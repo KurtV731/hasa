@@ -1,0 +1,3947 @@
+
+
+// ==UserScript==
+// @name         hasa 1.0.3l ascension-reset + solartechnik-fix - horizon assistant
+// @namespace    horiversum.hasa
+// @version      1.0.3l
+// @description  Persönlicher Ascension-Assistent für Horizon
+// @match        https://horiversum.org/game/main/main.php*
+// @grant        GM_getValue
+// @grant        GM_setValue
+// @grant        GM_xmlhttpRequest
+// @connect      techtree.kommandobasis.eu
+// ==/UserScript==
+
+/*
+==========================================================
+ HASA – Horizon Ascension Assistant
+
+ Version : 1.0.3l
+ Status  : Planer-Neustart – Horizon-Iststand bei jedem Forschungsseiten-Scan
+ Build   : 2026-08-06
+
+ Änderungen:
+ - 1.0.3l: Horizon-Seitenstand ist je Bereich autoritativ; alte Forschungs-/Gebäudewerte werden vor dem Scan entfernt
+ - damit bleiben Werte aus dem Leben vor einer Ascension nicht als erledigt gespeichert
+ - SOLARENERGYTECH / Solarenergietechnik wird verbindlich als Forschung eingeordnet
+ - J bleibt J: UI-Korrektur in 1.0.3j integriert
+ - Astrogation und Terraforming werden sicher als Forschung eingeordnet
+ - Forschungsplan-Liste wieder ein-/ausklappbar
+ - Forschungsseite wird bei jedem HASA-Seitenscan vollständig neu als Iststand eingelesen
+ - zusätzlicher Horizon-Fallback liest Zeilen wie „Physik 16 (physics - Forschungsstufe 16)“
+ - technische Horizon-ID wird dabei mitgespeichert (z. B. PHYSICS, PSYCHOLOGY, REFINERYTECH)
+ - F5 bzw. erneutes Öffnen/Ändern der Forschungsseite bewertet den Plan danach sofort neu
+ - Forschungsplaner neu begonnen: keine rekursive Sammlung in dieser Teststufe
+ - nur die direkten Mindestanforderungen des ausgewählten Ziels werden gelesen
+ - direkte Anforderungen werden sofort gegen den lokalen Horizon-Iststand geprüft
+ - erfüllte Anforderungen verschwinden in der reduzierten Ansicht
+ - keine Untervoraussetzungen, Reverse-Pfade oder Maximalstufen in dieser Teststufe
+ - erfüllte Voraussetzungen beenden ihren Zweig sofort; keine Rekursion unter bereits vorhandene Gebäude/Forschungen
+ - bereits erfüllte Zweige werden beim TechTree-Import nicht mehr nachgeladen
+ - Namen mit der Endung „Technik“ werden verbindlich als Forschung eingeordnet
+ - sichtbarer Debugbereich bleibt erhalten
+ - STAN-Kategorien „Schwarm“ und „Arkane“ im Ziel-Explorer ausblenden
+ - Fremdrassen-Daten bleiben im lokalen STAN-Bestand erhalten und können später für Kampfanalyse genutzt werden
+ - Forschungs- und Gebäudestände weiterhin nur von der sichtbar geöffneten Horizon-Seite lesen
+ - nach dem Öffnen eines Horizon-Unterbereichs automatisch erneut einlesen
+ - Forschungsplanung danach ohne weiteren HASA-Klick aktualisieren
+ - keine Horizon-Seiten im Hintergrund abrufen
+ - Debugprotokoll für Auswahl und Sammlung der TechTree-Anforderungen
+ - protokolliert Übernahme, Ablehnung, Zusammenführung und Rekursionssprünge
+
+ Idee & Konzept:
+   Styl
+
+ Programmierung:
+   ChatGPT
+
+ Grundsatz:
+   HASA informiert, analysiert und erinnert.
+   HASA spielt nicht.
+
+ Speicherung:
+   Alle Einstellungen werden lokal im Tampermonkey-Speicher
+   (GM_getValue / GM_setValue) gespeichert.
+   Fallback: Browser-localStorage, falls GM-Speicher nicht verfügbar ist.
+==========================================================
+*/
+
+(function () {
+    'use strict';
+
+    // Fremdrassen: nicht als erreichbare Spielerziele im Explorer anzeigen.
+    // Die Datensätze bleiben bewusst gespeichert, damit sie später z. B.
+    // für einen Kampfsimulator oder Flottenvergleich genutzt werden können.
+    const STAN_EXPLORER_AUSGEBLENDETE_KATEGORIEN = ['schwarm', 'arkane'];
+
+    function istStanExplorerKategorieAusgeblendet(kategorie) {
+        const normalisiert = normalisiereTechTreeText(kategorie).toLowerCase();
+        return STAN_EXPLORER_AUSGEBLENDETE_KATEGORIEN.includes(normalisiert);
+    }
+
+    const HASA_SICHERE_FORSCHUNGS_IDS = new Set([
+        'ASTROGATION', 'TERRAFORMINGTECH', 'TERRAFORMING',
+        'PHYSICS', 'PSYCHOLOGY', 'NUCLEARPHYSICS', 'SOLARENERGYTECH'
+    ]);
+
+    const HASA_VERSION = '1.0.3l – Ascension-Reset + Solarenergietechnik-Fix';
+    const HASA_BUILD_LABEL = '1.0.3l-ascension-reset-solartechnik-2026-08-17';
+
+    /*
+     * hasa-Positionswerte ab 0.7 Beta
+     *
+     * Die Position der hasa-Box hängt NICHT mehr vom Text „Ascension“ ab.
+     * Ascension entscheidet nur noch über den INHALT der Box.
+     *
+     * Grundlage ist der feste Horizon-Spielbereich:
+     *   - linke Navigation: 128px
+     *   - nutzbarer linker Spielbereich: ca. 642px
+     *   - daraus ergibt sich als Standard-Anker: 128 + 642 = 770px
+     *
+     * Falls Horizon in einem Skin/Zoom minimal abweicht, sind nur diese
+     * Werte anzupassen. Keine Pixelwerte mehr tief in der Funktion.
+     */
+    const HASA_POSITION = {
+        SPIEL_LINKS_X: 128,
+        SPIEL_BREITE_X: 642,
+        BOX_X_OFFSET: 0,
+        BOX_OBEN_Y: 132,
+        BOX_Y_OFFSET: 0,
+        RAND_RECHTS_MIN: 12,
+
+        // 0.8.2 Beta:
+        // Optischer Standardanker:
+        //   oben  = Oberkante der Buddies-Leiste
+        //   links = linke Kante des Nachrichten-/Chatfensters unten
+        // Wenn einer der Anker nicht gefunden wird, greift der alte Fallback.
+        BUDDIES_Y_FALLBACK: 68,
+        CHAT_LINKS_FALLBACK: 286,
+        ANKER_Y_OFFSET: 0,
+        ANKER_X_OFFSET: 0,
+
+        // 0.8.3 Beta:
+        // Anker nur übernehmen, wenn sie plausibel zum großen Horizon-Layout passen.
+        // So vermeiden wir, dass HASA an einer kleinen Mini-Box oben links kleben bleibt.
+        BUDDIES_MIN_LINKS: 350,
+        BUDDIES_MAX_OBEN: 160,
+        CHAT_MIN_OBEN_ANTEIL: 0.45,
+        CHAT_MIN_LINKS: 120,
+        CHAT_MIN_BREITE: 500,
+
+        // 0.9.6 Beta: Magnetisches Einrasten beim Verschieben.
+        SNAP_ABSTAND: 18
+    };
+
+    const STORAGE_FAVORITEN = 'haa_favoriten_v05';
+    const STORAGE_SPALTEN = 'haa_spalten_v05';
+    const STORAGE_ZU = 'haa_zu_v05';
+    const STORAGE_BAUALARM = 'haa_baualarm_v055';
+    const STORAGE_BAUSTATUS = 'haa_baustatus_v060';
+    const STORAGE_ALARM_AUSGELOEST = 'haa_alarm_ausgeloest_v060';
+    const STORAGE_FENSTER_POSITION = 'haa_fenster_position_v090';
+    const STORAGE_ASCENSION_STATUS = 'haa_ascension_status_v091';
+    const STORAGE_ZIEL = 'haa_ziel_v095';
+    const STORAGE_VORLAUF = 'haa_vorlauf_v095';
+    const STORAGE_VORALARM_AUSGELOEST = 'haa_voralarm_ausgeloest_v095';
+    const STORAGE_BAUUEBERWACHUNG = 'haa_bauueberwachung_v099';
+    const STORAGE_FORSCHUNGSUEBERWACHUNG = 'haa_forschungsueberwachung_v101b';
+    const STORAGE_TECHTREE_GRAPH = 'haa_techtree_graph_v103i';
+    const STORAGE_TECHTREE_STATUS = 'haa_techtree_status_v103f';
+    const STORAGE_TECHTREE_DEBUG = 'haa_techtree_debug_v103g';
+    const STORAGE_UI_BOX_ZU = 'haa_ui_box_zu_v101e1';
+    const STORAGE_UI_AKTIVER_BEREICH = 'haa_ui_aktiver_bereich_v101e2';
+    const STORAGE_UI_SCROLL = 'haa_ui_scroll_v101e2';
+    const STORAGE_TECHTREE_SPIELSTAND = 'haa_techtree_spielstand_v102';
+    const STORAGE_TECHTREE_ERLEDIGT_ZEIGEN = 'haa_techtree_erledigt_zeigen_v102';
+    const STORAGE_STAN_STAMMDATEN = 'haa_stan_stammdaten_v103';
+    const STORAGE_STAN_VERSIONEN = 'haa_stan_versionen_v103a';
+    const STORAGE_STAN_STATUS = 'haa_stan_status_v103';
+    const STORAGE_STAN_AUSWAHL = 'haa_stan_auswahl_v103';
+    const STORAGE_STAN_NAVIGATION = 'haa_stan_navigation_v103';
+    const STORAGE_STAN_AUSWAHL_OFFEN = 'haa_stan_auswahl_offen_v103b';
+    const STORAGE_SEITENSCAN_STATUS = 'haa_seitenscan_status_v103';
+    const TECHTREE_BASIS_URL = 'https://techtree.kommandobasis.eu/objects/details/id/';
+    const STAN_START_DATENSTAND = '20260802';
+    const STAN_RHYTHMUS_TAGE = 7;
+    const TECHTREE_CACHE_MS = 24 * 60 * 60 * 1000;
+
+    const HASA_ALARM_VORLAUF_SEKUNDEN = 2;
+    const HASA_SYNC_INTERVALL_MS = 60000;
+
+    const STANDARD_FAVORITEN = [
+        'Erhöht Gebäudeausbaugeschwindigkeit',
+        'Reduziert Gebäudepreise',
+        'Ascension-Vervielfältigung'
+    ];
+
+    const STANDARD_SPALTEN = {
+        stufe: true,
+        letzte: true,
+        kosten: true,
+        invest: true
+    };
+
+    function verdopplung(max) {
+        const a = [];
+        let k = 1;
+        for (let i = 0; i < max; i++) {
+            a.push(k);
+            k *= 2;
+        }
+        return a;
+    }
+
+    function skill(kategorie, kosten, max) {
+        return { kategorie, kosten, max };
+    }
+
+    const K31 = verdopplung(31);
+
+    const HASA_SKILLS = {
+        // Produktion
+        'Erhöht Gebäudeausbaugeschwindigkeit': skill('Produktion', K31, 31),
+        'Erhöht Gebäudebauplätze': skill('Produktion', verdopplung(10), 10),
+        'Erhöht Gewinn von Bauplatz durch Infrastruktur': skill('Produktion', K31, 31),
+        'Erhöht die Größe des Mondbauplatzes': skill('Produktion', K31, 31),
+        'Erhöht Schiffsbaugeschwindigkeit': skill('Produktion', K31, 31),
+        'Erhöht Schiffsreparaturgeschwindigkeit': skill('Produktion', K31, 31),
+        'Erhöht Waffenbaugeschwindigkeit': skill('Produktion', K31, 31),
+
+        // Rohstoffe
+        'Erhöhte Metallproduktion': skill('Rohstoffe', K31, 31),
+        'Erhöhte Mineralproduktion': skill('Rohstoffe', K31, 31),
+        'Erhöhte Treibstoffproduktion': skill('Rohstoffe', K31, 31),
+        'Vergrößerte Metalllager': skill('Rohstoffe', K31, 31),
+        'Vergrößerte Minerallager': skill('Rohstoffe', K31, 31),
+        'Vergrößerte Treibstofflager': skill('Rohstoffe', K31, 31),
+        'Erhöhte Bevölkerung': skill('Rohstoffe', K31, 31),
+        'Erhöhte Energieproduktion': skill('Rohstoffe', K31, 31),
+        'Reduziert Gebäudepreise': skill('Rohstoffe', K31, 31),
+        'Reduziert Forschungskosten': skill('Rohstoffe', K31, 31),
+
+        // Flotte
+        'Senkt Treibstoffverbrauch der Schiffe': skill('Flotte', K31, 31),
+        'Erhöht die interplanetare Geschwindigkeit der Schiffe': skill('Flotte', K31, 31),
+        'Erhöht die Flottenkontrolle der Flaggschiffe': skill('Flotte', K31, 31),
+        'Erhöht Rohstoffabbau durch Bergbauschiffe': skill('Flotte', K31, 31),
+        'Erhöht den Laderaume der Schiffe': skill('Flotte', K31, 31),
+        'Reduziert den Bedarf an Hyperraumkontrollzyklen der Schiffe': skill('Flotte', K31, 31),
+        'Erhöht die Größe des Raumhafens': skill('Flotte', K31, 31),
+        'Erhöht die Größe der Raumstation': skill('Flotte', K31, 31),
+        'Erhöht die Größe des Flottenbunkers': skill('Flotte', K31, 31),
+
+        // Gebäude
+        'Grundausstattung des Heimatplaneten': skill('Gebäude', [1, 2, 4], 3),
+        'Grundausstattung der Kolonien': skill('Gebäude', [1, 2], 2),
+
+        // Imperium
+        'Imperium Coloniale Supremum': skill('Imperium', [10, 100, 1000], 3),
+        'Erhöhte Koloniekontrolle': skill('Imperium', [4, 16, 64, 256, 1024], 5),
+       // 'Ascension-Vervielfältigung': skill('Imperium', [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192], 31),
+        'Ascension-Vervielfältigung': skill('Imperium', K31, 31),
+
+        'Panzerbrechende Maschinenkanonen': skill('Waffen', [1, 10, 100], 3),
+        'Aktivkühlung von Maschinenkanonen': skill('Waffen', [1, 10, 100], 3),
+        'Stickstoffkühlung von Protonenkanonen': skill('Waffen', [1, 10, 100], 3),
+        'Magnetische Plasmaverdichtung': skill('Waffen', [1, 10, 100], 3),
+        'Fokussierte Plasmafeldstabilisierung': skill('Waffen', [1, 10, 100], 3),
+        'Resonanzmodulation von Ionenstrahlen': skill('Waffen', [1, 10, 100], 3),
+        'Hochenergetische Ionisierung': skill('Waffen', [1, 10, 100], 3),
+
+        // Perks
+        'Alle Gebäude fertig stellen': skill('Perks', [1], 1),
+        'Aktuelle Forschung fertig stellen': skill('Perks', [1], 1),
+        'Alle Schiffe fertig stellen': skill('Perks', [1], 1),
+        'Alle Verteidigungsanlagen fertig stellen': skill('Perks', [1], 1),
+        'Alle Expeditionen abschließen': skill('Perks', [1], 1),
+        'Alle Planetaren Hypersprünge abschließen': skill('Perks', [1], 1),
+        'Alle Flotten kehren sofort zurück': skill('Perks', [1], 1),
+        'Forschungssprung': skill('Perks', [25], 1),
+        'Aggregatsverbesserung': skill('Perks', [25], 1),
+
+        // Ereignisse
+        'Reduziert Risiko von Alien Flotten': skill('Ereignisse', K31, 31),
+        'Erhöht die Häufigkeit von Motivationsvideos': skill('Ereignisse', K31, 31),
+
+        // Forschung
+        'Grundausstattung an Forschungen': skill('Forschung', [10, 20, 40, 80, 160], 5)
+    };
+
+    function text(el) {
+        return el ? el.textContent.replace(/\s+/g, ' ').trim() : '';
+    }
+
+    function zahl(s) {
+        if (!s || s === 'N/A') return null;
+        s = String(s).replace(',', '.').replace(/[^\d.]/g, '');
+        return s ? Number(s) : null;
+    }
+
+    function esc(s) {
+        return String(s ?? '').replace(/[&<>"']/g, c => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[c]));
+    }
+
+    function summeBis(kosten, stufe) {
+        if (!kosten || stufe <= 0) return 0;
+        let s = 0;
+        for (let i = 0; i < stufe && i < kosten.length; i++) {
+            s += kosten[i];
+        }
+        return s;
+    }
+
+    function letzteAusDatenbank(name, stufe) {
+        const db = HASA_SKILLS[name];
+        if (!db || stufe <= 0) return null;
+        return db.kosten[stufe - 1] ?? null;
+    }
+
+    function investAusDatenbank(name, stufe) {
+        const db = HASA_SKILLS[name];
+        if (!db) return null;
+        return summeBis(db.kosten, stufe);
+    }
+
+    function leseAP() {
+        for (const el of Array.from(document.querySelectorAll('p, div'))) {
+            const m = text(el).match(/Du kannst\s+([\d.,]+)\s+Ascend-Punkte ausgeben/i);
+            if (m) return zahl(m[1]);
+        }
+        return null;
+    }
+
+    function leseAPBeimNaechstenReset() {
+        const seitenText = text(document.body);
+        const muster = [
+            /Beim Zurücksetzen werden\s+([\d.,]+)\s+Punkte verfügbar/i,
+            /Beim Zuruecksetzen werden\s+([\d.,]+)\s+Punkte verfuegbar/i,
+            /(?:nächsten|naechsten)\s+(?:Reset|Zurücksetzen)[^\d]{0,80}([\d.,]+)\s+(?:Ascend-?)?Punkte/i
+        ];
+        for (const regex of muster) {
+            const m = seitenText.match(regex);
+            if (m) return zahl(m[1]);
+        }
+        return null;
+    }
+
+    function leseAscensions() {
+        const daten = [];
+        const kats = Array.from(document.querySelectorAll('.AscAccCatHeadBox'));
+
+        kats.forEach(catBox => {
+            const kategorie = text(catBox.querySelector('.AscAccCatHead'));
+            const content = catBox.nextElementSibling;
+            if (!kategorie || !content) return;
+
+            const rows = Array.from(content.querySelectorAll('tr.AscAccBldClsBody'));
+
+            for (let i = 0; i < rows.length; i += 2) {
+                const nameEl = rows[i].querySelector('.AscAccCategory');
+                const row2 = rows[i + 1];
+                if (!nameEl || !row2) continue;
+
+                const werte = Array.from(row2.querySelectorAll('.AscAccFuncDescTextright')).map(text);
+                const stufe = zahl(werte[0]);
+                const kostenText = werte[1] || '';
+                const kosten = zahl(kostenText);
+
+                let name = text(nameEl);
+                if (stufe !== null) {
+                    name = name.replace(new RegExp('\\s+' + stufe + '$'), '');
+                }
+
+                daten.push({
+                    kategorie,
+                    name,
+                    stufe,
+                    kosten,
+                    kostenText,
+                    letzte: letzteAusDatenbank(name, stufe),
+                    invest: investAusDatenbank(name, stufe),
+                    meta: HASA_SKILLS[name] || null
+                });
+            }
+        });
+
+        return daten;
+    }
+
+    function ladeFavoriten(daten) {
+        const gespeicherteFavoriten = laden(STORAGE_FAVORITEN, null);
+        if (Array.isArray(gespeicherteFavoriten)) {
+            return gespeicherteFavoriten;
+        }
+
+        return daten.filter(e => STANDARD_FAVORITEN.includes(e.name)).map(e => e.name);
+    }
+
+    function ladeSpalten() {
+        const gespeicherteSpalten = laden(STORAGE_SPALTEN, null);
+        if (gespeicherteSpalten && typeof gespeicherteSpalten === 'object' && !Array.isArray(gespeicherteSpalten)) {
+            return Object.assign({}, STANDARD_SPALTEN, gespeicherteSpalten);
+        }
+
+        return Object.assign({}, STANDARD_SPALTEN);
+    }
+
+    function gmSpeicherVerfuegbar() {
+        return typeof GM_getValue === 'function' && typeof GM_setValue === 'function';
+    }
+
+    function hasaSpeicherName() {
+        return gmSpeicherVerfuegbar() ? 'Tampermonkey GM' : 'localStorage';
+    }
+
+    function baueHasaStatusHtml() {
+        let html = '';
+        html += '<div style="margin-top:8px;border-top:1px solid #777;padding-top:5px;';
+        html += 'font-size:11px;color:#aaa;line-height:1.35;">';
+        html += '<div>Version: <b style="color:#FFD27C;">' + esc(HASA_VERSION) + '</b></div>';
+        html += '<div>Speicher: <b style="color:' + (gmSpeicherVerfuegbar() ? '#7CFF7C' : '#FFD27C') + ';">' + esc(hasaSpeicherName()) + '</b></div>';
+        html += '<div style="font-size:10px;color:#777;">Build: ' + esc(HASA_BUILD_LABEL) + '</div>';
+        html += '</div>';
+        return html;
+    }
+
+    function ladeHasaZiel() {
+        const ziel = laden(STORAGE_ZIEL, null);
+        if (ziel && typeof ziel === 'object' && !Array.isArray(ziel)) {
+            return Object.assign({ typ: 'aktueller-bau', name: 'Aktueller Bau' }, ziel);
+        }
+        return { typ: 'aktueller-bau', name: 'Aktueller Bau' };
+    }
+
+    function speichereHasaZiel(typ) {
+        speichern(STORAGE_ZIEL, {
+            typ: typ || 'aktueller-bau',
+            name: typ === 'cc' ? 'Koloniezentrum / Kolonialverwaltung' : 'Aktueller Bau',
+            gespeichertAm: Date.now()
+        });
+    }
+
+    function ladeVorlaufSekunden() {
+        const wert = Number(laden(STORAGE_VORLAUF, 60));
+        if (!Number.isFinite(wert) || wert < 0) {
+            return 60;
+        }
+        return wert;
+    }
+
+    function speichereVorlaufSekunden(wert) {
+        const sekunden = Number(wert);
+        speichern(STORAGE_VORLAUF, Number.isFinite(sekunden) && sekunden >= 0 ? sekunden : 60);
+    }
+
+    function baueVorlaufOption(wert, label, aktuell) {
+        return '<option value="' + esc(wert) + '" ' + (Number(aktuell) === Number(wert) ? 'selected' : '') + '>' + esc(label) + '</option>';
+    }
+
+    function baueZielUndVorlaufHtml() {
+        const ziel = ladeHasaZiel();
+        const vorlauf = ladeVorlaufSekunden();
+        let html = '';
+        html += '<div style="margin-top:6px;display:grid;grid-template-columns:90px 1fr;gap:4px;align-items:center;">';
+        html += '<label for="haa-ziel-select" style="color:#ccc;">Ziel:</label>';
+        html += '<select id="haa-ziel-select" style="width:100%;">';
+        html += '<option value="aktueller-bau" ' + (ziel.typ === 'aktueller-bau' ? 'selected' : '') + '>aktueller Bau</option>';
+        html += '<option value="cc" ' + (ziel.typ === 'cc' ? 'selected' : '') + '>Koloniezentrum / Kolonialverwaltung</option>';
+        html += '</select>';
+        html += '<label for="haa-vorlauf-select" style="color:#ccc;">Vorlauf:</label>';
+        html += '<select id="haa-vorlauf-select" style="width:100%;">';
+        html += baueVorlaufOption(0, 'aus', vorlauf);
+        html += baueVorlaufOption(30, '30 Sekunden', vorlauf);
+        html += baueVorlaufOption(60, '1 Minute', vorlauf);
+        html += baueVorlaufOption(120, '2 Minuten', vorlauf);
+        html += baueVorlaufOption(300, '5 Minuten', vorlauf);
+        html += '</select>';
+        html += '</div>';
+        return html;
+    }
+
+    function verbindeZielUndVorlaufButtons(neuAufbauen) {
+        const zielSelect = document.getElementById('haa-ziel-select');
+        if (zielSelect) {
+            zielSelect.onchange = function () {
+                speichereHasaZiel(zielSelect.value);
+                if (typeof neuAufbauen === 'function') {
+                    neuAufbauen();
+                }
+            };
+        }
+
+        const vorlaufSelect = document.getElementById('haa-vorlauf-select');
+        if (vorlaufSelect) {
+            vorlaufSelect.onchange = function () {
+                speichereVorlaufSekunden(vorlaufSelect.value);
+                speichern(STORAGE_VORALARM_AUSGELOEST, '');
+                HAA_VORALARM_AUSGELOEST_LAUF = '';
+                if (typeof neuAufbauen === 'function') {
+                    neuAufbauen();
+                }
+            };
+        }
+    }
+
+    function speichern(key, wert) {
+        try {
+            if (gmSpeicherVerfuegbar()) {
+                GM_setValue(key, wert);
+                return;
+            }
+        } catch (e) {
+            console.warn('HASA GM-Speicher fehlgeschlagen, nutze localStorage:', e);
+        }
+
+        localStorage.setItem(key, JSON.stringify(wert));
+    }
+
+    function laden(key, fallback) {
+        try {
+            if (gmSpeicherVerfuegbar()) {
+                const wert = GM_getValue(key, undefined);
+                if (wert !== undefined && wert !== null && wert !== '') {
+                    return wert;
+                }
+            }
+        } catch (e) {
+            console.warn('HASA GM-Lesen fehlgeschlagen, nutze localStorage:', e);
+        }
+
+        try {
+            const s = localStorage.getItem(key);
+            if (s === null || s === undefined || s === '') {
+                return fallback;
+            }
+            return JSON.parse(s);
+        } catch (e) {
+            return fallback;
+        }
+    }
+
+    function istZu() {
+        return laden(STORAGE_ZU, '0') === '1';
+    }
+
+    function setZu(zu) {
+        speichern(STORAGE_ZU, zu ? '1' : '0');
+    }
+
+    function px(wert) {
+        return Math.round(Number(wert)) + 'px';
+    }
+
+    function findeHorizonSpielLayout() {
+        const divs = Array.from(document.querySelectorAll('div'));
+
+        return divs.find(function (el) {
+            const style = el.getAttribute('style') || '';
+            return /left:\s*128px/i.test(style)
+                && /top:\s*0px/i.test(style)
+                && /right:\s*0px/i.test(style);
+        }) || null;
+    }
+
+    function rechteckGueltig(r) {
+        return r
+            && Number.isFinite(r.left)
+            && Number.isFinite(r.top)
+            && Number.isFinite(r.width)
+            && Number.isFinite(r.height)
+            && r.width > 0
+            && r.height > 0;
+    }
+
+    function findeBuddiesAnker() {
+        const elemente = Array.from(document.querySelectorAll('a, div, td, span, nobr, font'));
+        const kandidaten = [];
+
+        for (const el of elemente) {
+            if (!/Buddies\s*:/i.test(text(el))) {
+                continue;
+            }
+
+            let kandidat = el;
+            for (let i = 0; i < 5 && kandidat; i++) {
+                const r = kandidat.getBoundingClientRect();
+                if (rechteckGueltig(r)
+                        && r.width >= 120
+                        && r.height >= 18
+                        && r.left >= HASA_POSITION.BUDDIES_MIN_LINKS
+                        && r.top >= 0
+                        && r.top <= HASA_POSITION.BUDDIES_MAX_OBEN) {
+                    kandidaten.push({ el: kandidat, rect: r });
+                }
+                kandidat = kandidat.parentElement;
+            }
+        }
+
+        if (!kandidaten.length) {
+            return null;
+        }
+
+        kandidaten.sort(function (a, b) {
+            // Oberste plausible Buddies-Leiste im rechten Kopfbereich.
+            return a.rect.top - b.rect.top;
+        });
+
+        return kandidaten[0].el;
+    }
+
+    function findeNachrichtenFensterAnker() {
+        const elemente = Array.from(document.querySelectorAll('div, table, tr, td, input, textarea, button'));
+        const kandidaten = [];
+        const minTop = window.innerHeight * HASA_POSITION.CHAT_MIN_OBEN_ANTEIL;
+
+        for (const el of elemente) {
+            const t = text(el);
+            if (!t) {
+                continue;
+            }
+
+            const istChat = /An\s+Allianz\s+senden/i.test(t)
+                || /\[\d{2}:\d{2}\]/.test(t);
+
+            if (!istChat) {
+                continue;
+            }
+
+            let kandidat = el;
+            for (let i = 0; i < 7 && kandidat; i++) {
+                const r = kandidat.getBoundingClientRect();
+                if (rechteckGueltig(r)
+                        && r.width >= HASA_POSITION.CHAT_MIN_BREITE
+                        && r.left >= HASA_POSITION.CHAT_MIN_LINKS
+                        && r.top >= minTop) {
+                    kandidaten.push({ el: kandidat, rect: r });
+                }
+                kandidat = kandidat.parentElement;
+            }
+        }
+
+        if (!kandidaten.length) {
+            return null;
+        }
+
+        kandidaten.sort(function (a, b) {
+            // Möglichst das große, untere Nachrichtenfenster nehmen,
+            // aber keine Mini-Boxen aus dem Kopfbereich.
+            if (Math.abs(b.rect.top - a.rect.top) > 8) {
+                return b.rect.top - a.rect.top;
+            }
+            return b.rect.width - a.rect.width;
+        });
+
+        return kandidaten[0].el;
+    }
+
+    function ermittleSpielLinks() {
+        const layout = findeHorizonSpielLayout();
+        if (layout) {
+            const r = layout.getBoundingClientRect();
+            if (Number.isFinite(r.left) && r.left > 0) {
+                return r.left;
+            }
+        }
+
+        return HASA_POSITION.SPIEL_LINKS_X;
+    }
+
+    function ermittleBoxLinks(box) {
+        const chat = findeNachrichtenFensterAnker();
+        if (chat) {
+            const r = chat.getBoundingClientRect();
+            if (rechteckGueltig(r)) {
+                return r.left + HASA_POSITION.ANKER_X_OFFSET;
+            }
+        }
+
+        // Fallback, wenn die Chat-/Nachrichtenbox im aktuellen Fenster nicht sichtbar ist.
+        if (HASA_POSITION.CHAT_LINKS_FALLBACK !== null && HASA_POSITION.CHAT_LINKS_FALLBACK !== undefined) {
+            return HASA_POSITION.CHAT_LINKS_FALLBACK + HASA_POSITION.ANKER_X_OFFSET;
+        }
+
+        const basisLinks = ermittleSpielLinks();
+        const links = basisLinks + HASA_POSITION.SPIEL_BREITE_X + HASA_POSITION.BOX_X_OFFSET;
+
+        if (!box || !box.offsetWidth) {
+            return links;
+        }
+
+        const maxLinks = window.innerWidth - box.offsetWidth - HASA_POSITION.RAND_RECHTS_MIN;
+        if (Number.isFinite(maxLinks) && maxLinks > 0) {
+            return Math.min(links, maxLinks);
+        }
+
+        return links;
+    }
+
+    function ermittleBoxOben() {
+        const buddies = findeBuddiesAnker();
+        if (buddies) {
+            const r = buddies.getBoundingClientRect();
+            if (rechteckGueltig(r)) {
+                return r.top + HASA_POSITION.ANKER_Y_OFFSET;
+            }
+        }
+
+        if (HASA_POSITION.BUDDIES_Y_FALLBACK !== null && HASA_POSITION.BUDDIES_Y_FALLBACK !== undefined) {
+            return HASA_POSITION.BUDDIES_Y_FALLBACK + HASA_POSITION.ANKER_Y_OFFSET;
+        }
+
+        return HASA_POSITION.BOX_OBEN_Y + HASA_POSITION.BOX_Y_OFFSET;
+    }
+
+    function setzeBoxPosition(box, links, oben) {
+        box.style.left = px(links);
+        box.style.top = px(oben);
+    }
+
+    function ladeGespeicherteFensterPosition() {
+        const pos = laden(STORAGE_FENSTER_POSITION, null);
+        if (!pos) {
+            return null;
+        }
+
+        const links = Number(pos.left);
+        const oben = Number(pos.top);
+
+        if (!Number.isFinite(links) || !Number.isFinite(oben)) {
+            return null;
+        }
+
+        return { left: links, top: oben };
+    }
+
+    function speichereFensterPosition(box) {
+        if (!box) {
+            return;
+        }
+
+        const r = box.getBoundingClientRect();
+        speichern(STORAGE_FENSTER_POSITION, {
+            left: Math.round(r.left),
+            top: Math.round(r.top),
+            gespeichertAm: Date.now()
+        });
+    }
+
+    function begrenzeFensterPosition(box, links, oben) {
+        const rand = 8;
+        const breite = box && box.offsetWidth ? box.offsetWidth : 380;
+        const hoehe = box && box.offsetHeight ? box.offsetHeight : 120;
+        const maxLinks = Math.max(rand, window.innerWidth - breite - rand);
+        const maxOben = Math.max(rand, window.innerHeight - hoehe - rand);
+
+        return {
+            left: Math.min(Math.max(rand, links), maxLinks),
+            top: Math.min(Math.max(rand, oben), maxOben)
+        };
+    }
+
+
+    function snappeFensterPosition(box, links, oben, eventObj) {
+        if (eventObj && eventObj.shiftKey) {
+            return { left: links, top: oben };
+        }
+
+        const abstand = HASA_POSITION.SNAP_ABSTAND || 18;
+        const rand = 8;
+        const breite = box && box.offsetWidth ? box.offsetWidth : 380;
+        const hoehe = box && box.offsetHeight ? box.offsetHeight : 120;
+        let neuLinks = links;
+        let neuOben = oben;
+
+        const rechterRand = window.innerWidth - breite - rand;
+        const untererRand = window.innerHeight - hoehe - rand;
+
+        if (Math.abs(neuLinks - rand) <= abstand) {
+            neuLinks = rand;
+        }
+        if (Math.abs(neuLinks - rechterRand) <= abstand) {
+            neuLinks = rechterRand;
+        }
+        if (Math.abs(neuOben - rand) <= abstand) {
+            neuOben = rand;
+        }
+        if (Math.abs(neuOben - untererRand) <= abstand) {
+            neuOben = untererRand;
+        }
+
+        const buddies = findeBuddiesAnker();
+        if (buddies) {
+            const r = buddies.getBoundingClientRect();
+            if (rechteckGueltig(r) && Math.abs(neuOben - r.top) <= abstand) {
+                neuOben = r.top;
+            }
+        }
+
+        const chat = findeNachrichtenFensterAnker();
+        if (chat) {
+            const r = chat.getBoundingClientRect();
+            if (rechteckGueltig(r)) {
+                if (Math.abs(neuLinks - r.left) <= abstand) {
+                    neuLinks = r.left;
+                }
+                if (Math.abs(neuOben - r.top) <= abstand) {
+                    neuOben = r.top;
+                }
+            }
+        }
+
+        return { left: neuLinks, top: neuOben };
+    }
+
+    function positioniereBox(box) {
+        const gespeichert = ladeGespeicherteFensterPosition();
+
+        if (gespeichert) {
+            const begrenzt = begrenzeFensterPosition(box, gespeichert.left, gespeichert.top);
+            setzeBoxPosition(box, begrenzt.left, begrenzt.top);
+            return;
+        }
+
+        setzeBoxPosition(
+            box,
+            ermittleBoxLinks(box),
+            ermittleBoxOben()
+        );
+    }
+
+    function istDragSperrElement(el) {
+        return !!(el && el.closest && el.closest('button, input, textarea, select, option, a, label'));
+    }
+
+    function starteHasaDrag(e) {
+        if (e.button !== 0 || istDragSperrElement(e.target)) {
+            return;
+        }
+
+        const box = document.getElementById('haa-box');
+        if (!box) {
+            return;
+        }
+
+        const r = box.getBoundingClientRect();
+        HAA_DRAG_AKTIV = true;
+        HAA_DRAG_BOX = box;
+        HAA_DRAG_START_X = e.clientX;
+        HAA_DRAG_START_Y = e.clientY;
+        HAA_DRAG_BOX_X = r.left;
+        HAA_DRAG_BOX_Y = r.top;
+
+        box.style.cursor = 'grabbing';
+        box.style.userSelect = 'none';
+        e.preventDefault();
+    }
+
+    function bewegeHasaDrag(e) {
+        if (!HAA_DRAG_AKTIV || !HAA_DRAG_BOX) {
+            return;
+        }
+
+        const links = HAA_DRAG_BOX_X + (e.clientX - HAA_DRAG_START_X);
+        const oben = HAA_DRAG_BOX_Y + (e.clientY - HAA_DRAG_START_Y);
+        const geschnappt = snappeFensterPosition(HAA_DRAG_BOX, links, oben, e);
+        const begrenzt = begrenzeFensterPosition(HAA_DRAG_BOX, geschnappt.left, geschnappt.top);
+
+        setzeBoxPosition(HAA_DRAG_BOX, begrenzt.left, begrenzt.top);
+        e.preventDefault();
+    }
+
+    function beendeHasaDrag() {
+        if (!HAA_DRAG_AKTIV || !HAA_DRAG_BOX) {
+            return;
+        }
+
+        HAA_DRAG_BOX.style.cursor = 'move';
+        HAA_DRAG_BOX.style.userSelect = '';
+        speichereFensterPosition(HAA_DRAG_BOX);
+
+        HAA_DRAG_AKTIV = false;
+        HAA_DRAG_BOX = null;
+    }
+
+    function aktiviereHasaDrag(box) {
+        if (!box || box.dataset.hasaDrag === '1') {
+            return;
+        }
+
+        box.dataset.hasaDrag = '1';
+        box.title = 'hasa-Fenster mit der Maus verschieben';
+        box.style.cursor = 'move';
+        box.addEventListener('mousedown', starteHasaDrag);
+    }
+
+    document.addEventListener('mousemove', bewegeHasaDrag);
+    document.addEventListener('mouseup', beendeHasaDrag);
+
+    function grundBox() {
+        const alt = document.getElementById('haa-box');
+        if (alt) alt.remove();
+
+        const box = document.createElement('div');
+        box.id = 'haa-box';
+        box.style.position = 'fixed';
+        box.style.zIndex = '999999';
+        box.style.background = '#211d18';
+        box.style.color = '#ffffff';
+        box.style.border = '2px solid #b89b5e';
+        box.style.padding = '8px';
+        box.style.fontFamily = 'Arial, sans-serif';
+        box.style.fontSize = '13px';
+               // HASA 0.5.1:
+        // Box breiter, damit die rechte I-Spalte nicht abgeschnitten wird.
+        box.style.minWidth = '380px';
+        box.style.maxWidth = '760px';
+        box.style.maxHeight = 'calc(100vh - 16px)';
+        box.style.overflow = 'hidden';
+        box.style.boxShadow = '0 0 8px #000';
+        box.style.borderRadius = '3px';
+        positioniereBox(box);
+        document.body.appendChild(box);
+        aktiviereHasaDrag(box);
+        return box;
+    }
+
+    function baueBauzeitAnalyse(daten) {
+        const speed = daten.find(e => e.name === 'Erhöht Gebäudeausbaugeschwindigkeit');
+        const preis = daten.find(e => e.name === 'Reduziert Gebäudepreise');
+
+        if (!speed || !preis) return '';
+
+        const stSpeed = speed.stufe || 0;
+        const stPreis = preis.stufe || 0;
+
+        const speedFaktor = Math.pow(1.30, stSpeed);
+        const kostenFaktor = Math.pow(0.80, stPreis);
+        const bauzeitFaktor = kostenFaktor / speedFaktor;
+
+        const prozent = bauzeitFaktor * 100;
+        const ersparnis = 100 - prozent;
+
+        return ''
+            + '<div style="margin-top:8px;border-top:1px solid #777;padding-top:6px;">'
+            + '<div style="color:#FFD27C;font-weight:bold;">🏗 Bauzeit</div>'
+            + '<div>Speed St. ' + esc(stSpeed) + ' → ×' + speedFaktor.toFixed(3) + '</div>'
+            + '<div>Preis St. ' + esc(stPreis) + ' → ×' + kostenFaktor.toFixed(3) + '</div>'
+            + '<div><b>' + prozent.toFixed(1) + '% der Grundbauzeit</b></div>'
+            + '<div>verkürzt um ca. ' + ersparnis.toFixed(1) + '%</div>'
+            + '</div>';
+    }
+
+
+    function berechneInvestGesamt(daten) {
+        let summe = 0;
+        let unbekannt = 0;
+
+        daten.forEach(e => {
+            if (typeof e.invest === 'number') {
+                summe += e.invest;
+            } else if ((e.stufe || 0) > 0) {
+                unbekannt++;
+            }
+        });
+
+        return { summe, unbekannt };
+    }
+
+    function formatZahl(n) {
+        if (n === null || n === undefined || Number.isNaN(n)) return '?';
+        return Number(n).toLocaleString('de-DE', { maximumFractionDigits: 2 });
+    }
+
+    function erstelleAscensionStatus(daten, ap, apNaechsterReset) {
+        const inv = berechneInvestGesamt(daten);
+        return {
+            apFrei: ap,
+            apNaechsterReset: apNaechsterReset,
+            apInvestiert: inv.summe,
+            apGesamt: ap !== null ? inv.summe + ap : null,
+            unbekannt: inv.unbekannt,
+            skills: Array.isArray(daten) ? daten.map(function (e) {
+                return {
+                    kategorie: e.kategorie,
+                    name: e.name,
+                    stufe: e.stufe,
+                    kosten: e.kosten,
+                    kostenText: e.kostenText,
+                    letzte: e.letzte,
+                    invest: e.invest
+                };
+            }) : [],
+            zuletztGesehen: Date.now()
+        };
+    }
+
+    function speichereAscensionStatus(status) {
+        if (!status) {
+            return;
+        }
+
+        speichern(STORAGE_ASCENSION_STATUS, status);
+    }
+
+    function ladeAscensionStatus() {
+        return laden(STORAGE_ASCENSION_STATUS, null);
+    }
+
+    function baueAscensionDashboardHtml(status) {
+        let html = '';
+        html += '<div style="margin-bottom:8px;">';
+        html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">';
+        html += '<div style="color:#FFD27C;font-weight:bold;font-size:15px;">⭐ Ascension</div>';
+        html += '<a href="https://horiversum.org/game/main/main.php?cmd=account&send=changeTab&area=4" ';
+        html += 'title="Zur Ascension" style="color:#FFD27C;font-size:24px;line-height:1;text-decoration:none;">➜</a>';
+        html += '</div>';
+
+        if (!status) {
+            html += '<div style="margin-top:3px;color:#aaa;">noch keine Werte gelesen</div>';
+            html += '</div>';
+            return html;
+        }
+
+        const frei = formatZahl(status.apFrei);
+        const investiert = formatZahl(status.apInvestiert);
+        const gesamt = formatZahl(status.apGesamt);
+        const tooltip = 'AP frei: ' + frei + '\nAP investiert: ' + investiert + '\nAP gesamt: ' + gesamt;
+
+        html += '<div title="' + esc(tooltip) + '" ';
+        html += 'style="margin-top:3px;font-size:16px;font-weight:bold;letter-spacing:.2px;cursor:help;">';
+        html += '<span style="color:#7CFF7C;">' + esc(frei) + '</span>';
+        html += ' <span style="color:#777;">/</span> ';
+        html += '<span style="color:#8EB8FF;">' + esc(investiert) + '</span>';
+        html += ' <span style="color:#777;">/</span> ';
+        html += '<span style="color:#fff;">' + esc(gesamt) + '</span>';
+        html += '</div>';
+        if (status.apNaechsterReset !== null && status.apNaechsterReset !== undefined) {
+            html += '<div style="margin-top:3px;color:#FFD27C;font-size:12px;">Beim nächsten Reset: <b>'
+                + esc(formatZahl(status.apNaechsterReset)) + ' AP</b> <span style="color:#777;">(Horizon-Wert)</span></div>';
+        }
+        html += '</div>';
+        return html;
+    }
+
+    function baueNavigationHtml() {
+        const aktuell = ermittleAktuellenBereich();
+        const eintraege = [
+            { key: 'building', label: 'Gebäude', icon: '🏢', url: 'https://horiversum.org/game/main/main.php?cmd=building' },
+            { key: 'research', label: 'Forschung', icon: '🔬', url: 'https://horiversum.org/game/main/main.php?cmd=research' },
+            { key: 'shipyard', label: 'Werft', icon: '🚀', url: 'https://horiversum.org/game/main/main.php?cmd=shipyard' },
+            { key: 'fleet', label: 'Flotte', icon: '🎯', url: 'https://horiversum.org/game/main/main.php?cmd=fleet' }
+        ];
+
+        let html = '';
+        html += '<div style="border-top:1px solid #555;border-bottom:1px solid #555;';
+        html += 'padding:7px 0;margin:7px 0;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;">';
+
+        eintraege.forEach(function (e) {
+            const aktiv = aktuell === e.key
+                || (e.key === 'research' && aktuell === 'forschung')
+                || (e.key === 'building' && aktuell === 'gebäude');
+
+            html += '<a href="' + esc(e.url) + '" title="' + esc(e.label + ' öffnen') + '" ';
+            html += 'style="display:block;text-align:center;text-decoration:none;padding:4px 2px;border-radius:3px;';
+            html += 'color:' + (aktiv ? '#FFD27C' : '#bbb') + ';';
+            html += 'background:' + (aktiv ? 'rgba(255,210,124,.08)' : 'transparent') + ';">';
+            html += '<div style="font-size:19px;line-height:1.1;">' + esc(e.icon) + '</div>';
+            html += '<div style="font-size:11px;margin-top:2px;">' + esc(e.label) + '</div>';
+            html += '</a>';
+        });
+
+        html += '</div>';
+        return html;
+    }
+
+    function baueBereichsanalyseHtml() {
+        const bereich = ermittleAktuellenBereich();
+        const kandidaten = findeBauKandidaten();
+        const laufend = kandidaten.filter(function (k) { return k.info.status === 'laeuft'; });
+        const baubar = kandidaten.filter(function (k) { return k.info.status === 'baubar'; });
+
+        let titel = 'Aktueller Bereich';
+        if (bereich === 'building' || bereich === 'gebäude') titel = 'Gebäude';
+        else if (bereich === 'research' || bereich === 'forschung') titel = 'Forschung';
+        else if (bereich === 'shipyard') titel = 'Werft';
+        else if (bereich === 'fleet') titel = 'Flotte';
+
+        let html = '';
+        html += '<div style="margin-top:4px;">';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+        html += '<div style="color:#FFD27C;font-weight:bold;font-size:15px;">📊 Bereich</div>';
+        html += '<div style="font-weight:bold;">' + esc(titel) + '</div>';
+        html += '</div>';
+
+        if (bereich === 'building' || bereich === 'gebäude'
+                || bereich === 'research' || bereich === 'forschung') {
+            const laengste = laufend.reduce(function (max, k) {
+                const sec = Number(k.info.sekunden);
+                return Number.isFinite(sec) && sec > max ? sec : max;
+            }, 0);
+
+            html += '<div style="margin-top:6px;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;text-align:center;">';
+            html += '<div><div style="font-size:18px;font-weight:bold;">' + esc(laufend.length) + '</div>';
+            html += '<div style="font-size:11px;color:#aaa;">laufend</div></div>';
+            html += '<div><div style="font-size:18px;font-weight:bold;">' + esc(baubar.length) + '</div>';
+            html += '<div style="font-size:11px;color:#aaa;">baubar</div></div>';
+            html += '<div><div style="font-size:18px;font-weight:bold;">'
+                + esc(laengste > 0 ? formatSekunden(laengste) : '–') + '</div>';
+            html += '<div style="font-size:11px;color:#aaa;">längste Restzeit</div></div>';
+            html += '</div>';
+        } else {
+            html += '<div style="margin-top:5px;color:#aaa;font-size:12px;">';
+            html += 'Kontextanzeige für diesen Bereich folgt später.';
+            html += '</div>';
+        }
+
+        html += '</div>';
+        return html;
+    }
+
+
+
+    // ==========================================================
+    // HASA 1.0.2b – Forschungsplanung mit Forschungslistenfix
+    // ==========================================================
+
+    function techTreeRequest(url) {
+        return new Promise(function (resolve, reject) {
+            GM_xmlhttpRequest({
+                method: 'GET',
+                url: url,
+                timeout: 20000,
+                headers: { 'Accept': 'text/html,application/xhtml+xml' },
+                onload: function (response) {
+                    if (response.status >= 200 && response.status < 300) {
+                        resolve(response.responseText || '');
+                    } else {
+                        reject(new Error('HTTP ' + response.status));
+                    }
+                },
+                ontimeout: function () { reject(new Error('Zeitüberschreitung')); },
+                onerror: function () { reject(new Error('Netzwerkfehler')); }
+            });
+        });
+    }
+
+    function normalisiereTechTreeText(textWert) {
+        return String(textWert || '').replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+
+    function normalisiereTechTreeName(name) {
+        return normalisiereTechTreeText(name)
+            .toLowerCase()
+            .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+            .replace(/[^a-z0-9]+/g, ' ').trim();
+    }
+
+    function techTreeTypLabel(typ) {
+        return ({ building: 'Gebäude', research: 'Forschung', ship: 'Schiffe', defense: 'Verteidigung', unknown: 'Unbekannt' })[typ] || 'Unbekannt';
+    }
+
+    function techTreeTypSymbol(typ) {
+        return ({ building: '🏢', research: '🔬', ship: '🚀', defense: '🛡️', unknown: '•' })[typ] || '•';
+    }
+
+    function ermittleTechTreeTypAusIdUndName(id, name) {
+        const kennung = String(id || '').toUpperCase();
+        const n = normalisiereTechTreeName(name);
+
+        // Gebäude mit irreführenden technischen IDs zuerst fest zuordnen.
+        // Insbesondere ist SHIPYARD eine Raumschiffswerft und kein Schiff.
+        if (/^(SHIPYARD|RESEARCHCENTER|COMPUTERCENTER|CONSTRUCTIONFACILITY|HEADQUARTER|INFRASTRUCTURE|TRADECENTER|SPACEPORT|SPACESTATION|METALMINE|CRYSTALMINE|FUELREFINERY|METALSTORAGE|CRYSTALSTORAGE|FUELSTORAGE|SOLARCOLLECTOR|ROBOTFACTORY|HABITATION|FISSIONREACTOR|FUSIONREACTOR|TIDALPOWERPLANT|RECYCLINGFACILITY|RESCUESTATION|SPACEOBSERVATORY)$/.test(kennung)) return 'building';
+        if (/^(BLD|BUILD|STOR|SOL|HAB|ROB|HQ|LAB|YARD)/.test(kennung)) return 'building';
+        if (/^(DEF|TUR|SHIELD|BUNK)/.test(kennung)) return 'defense';
+        if (/^(RES|TECH|PHY|COMP|ENER|PSY|MAT|MINE|SOLT)/.test(kennung)) return 'research';
+        if (/^(SCOL|CCOL|BCOL|COL|FIGHT|TRANS|CARGO)/.test(kennung)) return 'ship';
+        // Verbindliche Spielregel: deutsche Namen mit der Endung „-technik“ sind Forschungen.
+        // Diese Prüfung muss vor Gebäudebegriffen wie „Roboter“ oder „Solar“ stehen.
+        if (/technik$/.test(n)) return 'research';
+        if (/forschung|physik|computer|energie|psychologie|material|minentechnik/.test(n)) return 'research';
+        if (/werft|mine|lager|kraftwerk|wohnbezirk|roboterfabrik|zentrum|verwaltung|bauhof|forschungseinrichtung|forschungslabor|raumhafen|raumstation|fabrik|hauptquartier|infrastruktur|sternwarte/.test(n)) return 'building';
+        if (/schiff|kolonieschiff|frachter|jaeger|kreuzer/.test(n)) return 'ship';
+        if (/verteidigung|geschuetz|schild|bunker/.test(n)) return 'defense';
+        return 'unknown';
+    }
+
+    function ermittleTechTreeTypAusKontext(element) {
+        const typen = [
+            { muster: /^(Gebäude|Gebaeude)$/i, typ: 'building' },
+            { muster: /^Forschungen?$/i, typ: 'research' },
+            { muster: /^(Raumschiffe?|Schiffe?)$/i, typ: 'ship' },
+            { muster: /^Verteidigung$/i, typ: 'defense' }
+        ];
+        let knoten = element;
+        for (let runde = 0; runde < 80 && knoten; runde++) {
+            let vorher = knoten.previousElementSibling;
+            while (vorher) {
+                const vorherText = normalisiereTechTreeText(vorher.textContent);
+                for (const eintrag of typen) {
+                    if (eintrag.muster.test(vorherText)) return eintrag.typ;
+                }
+                const treffer = typen.find(function (eintrag) {
+                    return Array.from(vorher.querySelectorAll('h1,h2,h3,h4,h5,th,strong,b')).some(function (h) {
+                        return eintrag.muster.test(normalisiereTechTreeText(h.textContent));
+                    });
+                });
+                if (treffer) return treffer.typ;
+                vorher = vorher.previousElementSibling;
+            }
+            knoten = knoten.parentElement;
+        }
+        return 'unknown';
+    }
+
+    function ermittleStufeNebenLink(link) {
+        const kandidaten = [];
+        const zeile = link.closest('tr');
+        if (zeile) kandidaten.push(zeile.textContent);
+        const parent = link.parentElement;
+        if (parent) {
+            kandidaten.push(parent.textContent);
+            if (parent.nextElementSibling) kandidaten.push(parent.nextElementSibling.textContent);
+        }
+        if (link.nextSibling) kandidaten.push(link.nextSibling.textContent);
+        for (const roh of kandidaten) {
+            const t = normalisiereTechTreeText(roh);
+            let m = t.match(/(?:Stufe|Level|Lvl\.?|Ausbaustufe)\s*:?\s*(\d+)/i);
+            if (m) return Number(m[1]);
+            m = t.match(/(?:>=|≥)\s*(\d+)/);
+            if (m) return Number(m[1]);
+            const zahlen = t.match(/\b\d+\b/g);
+            if (zahlen && zahlen.length) return Number(zahlen[zahlen.length - 1]);
+        }
+        return null;
+    }
+
+    function ermittleTechTreeStufenmarkerFuerLink(link) {
+        // Der Community-TechTree enthält zwei Richtungen:
+        //   „Stufe N“    = Voraussetzungen dieses Objekts (Vorwärtspfad)
+        //   „ab Stufe N“ = Reverse-Liste: wofür dieses Objekt später gebraucht wird
+        // Für die Zielplanung darf ausschließlich „Stufe N“ verwendet werden.
+        if (!link || !link.ownerDocument) return null;
+
+        function markerAusElement(element) {
+            if (!element || element === link || element.contains(link)) return null;
+            const t = normalisiereTechTreeText(element.textContent);
+            if (!t || t.length > 100) return null;
+            let m = t.match(/^ab\s+Stufe\s*:?[ \t]*(\d+)\b/i);
+            if (m) return { level: Number(m[1]), reverse: true, text: t };
+            m = t.match(/^Stufe\s*:?[ \t]*(\d+)\b/i);
+            if (m) return { level: Number(m[1]), reverse: false, text: t };
+            return null;
+        }
+
+        const doc = link.ownerDocument;
+        const elemente = Array.from(doc.querySelectorAll('h1,h2,h3,h4,h5,h6,legend,strong,b,th,div,span'));
+        let letzter = null;
+        for (const el of elemente) {
+            const lage = el.compareDocumentPosition(link);
+            if (!(lage & Node.DOCUMENT_POSITION_FOLLOWING)) continue;
+            const marker = markerAusElement(el);
+            if (marker) letzter = marker;
+        }
+        return letzter;
+    }
+
+    function istTechTreeReverseKontext(link) {
+        let el = link;
+        for (let i = 0; i < 10 && el; i++, el = el.parentElement) {
+            const kennung = [el.id, el.className, el.getAttribute && el.getAttribute('data-tab'), el.getAttribute && el.getAttribute('aria-label')]
+                .filter(Boolean).join(' ').toLowerCase();
+            if (/reverse|revers|rueckwaerts|rückwärts/.test(kennung)) return true;
+            if (el.hidden || (el.getAttribute && el.getAttribute('aria-hidden') === 'true')) return true;
+        }
+        return false;
+    }
+
+    function parseTechTreeObjekt(html, erwarteteId) {
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const bodyText = normalisiereTechTreeText(doc.body ? doc.body.textContent : '');
+        const titelTreffer = bodyText.match(/Details\s*-\s*(.+?)\s*\(([A-Z0-9_-]+)\)\s*\[\s*Finale Stufe:\s*(\d+)\s*\]/i);
+        const objektId = titelTreffer ? titelTreffer[2].toUpperCase() : String(erwarteteId || '').toUpperCase();
+        const name = titelTreffer ? normalisiereTechTreeText(titelTreffer[1]) : objektId;
+        const finaleStufe = titelTreffer ? Number(titelTreffer[3]) : null;
+        const requirements = [];
+        const gesehen = new Set();
+
+        Array.from(doc.querySelectorAll('a[href*="/objects/details/id/"]')).forEach(function (link) {
+            const href = link.getAttribute('href') || '';
+            const idTreffer = href.match(/\/objects\/details\/id\/([^/?#]+)/i);
+            if (!idTreffer) return;
+            const id = decodeURIComponent(idTreffer[1]).toUpperCase();
+            if (!id || id === objektId) return;
+
+            if (istTechTreeReverseKontext(link)) return;
+            const marker = ermittleTechTreeStufenmarkerFuerLink(link);
+            // Kein Marker oder „ab Stufe“ bedeutet: nicht Teil des Vorwärtspfads.
+            if (!marker || marker.reverse || !Number.isFinite(marker.level)) return;
+            const level = ermittleStufeNebenLink(link);
+            if (!Number.isFinite(level)) return;
+            const appliesToLevel = marker.level;
+            const eindeutig = appliesToLevel + ':' + id + ':' + level;
+            if (gesehen.has(eindeutig)) return;
+
+            const reqName = normalisiereTechTreeText(link.textContent) || id;
+            let typ = ermittleTechTreeTypAusIdUndName(id, reqName);
+            if (typ === 'unknown') typ = ermittleTechTreeTypAusKontext(link);
+            gesehen.add(eindeutig);
+            requirements.push({ id: id, name: reqName, type: typ, level: level, appliesToLevel: appliesToLevel });
+        });
+
+        return {
+            id: objektId,
+            name: name,
+            type: ermittleTechTreeTypAusIdUndName(objektId, name),
+            finalLevel: finaleStufe,
+            requirements: requirements,
+            sourceUrl: TECHTREE_BASIS_URL + encodeURIComponent(objektId),
+            fetchedAt: Date.now()
+        };
+    }
+
+    function ermittleTechTreeStufeAusKopf(kopf) {
+        if (!kopf) return null;
+
+        const body = findeKoerperZeileZumKopf(kopf);
+        const container = kopf.closest('form, .BldTable, .BldContainerAccordionBox') || kopf.parentElement;
+        const texte = [text(kopf), text(body), text(container)].filter(Boolean);
+        const muster = [
+            /(?:Ausbaustufe|Forschungsstufe|Forschungslevel|Stufe|Level|Lvl\.?)\s*:?\s*(\d+)/i,
+            /\(\s*(?:Ausbaustufe|Forschungsstufe|Forschungslevel|Stufe|Level|Lvl\.?)\s*:?\s*(\d+)\s*\)/i,
+            /(?:aktuell|derzeit|erforscht)\s*:?\s*(\d+)/i
+        ];
+
+        for (const roh of texte) {
+            for (const regex of muster) {
+                const treffer = roh.match(regex);
+                if (treffer) return Number(treffer[1]);
+            }
+        }
+
+        // Horizon zeigt die Stufe teilweise nur als erste reine Zahl in einer
+        // Funktionszeile. Nur kleine plausible Stufen akzeptieren, niemals Kosten.
+        const funktionsWerte = container
+            ? Array.from(container.querySelectorAll('.BldFunctionRight, .BldFunction, td')).map(text)
+            : [];
+        for (const wert of funktionsWerte) {
+            const m = wert.match(/^\s*(\d{1,3})\s*$/);
+            if (m && Number(m[1]) <= 100) return Number(m[1]);
+        }
+        return null;
+    }
+
+    function leseTechTreeNameAusKopf(kopf) {
+        if (!kopf) return '';
+        const fett = kopf.querySelector('b, strong');
+        let name = text(fett) || leseGebaeudeNameAusKopf(kopf) || text(kopf);
+        name = String(name)
+            .replace(/\s*[-–]\s*\d[\d'.]*\s*(?:Tonnen-?Typ|ts).*$/i, '')
+            .replace(/\s*\([A-Z0-9_-]{2,8}\)\s*$/i, '')
+            .replace(/\s*\((?:Ausbaustufe|Forschungsstufe|Stufe|Level)\s*:?\s*\d+\)\s*$/i, '')
+            .trim();
+        return normalisiereGebaeudename(name);
+    }
+
+    function ermittleTechnischeIdAusKopf(kopf) {
+        if (!kopf) return '';
+        const container = kopf.closest('form, .BldTable, .BldContainerAccordionBox, .ResContainerAccordionBox') || kopf.parentElement;
+        const bild = container && container.querySelector('img[alt]');
+        const alt = bild ? String(bild.getAttribute('alt') || '').trim().toUpperCase() : '';
+        if (/^[A-Z0-9_-]{2,40}$/.test(alt)) return alt;
+        const datenId = String((kopf.dataset && (kopf.dataset.id || kopf.dataset.object || kopf.dataset.key)) || '').trim().toUpperCase();
+        return /^[A-Z0-9_-]{2,40}$/.test(datenId) ? datenId : '';
+    }
+
+    function speichereTechTreeSpielstandAusSeite() {
+        const bereich = ermittleAktuellenBereich();
+        const typ = (bereich === 'research' || bereich === 'forschung') ? 'research'
+            : ((bereich === 'building' || bereich === 'gebäude') ? 'building'
+            : (bereich === 'shipyard' ? 'ship' : ''));
+        if (!typ) return 0;
+
+        const stand = laden(STORAGE_TECHTREE_SPIELSTAND, {});
+        const neu = stand && typeof stand === 'object' && !Array.isArray(stand) ? stand : {};
+
+        // 1.0.3l: Die aktuell geöffnete Horizon-Seite ist für ihren Bereich die Wahrheit.
+        // Alte Werte dieses Typs werden vor dem Neu-Einlesen entfernt. Dadurch können
+        // Forschungs- und Gebäudestände aus dem Leben vor einer Ascension nicht
+        // weiter als "vorhanden" im Plan stehen bleiben.
+        Object.keys(neu).forEach(function (key) {
+            const eintrag = neu[key];
+            if (eintrag && eintrag.type === typ) delete neu[key];
+        });
+
+        let gefunden = 0;
+        const koepfe = Array.from(document.querySelectorAll('.BldClsRow, .ResClsRow, [class*="ClsRow"]'));
+
+        koepfe.forEach(function (kopf) {
+            if (!kopf || kopf.closest('#haa-box')) return;
+            const name = leseTechTreeNameAusKopf(kopf);
+            let level = ermittleTechTreeStufeAusKopf(kopf);
+            if (typ === 'ship' && !Number.isFinite(level)) level = 1;
+            if (!name || name === 'Bauauftrag' || !Number.isFinite(level)) return;
+
+            const technischeId = ermittleTechnischeIdAusKopf(kopf);
+            const eintrag = { id: technischeId || '', name: name, level: level, type: typ, seenAt: Date.now() };
+            const schluessel = normalisiereTechTreeName(name);
+            neu[schluessel] = eintrag;
+            if (technischeId) neu['id:' + technischeId] = eintrag;
+
+            const kurz = normalisiereTechTreeName(name
+                .replace(/^(grundlagen der|grundlagen von|erweiterte|allgemeine)\s+/i, '')
+                .replace(/\s+(forschung|technik)$/i, ''));
+            if (kurz && kurz !== schluessel) neu[kurz] = eintrag;
+            gefunden++;
+        });
+
+        // 1.0.3j: Horizon-Forschungsseite zusätzlich direkt aus den sichtbaren
+        // Forschungs-Kopfzeilen lesen. Das ist absichtlich unabhängig von den
+        // CSS-Klassennamen, weil Horizon hier unterschiedliche Row-Klassen nutzt.
+        //
+        // Beispiel:
+        //   Physik 16 (physics - Forschungsstufe 16)
+        //
+        // Wichtig: Nur auf der echten Forschungsseite anwenden. Der Ausdruck
+        // „Forschungsstufe“ verhindert außerdem, dass HASA-eigene Planzeilen
+        // versehentlich als Spielstand eingelesen werden.
+        if (typ === 'research') {
+            const sichtText = document.body ? document.body.innerText : '';
+            const zeilen = sichtText.split(/\n+/)
+                .map(function (z) { return z.replace(/\s+/g, ' ').trim(); })
+                .filter(Boolean);
+
+            zeilen.forEach(function (zeile) {
+                const m = zeile.match(/^(.{1,100}?)\s+(\d{1,3})\s*\(\s*([a-z0-9_-]{2,40})\s*-\s*Forschungsstufe\s+(\d{1,3})\s*\)/i);
+                if (!m) return;
+
+                const name = normalisiereGebaeudename(m[1]);
+                const technischeId = String(m[3] || '').trim().toUpperCase();
+                const level = Number(m[4]);
+
+                if (!name || !technischeId || !Number.isFinite(level)) return;
+
+                const eintrag = {
+                    id: technischeId,
+                    name: name,
+                    level: level,
+                    type: 'research',
+                    seenAt: Date.now(),
+                    quelle: 'horizon-forschungs-kopfzeile'
+                };
+
+                const schluessel = normalisiereTechTreeName(name);
+                neu[schluessel] = eintrag;
+                neu['id:' + technischeId] = eintrag;
+
+                const kurz = normalisiereTechTreeName(name
+                    .replace(/^(grundlagen der|grundlagen von|erweiterte|allgemeine)\s+/i, '')
+                    .replace(/\s+(forschung|technik)$/i, ''));
+                if (kurz && kurz !== schluessel) neu[kurz] = eintrag;
+                gefunden++;
+            });
+        }
+
+        if (typ === 'building') {
+            const sichtText = document.body ? document.body.innerText : '';
+            sichtText.split(/\n+/).map(z => z.replace(/\s+/g, ' ').trim()).filter(Boolean).forEach(function (zeile) {
+                const m = zeile.match(/^(.{1,120}?)\s*\(\s*([a-z0-9_-]{2,50})\s*-\s*Ausbaustufe\s+(\d{1,3})\s*\)/i);
+                if (!m) return;
+                const name = normalisiereGebaeudename(m[1]);
+                const technischeId = String(m[2] || '').trim().toUpperCase();
+                const level = Number(m[3]);
+                if (!name || !technischeId || !Number.isFinite(level)) return;
+                const eintrag = { id: technischeId, name, level, type: 'building', seenAt: Date.now(), quelle: 'horizon-gebaeude-kopfzeile' };
+                neu['id:' + technischeId] = eintrag;
+                neu[normalisiereTechTreeName(name)] = eintrag;
+                gefunden++;
+            });
+        }
+
+        if (gefunden) speichern(STORAGE_TECHTREE_SPIELSTAND, neu);
+        return gefunden;
+    }
+
+    function ermittleErfuellungsstand(req) {
+        const stand = laden(STORAGE_TECHTREE_SPIELSTAND, {});
+        const reqId = String(req && req.id || '').trim().toUpperCase();
+        const zielName = normalisiereTechTreeName(req.name);
+        let eintrag = reqId && stand ? stand['id:' + reqId] : null;
+        if (!eintrag) eintrag = stand && stand[zielName];
+
+        if (!eintrag && stand && typeof stand === 'object') {
+            const zielKurz = zielName.replace(/^(grundlagen der|grundlagen von|erweiterte|allgemeine)\s+/, '')
+                .replace(/\s+(forschung|technik)$/, '');
+            const kandidaten = Object.keys(stand).filter(function (key) {
+                if (key.indexOf('id:') === 0 || !key || key.length < 4 || zielKurz.length < 4) return false;
+                return key === zielKurz || key.includes(zielKurz) || zielKurz.includes(key);
+            });
+            if (kandidaten.length === 1) eintrag = stand[kandidaten[0]];
+        }
+
+        const aktuell = eintrag && Number.isFinite(Number(eintrag.level)) ? Number(eintrag.level) : null;
+        return { aktuell: aktuell, erledigt: aktuell !== null && aktuell >= Number(req.level) };
+    }
+
+    function normalisiereStanKategorie(roh) {
+        const t = normalisiereTechTreeText(roh).toLowerCase();
+        if (/geb[aä]ude|building/.test(t)) return 'building';
+        if (/forschung|research|technik/.test(t)) return 'research';
+        if (/schiff|ship|flotte/.test(t)) return 'ship';
+        if (/verteidigung|defen[cs]e|abwehr/.test(t)) return 'defense';
+        return 'unknown';
+    }
+
+    function ermittleStanDatenstandAusDateiname(name) {
+        const m = String(name || '').match(/(20\d{6})/);
+        return m ? m[1] : '';
+    }
+
+    function parseStanXml(xmlText, dateiname) {
+        const doc = new DOMParser().parseFromString(String(xmlText || ''), 'application/xml');
+        const parserFehler = doc.querySelector('parsererror');
+        if (parserFehler || !doc.documentElement || doc.documentElement.nodeName.toLowerCase() !== 'statistic') {
+            throw new Error('Die Datei ist keine lesbare STAN-Statistik-XML.');
+        }
+        const bereiche = [
+            { tag: 'buildings', type: 'building' },
+            { tag: 'researches', type: 'research' },
+            { tag: 'ships', type: 'ship' },
+            { tag: 'defense', type: 'defense' }
+        ];
+        const objects = [];
+        let order = 0;
+        bereiche.forEach(function (bereich) {
+            const wurzel = doc.querySelector(bereich.tag);
+            if (!wurzel) return;
+            Array.from(wurzel.querySelectorAll(':scope > category')).forEach(function (kat) {
+                const category = String(kat.getAttribute('name') || '').trim();
+                Array.from(kat.querySelectorAll(':scope > object')).forEach(function (obj) {
+                    const id = String(obj.getAttribute('name') || '').trim().toUpperCase();
+                    if (!id) return;
+                    const stufen = Array.from(obj.querySelectorAll('count[level]')).map(function (c) { return Number(c.getAttribute('level')); }).filter(Number.isFinite);
+                    objects.push({ id: id, name: id, type: bereich.type, category: category, maxLevel: stufen.length ? Math.max.apply(Math, stufen) : null, order: ++order });
+                });
+            });
+        });
+        if (!objects.length) throw new Error('Keine Gebäude, Forschungen, Schiffe oder Verteidigungen gefunden.');
+        return { objects: objects, dataDate: ermittleStanDatenstandAusDateiname(dateiname), fileName: String(dateiname || ''), importedAt: Date.now(), source: 'file' };
+    }
+
+    function vergleicheStanVersionen(alt, neu) {
+        const altMap = {};
+        const neuMap = {};
+        (alt && alt.objects || []).forEach(function (o) { altMap[o.type + ':' + o.id] = o; });
+        (neu && neu.objects || []).forEach(function (o) { neuMap[o.type + ':' + o.id] = o; });
+        const added = Object.keys(neuMap).filter(function (k) { return !altMap[k]; }).map(function (k) { return neuMap[k]; });
+        const missing = Object.keys(altMap).filter(function (k) { return !neuMap[k]; }).map(function (k) { return altMap[k]; });
+        const changed = Object.keys(neuMap).filter(function (k) {
+            return altMap[k] && (String(altMap[k].category) !== String(neuMap[k].category) || Number(altMap[k].maxLevel) !== Number(neuMap[k].maxLevel));
+        }).map(function (k) { return { before: altMap[k], after: neuMap[k] }; });
+        return { added: added, missing: missing, changed: changed };
+    }
+
+    function importiereStanDatei(datei) {
+        if (!datei) return Promise.reject(new Error('Keine Datei ausgewählt.'));
+        speichern(STORAGE_STAN_STATUS, { state: 'loading', message: 'STAN-Datei wird geprüft …', at: Date.now() });
+        baueBox();
+        return datei.text().then(function (inhalt) {
+            const daten = parseStanXml(inhalt, datei.name);
+            const alt = laden(STORAGE_STAN_STAMMDATEN, null);
+            const delta = vergleicheStanVersionen(alt, daten);
+            const versionen = laden(STORAGE_STAN_VERSIONEN, []);
+            const liste = Array.isArray(versionen) ? versionen : [];
+            liste.push({ dataDate: daten.dataDate, fileName: daten.fileName, importedAt: daten.importedAt, objects: daten.objects, delta: delta });
+            speichern(STORAGE_STAN_VERSIONEN, liste.slice(-12));
+            speichern(STORAGE_STAN_STAMMDATEN, daten);
+            speichern(STORAGE_STAN_STATUS, {
+                state: 'ok',
+                message: daten.objects.length + ' Objekte gespeichert · +' + delta.added.length + ' neu · ' + delta.changed.length + ' geändert · ' + delta.missing.length + ' fehlen im neuen Stand (nicht gelöscht).',
+                at: Date.now(), dataDate: daten.dataDate, fileName: daten.fileName
+            });
+            return daten;
+        }).catch(function (e) {
+            speichern(STORAGE_STAN_STATUS, { state: 'error', message: 'STAN-Datei nicht importiert: ' + String(e && e.message || e), at: Date.now() });
+            throw e;
+        }).finally(baueBox);
+    }
+
+    function stanAktualitaet(daten) {
+        if (!daten || !daten.dataDate || !/^20\d{6}$/.test(daten.dataDate)) return { state: 'red', text: 'kein gültiger STAN-Datenstand' };
+        const y = Number(daten.dataDate.slice(0,4));
+        const m = Number(daten.dataDate.slice(4,6)) - 1;
+        const d = Number(daten.dataDate.slice(6,8));
+        const stand = new Date(y,m,d,12,0,0,0);
+        const naechster = new Date(stand.getTime() + STAN_RHYTHMUS_TAGE * 86400000);
+        const jetzt = new Date();
+        if (jetzt < naechster) return { state: 'green', text: 'aktuell bis ' + naechster.toLocaleDateString('de-DE') };
+        const tage = Math.floor((jetzt - naechster) / 86400000);
+        if (tage <= 1) return { state: 'yellow', text: 'neuer Wochenstand könnte verfügbar sein' };
+        return { state: 'red', text: 'Aktualisierung seit ' + naechster.toLocaleDateString('de-DE') + ' überfällig' };
+    }
+
+    function ladeStanAuswahl() {
+        const a = laden(STORAGE_STAN_AUSWAHL, null);
+        return a && typeof a === 'object' ? a : null;
+    }
+
+    function techTreeDebugZeile(debug, text) {
+        if (!Array.isArray(debug)) return;
+        debug.push(String(text));
+        if (debug.length > 1200) debug.shift();
+    }
+
+    function waehleVoraussetzungenBisStufe(objekt, zielStufe, debug, tiefe) {
+        const grenze = Math.max(1, Number(zielStufe) || 1);
+        const proId = {};
+        const einzug = '  '.repeat(Math.max(0, Number(tiefe) || 0));
+        const objektId = objekt && objekt.id || '?';
+        const objektName = objekt && objekt.name || objektId;
+        const roh = (objekt && objekt.requirements || []);
+
+        techTreeDebugZeile(debug, einzug + 'AUSWAHL ' + objektName + ' [' + objektId + '] bis Stufe ' + grenze + ' · Rohdaten: ' + roh.length);
+
+        roh.forEach(function (req, index) {
+            const giltAb = Math.max(1, Number(req.appliesToLevel) || 1);
+            const key = req.id || normalisiereTechTreeName(req.name);
+            const beschreibung = (req.name || req.id || '?') + ' [' + (req.id || '?') + '] benötigt ' + Number(req.level || 0) + ' · gilt ab Objektstufe ' + giltAb;
+
+            if (giltAb > grenze) {
+                techTreeDebugZeile(debug, einzug + '  − VERWORFEN #' + (index + 1) + ': ' + beschreibung + ' (liegt oberhalb der Zielstufe ' + grenze + ')');
+                return;
+            }
+
+            const alt = proId[key];
+            if (!alt) {
+                proId[key] = Object.assign({}, req, { appliesToLevel: giltAb });
+                techTreeDebugZeile(debug, einzug + '  + ÜBERNOMMEN #' + (index + 1) + ': ' + beschreibung + ' (erste passende Forderung)');
+                return;
+            }
+
+            if (Number(req.level) > Number(alt.level)) {
+                techTreeDebugZeile(debug, einzug + '  ~ ERSETZT #' + (index + 1) + ': ' + beschreibung + ' (höher als zuvor benötigt ' + Number(alt.level || 0) + ', bisher galt ab ' + Number(alt.appliesToLevel || 1) + ')');
+                proId[key] = Object.assign({}, req, { appliesToLevel: giltAb });
+            } else {
+                techTreeDebugZeile(debug, einzug + '  = BEHALTEN #' + (index + 1) + ': ' + beschreibung + ' (vorhandene Forderung benötigt bereits ' + Number(alt.level || 0) + ')');
+            }
+        });
+
+        const ausgewaehlt = Object.values(proId);
+        techTreeDebugZeile(debug, einzug + 'ERGEBNIS AUSWAHL ' + objektName + ': ' + ausgewaehlt.length + ' Voraussetzung(en)');
+        return ausgewaehlt;
+    }
+
+    function sammleTechTreeAnforderungen(graph, zielId, zielStufe) {
+        const debug = [];
+        const objekt = graph && graph[zielId];
+        const grenze = Math.max(1, Number(zielStufe) || 1);
+
+        techTreeDebugZeile(debug, '=== PLANER-NEUSTART: DIREKTE MINDESTANFORDERUNGEN ===');
+        techTreeDebugZeile(debug, 'Ziel: ' + String(zielId || '?') + ' · Zielstufe: ' + grenze);
+
+        if (!objekt) {
+            techTreeDebugZeile(debug, '! Zielobjekt ist noch nicht geladen.');
+            speichern(STORAGE_TECHTREE_DEBUG, { at: Date.now(), zielId: zielId, zielStufe: grenze, lines: debug });
+            return [];
+        }
+
+        // Teststufe 1:
+        // KEINE Rekursion. KEINE Reverse-Auswertung. KEINE Unterzweige.
+        // Wir lesen ausschließlich die direkten Mindestanforderungen des Zielobjekts.
+        const direkt = waehleVoraussetzungenBisStufe(objekt, grenze, debug, 0);
+        direkt.forEach(function (req) {
+            const rid = String(req && req.id || '').toUpperCase();
+            if (HASA_SICHERE_FORSCHUNGS_IDS.has(rid)) {
+                req.type = 'research';
+                req.typ = 'research';
+            }
+        });
+
+        techTreeDebugZeile(debug, 'Direkte Anforderungen: ' + direkt.length);
+        direkt.forEach(function (req, index) {
+            const stand = ermittleErfuellungsstand(req);
+            techTreeDebugZeile(
+                debug,
+                String(index + 1).padStart(2, '0') + '. ' +
+                (req.name || req.id) + ' [' + (req.id || '?') + '] · benötigt ' +
+                Number(req.level || 0) + ' · vorhanden ' +
+                (stand.aktuell === null ? '?' : stand.aktuell) +
+                (stand.erledigt ? ' · ERLEDIGT → aus reduzierter Ansicht raus' : ' · OFFEN → Merkliste')
+            );
+        });
+
+        techTreeDebugZeile(debug, '=== ENDE TESTSTUFE 1 – KEINE TIEFENSUCHE ===');
+        speichern(STORAGE_TECHTREE_DEBUG, {
+            at: Date.now(),
+            zielId: zielId,
+            zielStufe: grenze,
+            lines: debug
+        });
+
+        console.groupCollapsed('[HASA Planer-Neustart] ' + String(zielId) + ' Stufe ' + grenze);
+        debug.forEach(function (line) { console.log(line); });
+        console.groupEnd();
+
+        return direkt;
+    }
+
+    async function importiereTechTreeZiel(zielId, zielStufe, erzwingen) {
+        const id = String(zielId || 'CCOL').trim().toUpperCase();
+        const grenze = Math.max(1, Number(zielStufe) || 1);
+        let graph = laden(STORAGE_TECHTREE_GRAPH, {});
+        graph = graph && typeof graph === 'object' && !Array.isArray(graph) ? graph : {};
+
+        speichern(STORAGE_TECHTREE_STATUS, {
+            state: 'loading',
+            message: id + ' – direkte Mindestanforderungen werden gelesen …',
+            id: id,
+            at: Date.now()
+        });
+        baueBox();
+
+        try {
+            // Planer-Neustart Teststufe 1:
+            // Nur die ausgewählte Zielseite lesen. Keine Unterobjekte nachladen.
+            const html = await techTreeRequest(TECHTREE_BASIS_URL + encodeURIComponent(id));
+            const objekt = parseTechTreeObjekt(html, id);
+            graph[id] = objekt;
+            speichern(STORAGE_TECHTREE_GRAPH, graph);
+
+            const anforderungen = sammleTechTreeAnforderungen(graph, id, grenze);
+            if (!anforderungen.length) {
+                throw new Error('Keine direkten Mindestanforderungen erkannt – Parserausgabe prüfen.');
+            }
+
+            const offen = anforderungen.filter(function (req) {
+                return !ermittleErfuellungsstand(req).erledigt;
+            });
+
+            speichern(STORAGE_TECHTREE_STATUS, {
+                state: 'ok',
+                message: anforderungen.length + ' direkte Mindestanforderungen · ' +
+                         offen.length + ' davon offen · Teststufe 1 ohne Tiefensuche.',
+                id: id,
+                at: Date.now()
+            });
+            return objekt;
+        } catch (fehler) {
+            speichern(STORAGE_TECHTREE_STATUS, {
+                state: 'error',
+                message: String(fehler && fehler.message ? fehler.message : fehler),
+                id: id,
+                at: Date.now()
+            });
+            throw fehler;
+        } finally {
+            baueBox();
+        }
+    }
+
+    function aktivierePlanStatusSticky() {
+        const box = document.getElementById('haa-box') || document.querySelector('[id^="haa"]');
+        if (!box) return;
+        const checkboxen = Array.from(box.querySelectorAll('input[type="checkbox"]'));
+        const checkbox = checkboxen.find(cb => ((cb.closest('label') || cb.parentElement)?.textContent || '').includes('vollständige Ansicht'));
+        if (!checkbox) return;
+        const label = checkbox.closest('label') || checkbox.parentElement;
+        const host = label && label.parentElement;
+        if (!host || host.dataset.hasaStickyPlanstatus === '1') return;
+        host.dataset.hasaStickyPlanstatus = '1';
+        host.style.position = 'sticky'; host.style.top = '0'; host.style.zIndex = '20'; host.style.background = '#18140f';
+    }
+
+    function aktivierePlanlistenKlappung() {
+        const box = document.getElementById('haa-box') || document.querySelector('[id^="haa"]');
+        if (!box) return;
+
+        const all = Array.from(box.querySelectorAll('div'));
+        const liste = all.find(function (el) {
+            if (el.dataset && el.dataset.hasaPlanListe === '1') return false;
+            const t = (el.textContent || '');
+            const own = Array.from(el.children || []).map(function(c){ return c.textContent || ''; }).join(' ');
+            return t.indexOf('benötigt') >= 0 &&
+                   (t.indexOf('Hyperraumtechnik') >= 0 || t.indexOf('Flottentechnik') >= 0) &&
+                   el.querySelectorAll('div').length >= 2 &&
+                   el.querySelectorAll('button').length <= 2;
+        });
+        if (!liste || !liste.parentNode) return;
+        if (liste.previousElementSibling && liste.previousElementSibling.classList &&
+            liste.previousElementSibling.classList.contains('haa-plan-klapp-btn')) return;
+
+        liste.dataset.hasaPlanListe = '1';
+        const btn = document.createElement('button');
+        btn.className = 'haa-plan-klapp-btn';
+        btn.type = 'button';
+        btn.style.cssText = 'font-size:11px;margin:4px 0 6px;padding:2px 7px;cursor:pointer;';
+        const key = 'haa_planliste_eingeklappt';
+
+        function setState(zu) {
+            liste.style.display = zu ? 'none' : '';
+            btn.textContent = zu ? '▸ Planliste anzeigen' : '▾ Planliste einklappen';
+            speichern(key, !!zu);
+        }
+        btn.addEventListener('click', function(){ setState(liste.style.display !== 'none'); });
+        liste.parentNode.insertBefore(btn, liste);
+        setState(!!laden(key, false));
+    }
+
+
+    function baueStanNavigationHtml() {
+        const daten = laden(STORAGE_STAN_STAMMDATEN, null);
+        const status = laden(STORAGE_STAN_STATUS, null);
+        const auswahl = ladeStanAuswahl();
+        const auswahlOffen = !auswahl || laden(STORAGE_STAN_AUSWAHL_OFFEN, '0') === '1';
+        let html = '<div style="margin-top:2px;">';
+
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">';
+        html += '<b>Import & Datenbestand</b><button id="haa-stan-import" style="font-size:11px;">' + (daten ? 'XML-Datei aktualisieren' : 'STAN-XML einlesen') + '</button>';
+        html += '<input id="haa-stan-datei" type="file" accept=".xml,text/xml,application/xml" style="display:none;"></div>';
+
+        const aktuell = stanAktualitaet(daten);
+        const aktuellFarbe = aktuell.state === 'green' ? '#7CFF7C' : aktuell.state === 'yellow' ? '#FFD27C' : '#FF8080';
+        html += '<div style="margin-top:4px;color:' + aktuellFarbe + ';font-size:11px;">● ' + esc(aktuell.text) + (daten && daten.dataDate ? ' · Stand ' + esc(daten.dataDate) : '') + '</div>';
+        if (status) html += '<div style="margin-top:3px;color:' + (status.state === 'error' ? '#FF8080' : status.state === 'ok' ? '#aaa' : '#FFD27C') + ';font-size:11px;">' + esc(status.message || '') + '</div>';
+        if (!daten || !Array.isArray(daten.objects)) return html + '</div>';
+
+        html += '<div style="margin-top:8px;border-top:1px solid #555;padding-top:7px;">';
+        if (auswahl) {
+            html += '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">';
+            html += '<div><span style="color:#aaa;font-size:11px;">Gewähltes Ziel</span><br><b style="color:#FFD27C;">' + esc(auswahl.name) + ' (' + esc(auswahl.id) + ')</b></div>';
+            html += '<button id="haa-stan-auswahl-umschalten" style="font-size:11px;">' + (auswahlOffen ? 'Auswahl schließen' : 'Ziel ändern') + '</button>';
+            html += '</div>';
+        } else {
+            html += '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><b style="color:#FFD27C;">Ziel auswählen</b></div>';
+        }
+
+        if (auswahlOffen) {
+            const typen = ['building', 'research', 'ship', 'defense'];
+            html += '<div id="haa-stan-explorer" style="margin-top:7px;">';
+            typen.forEach(function (typ) {
+                const gruppe = daten.objects.filter(function (o) {
+                    return o.type === typ && !istStanExplorerKategorieAusgeblendet(o.category);
+                }).sort(function (a,b) { return Number(a.order)-Number(b.order) || a.name.localeCompare(b.name,'de'); });
+                if (!gruppe.length) return;
+
+                const kategorien = [];
+                const nachKategorie = {};
+                gruppe.forEach(function (o) {
+                    const kat = o.category || 'Ohne Untergruppe';
+                    if (!nachKategorie[kat]) {
+                        nachKategorie[kat] = [];
+                        kategorien.push(kat);
+                    }
+                    nachKategorie[kat].push(o);
+                });
+
+                html += '<details class="haa-stan-hauptgruppe" style="margin:5px 0;border:1px solid #555;border-radius:3px;background:#211d18;">';
+                html += '<summary style="padding:6px;cursor:pointer;color:#FFD27C;font-weight:bold;">' + techTreeTypSymbol(typ) + ' ' + esc(techTreeTypLabel(typ)) + ' <span style="color:#777;font-size:10px;">(' + gruppe.length + ')</span></summary>';
+                html += '<div style="padding:0 6px 6px 14px;">';
+
+                kategorien.forEach(function (kat) {
+                    const objekte = nachKategorie[kat];
+                    html += '<details class="haa-stan-untergruppe" style="margin:4px 0;border-left:2px solid #555;padding-left:5px;">';
+                    html += '<summary style="padding:4px 2px;cursor:pointer;color:#ddd;font-weight:bold;">' + esc(kat) + ' <span style="color:#777;font-size:10px;">(' + objekte.length + ')</span></summary>';
+                    html += '<div style="padding:2px 0 4px 5px;">';
+                    objekte.forEach(function (o) {
+                        const aktiv = auswahl && auswahl.id === o.id && auswahl.type === o.type;
+                        html += '<button class="haa-stan-ziel" data-id="' + esc(o.id) + '" data-name="' + esc(o.name) + '" data-type="' + esc(o.type) + '" style="display:block;width:100%;text-align:left;margin:2px 0;padding:4px 6px;background:' + (aktiv ? '#4a402a' : '#2a251f') + ';color:' + (aktiv ? '#FFD27C' : '#fff') + ';border:1px solid #555;border-radius:2px;cursor:pointer;">' + esc(o.name) + ' (' + esc(o.id) + ')</button>';
+                    });
+                    html += '</div></details>';
+                });
+
+                html += '</div></details>';
+            });
+            html += '</div>';
+        }
+
+        html += '</div></div>';
+        return html;
+    }
+
+    function baueTechTreeTestHtml() {
+        const graph = laden(STORAGE_TECHTREE_GRAPH, {});
+        const auswahl = ladeStanAuswahl();
+        const zielId = auswahl && auswahl.id;
+        const zielStufe = Number(auswahl && auswahl.level) || 1;
+        const objekt = zielId && graph ? graph[zielId] : null;
+        const status = laden(STORAGE_TECHTREE_STATUS, null);
+        const erledigteZeigen = laden(STORAGE_TECHTREE_ERLEDIGT_ZEIGEN, '0') === '1';
+        const alle = objekt ? sammleTechTreeAnforderungen(graph, zielId, zielStufe) : [];
+        const bewertet = alle.map(function (req) { return Object.assign({}, req, ermittleErfuellungsstand(req)); });
+        const offen = bewertet.filter(function (req) { return !req.erledigt; });
+        const erledigt = bewertet.filter(function (req) { return req.erledigt; });
+        const sichtbar = erledigteZeigen ? bewertet : offen;
+        let html = baueStanNavigationHtml();
+        if (!zielId) return html + '<div style="margin-top:8px;color:#aaa;">Nach dem STAN-Import ein Ziel auswählen.</div>';
+        html += '<div style="margin-top:9px;border-top:1px solid #555;padding-top:7px;">';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><div style="color:#FFD27C;font-weight:bold;font-size:15px;">Aktuelles Ziel: ' + esc(auswahl.name) + ' (' + esc(zielId) + ')</div><button id="haa-techtree-import" style="font-size:11px;">Mindestliste lesen</button></div>';
+        if (status) html += '<div style="margin-top:4px;color:' + (status.state === 'error' ? '#FF8080' : status.state === 'ok' ? '#7CFF7C' : '#FFD27C') + ';font-size:12px;">' + esc(status.message || '') + '</div>';
+        if (objekt) {
+            html += '<label style="display:block;margin-top:5px;font-size:11px;color:#bbb;"><input id="haa-techtree-erledigt" type="checkbox" ' + (erledigteZeigen ? 'checked' : '') + '> vollständige Ansicht (erledigte zeigen)</label>';
+            html += '<div style="font-size:12px;margin-top:3px;"><span style="color:#FFD27C;">offen: <b>' + offen.length + '</b></span> · <span style="color:#7CFF7C;">erledigt: <b>' + erledigt.length + '</b></span></div>';
+            ['building','research','ship','defense','unknown'].forEach(function (typ) {
+                const gruppe = sichtbar.filter(function (req) { return (req.type || 'unknown') === typ; });
+                if (!gruppe.length) return;
+                html += '<div style="margin-top:7px;color:#FFD27C;font-weight:bold;">' + techTreeTypSymbol(typ) + ' ' + esc(techTreeTypLabel(typ)) + '</div>';
+                gruppe.sort(function (a,b) { return String(a.name).localeCompare(String(b.name),'de'); }).forEach(function (req) {
+                    html += '<div style="display:grid;grid-template-columns:18px 1fr auto;gap:4px;padding:2px 0;color:' + (req.erledigt ? '#888' : '#fff') + ';"><span>' + (req.erledigt ? '✓' : '➜') + '</span><span>' + esc(req.name) + ' <span style="color:#777;font-size:10px;">[' + esc(req.id) + ']</span></span><b style="text-align:right;">benötigt ' + esc(req.level) + (req.aktuell !== null ? '<br><span style="font-weight:normal;color:#aaa;">vorhanden ' + esc(req.aktuell) + '</span>' : '') + '</b></div>';
+                });
+            });
+        }
+        const debugDaten = laden(STORAGE_TECHTREE_DEBUG, null);
+        if (debugDaten && Array.isArray(debugDaten.lines)) {
+            html += '<details style="margin-top:10px;border:1px solid #704f2a;border-radius:4px;background:#130f0b;">';
+            html += '<summary style="cursor:pointer;padding:6px;color:#FFD27C;font-weight:bold;">Planer-Debug: direkte Mindestliste</summary>';
+            html += '<div style="padding:6px;">';
+            html += '<div style="display:flex;gap:6px;margin-bottom:5px;"><button id="haa-techtree-debug-kopieren" style="font-size:11px;">Debug kopieren</button><button id="haa-techtree-debug-loeschen" style="font-size:11px;">Debug löschen</button></div>';
+            html += '<pre id="haa-techtree-debug-text" style="white-space:pre-wrap;overflow:auto;max-height:420px;margin:0;padding:6px;background:#090807;color:#ddd;border:1px solid #444;font-size:10px;line-height:1.35;">' + esc(debugDaten.lines.join('\n')) + '</pre>';
+            html += '</div></details>';
+        }
+        return html + '</div>';
+    }
+
+    function verbindeTechTreeTestButtons() {
+        const stanBtn = document.getElementById('haa-stan-import');
+        const stanDatei = document.getElementById('haa-stan-datei');
+        if (stanBtn && stanDatei) stanBtn.onclick = function () { stanDatei.value = ''; stanDatei.click(); };
+        if (stanDatei) stanDatei.onchange = function () {
+            const datei = stanDatei.files && stanDatei.files[0];
+            if (datei) importiereStanDatei(datei).catch(function () {});
+        };
+        const auswahlUmschalten = document.getElementById('haa-stan-auswahl-umschalten');
+        if (auswahlUmschalten) auswahlUmschalten.onclick = function () {
+            const offen = laden(STORAGE_STAN_AUSWAHL_OFFEN, '0') === '1';
+            speichern(STORAGE_STAN_AUSWAHL_OFFEN, offen ? '0' : '1');
+            baueBox();
+        };
+        Array.from(document.querySelectorAll('.haa-stan-ziel')).forEach(function (btn) {
+            btn.onclick = function () {
+                const auswahl = { id: btn.dataset.id, name: btn.dataset.name, type: btn.dataset.type, level: 1, selectedAt: Date.now() };
+                speichern(STORAGE_STAN_AUSWAHL, auswahl);
+                speichern(STORAGE_STAN_NAVIGATION, { category: auswahl.type, targetId: auswahl.id, at: Date.now() });
+                speichern(STORAGE_STAN_AUSWAHL_OFFEN, '0');
+                baueBox();
+            };
+        });
+        const btn = document.getElementById('haa-techtree-import');
+        if (btn) btn.onclick = function () {
+            const auswahl = ladeStanAuswahl();
+            if (!auswahl) return;
+            btn.disabled = true;
+            importiereTechTreeZiel(auswahl.id, auswahl.level || 1, true).catch(function () {});
+        };
+        const erledigt = document.getElementById('haa-techtree-erledigt');
+        if (erledigt) erledigt.onchange = function () { speichern(STORAGE_TECHTREE_ERLEDIGT_ZEIGEN, erledigt.checked ? '1' : '0'); baueBox(); };
+
+        const debugKopieren = document.getElementById('haa-techtree-debug-kopieren');
+        if (debugKopieren) debugKopieren.onclick = function () {
+            const el = document.getElementById('haa-techtree-debug-text');
+            const inhalt = el ? el.textContent : '';
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(inhalt).then(function () {
+                    debugKopieren.textContent = 'kopiert';
+                    setTimeout(function () { debugKopieren.textContent = 'Debug kopieren'; }, 1200);
+                }).catch(function () {});
+            }
+        };
+        const debugLoeschen = document.getElementById('haa-techtree-debug-loeschen');
+        if (debugLoeschen) debugLoeschen.onclick = function () {
+            speichern(STORAGE_TECHTREE_DEBUG, null);
+            baueBox();
+        };
+    }
+
+
+    function baueAccordionBereichHtml(id, titel, inhaltHtml) {
+        const offen = HAA_UI_AKTIVER_BEREICH === id;
+        let html = '';
+        html += '<details class="haa-accordion" data-haa-bereich="' + esc(id) + '" ' + (offen ? 'open' : '') + ' ';
+        html += 'style="margin-top:6px;border:1px solid #555;border-radius:4px;background:#191612;">';
+        html += '<summary style="padding:7px 8px;cursor:pointer;color:#FFD27C;font-weight:bold;';
+        html += 'list-style-position:inside;user-select:none;">' + titel + '</summary>';
+        html += '<div class="haa-bereich-inhalt" data-haa-scroll-bereich="' + esc(id) + '" ';
+        html += 'style="padding:0 8px 8px 8px;max-height:min(360px,calc(100vh - 235px));';
+        html += 'overflow-y:auto;overflow-x:auto;">' + inhaltHtml + '</div>';
+        html += '</details>';
+        return html;
+    }
+
+    function verbindeHasaUiButtons(neuAufbauen) {
+        const klappButton = document.getElementById('haa-box-klappen');
+        if (klappButton) {
+            klappButton.onclick = function () {
+                HAA_UI_BOX_ZU = !HAA_UI_BOX_ZU;
+                speichern(STORAGE_UI_BOX_ZU, HAA_UI_BOX_ZU ? '1' : '0');
+                neuAufbauen();
+            };
+        }
+
+        Array.from(document.querySelectorAll('#haa-box details.haa-accordion')).forEach(function (details) {
+            details.addEventListener('toggle', function () {
+                const bereich = details.dataset.haaBereich || '';
+
+                if (!details.open) {
+                    if (HAA_UI_AKTIVER_BEREICH === bereich) {
+                        HAA_UI_AKTIVER_BEREICH = '';
+                        speichern(STORAGE_UI_AKTIVER_BEREICH, '');
+                    }
+                    return;
+                }
+
+                HAA_UI_AKTIVER_BEREICH = bereich;
+                speichern(STORAGE_UI_AKTIVER_BEREICH, bereich);
+                Array.from(document.querySelectorAll('#haa-box details.haa-accordion')).forEach(function (anderes) {
+                    if (anderes !== details) anderes.open = false;
+                });
+            });
+        });
+
+        const scrollStaende = laden(STORAGE_UI_SCROLL, {});
+        Array.from(document.querySelectorAll('#haa-box .haa-bereich-inhalt')).forEach(function (inhalt) {
+            const bereich = inhalt.dataset.haaScrollBereich || '';
+            const gespeichert = scrollStaende && Number(scrollStaende[bereich]);
+            if (Number.isFinite(gespeichert) && gespeichert > 0) {
+                inhalt.scrollTop = gespeichert;
+            }
+            inhalt.addEventListener('scroll', function () {
+                const aktuell = laden(STORAGE_UI_SCROLL, {});
+                const neu = aktuell && typeof aktuell === 'object' && !Array.isArray(aktuell) ? aktuell : {};
+                neu[bereich] = Math.round(inhalt.scrollTop);
+                speichern(STORAGE_UI_SCROLL, neu);
+            }, { passive: true });
+        });
+    }
+
+    function baueBox() {
+        speichereTechTreeSpielstandAusSeite();
+        const datenLive = leseAscensions();
+        const ap = leseAP();
+        const apNaechsterReset = leseAPBeimNaechstenReset();
+        const ascensionSichtbar = datenLive.length > 0;
+        const ascStatusAktuell = ascensionSichtbar ? erstelleAscensionStatus(datenLive, ap, apNaechsterReset) : null;
+
+        if (ascStatusAktuell) speichereAscensionStatus(ascStatusAktuell);
+
+        const ascStatus = ascStatusAktuell || ladeAscensionStatus();
+        const datenAnzeige = ascensionSichtbar
+            ? datenLive
+            : (ascStatus && Array.isArray(ascStatus.skills) ? ascStatus.skills : []);
+        const favoriten = ladeFavoriten(datenAnzeige);
+        const spalten = ladeSpalten();
+        const ziel = aktualisiereUeberwachungsStatus();
+        const forschung = aktualisiereForschungsStatus();
+
+        const box = grundBox();
+        let html = '';
+        html += '<div title="Letzter Statusscan: ' + esc(HAA_LETZTE_SCAN_DAUER_MS) + ' ms" ';
+        html += 'style="display:flex;align-items:center;justify-content:space-between;gap:8px;font-weight:bold;font-size:16px;">';
+        const scanStatus = laden(STORAGE_SEITENSCAN_STATUS, { state: 'green', message: 'bereit' });
+        const scanFarbe = scanStatus.state === 'red' ? '#ff5a5a' : '#62d862';
+        html += '<span>⭐ HASA ' + esc(HASA_VERSION) + ' <span title="' + esc(scanStatus.message || '') + '" style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + scanFarbe + ';box-shadow:0 0 4px ' + scanFarbe + ';vertical-align:middle;"></span></span>';
+        html += '<button id="haa-box-klappen" type="button" title="HASA ' + (HAA_UI_BOX_ZU ? 'öffnen' : 'einklappen') + '" ';
+        html += 'style="min-width:30px;height:26px;font-weight:bold;cursor:pointer;">' + (HAA_UI_BOX_ZU ? '▾' : '▴') + '</button>';
+        html += '</div>';
+
+        if (!HAA_UI_BOX_ZU) {
+            let ascensionHtml = baueAscensionDashboardHtml(ascStatus);
+
+            if (datenAnzeige.length) {
+                ascensionHtml += '<table style="border-collapse:collapse;width:100%;color:white;margin-top:3px;">';
+                ascensionHtml += '<tr><td></td>';
+                if (spalten.stufe) ascensionHtml += '<td style="text-align:right;color:#FFD27C;">St</td>';
+                if (spalten.letzte) ascensionHtml += '<td style="text-align:right;color:#FFD27C;">L</td>';
+                if (spalten.kosten) ascensionHtml += '<td style="text-align:right;color:#FFD27C;">K</td>';
+                if (spalten.invest) ascensionHtml += '<td style="text-align:right;color:#FFD27C;">I</td>';
+                ascensionHtml += '</tr>';
+
+                datenAnzeige.filter(function (e) {
+                    return favoriten.includes(e.name);
+                }).forEach(function (e) {
+                    const apFrei = ascStatus ? ascStatus.apFrei : null;
+                    const kaufbar = apFrei !== null && e.kosten !== null && apFrei >= e.kosten;
+                    const farbe = kaufbar ? '#7CFF7C' : '#FF8080';
+
+                    ascensionHtml += '<tr style="color:' + farbe + ';">';
+                    ascensionHtml += '<td style="padding-right:8px;">' + (kaufbar ? '✅ ' : '❌ ') + esc(e.name) + '</td>';
+                    if (spalten.stufe) ascensionHtml += '<td style="text-align:right;padding-left:8px;">' + esc(e.stufe ?? '-') + '</td>';
+                    if (spalten.letzte) ascensionHtml += '<td style="text-align:right;padding-left:8px;">' + esc(e.letzte ?? '-') + '</td>';
+                    if (spalten.kosten) ascensionHtml += '<td style="text-align:right;padding-left:8px;">' + esc(e.kostenText || 'N/A') + '</td>';
+                    if (spalten.invest) ascensionHtml += '<td style="text-align:right;padding-left:8px;">' + esc(e.invest ?? '-') + '</td>';
+                    ascensionHtml += '</tr>';
+                });
+
+                ascensionHtml += '</table>';
+                ascensionHtml += '<div style="margin-top:8px;display:flex;gap:4px;">';
+                ascensionHtml += '<button id="haa-auswahl" style="flex:1;">Auswahl</button>';
+                ascensionHtml += '<button id="haa-spalten" style="flex:1;">Spalten</button>';
+                ascensionHtml += '</div>';
+            }
+
+            html += baueNavigationHtml();
+            html += baueAccordionBereichHtml('ascension', '⭐ Ascension', ascensionHtml);
+            html += baueAccordionBereichHtml('baualarm', '🏗 Baualarm', baueBaualarmHtml(ziel));
+            html += baueAccordionBereichHtml('forschungsalarm', '🔬 Forschungsalarm', baueForschungsalarmHtml(forschung));
+            html += baueAccordionBereichHtml('techtree', '🧭 Forschungsplanung', baueTechTreeTestHtml());
+        }
+
+        box.innerHTML = html;
+        positioniereBox(box);
+
+        const auswahl = document.getElementById('haa-auswahl');
+        if (auswahl) auswahl.onclick = function () { baueAuswahl(datenAnzeige, favoriten); };
+
+        const spaltenBtn = document.getElementById('haa-spalten');
+        if (spaltenBtn) spaltenBtn.onclick = baueSpalten;
+
+        verbindeHasaUiButtons(baueBox);
+        verbindeBaualarmButtons(ziel, baueBox);
+        verbindeForschungsalarmButtons(forschung, baueBox);
+        verbindeTechTreeTestButtons();
+        aktualisiereBauMarkierungen();
+    }
+
+    function baueAuswahl(daten, favoriten) {
+        const box = grundBox();
+
+        let html = '<div style="font-weight:bold;margin-bottom:6px;">Favoriten auswählen</div>';
+        html += '<div style="column-count:3;column-gap:18px;max-height:520px;overflow-y:auto;padding-right:8px;">';
+
+        let letzteKat = '';
+        daten.forEach(e => {
+            if (e.kategorie !== letzteKat) {
+                letzteKat = e.kategorie;
+                html += '<div style="break-inside:avoid;margin-top:6px;color:#FFD27C;"><b>' + esc(letzteKat) + '</b></div>';
+            }
+
+            html += '<label style="display:block;break-inside:avoid;margin:2px 0;">';
+            html += '<input class="haa-check" type="checkbox" value="' + esc(e.name) + '" '
+                + (favoriten.includes(e.name) ? 'checked' : '') + '> ';
+            html += esc(e.name);
+            html += '</label>';
+        });
+
+        html += '</div>';
+        html += '<button id="haa-save" style="margin-top:8px;width:100%;">speichern</button>';
+        html += '<button id="haa-back" style="margin-top:4px;width:100%;">zurück</button>';
+
+        box.innerHTML = html;
+        positioniereBox(box);
+
+        document.getElementById('haa-save').onclick = function () {
+            const namen = Array.from(document.querySelectorAll('.haa-check:checked')).map(e => e.value);
+            speichern(STORAGE_FAVORITEN, namen);
+            baueBox();
+        };
+
+        document.getElementById('haa-back').onclick = baueBox;
+    }
+
+    function baueSpalten() {
+        const box = grundBox();
+        const spalten = ladeSpalten();
+
+        box.innerHTML =
+            '<div style="font-weight:bold;margin-bottom:6px;">Spalten anzeigen</div>' +
+            checkbox('stufe', 'St = Stufe', spalten.stufe) +
+            checkbox('letzte', 'L = letzte Kosten', spalten.letzte) +
+            checkbox('kosten', 'K = nächste Kosten', spalten.kosten) +
+            checkbox('invest', 'I = insgesamt investiert', spalten.invest) +
+            '<button id="haa-save-spalten" style="margin-top:8px;width:100%;">speichern</button>' +
+            '<button id="haa-back" style="margin-top:4px;width:100%;">zurück</button>';
+        positioniereBox(box);
+
+        document.getElementById('haa-save-spalten').onclick = function () {
+            const neu = {};
+            ['stufe', 'letzte', 'kosten', 'invest'].forEach(k => {
+                neu[k] = document.getElementById('haa-col-' + k).checked;
+            });
+            speichern(STORAGE_SPALTEN, neu);
+            baueBox();
+        };
+
+        document.getElementById('haa-back').onclick = baueBox;
+    }
+
+    function checkbox(key, label, checked) {
+        return '<label style="display:block;margin:4px 0;">' +
+            '<input id="haa-col-' + key + '" type="checkbox" ' + (checked ? 'checked' : '') + '> ' +
+            esc(label) +
+            '</label>';
+    }
+
+
+    let HAA_BAUALARM_TIMER = null;
+    let HAA_BAUALARM_ANZEIGE_TIMER = null;
+    let HAA_FORSCHUNGSALARM_TIMER = null;
+    let HAA_FORSCHUNGSANZEIGE_TIMER = null;
+    let HAA_AUDIO_CTX = null;
+    let HAA_AUDIO_FREIGEGEBEN = false;
+    let HAA_START_GELAUFEN = false;
+    let HAA_DRAG_AKTIV = false;
+    let HAA_DRAG_START_X = 0;
+    let HAA_DRAG_START_Y = 0;
+    let HAA_DRAG_BOX_X = 0;
+    let HAA_DRAG_BOX_Y = 0;
+    let HAA_DRAG_BOX = null;
+    let HAA_VORALARM_AUSGELOEST_LAUF = '';
+    let HAA_UEBERWACHUNG_LETZTE_SYNC = 0;
+    let HAA_AUDIO_KEEPALIVE_TIMER = null;
+    let HAA_ALARM_BANNER_TIMER = null;
+    let HAA_SYNC_LAEUFT = false;
+    let HAA_LETZTE_SCAN_DAUER_MS = 0;
+    let HAA_AUDIO_KEEPALIVE_OSC = null;
+    let HAA_AUDIO_KEEPALIVE_GAIN = null;
+    let HAA_AUDIO_NACHHOLEN = 0;
+    let HAA_UI_BOX_ZU = laden(STORAGE_UI_BOX_ZU, '0') === '1';
+    let HAA_UI_AKTIVER_BEREICH = laden(STORAGE_UI_AKTIVER_BEREICH, 'ascension') || 'ascension';
+
+    /*
+     * HASA 0.8 Beobachter-Engine
+     *
+     * Grundregel:
+     *   HASA besitzt keine eigene Bauzeit mehr.
+     *   Horizon ist die Uhr.
+     *
+     * Der Timer ist nur ein Taktgeber:
+     *   - sichtbare Horizon-Zeit lesen
+     *   - Text anzeigen
+     *   - Sekundenwert nur fuer Voralarm pruefen
+     *
+     * Kein Date.now()-Countdown, keine Zielzeit als Wahrheit.
+     */
+
+    const HAA_CC_NAMEN = [
+        'Koloniezentrum',
+        'Großes Koloniezentrum',
+        'Grosses Koloniezentrum',
+        'Colonycenter',
+        'Colony Center',
+        'Kolonialverwaltung',
+        'Provisorische Kolonialverwaltung'
+    ];
+
+    function istBaualarmAn() {
+        return laden(STORAGE_BAUALARM, '0') === '1';
+    }
+
+    function setBaualarmAn(an) {
+        speichern(STORAGE_BAUALARM, an ? '1' : '0');
+        if (!an && HAA_BAUALARM_TIMER) {
+            clearInterval(HAA_BAUALARM_TIMER);
+            HAA_BAUALARM_TIMER = null;
+        }
+    }
+
+    function istCcGebaeude(name) {
+        const n = String(name || '').toLowerCase();
+        return HAA_CC_NAMEN.some(cc => n.includes(cc.toLowerCase()));
+    }
+
+    function normalisiereGebaeudename(name) {
+        const n = String(name || '')
+            .replace(/^[\s○◉●◌◎⊙]+/, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+        if (!n || /^countdown$/i.test(n) || /^bauauftrag$/i.test(n)) {
+            return 'Bauauftrag';
+        }
+        return n;
+    }
+
+    function zeitStringZuSekunden(zeit) {
+        const m = String(zeit || '').match(/(\d+):(\d{2}):(\d{2}):(\d{2})s?/);
+        if (!m) {
+            return null;
+        }
+
+        const tage = Number(m[1]);
+        const stunden = Number(m[2]);
+        const minuten = Number(m[3]);
+        const sekunden = Number(m[4]);
+
+        return (((tage * 24) + stunden) * 60 + minuten) * 60 + sekunden;
+    }
+
+    function kuerzeZeitText(zeit) {
+        const m = String(zeit || '').match(/(\d+):(\d{2}):(\d{2}):(\d{2})s?/);
+        if (!m) {
+            return String(zeit || '').replace(/s$/, '');
+        }
+
+        const tage = Number(m[1]);
+        const stunden = Number(m[2]);
+        const minuten = Number(m[3]);
+        const sekunden = Number(m[4]);
+
+        if (tage > 0) {
+            return tage + ':' + String(stunden).padStart(2, '0') + ':' + String(minuten).padStart(2, '0') + ':' + String(sekunden).padStart(2, '0');
+        }
+        if (stunden > 0) {
+            return stunden + ':' + String(minuten).padStart(2, '0') + ':' + String(sekunden).padStart(2, '0');
+        }
+        return minuten + ':' + String(sekunden).padStart(2, '0');
+    }
+
+    function merkeLetztenBauStatus(info) {
+        if (!info || info.sekunden === null || info.sekunden === undefined) {
+            return;
+        }
+
+        speichern(STORAGE_BAUSTATUS, {
+            planet: info.planet || 'aktueller Planet',
+            gebaeude: normalisiereGebaeudename(info.name || info.gebaeude),
+            modus: info.modus || 'Bau',
+            sekunden: Number(info.sekunden),
+            zeitText: info.zeitText || formatSekunden(info.sekunden),
+            zuletztGesehen: Date.now(),
+            quelle: info.quelle || 'sichtbar'
+        });
+    }
+
+    function ladeLetztenBauStatus() {
+        const daten = laden(STORAGE_BAUSTATUS, null);
+        if (!daten || daten.sekunden === null || daten.sekunden === undefined) {
+            return null;
+        }
+
+        return {
+            planet: daten.planet || 'aktueller Planet',
+            name: normalisiereGebaeudename(daten.gebaeude),
+            gebaeude: normalisiereGebaeudename(daten.gebaeude),
+            modus: daten.modus || 'Bau',
+            sekunden: Number(daten.sekunden),
+            zeitText: daten.zeitText || formatSekunden(Number(daten.sekunden)),
+            sichtbar: false,
+            wartet: true,
+            quelle: 'letzter-sichtbarer-wert'
+        };
+    }
+
+    function baueBauInfo(name, zeit, quelle) {
+        const sekunden = zeitStringZuSekunden(zeit);
+        if (sekunden === null || sekunden < 0) {
+            return null;
+        }
+
+        return {
+            name: normalisiereGebaeudename(name),
+            gebaeude: normalisiereGebaeudename(name),
+            planet: 'aktueller Planet',
+            modus: 'Bau',
+            sekunden: sekunden,
+            zeitText: kuerzeZeitText(zeit),
+            sichtbar: true,
+            wartet: false,
+            quelle: quelle
+        };
+    }
+
+    function findeBauInfoAusZeitZeilen(zeilen) {
+        for (let i = 0; i < zeilen.length; i++) {
+            const z = zeilen[i];
+            const mZeit = z.match(/^Zeit:\s*(\d+:\d{2}:\d{2}:\d{2}s?)\s*$/i);
+            if (!mZeit) {
+                continue;
+            }
+
+            let name = 'Koloniezentrum';
+            let rohName = '';
+
+            for (let j = i - 1; j >= 0 && j >= i - 10; j--) {
+                if (/wird gebaut/i.test(zeilen[j])) {
+                    rohName = zeilen[j].replace(/\s*wird gebaut\..*$/i, '').trim();
+                    name = rohName || name;
+                    break;
+                }
+            }
+
+            const kontext = (rohName + ' ' + zeilen.slice(Math.max(0, i - 10), i + 1).join(' ')).toLowerCase();
+            if (istCcGebaeude(name) || /colonycenter|koloniezentrum|kolonialverwaltung/i.test(kontext)) {
+                return baueBauInfo(name, mZeit[1], 'zeit-zeile');
+            }
+        }
+
+        return null;
+    }
+
+    function findeBauInfoAusKategorieZeilen(bodyText) {
+        const reKlammerBau = /\(([^()\n]+?)\s*:\s*(\d+:\d{2}:\d{2}:\d{2}s?)\s*\)/g;
+        let match;
+        let bester = null;
+
+        while ((match = reKlammerBau.exec(bodyText)) !== null) {
+            const name = match[1].trim();
+            if (!istCcGebaeude(name) && !/colonycenter|koloniezentrum|kolonialverwaltung/i.test(name)) {
+                continue;
+            }
+
+            const info = baueBauInfo(name, match[2], 'kategorie-zeile');
+            if (info && (!bester || info.sekunden < bester.sekunden)) {
+                bester = info;
+            }
+        }
+
+        return bester;
+    }
+
+    function findeSichtbarenBauStatus() {
+        const bodyText = document.body ? document.body.innerText : '';
+        if (!bodyText) {
+            return null;
+        }
+
+        const zeilen = bodyText.split(/\n+/).map(z => z.replace(/\s+/g, ' ').trim()).filter(Boolean);
+        return findeBauInfoAusZeitZeilen(zeilen) || findeBauInfoAusKategorieZeilen(bodyText);
+    }
+
+    function aktualisiereBauStatusAusSeite() {
+        const live = findeSichtbarenBauStatus();
+        if (live) {
+            merkeLetztenBauStatus(live);
+            return live;
+        }
+        return ladeLetztenBauStatus();
+    }
+
+    function berechneGespeicherteRestsekunden(daten) {
+        if (!daten) {
+            return null;
+        }
+
+        const basisSekunden = Number(
+            daten.restBasisSekunden !== undefined
+                ? daten.restBasisSekunden
+                : daten.sekunden
+        );
+        const basisZeit = Number(
+            daten.restBasisZeit !== undefined
+                ? daten.restBasisZeit
+                : daten.zuletztGesehen
+        );
+
+        if (!Number.isFinite(basisSekunden)) {
+            return null;
+        }
+
+        if (!Number.isFinite(basisZeit) || daten.status !== 'laeuft') {
+            return Math.max(0, basisSekunden);
+        }
+
+        const vergangen = Math.max(0, Math.floor((Date.now() - basisZeit) / 1000));
+        return Math.max(0, basisSekunden - vergangen);
+    }
+
+    function ladeBauUeberwachung() {
+        const daten = laden(STORAGE_BAUUEBERWACHUNG, null);
+        if (!daten || typeof daten !== 'object' || Array.isArray(daten)) {
+            return null;
+        }
+
+        const name = normalisiereGebaeudename(daten.name || daten.gebaeude || '');
+        if (!name || name === 'Bauauftrag') {
+            return null;
+        }
+
+        const sekunden = berechneGespeicherteRestsekunden(daten);
+
+        return {
+            typ: daten.typ || 'ziel',
+            bereich: daten.bereich || '',
+            planet: daten.planet || 'Planet nicht erkannt',
+            name: name,
+            gebaeude: name,
+            status: daten.status || (sekunden !== null ? 'laeuft' : 'vorgemerkt'),
+            sekunden: sekunden,
+            zeitText: sekunden !== null ? formatSekunden(sekunden) : '',
+            sichtbar: false,
+            wartet: false,
+            quelle: daten.quelle || 'gespeicherte-ueberwachung',
+            gestartetAm: daten.gestartetAm || null,
+            ausgewaehltAm: daten.ausgewaehltAm || Date.now(),
+            zuletztGesehen: daten.zuletztGesehen || Date.now(),
+            restBasisSekunden: Number.isFinite(Number(daten.restBasisSekunden))
+                ? Number(daten.restBasisSekunden)
+                : sekunden,
+            restBasisZeit: Number.isFinite(Number(daten.restBasisZeit))
+                ? Number(daten.restBasisZeit)
+                : Date.now(),
+            letzteLiveSekunden: Number.isFinite(Number(daten.letzteLiveSekunden))
+                ? Number(daten.letzteLiveSekunden)
+                : null
+        };
+    }
+
+    function speichereBauUeberwachung(info) {
+        if (!info) {
+            return null;
+        }
+
+        const sekundenRoh = Number(info.sekunden);
+        const sekunden = Number.isFinite(sekundenRoh) ? Math.max(0, sekundenRoh) : null;
+        const status = info.status === 'laeuft' ? 'laeuft' : 'vorgemerkt';
+        const jetzt = Date.now();
+
+        const ziel = {
+            typ: info.typ || 'ziel',
+            bereich: info.bereich || ermittleAktuellenBereich(),
+            planet: info.planet || findeAktuellenPlanetennamen() || 'Planet nicht erkannt',
+            name: normalisiereGebaeudename(info.name || info.gebaeude || 'Bauauftrag'),
+            gebaeude: normalisiereGebaeudename(info.name || info.gebaeude || 'Bauauftrag'),
+            status: status,
+            sekunden: sekunden,
+            zeitText: sekunden !== null ? formatSekunden(sekunden) : '',
+            quelle: info.quelle || 'benutzer-markierung',
+            gestartetAm: status === 'laeuft' ? jetzt : null,
+            ausgewaehltAm: jetzt,
+            zuletztGesehen: jetzt,
+            restBasisSekunden: status === 'laeuft' ? sekunden : null,
+            restBasisZeit: status === 'laeuft' ? jetzt : null,
+            letzteLiveSekunden: status === 'laeuft' ? sekunden : null
+        };
+
+        speichern(STORAGE_BAUUEBERWACHUNG, ziel);
+        HAA_UEBERWACHUNG_LETZTE_SYNC = 0;
+        setBaualarmAn(true);
+        speichern(STORAGE_ALARM_AUSGELOEST, '');
+        speichern(STORAGE_VORALARM_AUSGELOEST, '');
+        HAA_VORALARM_AUSGELOEST_LAUF = '';
+        return ziel;
+    }
+
+    function beendeBauUeberwachung() {
+        speichern(STORAGE_BAUUEBERWACHUNG, null);
+        HAA_UEBERWACHUNG_LETZTE_SYNC = 0;
+        setBaualarmAn(false);
+        speichern(STORAGE_ALARM_AUSGELOEST, '');
+        speichern(STORAGE_VORALARM_AUSGELOEST, '');
+        HAA_VORALARM_AUSGELOEST_LAUF = '';
+        aktualisiereBauMarkierungen();
+    }
+
+    function bauInfoPasstZuUeberwachung(info, ziel) {
+        if (!info || !ziel) {
+            return false;
+        }
+
+        const a = normalisiereGebaeudename(info.name || info.gebaeude).toLowerCase();
+        const b = normalisiereGebaeudename(ziel.name || ziel.gebaeude).toLowerCase();
+        const planetA = String(info.planet || '').trim().toLowerCase();
+        const planetB = String(ziel.planet || '').trim().toLowerCase();
+
+        if (!a || !b || !(a === b || a.includes(b) || b.includes(a))) {
+            return false;
+        }
+
+        const istForschung = String(info.typ || ziel.typ || '').toLowerCase() === 'forschung';
+
+        // Forschung gilt reichsweit. Der Planet entscheidet deshalb nicht,
+        // ob ein gespeicherter Forschungsauftrag zum sichtbaren Auftrag passt.
+        if (!istForschung
+                && planetA && planetB
+                && planetA !== 'planet nicht erkannt'
+                && planetB !== 'planet nicht erkannt'
+                && planetA !== planetB) {
+            return false;
+        }
+
+        const bereichA = String(info.bereich || '').toLowerCase();
+        const bereichB = String(ziel.bereich || '').toLowerCase();
+        if (bereichA && bereichB && bereichA !== bereichB) {
+            return false;
+        }
+
+        return true;
+    }
+
+    function escapeRegExp(textWert) {
+        return String(textWert || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    function findeGlobalenZielZeitwert(ziel) {
+        if (!ziel || !ziel.name) {
+            return null;
+        }
+
+        const name = normalisiereGebaeudename(ziel.name);
+        const nameRe = new RegExp(escapeRegExp(name), 'i');
+        const zeitRe = /(\d+:\d{2}:\d{2}:\d{2}s?)/;
+
+        const selektoren = [
+            'tr',
+            '.BldClsRow',
+            '.BldClsBody',
+            '[class*="event" i]',
+            '[id*="event" i]',
+            '[class*="order" i]',
+            '[id*="order" i]'
+        ];
+
+        const elemente = Array.from(document.querySelectorAll(selektoren.join(',')))
+            .slice(0, 1200);
+
+        let bester = null;
+
+        for (const el of elemente) {
+            if (!el || el.closest('#haa-box') || el.closest('.haa-watch-circle')) {
+                continue;
+            }
+
+            const t = text(el);
+            if (!t || t.length > 350 || !nameRe.test(t)) {
+                continue;
+            }
+
+            const m = t.match(zeitRe);
+            if (!m) {
+                continue;
+            }
+
+            const sekunden = zeitStringZuSekunden(m[1]);
+            if (sekunden === null) {
+                continue;
+            }
+
+            if (!bester || sekunden < bester.sekunden) {
+                bester = {
+                    sekunden: sekunden,
+                    zeitText: kuerzeZeitText(m[1]),
+                    element: el
+                };
+            }
+        }
+
+        return bester;
+    }
+
+    function holeUeberwachungsStatusMitSync(force) {
+        const jetzt = Date.now();
+
+        if (!force
+                && HAA_UEBERWACHUNG_LETZTE_SYNC
+                && jetzt - HAA_UEBERWACHUNG_LETZTE_SYNC < HASA_SYNC_INTERVALL_MS) {
+            return ladeBauUeberwachung();
+        }
+
+        if (HAA_SYNC_LAEUFT) {
+            return ladeBauUeberwachung();
+        }
+
+        HAA_SYNC_LAEUFT = true;
+        const startZeit = performance.now();
+
+        try {
+            HAA_UEBERWACHUNG_LETZTE_SYNC = jetzt;
+            return aktualisiereUeberwachungsStatus();
+        } finally {
+            HAA_LETZTE_SCAN_DAUER_MS = Math.round(performance.now() - startZeit);
+            HAA_SYNC_LAEUFT = false;
+
+            if (HAA_LETZTE_SCAN_DAUER_MS > 250) {
+                console.warn(
+                    'HASA Performance: Statusscan dauerte '
+                    + HAA_LETZTE_SCAN_DAUER_MS
+                    + ' ms.'
+                );
+            }
+        }
+    }
+
+    function aktualisiereUeberwachungsStatus() {
+        const ziel = ladeBauUeberwachung();
+        if (!ziel) {
+            return null;
+        }
+
+        const kandidaten = findeBauKandidaten();
+        const live = kandidaten.find(function (k) {
+            return bauInfoPasstZuUeberwachung(k.info, ziel);
+        });
+
+        if (live) {
+            const info = live.info;
+
+            if (ziel.status === 'laeuft' && info.status === 'baubar') {
+                const fertig = Object.assign({}, ziel, {
+                    status: 'fertig',
+                    sekunden: 0,
+                    zeitText: '0:00',
+                    sichtbar: true,
+                    wartet: false,
+                    quelle: 'ziel-fertig-erkannt',
+                    zuletztGesehen: Date.now()
+                });
+
+                loeseBaualarmAus(fertig);
+                speichern(STORAGE_BAUUEBERWACHUNG, null);
+                setBaualarmAn(false);
+                speichern(STORAGE_VORALARM_AUSGELOEST, '');
+                HAA_VORALARM_AUSGELOEST_LAUF = '';
+
+                setTimeout(function () {
+                    aktualisiereBauMarkierungen();
+                    baueBox();
+                }, 250);
+
+                return null;
+            }
+
+            if (info.status === 'laeuft' && Number.isFinite(Number(info.sekunden))) {
+                const liveSekunden = Math.max(0, Number(info.sekunden));
+                const vorherLive = Number(ziel.letzteLiveSekunden);
+                const jetzt = Date.now();
+
+                // Horizon bleibt die Referenz, sobald dort ein kleinerer Wert erscheint.
+                // Bleibt der DOM-Wert statisch, läuft HASA lokal sekündlich weiter.
+                const mussNeuSynchronisieren =
+                    ziel.status !== 'laeuft'
+                    || !Number.isFinite(Number(ziel.restBasisSekunden))
+                    || !Number.isFinite(Number(ziel.restBasisZeit))
+                    || (Number.isFinite(vorherLive) && liveSekunden < vorherLive);
+
+                const neu = Object.assign({}, ziel, info, {
+                    name: normalisiereGebaeudename(info.name || ziel.name),
+                    gebaeude: normalisiereGebaeudename(info.name || ziel.name),
+                    planet: info.planet || ziel.planet,
+                    bereich: info.bereich || ziel.bereich,
+                    status: 'laeuft',
+                    sichtbar: true,
+                    wartet: false,
+                    quelle: info.quelle || 'explorer',
+                    gestartetAm: ziel.gestartetAm || jetzt,
+                    zuletztGesehen: jetzt,
+                    letzteLiveSekunden: liveSekunden
+                });
+
+                if (mussNeuSynchronisieren) {
+                    neu.restBasisSekunden = liveSekunden;
+                    neu.restBasisZeit = jetzt;
+                    neu.sekunden = liveSekunden;
+                } else {
+                    neu.restBasisSekunden = ziel.restBasisSekunden;
+                    neu.restBasisZeit = ziel.restBasisZeit;
+                    neu.sekunden = berechneGespeicherteRestsekunden(neu);
+                }
+
+                neu.zeitText = formatSekunden(neu.sekunden);
+                speichern(STORAGE_BAUUEBERWACHUNG, neu);
+                return neu;
+            }
+
+            const neu = Object.assign({}, ziel, info, {
+                name: normalisiereGebaeudename(info.name || ziel.name),
+                gebaeude: normalisiereGebaeudename(info.name || ziel.name),
+                planet: info.planet || ziel.planet,
+                bereich: info.bereich || ziel.bereich,
+                status: 'vorgemerkt',
+                sekunden: null,
+                zeitText: '',
+                sichtbar: true,
+                wartet: false,
+                quelle: info.quelle || 'explorer',
+                zuletztGesehen: Date.now(),
+                restBasisSekunden: null,
+                restBasisZeit: null,
+                letzteLiveSekunden: null
+            });
+            speichern(STORAGE_BAUUEBERWACHUNG, neu);
+            return neu;
+        }
+
+        const global = findeGlobalenZielZeitwert(ziel);
+        if (global && ziel.status === 'laeuft') {
+            const jetzt = Date.now();
+            const globalSekunden = Math.max(0, Number(global.sekunden));
+
+            const synchronisiert = Object.assign({}, ziel, {
+                sekunden: globalSekunden,
+                zeitText: formatSekunden(globalSekunden),
+                sichtbar: true,
+                wartet: false,
+                quelle: 'globaler-statusscanner',
+                zuletztGesehen: jetzt,
+                restBasisSekunden: globalSekunden,
+                restBasisZeit: jetzt,
+                letzteLiveSekunden: globalSekunden
+            });
+
+            speichern(STORAGE_BAUUEBERWACHUNG, synchronisiert);
+            return synchronisiert;
+        }
+
+        // Auch ohne sichtbare Quelle läuft ein bereits gestarteter Countdown lokal weiter.
+        const lokalSekunden = berechneGespeicherteRestsekunden(ziel);
+        return Object.assign({}, ziel, {
+            sekunden: lokalSekunden,
+            zeitText: Number.isFinite(Number(lokalSekunden))
+                ? formatSekunden(lokalSekunden)
+                : '',
+            sichtbar: false,
+            wartet: false,
+            quelle: 'lokaler-fortlauf'
+        });
+    }
+
+    function formatSekunden(sec) {
+        sec = Math.max(0, Math.floor(sec));
+        const d = Math.floor(sec / 86400);
+        const h = Math.floor((sec % 86400) / 3600);
+        const m = Math.floor((sec % 3600) / 60);
+        const s = sec % 60;
+        if (d > 0) return d + ':' + String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+        if (h > 0) return h + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+        return m + ':' + String(s).padStart(2, '0');
+    }
+
+    function zeigeBaualarmStatus(info) {
+        const restEl = document.getElementById('haa-baualarm-rest');
+        if (!restEl) {
+            return;
+        }
+
+        if (!info) {
+            restEl.textContent = 'unbekannt';
+            return;
+        }
+
+        if (info.status !== 'laeuft' || !Number.isFinite(Number(info.sekunden))) {
+            restEl.textContent = 'noch nicht gestartet';
+        } else {
+            restEl.textContent = info.zeitText || formatSekunden(info.sekunden);
+        }
+    }
+
+    function starteBaualarmAnzeigeTicker(info) {
+        if (HAA_BAUALARM_ANZEIGE_TIMER) {
+            clearInterval(HAA_BAUALARM_ANZEIGE_TIMER);
+            HAA_BAUALARM_ANZEIGE_TIMER = null;
+        }
+
+        function tick() {
+            const restEl = document.getElementById('haa-baualarm-rest');
+            if (!restEl) {
+                clearInterval(HAA_BAUALARM_ANZEIGE_TIMER);
+                HAA_BAUALARM_ANZEIGE_TIMER = null;
+                return;
+            }
+
+            zeigeBaualarmStatus(holeUeberwachungsStatusMitSync(false));
+        }
+
+        zeigeBaualarmStatus(holeUeberwachungsStatusMitSync(true));
+        HAA_BAUALARM_ANZEIGE_TIMER = setInterval(tick, 1000);
+    }
+
+    function holeAudioContext() {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) {
+            return null;
+        }
+
+        if (!HAA_AUDIO_CTX || HAA_AUDIO_CTX.state === 'closed') {
+            HAA_AUDIO_CTX = new AudioCtx();
+        }
+
+        return HAA_AUDIO_CTX;
+    }
+
+    function istAudioAktiv() {
+        return !!(
+            HAA_AUDIO_CTX
+            && HAA_AUDIO_CTX.state === 'running'
+            && HAA_AUDIO_FREIGEGEBEN
+        );
+    }
+
+    function starteAudioKeepalive() {
+        const ctx = holeAudioContext();
+        if (!ctx || ctx.state !== 'running' || HAA_AUDIO_KEEPALIVE_OSC) {
+            return;
+        }
+
+        try {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+
+            osc.type = 'sine';
+            osc.frequency.value = 18;
+            gain.gain.value = 0.000001;
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+
+            HAA_AUDIO_KEEPALIVE_OSC = osc;
+            HAA_AUDIO_KEEPALIVE_GAIN = gain;
+        } catch (e) {
+            console.warn('HASA Audio-Keepalive fehlgeschlagen:', e);
+        }
+    }
+
+    async function schalteAudioFrei() {
+        const ctx = holeAudioContext();
+        if (!ctx) {
+            HAA_AUDIO_FREIGEGEBEN = false;
+            return false;
+        }
+
+        try {
+            if (ctx.state === 'suspended') {
+                await ctx.resume();
+            }
+
+            if (ctx.state !== 'running') {
+                HAA_AUDIO_FREIGEGEBEN = false;
+                return false;
+            }
+
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            gain.gain.value = 0.0001;
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.03);
+
+            HAA_AUDIO_FREIGEGEBEN = true;
+            starteAudioKeepalive();
+            return true;
+        } catch (e) {
+            HAA_AUDIO_FREIGEGEBEN = false;
+            console.warn('HASA Audiofreigabe fehlgeschlagen:', e);
+            return false;
+        }
+    }
+
+    async function spieleNachgeholtenAlarm() {
+        if (!HAA_AUDIO_NACHHOLEN || !istAudioAktiv()) {
+            return;
+        }
+
+        const anzahl = HAA_AUDIO_NACHHOLEN;
+        HAA_AUDIO_NACHHOLEN = 0;
+
+        for (let i = 0; i < anzahl; i++) {
+            setTimeout(function () {
+                hasaBeep();
+            }, i * 550);
+        }
+    }
+
+    function installiereAudioFreigabe() {
+        const handler = function () {
+            schalteAudioFrei().then(function (ok) {
+                if (ok) {
+                    spieleNachgeholtenAlarm();
+                }
+            });
+        };
+
+        window.addEventListener('pointerdown', handler, { capture: true, passive: true });
+        window.addEventListener('mousedown', handler, { capture: true, passive: true });
+        window.addEventListener('contextmenu', handler, { capture: true, passive: true });
+        window.addEventListener('keydown', handler, { capture: true, passive: true });
+        window.addEventListener('touchstart', handler, { capture: true, passive: true });
+
+        document.addEventListener('visibilitychange', function () {
+            if (!document.hidden && HAA_AUDIO_CTX && HAA_AUDIO_CTX.state === 'suspended') {
+                HAA_AUDIO_CTX.resume().then(function () {
+                    HAA_AUDIO_FREIGEGEBEN = HAA_AUDIO_CTX.state === 'running';
+                    if (HAA_AUDIO_FREIGEGEBEN) {
+                        starteAudioKeepalive();
+                        spieleNachgeholtenAlarm();
+                    }
+                }).catch(function () {});
+            }
+        });
+    }
+
+    async function hasaBeep() {
+        try {
+            const ctx = holeAudioContext();
+            if (!ctx) {
+                HAA_AUDIO_FREIGEGEBEN = false;
+                return false;
+            }
+
+            if (ctx.state === 'suspended') {
+                try {
+                    await ctx.resume();
+                } catch (e) {
+                    HAA_AUDIO_FREIGEGEBEN = false;
+                    return false;
+                }
+            }
+
+            if (ctx.state !== 'running') {
+                HAA_AUDIO_FREIGEGEBEN = false;
+                return false;
+            }
+
+            function ton(start, freq, dauer, laut) {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                osc.type = 'square';
+                osc.frequency.value = freq;
+
+                gain.gain.setValueAtTime(0.0001, ctx.currentTime + start);
+                gain.gain.exponentialRampToValueAtTime(laut, ctx.currentTime + start + 0.02);
+                gain.gain.setValueAtTime(laut, ctx.currentTime + start + Math.max(0.03, dauer - 0.05));
+                gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + start + dauer);
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                osc.start(ctx.currentTime + start);
+                osc.stop(ctx.currentTime + start + dauer + 0.02);
+            }
+
+            // HASA 1.0.3a: ein einzelner kurzer Alarmton.
+            ton(0.00, 740, 0.28, 0.24);
+
+            HAA_AUDIO_FREIGEGEBEN = true;
+            starteAudioKeepalive();
+            return true;
+        } catch (e) {
+            HAA_AUDIO_FREIGEGEBEN = false;
+            console.warn('HASA Ton konnte nicht abgespielt werden:', e);
+            return false;
+        }
+    }
+
+    async function spieleAlarmfolge(anzahl) {
+        const ok = await hasaBeep();
+        if (!ok) {
+            HAA_AUDIO_NACHHOLEN = Math.max(HAA_AUDIO_NACHHOLEN, 1);
+            return false;
+        }
+        return true;
+    }
+
+    function zeigeHasaAlarmBanner(textWert, kritisch) {
+        const alt = document.getElementById('haa-alarm-banner');
+        if (alt) {
+            alt.remove();
+        }
+
+        if (HAA_ALARM_BANNER_TIMER) {
+            clearTimeout(HAA_ALARM_BANNER_TIMER);
+            HAA_ALARM_BANNER_TIMER = null;
+        }
+
+        const banner = document.createElement('div');
+        banner.id = 'haa-alarm-banner';
+        banner.textContent = textWert;
+        banner.title = 'Zum Schließen anklicken';
+        banner.style.position = 'fixed';
+        banner.style.zIndex = '1000001';
+        banner.style.left = '50%';
+        banner.style.top = '18px';
+        banner.style.transform = 'translateX(-50%)';
+        banner.style.maxWidth = '760px';
+        banner.style.padding = '12px 18px';
+        banner.style.border = kritisch ? '3px solid #ff5a5a' : '2px solid #FFD27C';
+        banner.style.borderRadius = '6px';
+        banner.style.background = kritisch ? '#4a1515' : '#211d18';
+        banner.style.color = '#fff';
+        banner.style.fontFamily = 'Arial, sans-serif';
+        banner.style.fontSize = '16px';
+        banner.style.fontWeight = 'bold';
+        banner.style.boxShadow = '0 0 16px #000';
+        banner.style.cursor = 'pointer';
+
+        banner.onclick = function () {
+            banner.remove();
+            if (HAA_ALARM_BANNER_TIMER) {
+                clearTimeout(HAA_ALARM_BANNER_TIMER);
+                HAA_ALARM_BANNER_TIMER = null;
+            }
+        };
+
+        document.body.appendChild(banner);
+
+        HAA_ALARM_BANNER_TIMER = setTimeout(function () {
+            if (banner && banner.parentNode) {
+                banner.remove();
+            }
+            HAA_ALARM_BANNER_TIMER = null;
+        }, kritisch ? 30000 : 15000);
+    }
+
+    function alarmKey(info) {
+        if (!info) {
+            return '';
+        }
+        return [
+            normalisiereGebaeudename(info.name || 'ziel'),
+            info.planet || '',
+            info.bereich || '',
+            String(info.gestartetAm || info.ausgewaehltAm || '')
+        ].join('|');
+    }
+
+    function voralarmKey(info, vorlaufSekunden) {
+        if (!info) {
+            return '';
+        }
+        return [info.name || 'bau', String(vorlaufSekunden || 0)].join('|');
+    }
+
+    function loeseVoralarmAus(info, vorlaufSekunden) {
+        const key = voralarmKey(info, vorlaufSekunden);
+        if (!key) {
+            return;
+        }
+        if (HAA_VORALARM_AUSGELOEST_LAUF === key
+                || laden(STORAGE_VORALARM_AUSGELOEST, '') === key) {
+            return;
+        }
+
+        HAA_VORALARM_AUSGELOEST_LAUF = key;
+        speichern(STORAGE_VORALARM_AUSGELOEST, key);
+
+        const istForschung = info && info.typ === 'forschung';
+        spieleAlarmfolge(1);
+        document.title = istForschung
+            ? '🔬 HASA Forschungsvoralarm - Horizon'
+            : '🔔 HASA Voralarm - Horizon';
+        zeigeHasaAlarmBanner(
+            (istForschung ? 'HASA Forschungsvoralarm: ' : 'HASA Voralarm: ')
+                + (info && info.name ? info.name : (istForschung ? 'Forschung' : 'Ziel'))
+                + ' ist bald fertig.',
+            false
+        );
+    }
+
+    function loeseBaualarmAus(info) {
+        const key = alarmKey(info);
+        if (key && laden(STORAGE_ALARM_AUSGELOEST, '') === key) {
+            return;
+        }
+        if (key) {
+            speichern(STORAGE_ALARM_AUSGELOEST, key);
+        }
+
+        const istForschung = info && info.typ === 'forschung';
+        spieleAlarmfolge(1);
+        document.title = istForschung
+            ? '🔬 Forschung fertig - Horizon'
+            : '🔔 Ziel fertig - Horizon';
+
+        zeigeHasaAlarmBanner(
+            (istForschung ? 'HASA Forschungsalarm: ' : 'HASA Alarm: ')
+                + (info && info.name ? info.name : (istForschung ? 'Forschung' : 'Ziel'))
+                + ' ist fertig.',
+            true
+        );
+    }
+
+    function starteBaualarmWennNoetig(info) {
+        if (HAA_BAUALARM_TIMER) {
+            clearInterval(HAA_BAUALARM_TIMER);
+            HAA_BAUALARM_TIMER = null;
+        }
+
+        if (!istBaualarmAn() || !ladeBauUeberwachung()) {
+            return;
+        }
+
+        HAA_BAUALARM_TIMER = setInterval(function () {
+            if (!istBaualarmAn() || !ladeBauUeberwachung()) {
+                clearInterval(HAA_BAUALARM_TIMER);
+                HAA_BAUALARM_TIMER = null;
+                return;
+            }
+
+            const aktuell = holeUeberwachungsStatusMitSync(false);
+            if (!aktuell || aktuell.status !== 'laeuft' || !Number.isFinite(Number(aktuell.sekunden))) {
+                return;
+            }
+
+            const vorlauf = ladeVorlaufSekunden();
+            if (vorlauf > 0
+                    && aktuell.sekunden > HASA_ALARM_VORLAUF_SEKUNDEN
+                    && aktuell.sekunden <= vorlauf) {
+                loeseVoralarmAus(aktuell, vorlauf);
+            }
+
+            if (vorlauf > 0 && aktuell.sekunden > vorlauf + 10) {
+                HAA_VORALARM_AUSGELOEST_LAUF = '';
+                speichern(STORAGE_VORALARM_AUSGELOEST, '');
+            }
+
+            if (aktuell.sekunden <= HASA_ALARM_VORLAUF_SEKUNDEN) {
+                clearInterval(HAA_BAUALARM_TIMER);
+                HAA_BAUALARM_TIMER = null;
+                loeseBaualarmAus(aktuell);
+                beendeBauUeberwachung();
+                setTimeout(baueBox, 500);
+            }
+        }, 1000);
+    }
+
+    function baueBaualarmHtml(ziel) {
+        const vorlauf = ladeVorlaufSekunden();
+        let html = '';
+
+        const istForschung = ziel && String(ziel.typ || '').toLowerCase() === 'forschung';
+
+        html += '<div style="margin-top:9px;border-top:1px solid #555;padding-top:7px;">';
+        html += '<div style="color:#FFD27C;font-weight:bold;font-size:15px;">'
+            + (istForschung ? '🔬 Forschungsalarm' : '🎯 Baualarm / Überwachung')
+            + '</div>';
+
+        if (ziel) {
+            html += '<div style="margin-top:6px;padding:7px;border:1px solid #3f3a32;border-radius:4px;">';
+            html += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">';
+            html += '<div>';
+            html += '<div style="font-weight:bold;font-size:14px;">'
+                + esc(normalisiereGebaeudename(ziel.name)) + '</div>';
+            if (!istForschung) {
+                html += '<div style="font-size:11px;color:#aaa;margin-top:2px;">'
+                    + esc(ziel.planet || 'Planet nicht erkannt') + '</div>';
+            }
+
+            if (ziel.status === 'laeuft' && Number.isFinite(Number(ziel.sekunden))) {
+                html += '<div id="haa-baualarm-rest" style="margin-top:3px;color:#7CFF7C;font-weight:bold;">'
+                    + esc(formatSekunden(ziel.sekunden)) + '</div>';
+            } else {
+                html += '<div id="haa-baualarm-rest" style="margin-top:3px;color:#FFD27C;font-weight:bold;">wartet</div>';
+            }
+
+            html += '</div>';
+            html += '<button id="haa-ziel-kreis" type="button" title="Überwachung beenden" ';
+            html += 'style="width:22px;height:22px;border-radius:50%;border:2px solid #FFD27C;';
+            html += 'background:#211d18;color:#FFD27C;cursor:pointer;">◉</button>';
+            html += '</div>';
+            html += '</div>';
+        } else {
+            html += '<div style="margin-top:5px;color:#aaa;font-size:12px;">Kein Ziel ausgewählt.</div>';
+        }
+
+        html += '<div style="margin-top:7px;display:grid;grid-template-columns:76px 1fr;gap:4px;align-items:center;">';
+        html += '<label for="haa-vorlauf-select" style="color:#ccc;">Vorlauf:</label>';
+        html += '<select id="haa-vorlauf-select" style="width:100%;">';
+        html += baueVorlaufOption(0, 'aus', vorlauf);
+        html += baueVorlaufOption(30, '30 Sekunden', vorlauf);
+        html += baueVorlaufOption(60, '1 Minute', vorlauf);
+        html += baueVorlaufOption(120, '2 Minuten', vorlauf);
+        html += baueVorlaufOption(300, '5 Minuten', vorlauf);
+        html += '</select>';
+        html += '</div>';
+
+        html += '<div style="margin-top:6px;display:flex;gap:4px;">';
+        html += '<button id="haa-alarm-toggle" style="flex:1;">'
+            + (ziel
+                ? 'Überwachung beenden'
+                : (istAudioAktiv() ? 'Ton aktiv' : 'Ton freigeben'))
+            + '</button>';
+        html += '<button id="haa-ton-test" style="flex:1;">Ton testen</button>';
+        html += '</div>';
+        html += '</div>';
+        return html;
+    }
+
+    function verbindeBaualarmButtons(bau, neuAufbauen) {
+        starteBaualarmAnzeigeTicker(bau);
+        starteBaualarmWennNoetig(bau);
+
+        const alarmBtn = document.getElementById('haa-alarm-toggle');
+        if (alarmBtn) {
+            alarmBtn.onclick = async function () {
+                const zielAktuell = ladeBauUeberwachung();
+
+                if (zielAktuell) {
+                    beendeBauUeberwachung();
+                    neuAufbauen();
+                    return;
+                }
+
+                await schalteAudioFrei();
+                neuAufbauen();
+            };
+        }
+
+        const zielKreis = document.getElementById('haa-ziel-kreis');
+        if (zielKreis) {
+            zielKreis.onclick = async function () {
+                const frei = await schalteAudioFrei();
+                if (frei) starteAudioKeepalive();
+                if (ladeBauUeberwachung()) beendeBauUeberwachung();
+                neuAufbauen();
+            };
+        }
+
+        const tonBtn = document.getElementById('haa-ton-test');
+        if (tonBtn) {
+            tonBtn.onclick = async function () {
+                await schalteAudioFrei();
+                await hasaBeep();
+                neuAufbauen();
+            };
+        }
+
+        verbindeZielUndVorlaufButtons(neuAufbauen);
+    }
+
+
+    function entferneBauMarkierungen() {
+        document.querySelectorAll('.haa-watch-circle').forEach(function (el) {
+            el.remove();
+        });
+    }
+
+    function ermittleAktuellenBereich() {
+        const aktiv = document.querySelector('.NavLinkActive');
+        if (aktiv && aktiv.id) {
+            return aktiv.id.replace(/^nav_/, '').toLowerCase();
+        }
+
+        const m = String(location.search || '').match(/[?&]cmd=([^&]+)/i);
+        return m ? decodeURIComponent(m[1]).toLowerCase() : 'unbekannt';
+    }
+
+    function findeAktuellenPlanetennamen() {
+        const selected = document.querySelector('select.PlanetSelectBox option:checked');
+        if (selected) {
+            const name = text(selected);
+            if (name) return name;
+        }
+
+        const select = document.querySelector('select.PlanetSelectBox');
+        if (select && select.options && select.selectedIndex >= 0) {
+            const option = select.options[select.selectedIndex];
+            const name = text(option);
+            if (name) return name;
+        }
+
+        return 'Planet nicht erkannt';
+    }
+
+    function istElementSichtbar(el) {
+        if (!el || !el.getBoundingClientRect) return false;
+        const r = el.getBoundingClientRect();
+        const cs = window.getComputedStyle(el);
+        return r.width > 0
+            && r.height > 0
+            && cs.display !== 'none'
+            && cs.visibility !== 'hidden';
+    }
+
+    function leseZeitAusText(textWert, bevorzugtLaufend) {
+        const t = String(textWert || '').replace(/\s+/g, ' ').trim();
+
+        let m = null;
+        if (bevorzugtLaufend) {
+            m = t.match(/Zeit:\s*(\d+:\d{2}:\d{2}:\d{2}s?)/i);
+        }
+        if (!m) {
+            m = t.match(/Bauzeit:\s*(\d+:\d{2}:\d{2}:\d{2}s?)/i);
+        }
+        if (!m) {
+            m = t.match(/(\d+:\d{2}:\d{2}:\d{2}s?)/i);
+        }
+
+        return m ? m[1] : '';
+    }
+
+    function leseGebaeudeNameAusKopf(kopf) {
+        if (!kopf) return '';
+
+        const b = kopf.querySelector('b');
+        if (b) {
+            const clone = b.cloneNode(true);
+            clone.querySelectorAll('.haa-watch-circle').forEach(function (el) {
+                el.remove();
+            });
+            const name = normalisiereGebaeudename(text(clone));
+            if (name) return name;
+        }
+
+        const clone = kopf.cloneNode(true);
+        clone.querySelectorAll('.haa-watch-circle').forEach(function (el) {
+            el.remove();
+        });
+
+        let roh = text(clone);
+        roh = roh.replace(/\s*\([^)]*Ausbaustufe[^)]*\)\s*$/i, '').trim();
+        roh = roh.replace(/\s*wird gebaut.*$/i, '').trim();
+        return normalisiereGebaeudename(roh);
+    }
+
+    function findeKoerperZeileZumKopf(kopf) {
+        const kopfZeile = kopf && kopf.closest ? kopf.closest('tr') : null;
+        let el = kopfZeile ? kopfZeile.nextElementSibling : null;
+
+        while (el) {
+            if (el.classList && el.classList.contains('BldClsBody')) {
+                return el;
+            }
+            if (el.querySelector && el.querySelector('.BldClsRow')) {
+                break;
+            }
+            el = el.nextElementSibling;
+        }
+
+        return null;
+    }
+
+    function istAktiverBauenButton(body) {
+        if (!body) return null;
+
+        const links = Array.from(body.querySelectorAll('a.SystemGfxButton'));
+        return links.find(function (a) {
+            const klassen = a.classList;
+            return /^bauen$/i.test(text(a))
+                && klassen.contains('Green')
+                && !klassen.contains('SystemGfxButtonDisabled');
+        }) || null;
+    }
+
+    function istLaufenderBau(kopf, body) {
+        const gesamt = (text(kopf) + ' ' + text(body)).replace(/\s+/g, ' ');
+        const hatWirdGebaut = /wird gebaut/i.test(gesamt);
+        const hatAbbrechen = Array.from((body || document).querySelectorAll('a, button'))
+            .some(function (el) { return /^abbrechen$/i.test(text(el)); });
+        const hatZeit = /Zeit:\s*\d+:\d{2}:\d{2}:\d{2}s?/i.test(gesamt);
+
+        return (hatWirdGebaut || hatAbbrechen) && hatZeit;
+    }
+
+    function findeBauKandidaten() {
+        const planet = findeAktuellenPlanetennamen();
+        const kandidaten = [];
+        const gesehen = {};
+
+        const koepfe = Array.from(document.querySelectorAll('.BldClsRow'));
+
+        koepfe.forEach(function (kopf) {
+            if (!kopf || kopf.closest('#haa-box')) return;
+
+            const body = findeKoerperZeileZumKopf(kopf);
+            if (!body) return;
+
+            const name = normalisiereGebaeudename(leseGebaeudeNameAusKopf(kopf));
+            if (!name || name === 'Bauauftrag') return;
+
+            const laufend = istLaufenderBau(kopf, body);
+            const bauenButton = istAktiverBauenButton(body);
+
+            if (!laufend && !bauenButton) {
+                return;
+            }
+
+            const zeit = leseZeitAusText(text(kopf) + ' ' + text(body), laufend);
+            if (!zeit) return;
+
+            const sekunden = zeitStringZuSekunden(zeit);
+            if (sekunden === null) return;
+
+            const titelEl = kopf.querySelector('b') || kopf;
+            const key = planet.toLowerCase() + '|' + name.toLowerCase();
+
+            if (gesehen[key]) return;
+            gesehen[key] = true;
+
+            const bereich = ermittleAktuellenBereich();
+            const typ = bereich === 'forschung' || bereich === 'research'
+                ? 'forschung'
+                : 'bau';
+
+            kandidaten.push({
+                key: key,
+                kopf: kopf,
+                body: body,
+                titelEl: titelEl,
+                info: {
+                    name: name,
+                    gebaeude: name,
+                    // Forschung ist global: kein Startplanet in Anzeige oder Zuordnung.
+                    planet: typ === 'forschung' ? '' : planet,
+                    bereich: bereich,
+                    typ: typ,
+                    status: laufend ? 'laeuft' : 'baubar',
+                    modus: 'Ziel',
+                    sekunden: laufend ? sekunden : null,
+                    bauzeitSekunden: laufend ? null : sekunden,
+                    zeitText: kuerzeZeitText(zeit),
+                    sichtbar: true,
+                    wartet: false,
+                    quelle: laufend ? 'horizon-bld-laufend' : 'horizon-bld-baubar'
+                }
+            });
+        });
+
+        return kandidaten;
+    }
+
+    function entferneBauMarkierungen() {
+        document.querySelectorAll('.haa-watch-circle').forEach(function (el) {
+            el.remove();
+        });
+    }
+
+    function setzeKreisAnTitel(kandidat, ziel) {
+        const titelEl = kandidat && kandidat.titelEl;
+        if (!titelEl || !titelEl.parentNode) return;
+
+        const markiert = ziel && bauInfoPasstZuUeberwachung(kandidat.info, ziel);
+
+        const btn = document.createElement('button');
+        btn.className = 'haa-watch-circle';
+        btn.type = 'button';
+        btn.textContent = markiert ? '◉' : '○';
+        const istForschung = String(kandidat.info.typ || '').toLowerCase() === 'forschung';
+        btn.title = markiert
+            ? 'Überwachung beenden: ' + kandidat.info.name
+            : (istForschung
+                ? 'Diese Forschung überwachen: ' + kandidat.info.name
+                : 'Diesen Bau überwachen: ' + kandidat.info.name + ' auf ' + kandidat.info.planet);
+
+        btn.style.display = 'inline-flex';
+        btn.style.alignItems = 'center';
+        btn.style.justifyContent = 'center';
+        btn.style.verticalAlign = 'middle';
+        btn.style.marginRight = '6px';
+        btn.style.width = '18px';
+        btn.style.height = '18px';
+        btn.style.lineHeight = '16px';
+        btn.style.padding = '0';
+        btn.style.borderRadius = '50%';
+        btn.style.border = '1px solid #FFD27C';
+        btn.style.background = '#211d18';
+        btn.style.color = markiert ? '#7CFF7C' : '#FFD27C';
+        btn.style.fontWeight = 'bold';
+        btn.style.cursor = 'pointer';
+        btn.style.boxShadow = '0 0 3px #000';
+
+        btn.onclick = function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            schalteAudioFrei();
+
+            const aktuell = ladeBauUeberwachung();
+
+            if (aktuell && bauInfoPasstZuUeberwachung(kandidat.info, aktuell)) {
+                beendeBauUeberwachung();
+            } else {
+                speichereBauUeberwachung(kandidat.info);
+            }
+
+            baueBox();
+            setTimeout(aktualisiereBauMarkierungen, 80);
+        };
+
+        titelEl.insertBefore(btn, titelEl.firstChild);
+    }
+
+    function aktualisiereBauMarkierungen() {
+        entferneBauMarkierungen();
+
+        let ziel = ladeBauUeberwachung();
+        const kandidaten = findeBauKandidaten();
+
+        // Forschung wird unabhängig vom Bauziel gespeichert. Dadurch können
+        // Baualarm und Forschungsalarm gleichzeitig sichtbar und aktiv bleiben.
+        const laufendeForschungen = kandidaten.filter(function (kandidat) {
+            return kandidat.info.typ === 'forschung'
+                && kandidat.info.status === 'laeuft'
+                && Number.isFinite(Number(kandidat.info.sekunden));
+        });
+
+        if (laufendeForschungen.length === 1) {
+            speichereForschungsUeberwachung(laufendeForschungen[0].info);
+        }
+
+        kandidaten.forEach(function (kandidat) {
+            setzeKreisAnTitel(kandidat, ziel);
+        });
+    }
+
+
+    /*
+     * hasa 1.0.1b: Forschungsüberwachung läuft vollständig getrennt
+     * von der Bauüberwachung. So können beide Aufträge parallel bestehen.
+     */
+    function ladeForschungsUeberwachung() {
+        const daten = laden(STORAGE_FORSCHUNGSUEBERWACHUNG, null);
+        if (!daten || typeof daten !== 'object' || Array.isArray(daten)) return null;
+
+        const name = normalisiereGebaeudename(daten.name || '');
+        if (!name || name === 'Bauauftrag') return null;
+
+        const sekunden = berechneGespeicherteRestsekunden(daten);
+        return Object.assign({}, daten, {
+            typ: 'forschung',
+            bereich: 'forschung',
+            planet: '',
+            name: name,
+            gebaeude: name,
+            sekunden: sekunden,
+            zeitText: Number.isFinite(Number(sekunden)) ? formatSekunden(sekunden) : ''
+        });
+    }
+
+    function speichereForschungsUeberwachung(info) {
+        if (!info) return null;
+
+        const alt = ladeForschungsUeberwachung();
+        const name = normalisiereGebaeudename(info.name || info.gebaeude || 'Forschung');
+        const sekundenRoh = Number(info.sekunden);
+        const sekunden = Number.isFinite(sekundenRoh) ? Math.max(0, sekundenRoh) : null;
+        const jetzt = Date.now();
+
+        // Beim sekündlichen Seitenscan nicht jedes Mal den Startzeitpunkt erneuern.
+        const gleicherAuftrag = alt && normalisiereGebaeudename(alt.name).toLowerCase() === name.toLowerCase();
+        const ziel = {
+            typ: 'forschung',
+            bereich: 'forschung',
+            planet: '',
+            name: name,
+            gebaeude: name,
+            status: sekunden !== null ? 'laeuft' : 'vorgemerkt',
+            sekunden: sekunden,
+            zeitText: sekunden !== null ? formatSekunden(sekunden) : '',
+            quelle: info.quelle || 'forschungsseite',
+            gestartetAm: gleicherAuftrag ? (alt.gestartetAm || jetzt) : jetzt,
+            ausgewaehltAm: gleicherAuftrag ? (alt.ausgewaehltAm || jetzt) : jetzt,
+            zuletztGesehen: jetzt,
+            restBasisSekunden: sekunden,
+            restBasisZeit: jetzt,
+            letzteLiveSekunden: sekunden
+        };
+
+        speichern(STORAGE_FORSCHUNGSUEBERWACHUNG, ziel);
+        setBaualarmAn(true);
+        return ziel;
+    }
+
+    function beendeForschungsUeberwachung() {
+        speichern(STORAGE_FORSCHUNGSUEBERWACHUNG, null);
+        if (HAA_FORSCHUNGSALARM_TIMER) {
+            clearInterval(HAA_FORSCHUNGSALARM_TIMER);
+            HAA_FORSCHUNGSALARM_TIMER = null;
+        }
+    }
+
+    function migriereAlteForschungsUeberwachung() {
+        const alt = ladeBauUeberwachung();
+        if (!alt || String(alt.typ || '').toLowerCase() !== 'forschung') return;
+        speichereForschungsUeberwachung(alt);
+        speichern(STORAGE_BAUUEBERWACHUNG, null);
+    }
+
+    function findeLaufendeForschungAusSeite() {
+        const bodyText = document.body ? document.body.innerText : '';
+        if (!bodyText) return null;
+
+        const zeilen = bodyText.split(/\n+/)
+            .map(function (z) { return z.replace(/\s+/g, ' ').trim(); })
+            .filter(Boolean);
+        const zeitRe = /(\d+:\d{2}:\d{2}:\d{2}s?)/;
+
+        // Sicherster Hinweis auf der Imperiumsübersicht:
+        // "Forschungsauftrag: Solarenergietechnik 9 0:02:29:53s"
+        for (let i = 0; i < zeilen.length; i++) {
+            if (!/Forschungsauftrag\s*:/i.test(zeilen[i])) continue;
+
+            let gesamt = zeilen[i];
+            for (let j = 1; j <= 2 && i + j < zeilen.length; j++) {
+                if (!zeitRe.test(gesamt)) gesamt += ' ' + zeilen[i + j];
+            }
+
+            const m = gesamt.match(/Forschungsauftrag\s*:\s*(.+?)\s+(\d+:\d{2}:\d{2}:\d{2}s?)(?:\s|$)/i);
+            if (!m) continue;
+
+            const name = normalisiereGebaeudename(m[1]);
+            const sekunden = zeitStringZuSekunden(m[2]);
+            if (!name || sekunden === null) continue;
+
+            return {
+                typ: 'forschung',
+                bereich: 'forschung',
+                planet: '',
+                name: name,
+                gebaeude: name,
+                status: 'laeuft',
+                modus: 'Ziel',
+                sekunden: sekunden,
+                zeitText: kuerzeZeitText(m[2]),
+                sichtbar: true,
+                wartet: false,
+                quelle: 'forschungsauftrag-zeile'
+            };
+        }
+
+        return null;
+    }
+
+    function findeForschungsZeitInEreignissen(ziel) {
+        if (!ziel || !ziel.name) return null;
+
+        const name = normalisiereGebaeudename(ziel.name);
+        const nameRe = new RegExp(escapeRegExp(name), 'i');
+        const zeitRe = /(\d+:\d{2}:\d{2}:\d{2}s?)/g;
+        const kandidaten = [];
+
+        function fuegeKandidatHinzu(t, quelle, prioritaet) {
+            if (!t || t.length > 300 || !nameRe.test(t)) return;
+
+            const treffer = Array.from(t.matchAll(zeitRe));
+            if (!treffer.length) return;
+
+            // Eine Horizon-Ereigniszeile enthält normalerweise genau eine Zeit.
+            // Enthält ein großer Container mehrere Zeiten, ist er als Uhrquelle
+            // ungeeignet und wird bewusst verworfen.
+            if (treffer.length !== 1) return;
+
+            const sekunden = zeitStringZuSekunden(treffer[0][1]);
+            if (sekunden === null) return;
+
+            kandidaten.push({
+                sekunden: sekunden,
+                zeitText: kuerzeZeitText(treffer[0][1]),
+                quelle: quelle,
+                prioritaet: prioritaet,
+                textLaenge: t.length
+            });
+        }
+
+        // 1. Vorrang: echte Tabellenzeilen der Ereignisliste.
+        Array.from(document.querySelectorAll('tr')).forEach(function (el) {
+            if (!el || el.closest('#haa-box')) return;
+            fuegeKandidatHinzu(text(el), 'ereignis-tabellenzeile', 1);
+        });
+
+        // 2. Danach nur kleine, zeilenartige Elemente. Keine großen DIV-Container,
+        // weil diese mehrere Countdown-Zeiten enthalten und früher z. B. 9:09
+        // vom Bauauftrag fälschlich als Forschungszeit lieferten.
+        Array.from(document.querySelectorAll('li, p, td, [class*="event" i], [id*="event" i]')).forEach(function (el) {
+            if (!el || el.closest('#haa-box')) return;
+            const r = el.getBoundingClientRect ? el.getBoundingClientRect() : null;
+            if (r && r.height > 80) return;
+            fuegeKandidatHinzu(text(el), 'ereignis-zeilenelement', 2);
+        });
+
+        // 3. Sicherer Text-Fallback: sichtbare Zeilen einzeln prüfen.
+        if (document.body) {
+            document.body.innerText.split(/\n+/)
+                .map(function (z) { return z.replace(/\s+/g, ' ').trim(); })
+                .filter(Boolean)
+                .forEach(function (zeile) {
+                    fuegeKandidatHinzu(zeile, 'ereignis-textzeile', 3);
+                });
+        }
+
+        if (!kandidaten.length) return null;
+
+        // Nicht die kleinste Zeit gewinnt, sondern die eindeutigste Horizon-Zeile.
+        // Bei gleicher Quelle ist die kürzere Textzeile spezifischer.
+        kandidaten.sort(function (a, b) {
+            if (a.prioritaet !== b.prioritaet) return a.prioritaet - b.prioritaet;
+            return a.textLaenge - b.textLaenge;
+        });
+
+        return kandidaten[0];
+    }
+
+    function aktualisiereForschungsStatus() {
+        let ziel = ladeForschungsUeberwachung();
+
+        // Auf der Imperiumsübersicht steht die laufende Forschung ausdrücklich
+        // hinter "Forschungsauftrag:". Diese Zeile hat Vorrang und funktioniert
+        // unabhängig von den CSS-Klassen der Ereignisliste.
+        const direkt = findeLaufendeForschungAusSeite();
+        if (direkt) {
+            ziel = speichereForschungsUeberwachung(direkt);
+        }
+
+        // Auf der Forschungsseite übernimmt HASA die einzige laufende Forschung automatisch.
+        const liveKandidaten = findeBauKandidaten().filter(function (kandidat) {
+            return kandidat.info.typ === 'forschung'
+                && kandidat.info.status === 'laeuft'
+                && Number.isFinite(Number(kandidat.info.sekunden));
+        });
+        if (liveKandidaten.length === 1) {
+            ziel = speichereForschungsUeberwachung(liveKandidaten[0].info);
+        }
+
+        if (!ziel) return null;
+
+        // Auf allen Seiten wird anschließend die Ereignisliste als Horizon-Uhr benutzt.
+        const ereignis = findeForschungsZeitInEreignissen(ziel);
+        if (ereignis) {
+            const jetzt = Date.now();
+            const neu = Object.assign({}, ziel, {
+                status: 'laeuft',
+                sekunden: ereignis.sekunden,
+                zeitText: formatSekunden(ereignis.sekunden),
+                sichtbar: true,
+                quelle: 'ereignisliste',
+                zuletztGesehen: jetzt,
+                restBasisSekunden: ereignis.sekunden,
+                restBasisZeit: jetzt,
+                letzteLiveSekunden: ereignis.sekunden
+            });
+            speichern(STORAGE_FORSCHUNGSUEBERWACHUNG, neu);
+            return neu;
+        }
+
+        const lokal = berechneGespeicherteRestsekunden(ziel);
+        return Object.assign({}, ziel, {
+            sekunden: lokal,
+            zeitText: Number.isFinite(Number(lokal)) ? formatSekunden(lokal) : '',
+            sichtbar: false,
+            quelle: 'lokaler-fortlauf'
+        });
+    }
+
+    function baueForschungsalarmHtml(forschung) {
+        let html = '';
+        html += '<div style="margin-top:9px;border-top:1px solid #555;padding-top:7px;">';
+        html += '<div style="color:#FFD27C;font-weight:bold;font-size:15px;">🔬 Forschungsalarm</div>';
+
+        if (forschung) {
+            html += '<div style="margin-top:6px;padding:7px;border:1px solid #3f3a32;border-radius:4px;">';
+            html += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">';
+            html += '<div><div style="font-weight:bold;font-size:14px;">' + esc(forschung.name) + '</div>';
+            html += '<div id="haa-forschungsalarm-rest" style="margin-top:3px;color:#7CFF7C;font-weight:bold;">'
+                + esc(Number.isFinite(Number(forschung.sekunden)) ? formatSekunden(forschung.sekunden) : 'wartet')
+                + '</div></div>';
+            html += '<button id="haa-forschungsziel-kreis" type="button" title="Forschungsüberwachung beenden" '
+                + 'style="width:22px;height:22px;border-radius:50%;border:2px solid #FFD27C;'
+                + 'background:#211d18;color:#FFD27C;cursor:pointer;">◉</button>';
+            html += '</div></div>';
+        } else {
+            html += '<div style="margin-top:5px;color:#aaa;font-size:12px;">Keine laufende Forschung erkannt.</div>';
+        }
+        html += '</div>';
+        return html;
+    }
+
+    function starteForschungsAnzeigeTicker() {
+        if (HAA_FORSCHUNGSANZEIGE_TIMER) clearInterval(HAA_FORSCHUNGSANZEIGE_TIMER);
+        HAA_FORSCHUNGSANZEIGE_TIMER = setInterval(function () {
+            const el = document.getElementById('haa-forschungsalarm-rest');
+            if (!el) return;
+            const aktuell = aktualisiereForschungsStatus();
+            el.textContent = aktuell && Number.isFinite(Number(aktuell.sekunden))
+                ? formatSekunden(aktuell.sekunden)
+                : 'unbekannt';
+        }, 1000);
+    }
+
+    function starteForschungsalarmWennNoetig() {
+        if (HAA_FORSCHUNGSALARM_TIMER) clearInterval(HAA_FORSCHUNGSALARM_TIMER);
+        if (!ladeForschungsUeberwachung()) return;
+
+        HAA_FORSCHUNGSALARM_TIMER = setInterval(function () {
+            const aktuell = aktualisiereForschungsStatus();
+            if (!aktuell || !Number.isFinite(Number(aktuell.sekunden))) return;
+
+            // Forschungsalarm: kein minutenfrüher Voralarm. Nur der Hauptalarm
+            // kurz vor dem sichtbaren Ende bleibt aktiv.
+            if (aktuell.sekunden <= HASA_ALARM_VORLAUF_SEKUNDEN) {
+                loeseBaualarmAus(aktuell);
+                beendeForschungsUeberwachung();
+                setTimeout(baueBox, 300);
+            }
+        }, 1000);
+    }
+
+    function verbindeForschungsalarmButtons(forschung, neuAufbauen) {
+        starteForschungsAnzeigeTicker();
+        starteForschungsalarmWennNoetig();
+        const btn = document.getElementById('haa-forschungsziel-kreis');
+        if (btn) {
+            btn.onclick = function () {
+                beendeForschungsUeberwachung();
+                neuAufbauen();
+            };
+        }
+    }
+
+    let HAA_SEITENSCAN_TIMER = null;
+
+    function planeTechTreeSeitenscan(verzoegerung) {
+        clearTimeout(HAA_SEITENSCAN_TIMER);
+        speichern(STORAGE_SEITENSCAN_STATUS, { state: 'red', message: 'sichtbare Horizon-Daten werden eingelesen', at: Date.now() });
+        baueBox();
+        HAA_SEITENSCAN_TIMER = setTimeout(function () {
+            const bereich = ermittleAktuellenBereich();
+            const istDatenSeite = bereich === 'research' || bereich === 'forschung'
+                || bereich === 'building' || bereich === 'gebäude' || bereich === 'shipyard';
+            if (istDatenSeite) speichereTechTreeSpielstandAusSeite();
+            speichern(STORAGE_SEITENSCAN_STATUS, { state: 'green', message: istDatenSeite ? 'sichtbare Horizon-Daten aktuell' : 'bereit', at: Date.now() });
+            baueBox();
+        }, Number(verzoegerung) || 350);
+    }
+
+    function istHorizonKlappkopf(element) {
+        if (!element || !element.closest) return false;
+        if (element.closest('#haa-box')) return false;
+        return !!element.closest(
+            '.BldContainerHeadBox, .ResContainerHeadBox, '
+            + '.BldAccordionHead, .ResAccordionHead, '
+            + '[class*="AccordionHead"], [class*="ContainerHeadBox"]'
+        );
+    }
+
+    function installiereAutomatischenSeitenscan() {
+        if (document.documentElement.dataset.hasaSeitenscan === '1') return;
+        document.documentElement.dataset.hasaSeitenscan = '1';
+
+        document.addEventListener('click', function (event) {
+            if (!istHorizonKlappkopf(event.target)) return;
+
+            // Horizon klappt den Inhalt erst nach dem Klick auf. Zwei kurze
+            // Nachscans erfassen sowohl sofort vorhandene als auch verzögert
+            // eingesetzte Zeilen, ohne andere Horizon-Seiten abzurufen.
+            planeTechTreeSeitenscan(250);
+            setTimeout(function () { planeTechTreeSeitenscan(150); }, 650);
+        }, true);
+    }
+
+    function istAscensionSeite() {
+        return document.querySelector('.AscAccCategory') !== null;
+    }
+
+    function starteSicher() {
+        if (HAA_START_GELAUFEN) {
+            return;
+        }
+        HAA_START_GELAUFEN = true;
+        migriereAlteForschungsUeberwachung();
+
+        let versuche = 0;
+        const timer = setInterval(function () {
+            versuche++;
+            if (document.body || versuche >= 8) {
+                baueBox();
+                clearInterval(timer);
+            }
+        }, 400);
+    }
+
+    installiereAutomatischenSeitenscan();
+    installiereAudioFreigabe();
+    window.addEventListener('load', starteSicher);
+    setTimeout(starteSicher, 1000);
+
+    setInterval(aktivierePlanlistenKlappung, 700);
+    setInterval(aktivierePlanStatusSticky, 700);
+})();
+
+/* HASA 1.0.3c STAN-Ziel-Explorer ohne Fremdrassen:
+   - Arbeitsbasis ausschließlich HASA 1.0.2c Auto-Seitenscan
+   - STAN-Import ausschließlich nach bewusstem Benutzerklick; lokale Speicherung
+   - Kategorien und Zielauswahl für Gebäude, Forschungen, Schiffe und Verteidigung
+   - gewähltes Ziel und Navigationszustand werden lokal gespeichert
+   - TechTree-Plan wird für das gewählte Ziel geladen
+   - Rekursion berücksichtigt die vom übergeordneten Ziel verlangte Stufe
+   - rotes/grünes Statuslämpchen beim sichtbaren Horizon-Seitenscan
+   - Hauptalarm auf einen einzelnen kurzen Ton reduziert
+   - keine Horizon-Seiten werden im Hintergrund abgerufen
+*/
