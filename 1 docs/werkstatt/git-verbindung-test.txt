@@ -1,0 +1,9 @@
+HASA – Git-Verbindungstest
+
+Wenn diese Datei nach ..pullhasa.bat unter
+C:\Hasa\1 docs\werkstatt\
+liegt, funktioniert der neue Arbeitsweg:
+
+ChatGPT -> GitHub -> git pull -> Kurt
+
+Erster Test: 17.08.2026
