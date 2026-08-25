@@ -1,0 +1,134 @@
+name: Build HASA 1.1 final
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/build-hasa-1.1-final.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build HASA 1.1
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          src = Path('2 src/current/hasa_1.0.3l_ascension-reset-solartechnik.user.js.txt')
+          s = src.read_text(encoding='utf-8')
+
+          s = s.replace('hasa 1.0.3l ascension-reset + solartechnik-fix - horizon assistant', 'hasa 1.1 forschungsmodul komplett - horizon assistant')
+          s = s.replace('// @version      1.0.3l', '// @version      1.1')
+          s = s.replace('Version : 1.0.3l', 'Version : 1.1')
+          s = s.replace("const HASA_VERSION = '1.0.3l – Ascension-Reset + Solarenergietechnik-Fix';", "const HASA_VERSION = '1.1 – Forschungsmodul komplett';")
+          s = re.sub(r"const HASA_BUILD_LABEL = '[^']*';", "const HASA_BUILD_LABEL = '1.1-forschungsmodul-komplett-2026-08-25';", s, count=1)
+          s = s.replace(' Status  : Planer-Neustart – Horizon-Iststand bei jedem Forschungsseiten-Scan', ' Status  : Forschungsmodul – allgemeine Typ- und Iststandsauswertung')
+          s = s.replace(' Build   : 2026-08-06', ' Build   : 2026-08-25', 1)
+          s = s.replace(' Änderungen:\n', ' Änderungen:\n - 1.1: Forschungsmodul als allgemeiner Mechanismus abgeschlossen\n - STAN-XML ist für bekannte Objekt-IDs die maßgebliche Typquelle\n - vor „Unbekannt“ wird immer der lokale STAN-Bestand geprüft\n - Logistik und weitere nicht namensbasierte Forschungen werden dadurch korrekt eingeordnet\n - Forschungs-Iststand wird vollständig aus der sichtbaren Horizon-Forschungsseite neu aufgebaut\n - nach Forschungsabschluss/F5/erneutem Öffnen wird der Soll/Ist-Vergleich ohne Sonderfall aktualisiert\n - Ascension-Reset aus 1.0.3l bleibt erhalten\n - HASA passt seine Breite an den verfügbaren rechten Bildschirmbereich an\n - auf kleinen Displays wird HASA horizontal scrollbar statt Horizon zu überdecken\n', 1)
+
+          marker = "    function ermittleTechTreeTypAusIdUndName(id, name) {\n"
+          helper = """    function ermittleTechTreeTypAusStan(id, name) {
+              const daten = laden(STORAGE_STAN_STAMMDATEN, null);
+              if (!daten || !Array.isArray(daten.objects)) return 'unknown';
+              const suchId = String(id || '').trim().toUpperCase();
+              const suchName = normalisiereTechTreeName(name);
+              let treffer = null;
+              if (suchId) {
+                  treffer = daten.objects.find(function (o) {
+                      return String(o && o.id || '').trim().toUpperCase() === suchId;
+                  }) || null;
+              }
+              if (!treffer && suchName) {
+                  const kandidaten = daten.objects.filter(function (o) {
+                      return normalisiereTechTreeName(o && o.id) === suchName || normalisiereTechTreeName(o && o.name) === suchName;
+                  });
+                  if (kandidaten.length === 1) treffer = kandidaten[0];
+              }
+              const typ = treffer && String(treffer.type || '').toLowerCase();
+              return ['building', 'research', 'ship', 'defense'].includes(typ) ? typ : 'unknown';
+          }
+
+          """
+          if marker not in s:
+              raise SystemExit('Typfunktion nicht gefunden')
+          s = s.replace(marker, helper + marker, 1)
+
+          s, n = re.subn(
+              r"(\s*const reqName = normalisiereTechTreeText\(link\.textContent\) \|\| id;\n)\s*let typ = ermittleTechTreeTypAusIdUndName\(id, reqName\);\n\s*if \(typ === 'unknown'\) typ = ermittleTechTreeTypAusKontext\(link\);",
+              r"\1            let typ = ermittleTechTreeTypAusStan(id, reqName);\n            if (typ === 'unknown') typ = ermittleTechTreeTypAusIdUndName(id, reqName);\n            if (typ === 'unknown') typ = ermittleTechTreeTypAusKontext(link);",
+              s, count=1)
+          if n != 1:
+              raise SystemExit('Parser-Typblock nicht gefunden')
+
+          s, n = re.subn(
+              r"direkt\.forEach\(function \(req\) \{\s*const rid = String\(req && req\.id \|\| ''\)\.toUpperCase\(\);\s*if \(HASA_SICHERE_FORSCHUNGS_IDS\.has\(rid\)\) \{\s*req\.type = 'research';\s*req\.typ = 'research';\s*\}\s*\}\);",
+              """direkt.forEach(function (req) {
+              const rid = String(req && req.id || '').toUpperCase();
+              const stanTyp = ermittleTechTreeTypAusStan(rid, req && req.name);
+              if (stanTyp !== 'unknown') {
+                  req.type = stanTyp;
+                  req.typ = stanTyp;
+              } else if (HASA_SICHERE_FORSCHUNGS_IDS.has(rid)) {
+                  req.type = 'research';
+                  req.typ = 'research';
+              } else if (!req.type || req.type === 'unknown') {
+                  req.type = ermittleTechTreeTypAusIdUndName(rid, req && req.name);
+                  req.typ = req.type;
+              }
+          });""",
+              s, count=1)
+          if n != 1:
+              raise SystemExit('Direktklassifizierung nicht gefunden')
+
+          s, n = re.subn(
+              r"\s*// HASA 0\.5\.1:\s*// Box breiter, damit die rechte I-Spalte nicht abgeschnitten wird\.\s*box\.style\.minWidth = '380px';\s*box\.style\.maxWidth = '760px';\s*box\.style\.maxHeight = 'calc\(100vh - 16px\)';\s*box\.style\.overflow = 'hidden';",
+              """
+          // HASA 1.1: kleine Displays behalten die normale Schriftgröße.
+          // Bei Platzmangel wird innerhalb von HASA horizontal gescrollt.
+          box.style.minWidth = '0';
+          box.style.width = '760px';
+          box.style.maxWidth = 'calc(100vw - 24px)';
+          box.style.maxHeight = 'calc(100vh - 16px)';
+          box.style.overflowY = 'hidden';
+          box.style.overflowX = 'auto';""",
+              s, count=1)
+          if n != 1:
+              raise SystemExit('Box-Breitenblock nicht gefunden')
+
+          s, n = re.subn(
+              r"\s*positioniereBox\(box\);\s*document\.body\.appendChild\(box\);\s*aktiviereHasaDrag\(box\);\s*return box;",
+              """
+          document.body.appendChild(box);
+          const basisLinks = ermittleBoxLinks(null);
+          const verfuegbar = Math.max(220, window.innerWidth - basisLinks - HASA_POSITION.RAND_RECHTS_MIN);
+          box.style.width = Math.min(760, verfuegbar) + 'px';
+          box.style.maxWidth = verfuegbar + 'px';
+          positioniereBox(box);
+          aktiviereHasaDrag(box);
+          return box;""",
+              s, count=1)
+          if n != 1:
+              raise SystemExit('Box-Appendblock nicht gefunden')
+
+          archive = Path('2 src/archive') / src.name
+          archive.parent.mkdir(parents=True, exist_ok=True)
+          src.replace(archive)
+          Path('2 src/current/hasa_1.1_forschungsmodul-komplett.user.js.txt').write_text(s, encoding='utf-8')
+
+      - name: Syntax check
+        run: |
+          cp '2 src/current/hasa_1.1_forschungsmodul-komplett.user.js.txt' /tmp/hasa-1.1.js
+          node --check /tmp/hasa-1.1.js
+      - name: Commit HASA 1.1
+        run: |
+          git config user.name 'ChatGPT HASA'
+          git config user.email 'actions@users.noreply.github.com'
+          git add '2 src/current' '2 src/archive'
+          git commit -m 'HASA 1.1 Forschungsmodul komplett'
+          git push
