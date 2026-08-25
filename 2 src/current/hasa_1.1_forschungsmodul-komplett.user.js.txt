@@ -3978,14 +3978,12 @@ return box;
     setInterval(aktivierePlanStatusSticky, 700);
 })();
 
-/* HASA 1.0.3c STAN-Ziel-Explorer ohne Fremdrassen:
-   - Arbeitsbasis ausschließlich HASA 1.0.2c Auto-Seitenscan
-   - STAN-Import ausschließlich nach bewusstem Benutzerklick; lokale Speicherung
-   - Kategorien und Zielauswahl für Gebäude, Forschungen, Schiffe und Verteidigung
-   - gewähltes Ziel und Navigationszustand werden lokal gespeichert
-   - TechTree-Plan wird für das gewählte Ziel geladen
-   - Rekursion berücksichtigt die vom übergeordneten Ziel verlangte Stufe
-   - rotes/grünes Statuslämpchen beim sichtbaren Horizon-Seitenscan
-   - Hauptalarm auf einen einzelnen kurzen Ton reduziert
+/* HASA 1.1 – Forschungsmodul komplett
+   - STAN-Daten als maßgebliche Quelle für TechTree-Typen
+   - allgemeine Erkennung von Gebäude, Forschung, Schiff und Verteidigung
+   - Forschungs-Iststand wird aus der sichtbaren Horizon-Seite übernommen
+   - Ascension-Reset verhindert veraltete Forschungs- und Gebäudestände
+   - TechTree-Soll/Ist-Vergleich wird nach erneutem Seitenscan aktualisiert
+   - responsive HASA-Breite für kleinere Displays
    - keine Horizon-Seiten werden im Hintergrund abgerufen
 */
