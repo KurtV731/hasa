@@ -1,0 +1,129 @@
+name: Build HASA 1.1
+
+on:
+  push:
+    paths:
+      - '.github/workflows/build-hasa-1.1.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build HASA 1.1 from 1.0.3l
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, shutil
+
+          src = Path('2 src/current/hasa_1.0.3l_ascension-reset-solartechnik.user.js.txt')
+          if not src.exists():
+              raise SystemExit(f'Basisdatei fehlt: {src}')
+          text = src.read_text(encoding='utf-8')
+
+          # Version / Kopf
+          text = text.replace('hasa 1.0.3l ascension-reset + solartechnik-fix - horizon assistant',
+                              'hasa 1.1 forschungsmodul komplett - horizon assistant')
+          text = text.replace('// @version      1.0.3l', '// @version      1.1')
+          text = text.replace('Version : 1.0.3l', 'Version : 1.1')
+          text = text.replace("const HASA_VERSION = '1.0.3l – Ascension-Reset + Solarenergietechnik-Fix';",
+                              "const HASA_VERSION = '1.1 – Forschungsmodul komplett';")
+          text = re.sub(r"const HASA_BUILD_LABEL = '[^']*';",
+                        "const HASA_BUILD_LABEL = '1.1-forschungsmodul-komplett-2026-08-25';", text, count=1)
+          text = text.replace(' Status  : Planer-Neustart – Horizon-Iststand bei jedem Forschungsseiten-Scan',
+                              ' Status  : Forschungsmodul – allgemeine Typ- und Iststandsauswertung')
+          text = text.replace(' Build   : 2026-08-06', ' Build   : 2026-08-25', 1)
+
+          changelog = ''' Änderungen:\n - 1.1: Forschungsmodul als allgemeiner Mechanismus abgeschlossen\n - STAN-XML ist für bekannte Objekt-IDs die maßgebliche Typquelle\n - vor „Unbekannt“ wird immer der lokale STAN-Bestand geprüft\n - Logistik und weitere nicht namensbasierte Forschungen werden dadurch korrekt eingeordnet\n - Forschungs-Iststand wird weiterhin vollständig aus der sichtbaren Horizon-Forschungsseite neu aufgebaut\n - nach Forschungsabschluss/F5/erneutem Öffnen wird der Soll/Ist-Vergleich ohne Sonderfall aktualisiert\n - Ascension-Reset aus 1.0.3l bleibt erhalten\n - HASA passt seine Breite an den verfügbaren rechten Bildschirmbereich an\n - auf kleinen Displays wird HASA horizontal scrollbar, statt wichtige Horizon-Inhalte zu überdecken\n'''
+          text = text.replace(' Änderungen:\n', changelog, 1)
+
+          # XML/STAN als autoritative Typquelle.
+          marker = '''    function ermittleTechTreeTypAusIdUndName(id, name) {\n'''
+          if marker not in text:
+              raise SystemExit('Typfunktion nicht gefunden')
+          helper = r'''    function ermittleTechTreeTypAusStan(id, name) {
+        const daten = laden(STORAGE_STAN_STAMMDATEN, null);
+        if (!daten || !Array.isArray(daten.objects)) return 'unknown';
+
+        const suchId = String(id || '').trim().toUpperCase();
+        const suchName = normalisiereTechTreeName(name);
+        let treffer = null;
+
+        if (suchId) {
+            treffer = daten.objects.find(function (o) {
+                return String(o && o.id || '').trim().toUpperCase() === suchId;
+            }) || null;
+        }
+
+        if (!treffer && suchName) {
+            const kandidaten = daten.objects.filter(function (o) {
+                const oid = normalisiereTechTreeName(o && o.id);
+                const oname = normalisiereTechTreeName(o && o.name);
+                return oid === suchName || oname === suchName;
+            });
+            if (kandidaten.length === 1) treffer = kandidaten[0];
+        }
+
+        const typ = treffer && String(treffer.type || '').toLowerCase();
+        return ['building', 'research', 'ship', 'defense'].includes(typ) ? typ : 'unknown';
+    }
+
+'''
+          text = text.replace(marker, helper + marker, 1)
+
+          old_parse = '''            const reqName = normalisiereTechTreeText(link.textContent) || id;\n            let typ = ermittleTechTreeTypAusIdUndName(id, reqName);\n            if (typ === 'unknown') typ = ermittleTechTreeTypAusKontext(link);\n'''
+          new_parse = '''            const reqName = normalisiereTechTreeText(link.textContent) || id;\n            // 1.1: STAN-XML ist bei bekannter ID die erste und maßgebliche Typquelle.\n            let typ = ermittleTechTreeTypAusStan(id, reqName);\n            if (typ === 'unknown') typ = ermittleTechTreeTypAusIdUndName(id, reqName);\n            if (typ === 'unknown') typ = ermittleTechTreeTypAusKontext(link);\n'''
+          if old_parse not in text:
+              raise SystemExit('Parser-Typblock nicht gefunden')
+          text = text.replace(old_parse, new_parse, 1)
+
+          # Auch bereits gecachte TechTree-Anforderungen beim Anzeigen neu gegen STAN klassifizieren.
+          old_direct = '''        direkt.forEach(function (req) {\n            const rid = String(req && req.id || '').toUpperCase();\n            if (HASA_SICHERE_FORSCHUNGS_IDS.has(rid)) {\n                req.type = 'research';\n                req.typ = 'research';\n            }\n        });\n'''
+          new_direct = '''        direkt.forEach(function (req) {\n            const rid = String(req && req.id || '').toUpperCase();\n            const stanTyp = ermittleTechTreeTypAusStan(rid, req && req.name);\n            if (stanTyp !== 'unknown') {\n                req.type = stanTyp;\n                req.typ = stanTyp;\n            } else if (HASA_SICHERE_FORSCHUNGS_IDS.has(rid)) {\n                req.type = 'research';\n                req.typ = 'research';\n            } else if (!req.type || req.type === 'unknown') {\n                req.type = ermittleTechTreeTypAusIdUndName(rid, req && req.name);\n                req.typ = req.type;\n            }\n        });\n'''
+          if old_direct not in text:
+              raise SystemExit('Direktklassifizierung nicht gefunden')
+          text = text.replace(old_direct, new_direct, 1)
+
+          # Kleine Displays: Box darf nicht in den Horizon-Inhaltsbereich wachsen.
+          old_box = '''        // HASA 0.5.1:\n        // Box breiter, damit die rechte I-Spalte nicht abgeschnitten wird.\n        box.style.minWidth = '380px';\n        box.style.maxWidth = '760px';\n        box.style.maxHeight = 'calc(100vh - 16px)';\n        box.style.overflow = 'hidden';\n'''
+          new_box = '''        // HASA 1.1: Auf kleinen Displays bleibt die Box im verfügbaren rechten Bereich.\n        // Die Schriftgröße bleibt unangetastet; bei Platzmangel scrollt HASA horizontal.\n        box.style.minWidth = '0';\n        box.style.width = '760px';\n        box.style.maxWidth = 'calc(100vw - 24px)';\n        box.style.maxHeight = 'calc(100vh - 16px)';\n        box.style.overflowY = 'hidden';\n        box.style.overflowX = 'auto';\n'''
+          if old_box not in text:
+              raise SystemExit('Box-Breitenblock nicht gefunden')
+          text = text.replace(old_box, new_box, 1)
+
+          # Nach dem Einfügen ins DOM die tatsächlich rechts verfügbare Breite begrenzen.
+          old_append = '''        positioniereBox(box);\n        document.body.appendChild(box);\n        aktiviereHasaDrag(box);\n        return box;\n'''
+          new_append = '''        document.body.appendChild(box);\n        const basisLinks = ermittleBoxLinks(null);\n        const verfuegbar = Math.max(220, window.innerWidth - basisLinks - HASA_POSITION.RAND_RECHTS_MIN);\n        box.style.width = Math.min(760, verfuegbar) + 'px';\n        box.style.maxWidth = verfuegbar + 'px';\n        positioniereBox(box);\n        aktiviereHasaDrag(box);\n        return box;\n'''
+          if old_append not in text:
+              raise SystemExit('Box-Appendblock nicht gefunden')
+          text = text.replace(old_append, new_append, 1)
+
+          # Archiv + neue Current-Datei
+          archive = Path('2 src/archive/hasa_1.0.3l_ascension-reset-solartechnik.user.js.txt')
+          archive.parent.mkdir(parents=True, exist_ok=True)
+          shutil.copy2(src, archive)
+
+          dst = Path('2 src/current/hasa_1.1_forschungsmodul-komplett.user.js.txt')
+          dst.write_text(text, encoding='utf-8')
+          src.unlink()
+          PY
+
+      - name: Syntax check
+        shell: bash
+        run: |
+          cp '2 src/current/hasa_1.1_forschungsmodul-komplett.user.js.txt' /tmp/hasa_1_1.js
+          node --check /tmp/hasa_1_1.js
+
+      - name: Commit HASA 1.1
+        shell: bash
+        run: |
+          git config user.name 'ChatGPT HASA Builder'
+          git config user.email 'hasa-builder@users.noreply.github.com'
+          git add '2 src/current' '2 src/archive'
+          git commit -m 'HASA 1.1 Forschungsmodul komplett' || exit 0
+          git push
