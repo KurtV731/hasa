@@ -1,0 +1,165 @@
+name: Polish HASA 1.1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/polish-hasa-1.1.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  polish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Polish HASA 1.1
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          p = Path('2 src/current/hasa_1.1_forschungsmodul-komplett.user.js.txt')
+          s = p.read_text(encoding='utf-8')
+
+          # Kennzeichnung dieser privaten Testfassung.
+          s = s.replace("const HASA_VERSION = '1.1 – Forschungsmodul komplett';",
+                        "const HASA_VERSION = '1.1 – Forschungsmodul komplett · poliert';")
+          s = re.sub(r"const HASA_BUILD_LABEL = '[^']*';",
+                     "const HASA_BUILD_LABEL = '1.1-poliert-2026-08-26';", s, count=1)
+
+          # Alte Werkstattbegriffe aus sichtbaren Meldungen entfernen.
+          for a, b in [
+              ('PLANER-NEUSTART: DIREKTE MINDESTANFORDERUNGEN', 'DIREKTE MINDESTANFORDERUNGEN'),
+              ('=== ENDE TESTSTUFE 1 – KEINE TIEFENSUCHE ===', '=== ENDE DIREKTE MINDESTANFORDERUNGEN ==='),
+              ('Teststufe 1 ohne Tiefensuche.', ''),
+              ('Teststufe 1 ohne Tiefensuche', ''),
+              ('Planer-Debug: direkte Mindestliste', 'Diagnose'),
+              ('Parserausgabe prüfen.', 'Datenquelle prüfen.'),
+          ]:
+              s = s.replace(a, b)
+
+          # Doppeltes „Aktuelles Ziel“ entfernen; der Button bleibt als kompakte Werkzeugzeile.
+          old = '''        html += '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><div style="color:#FFD27C;font-weight:bold;font-size:15px;">Aktuelles Ziel: ' + esc(auswahl.name) + ' (' + esc(zielId) + ')</div><button id="haa-techtree-import" style="font-size:11px;">Mindestliste lesen</button></div>';'''
+          new = '''        html += '<div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;"><button id="haa-techtree-import" style="font-size:11px;">Mindestliste lesen</button></div>';'''
+          if old not in s:
+              raise SystemExit('Doppelte Zielzeile nicht gefunden')
+          s = s.replace(old, new, 1)
+
+          # Der Kopf der Forschungsplanung bleibt stehen; nur der Plan darunter scrollt.
+          old = "        let html = '<div style=\"margin-top:2px;\">';"
+          new = "        let html = '<div class=\"haa-plan-kopf\" style=\"margin-top:2px;position:sticky;top:0;z-index:30;background:#191612;padding-bottom:5px;\">';"
+          if old not in s:
+              raise SystemExit('STAN-Kopfstart nicht gefunden')
+          s = s.replace(old, new, 1)
+
+          # Anforderungen werden zu direkt anklickbaren Zwischenzielen.
+          old = """                    html += '<div style=\"display:grid;grid-template-columns:18px 1fr auto;gap:4px;padding:2px 0;color:' + (req.erledigt ? '#888' : '#fff') + ';\"><span>' + (req.erledigt ? '✓' : '➜') + '</span><span>' + esc(req.name) + ' <span style=\"color:#777;font-size:10px;\">[' + esc(req.id) + ']</span></span><b style=\"text-align:right;\">benötigt ' + esc(req.level) + (req.aktuell !== null ? '<br><span style=\"font-weight:normal;color:#aaa;\">vorhanden ' + esc(req.aktuell) + '</span>' : '') + '</b></div>';"""
+          new = """                    html += '<div style=\"display:grid;grid-template-columns:18px minmax(180px,1fr) auto;gap:4px;padding:2px 0;color:' + (req.erledigt ? '#888' : '#fff') + ';\"><span>' + (req.erledigt ? '✓' : '➜') + '</span><button type=\"button\" class=\"haa-req-ziel\" data-id=\"' + esc(req.id) + '\" data-name=\"' + esc(req.name) + '\" data-type=\"' + esc(req.type || 'unknown') + '\" data-level=\"' + esc(req.level) + '\" title=\"Als Zwischenziel übernehmen\" style=\"text-align:left;background:transparent;border:0;padding:0;color:inherit;cursor:pointer;text-decoration:underline;text-decoration-style:dotted;\">' + esc(req.name) + ' <span style=\"color:#777;font-size:10px;\">[' + esc(req.id) + ']</span></button><b style=\"text-align:right;white-space:nowrap;\">benötigt ' + esc(req.level) + (req.aktuell !== null ? '<br><span style=\"font-weight:normal;color:#aaa;\">vorhanden ' + esc(req.aktuell) + '</span>' : '') + '</b></div>';"""
+          if old not in s:
+              raise SystemExit('Anforderungszeile nicht gefunden')
+          s = s.replace(old, new, 1)
+
+          # Klick auf eine Anforderung = neues Ziel mit genau der benötigten Stufe.
+          marker = """        const debugKopieren = document.getElementById('haa-techtree-debug-kopieren');"""
+          insert = r'''        Array.from(document.querySelectorAll('.haa-req-ziel')).forEach(function (zielBtn) {
+            zielBtn.onclick = function () {
+                const id = String(zielBtn.dataset.id || '').trim().toUpperCase();
+                const name = String(zielBtn.dataset.name || id).trim();
+                const type = String(zielBtn.dataset.type || 'unknown');
+                const level = Math.max(1, Number(zielBtn.dataset.level) || 1);
+                if (!id) return;
+                const neu = { id: id, name: name, type: type, level: level, selectedAt: Date.now(), quelle: 'anforderungsliste' };
+                speichern(STORAGE_STAN_AUSWAHL, neu);
+                speichern(STORAGE_STAN_NAVIGATION, { category: type, targetId: id, at: Date.now() });
+                speichern(STORAGE_STAN_AUSWAHL_OFFEN, '0');
+                importiereTechTreeZiel(id, level, true).catch(function () {});
+                baueBox();
+            };
+        });
+
+'''
+          if marker not in s:
+              raise SystemExit('Button-Verbindungsmarker nicht gefunden')
+          s = s.replace(marker, insert + marker, 1)
+
+          # Deutliche rote Scrollpfeile für den Forschungsplan.
+          marker = """    function verbindeHasaUiButtons(neuAufbauen) {"""
+          helper = r'''    function installierePlanScrollHinweise(inhalt) {
+        if (!inhalt || inhalt.dataset.hasaScrollHinweise === '1') return;
+        inhalt.dataset.hasaScrollHinweise = '1';
+        inhalt.style.position = 'relative';
+
+        const host = document.createElement('div');
+        host.className = 'haa-scroll-hinweise';
+        host.style.cssText = 'position:sticky;top:2px;right:2px;z-index:50;pointer-events:none;height:0;overflow:visible;';
+        host.innerHTML = ''
+            + '<button data-r="up" title="Nach oben scrollen">⬆</button>'
+            + '<button data-r="down" title="Nach unten scrollen">⬇</button>'
+            + '<button data-r="left" title="Nach links scrollen">⬅</button>'
+            + '<button data-r="right" title="Nach rechts scrollen">➡</button>';
+        inhalt.prepend(host);
+
+        const buttons = {};
+        Array.from(host.querySelectorAll('button')).forEach(function (b) {
+            buttons[b.dataset.r] = b;
+            b.style.cssText = 'pointer-events:auto;display:none;margin:0 2px;padding:2px 7px;border:2px solid #ff3030;border-radius:4px;background:#650000;color:#fff;font-weight:bold;font-size:18px;line-height:1;cursor:pointer;box-shadow:0 0 5px #000;';
+        });
+
+        function update() {
+            const eps = 3;
+            const oben = inhalt.scrollTop > eps;
+            const unten = inhalt.scrollTop + inhalt.clientHeight < inhalt.scrollHeight - eps;
+            const links = inhalt.scrollLeft > eps;
+            const rechts = inhalt.scrollLeft + inhalt.clientWidth < inhalt.scrollWidth - eps;
+            buttons.up.style.display = oben ? 'inline-block' : 'none';
+            buttons.down.style.display = unten ? 'inline-block' : 'none';
+            buttons.left.style.display = links ? 'inline-block' : 'none';
+            buttons.right.style.display = rechts ? 'inline-block' : 'none';
+        }
+
+        buttons.up.onclick = function () { inhalt.scrollBy({ top: -Math.max(120, inhalt.clientHeight * 0.6), behavior: 'smooth' }); };
+        buttons.down.onclick = function () { inhalt.scrollBy({ top: Math.max(120, inhalt.clientHeight * 0.6), behavior: 'smooth' }); };
+        buttons.left.onclick = function () { inhalt.scrollBy({ left: -Math.max(160, inhalt.clientWidth * 0.6), behavior: 'smooth' }); };
+        buttons.right.onclick = function () { inhalt.scrollBy({ left: Math.max(160, inhalt.clientWidth * 0.6), behavior: 'smooth' }); };
+        inhalt.addEventListener('scroll', update, { passive: true });
+        window.addEventListener('resize', update, { passive: true });
+        setTimeout(update, 0);
+        setTimeout(update, 250);
+    }
+
+'''
+          if marker not in s:
+              raise SystemExit('UI-Verbindungsfunktion nicht gefunden')
+          s = s.replace(marker, helper + marker, 1)
+
+          # Scrollindikatoren nur im Bereich Forschungsplanung aktivieren.
+          old = """            inhalt.addEventListener('scroll', function () {"""
+          new = """            if (bereich === 'techtree') installierePlanScrollHinweise(inhalt);
+            inhalt.addEventListener('scroll', function () {"""
+          if old not in s:
+              raise SystemExit('Scroll-Listener nicht gefunden')
+          s = s.replace(old, new, 1)
+
+          # Abschlusskommentar auf 1.1 aktualisieren.
+          s = re.sub(r"/\* HASA 1\.0\.3c STAN-Ziel-Explorer ohne Fremdrassen:.*?\*/\s*$",
+                     """/* HASA 1.1 – Forschungsmodul komplett · poliert\n   - STAN-Daten als maßgebliche Typquelle\n   - allgemeiner Forschungs-Iststand mit Ascension-Reset\n   - direkte Soll/Ist-Auswertung im Forschungsplan\n   - Anforderungen als anklickbare Zwischenziele\n   - fester Planungskopf und deutliche Scrollhinweise\n   - keine Horizon-Seiten werden im Hintergrund abgerufen\n*/\n""", s, flags=re.S)
+
+          p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: Syntax check
+        run: |
+          cp '2 src/current/hasa_1.1_forschungsmodul-komplett.user.js.txt' /tmp/hasa-1.1-poliert.js
+          node --check /tmp/hasa-1.1-poliert.js
+
+      - name: Commit polished 1.1
+        run: |
+          git config user.name 'ChatGPT HASA'
+          git config user.email 'actions@users.noreply.github.com'
+          git add '2 src/current/hasa_1.1_forschungsmodul-komplett.user.js.txt'
+          git commit -m 'HASA 1.1 poliert' || exit 0
+          git push
