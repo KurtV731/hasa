@@ -16,78 +16,68 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Fix general building requirement parsing
-        shell: bash
+        shell: python
         run: |
-          python3 - <<'PY'
           from pathlib import Path
 
           p = Path('2 src/current/hasa_1.1_forschungsmodul-komplett.user.js.txt')
           s = p.read_text(encoding='utf-8')
 
-          old = '''            if (istTechTreeReverseKontext(link)) return;
-            const marker = ermittleTechTreeStufenmarkerFuerLink(link);
-            // Kein Marker oder „ab Stufe“ bedeutet: nicht Teil des Vorwärtspfads.
-            if (!marker || marker.reverse || !Number.isFinite(marker.level)) return;
-            const level = ermittleStufeNebenLink(link);
-            if (!Number.isFinite(level)) return;
-            const appliesToLevel = marker.level;
-'''
+          old = """            if (istTechTreeReverseKontext(link)) return;
+                      const marker = ermittleTechTreeStufenmarkerFuerLink(link);
+                      // Kein Marker oder „ab Stufe“ bedeutet: nicht Teil des Vorwärtspfads.
+                      if (!marker || marker.reverse || !Number.isFinite(marker.level)) return;
+                      const level = ermittleStufeNebenLink(link);
+                      if (!Number.isFinite(level)) return;
+                      const appliesToLevel = marker.level;
+          """
 
-          new = '''            if (istTechTreeReverseKontext(link)) return;
-            const marker = ermittleTechTreeStufenmarkerFuerLink(link);
+          new = """            if (istTechTreeReverseKontext(link)) return;
+                      const marker = ermittleTechTreeStufenmarkerFuerLink(link);
 
-            // 1.1 poliert – allgemeiner Gebäude-Fix:
-            // Der Community-TechTree beschriftet die BASIS-Voraussetzungen vieler
-            // Gebäude nicht ausdrücklich mit „Stufe 1“. Zusätzliche Anforderungen
-            // höherer Stufen tragen dagegen einen Stufenmarker (z. B. Stufe 19).
-            //
-            // Bisher wurden markerlose Basiszeilen komplett verworfen. Dadurch
-            // funktionierten bereits oft getestete Ziele wie SHIPYARD, während viele
-            // spätere Gebäude scheinbar „keine Mindestanforderungen“ hatten.
-            //
-            // Regel:
-            //   - „ab Stufe N“ bleibt Reverse-Kontext und wird verworfen.
-            //   - explizites „Stufe N“ gilt ab genau dieser Objektstufe.
-            //   - eine echte Tabellen-Voraussetzungszeile OHNE Stufenmarker ist die
-            //     Grundvoraussetzung für Stufe 1.
-            if (marker && marker.reverse) return;
-            const level = ermittleStufeNebenLink(link);
-            if (!Number.isFinite(level)) return;
+                      // 1.1 poliert – allgemeiner Gebäude-Fix:
+                      // Der Community-TechTree beschriftet die BASIS-Voraussetzungen vieler
+                      // Gebäude nicht ausdrücklich mit „Stufe 1“. Zusätzliche Anforderungen
+                      // höherer Stufen tragen dagegen einen Stufenmarker (z. B. Stufe 19).
+                      // Markerlose echte Tabellenzeilen sind daher Grundvoraussetzungen für Stufe 1.
+                      if (marker && marker.reverse) return;
+                      const level = ermittleStufeNebenLink(link);
+                      if (!Number.isFinite(level)) return;
 
-            let appliesToLevel = null;
-            if (marker && Number.isFinite(marker.level)) {
-                appliesToLevel = marker.level;
-            } else {
-                const zeile = link.closest('tr');
-                if (!zeile) return;
-                appliesToLevel = 1;
-            }
-'''
+                      let appliesToLevel = null;
+                      if (marker && Number.isFinite(marker.level)) {
+                          appliesToLevel = marker.level;
+                      } else {
+                          const zeile = link.closest('tr');
+                          if (!zeile) return;
+                          appliesToLevel = 1;
+                      }
+          """
 
           if old not in s:
               raise SystemExit('Parserblock für Stufenmarker nicht gefunden')
           s = s.replace(old, new, 1)
 
-          old = '''            const anforderungen = sammleTechTreeAnforderungen(graph, id, grenze);
-            if (!anforderungen.length) {
-                throw new Error('Keine direkten Mindestanforderungen erkannt – Datenquelle prüfen.');
-            }
-'''
-          new = '''            const anforderungen = sammleTechTreeAnforderungen(graph, id, grenze);
-            if (!anforderungen.length) {
-                const roh = objekt && Array.isArray(objekt.requirements) ? objekt.requirements : [];
-                if (roh.length) {
-                    speichern(STORAGE_TECHTREE_STATUS, {
-                        state: 'ok',
-                        message: 'Für Zielstufe ' + grenze + ' keine zusätzlichen Mindestanforderungen.',
-                        id: id,
-                        at: Date.now()
-                    });
-                    return objekt;
-                }
-                throw new Error('Keine Mindestanforderungen aus dem TechTree gelesen – TechTree-Seite prüfen.');
-            }
-'''
+          old = """            const anforderungen = sammleTechTreeAnforderungen(graph, id, grenze);
+                      if (!anforderungen.length) {
+                          throw new Error('Keine direkten Mindestanforderungen erkannt – Datenquelle prüfen.');
+                      }
+          """
+          new = """            const anforderungen = sammleTechTreeAnforderungen(graph, id, grenze);
+                      if (!anforderungen.length) {
+                          const roh = objekt && Array.isArray(objekt.requirements) ? objekt.requirements : [];
+                          if (roh.length) {
+                              speichern(STORAGE_TECHTREE_STATUS, {
+                                  state: 'ok',
+                                  message: 'Für Zielstufe ' + grenze + ' keine zusätzlichen Mindestanforderungen.',
+                                  id: id,
+                                  at: Date.now()
+                              });
+                              return objekt;
+                          }
+                          throw new Error('Keine Mindestanforderungen aus dem TechTree gelesen – TechTree-Seite prüfen.');
+                      }
+          """
           if old not in s:
               raise SystemExit('Fehlermeldungsblock nicht gefunden')
           s = s.replace(old, new, 1)
@@ -96,7 +86,6 @@ jobs:
                         "const HASA_BUILD_LABEL = '1.1-poliert-gebaeude-parser-2026-08-26';", 1)
 
           p.write_text(s, encoding='utf-8')
-          PY
 
       - name: Syntax check
         run: |
