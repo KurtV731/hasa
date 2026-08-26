@@ -94,7 +94,7 @@
     ]);
 
     const HASA_VERSION = '1.1 – Forschungsmodul komplett · poliert';
-    const HASA_BUILD_LABEL = '1.1-poliert-2026-08-26';
+    const HASA_BUILD_LABEL = '1.1-poliert-gebaeude-parser-2026-08-26';
 
     /*
      * hasa-Positionswerte ab 0.7 Beta
@@ -1311,11 +1311,24 @@ return box;
 
             if (istTechTreeReverseKontext(link)) return;
             const marker = ermittleTechTreeStufenmarkerFuerLink(link);
-            // Kein Marker oder „ab Stufe“ bedeutet: nicht Teil des Vorwärtspfads.
-            if (!marker || marker.reverse || !Number.isFinite(marker.level)) return;
+
+            // 1.1 poliert – allgemeiner Gebäude-Fix:
+            // Der Community-TechTree beschriftet die BASIS-Voraussetzungen vieler
+            // Gebäude nicht ausdrücklich mit „Stufe 1“. Zusätzliche Anforderungen
+            // höherer Stufen tragen dagegen einen Stufenmarker (z. B. Stufe 19).
+            // Markerlose echte Tabellenzeilen sind daher Grundvoraussetzungen für Stufe 1.
+            if (marker && marker.reverse) return;
             const level = ermittleStufeNebenLink(link);
             if (!Number.isFinite(level)) return;
-            const appliesToLevel = marker.level;
+
+            let appliesToLevel = null;
+            if (marker && Number.isFinite(marker.level)) {
+                appliesToLevel = marker.level;
+            } else {
+                const zeile = link.closest('tr');
+                if (!zeile) return;
+                appliesToLevel = 1;
+            }
             const eindeutig = appliesToLevel + ':' + id + ':' + level;
             if (gesehen.has(eindeutig)) return;
 
@@ -1754,7 +1767,17 @@ return box;
 
             const anforderungen = sammleTechTreeAnforderungen(graph, id, grenze);
             if (!anforderungen.length) {
-                throw new Error('Keine direkten Mindestanforderungen erkannt – Datenquelle prüfen.');
+                const roh = objekt && Array.isArray(objekt.requirements) ? objekt.requirements : [];
+                if (roh.length) {
+                    speichern(STORAGE_TECHTREE_STATUS, {
+                        state: 'ok',
+                        message: 'Für Zielstufe ' + grenze + ' keine zusätzlichen Mindestanforderungen.',
+                        id: id,
+                        at: Date.now()
+                    });
+                    return objekt;
+                }
+                throw new Error('Keine Mindestanforderungen aus dem TechTree gelesen – TechTree-Seite prüfen.');
             }
 
             const offen = anforderungen.filter(function (req) {
