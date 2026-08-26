@@ -93,8 +93,8 @@
         'PHYSICS', 'PSYCHOLOGY', 'NUCLEARPHYSICS', 'SOLARENERGYTECH'
     ]);
 
-    const HASA_VERSION = '1.1 – Forschungsmodul komplett';
-    const HASA_BUILD_LABEL = '1.1-forschungsmodul-komplett-2026-08-25';
+    const HASA_VERSION = '1.1 – Forschungsmodul komplett · poliert';
+    const HASA_BUILD_LABEL = '1.1-poliert-2026-08-26';
 
     /*
      * hasa-Positionswerte ab 0.7 Beta
@@ -1674,7 +1674,7 @@ return box;
         const objekt = graph && graph[zielId];
         const grenze = Math.max(1, Number(zielStufe) || 1);
 
-        techTreeDebugZeile(debug, '=== PLANER-NEUSTART: DIREKTE MINDESTANFORDERUNGEN ===');
+        techTreeDebugZeile(debug, '=== DIREKTE MINDESTANFORDERUNGEN ===');
         techTreeDebugZeile(debug, 'Ziel: ' + String(zielId || '?') + ' · Zielstufe: ' + grenze);
 
         if (!objekt) {
@@ -1715,7 +1715,7 @@ return box;
             );
         });
 
-        techTreeDebugZeile(debug, '=== ENDE TESTSTUFE 1 – KEINE TIEFENSUCHE ===');
+        techTreeDebugZeile(debug, '=== ENDE DIREKTE MINDESTANFORDERUNGEN ===');
         speichern(STORAGE_TECHTREE_DEBUG, {
             at: Date.now(),
             zielId: zielId,
@@ -1754,7 +1754,7 @@ return box;
 
             const anforderungen = sammleTechTreeAnforderungen(graph, id, grenze);
             if (!anforderungen.length) {
-                throw new Error('Keine direkten Mindestanforderungen erkannt – Parserausgabe prüfen.');
+                throw new Error('Keine direkten Mindestanforderungen erkannt – Datenquelle prüfen.');
             }
 
             const offen = anforderungen.filter(function (req) {
@@ -1764,7 +1764,7 @@ return box;
             speichern(STORAGE_TECHTREE_STATUS, {
                 state: 'ok',
                 message: anforderungen.length + ' direkte Mindestanforderungen · ' +
-                         offen.length + ' davon offen · Teststufe 1 ohne Tiefensuche.',
+                         offen.length + ' davon offen · ',
                 id: id,
                 at: Date.now()
             });
@@ -1836,7 +1836,7 @@ return box;
         const status = laden(STORAGE_STAN_STATUS, null);
         const auswahl = ladeStanAuswahl();
         const auswahlOffen = !auswahl || laden(STORAGE_STAN_AUSWAHL_OFFEN, '0') === '1';
-        let html = '<div style="margin-top:2px;">';
+        let html = '<div class="haa-plan-kopf" style="margin-top:2px;position:sticky;top:0;z-index:30;background:#191612;padding-bottom:5px;">';
 
         html += '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">';
         html += '<b>Import & Datenbestand</b><button id="haa-stan-import" style="font-size:11px;">' + (daten ? 'XML-Datei aktualisieren' : 'STAN-XML einlesen') + '</button>';
@@ -1919,7 +1919,7 @@ return box;
         let html = baueStanNavigationHtml();
         if (!zielId) return html + '<div style="margin-top:8px;color:#aaa;">Nach dem STAN-Import ein Ziel auswählen.</div>';
         html += '<div style="margin-top:9px;border-top:1px solid #555;padding-top:7px;">';
-        html += '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><div style="color:#FFD27C;font-weight:bold;font-size:15px;">Aktuelles Ziel: ' + esc(auswahl.name) + ' (' + esc(zielId) + ')</div><button id="haa-techtree-import" style="font-size:11px;">Mindestliste lesen</button></div>';
+        html += '<div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;"><button id="haa-techtree-import" style="font-size:11px;">Mindestliste lesen</button></div>';
         if (status) html += '<div style="margin-top:4px;color:' + (status.state === 'error' ? '#FF8080' : status.state === 'ok' ? '#7CFF7C' : '#FFD27C') + ';font-size:12px;">' + esc(status.message || '') + '</div>';
         if (objekt) {
             html += '<label style="display:block;margin-top:5px;font-size:11px;color:#bbb;"><input id="haa-techtree-erledigt" type="checkbox" ' + (erledigteZeigen ? 'checked' : '') + '> vollständige Ansicht (erledigte zeigen)</label>';
@@ -1929,14 +1929,14 @@ return box;
                 if (!gruppe.length) return;
                 html += '<div style="margin-top:7px;color:#FFD27C;font-weight:bold;">' + techTreeTypSymbol(typ) + ' ' + esc(techTreeTypLabel(typ)) + '</div>';
                 gruppe.sort(function (a,b) { return String(a.name).localeCompare(String(b.name),'de'); }).forEach(function (req) {
-                    html += '<div style="display:grid;grid-template-columns:18px 1fr auto;gap:4px;padding:2px 0;color:' + (req.erledigt ? '#888' : '#fff') + ';"><span>' + (req.erledigt ? '✓' : '➜') + '</span><span>' + esc(req.name) + ' <span style="color:#777;font-size:10px;">[' + esc(req.id) + ']</span></span><b style="text-align:right;">benötigt ' + esc(req.level) + (req.aktuell !== null ? '<br><span style="font-weight:normal;color:#aaa;">vorhanden ' + esc(req.aktuell) + '</span>' : '') + '</b></div>';
+                    html += '<div style="display:grid;grid-template-columns:18px minmax(180px,1fr) auto;gap:4px;padding:2px 0;color:' + (req.erledigt ? '#888' : '#fff') + ';"><span>' + (req.erledigt ? '✓' : '➜') + '</span><button type="button" class="haa-req-ziel" data-id="' + esc(req.id) + '" data-name="' + esc(req.name) + '" data-type="' + esc(req.type || 'unknown') + '" data-level="' + esc(req.level) + '" title="Als Zwischenziel übernehmen" style="text-align:left;background:transparent;border:0;padding:0;color:inherit;cursor:pointer;text-decoration:underline;text-decoration-style:dotted;">' + esc(req.name) + ' <span style="color:#777;font-size:10px;">[' + esc(req.id) + ']</span></button><b style="text-align:right;white-space:nowrap;">benötigt ' + esc(req.level) + (req.aktuell !== null ? '<br><span style="font-weight:normal;color:#aaa;">vorhanden ' + esc(req.aktuell) + '</span>' : '') + '</b></div>';
                 });
             });
         }
         const debugDaten = laden(STORAGE_TECHTREE_DEBUG, null);
         if (debugDaten && Array.isArray(debugDaten.lines)) {
             html += '<details style="margin-top:10px;border:1px solid #704f2a;border-radius:4px;background:#130f0b;">';
-            html += '<summary style="cursor:pointer;padding:6px;color:#FFD27C;font-weight:bold;">Planer-Debug: direkte Mindestliste</summary>';
+            html += '<summary style="cursor:pointer;padding:6px;color:#FFD27C;font-weight:bold;">Diagnose</summary>';
             html += '<div style="padding:6px;">';
             html += '<div style="display:flex;gap:6px;margin-bottom:5px;"><button id="haa-techtree-debug-kopieren" style="font-size:11px;">Debug kopieren</button><button id="haa-techtree-debug-loeschen" style="font-size:11px;">Debug löschen</button></div>';
             html += '<pre id="haa-techtree-debug-text" style="white-space:pre-wrap;overflow:auto;max-height:420px;margin:0;padding:6px;background:#090807;color:#ddd;border:1px solid #444;font-size:10px;line-height:1.35;">' + esc(debugDaten.lines.join('\n')) + '</pre>';
@@ -1978,6 +1978,22 @@ return box;
         const erledigt = document.getElementById('haa-techtree-erledigt');
         if (erledigt) erledigt.onchange = function () { speichern(STORAGE_TECHTREE_ERLEDIGT_ZEIGEN, erledigt.checked ? '1' : '0'); baueBox(); };
 
+        Array.from(document.querySelectorAll('.haa-req-ziel')).forEach(function (zielBtn) {
+            zielBtn.onclick = function () {
+                const id = String(zielBtn.dataset.id || '').trim().toUpperCase();
+                const name = String(zielBtn.dataset.name || id).trim();
+                const type = String(zielBtn.dataset.type || 'unknown');
+                const level = Math.max(1, Number(zielBtn.dataset.level) || 1);
+                if (!id) return;
+                const neu = { id: id, name: name, type: type, level: level, selectedAt: Date.now(), quelle: 'anforderungsliste' };
+                speichern(STORAGE_STAN_AUSWAHL, neu);
+                speichern(STORAGE_STAN_NAVIGATION, { category: type, targetId: id, at: Date.now() });
+                speichern(STORAGE_STAN_AUSWAHL_OFFEN, '0');
+                importiereTechTreeZiel(id, level, true).catch(function () {});
+                baueBox();
+            };
+        });
+
         const debugKopieren = document.getElementById('haa-techtree-debug-kopieren');
         if (debugKopieren) debugKopieren.onclick = function () {
             const el = document.getElementById('haa-techtree-debug-text');
@@ -2009,6 +2025,49 @@ return box;
         html += 'overflow-y:auto;overflow-x:auto;">' + inhaltHtml + '</div>';
         html += '</details>';
         return html;
+    }
+
+    function installierePlanScrollHinweise(inhalt) {
+        if (!inhalt || inhalt.dataset.hasaScrollHinweise === '1') return;
+        inhalt.dataset.hasaScrollHinweise = '1';
+        inhalt.style.position = 'relative';
+
+        const host = document.createElement('div');
+        host.className = 'haa-scroll-hinweise';
+        host.style.cssText = 'position:sticky;top:2px;right:2px;z-index:50;pointer-events:none;height:0;overflow:visible;';
+        host.innerHTML = ''
+            + '<button data-r="up" title="Nach oben scrollen">⬆</button>'
+            + '<button data-r="down" title="Nach unten scrollen">⬇</button>'
+            + '<button data-r="left" title="Nach links scrollen">⬅</button>'
+            + '<button data-r="right" title="Nach rechts scrollen">➡</button>';
+        inhalt.prepend(host);
+
+        const buttons = {};
+        Array.from(host.querySelectorAll('button')).forEach(function (b) {
+            buttons[b.dataset.r] = b;
+            b.style.cssText = 'pointer-events:auto;display:none;margin:0 2px;padding:2px 7px;border:2px solid #ff3030;border-radius:4px;background:#650000;color:#fff;font-weight:bold;font-size:18px;line-height:1;cursor:pointer;box-shadow:0 0 5px #000;';
+        });
+
+        function update() {
+            const eps = 3;
+            const oben = inhalt.scrollTop > eps;
+            const unten = inhalt.scrollTop + inhalt.clientHeight < inhalt.scrollHeight - eps;
+            const links = inhalt.scrollLeft > eps;
+            const rechts = inhalt.scrollLeft + inhalt.clientWidth < inhalt.scrollWidth - eps;
+            buttons.up.style.display = oben ? 'inline-block' : 'none';
+            buttons.down.style.display = unten ? 'inline-block' : 'none';
+            buttons.left.style.display = links ? 'inline-block' : 'none';
+            buttons.right.style.display = rechts ? 'inline-block' : 'none';
+        }
+
+        buttons.up.onclick = function () { inhalt.scrollBy({ top: -Math.max(120, inhalt.clientHeight * 0.6), behavior: 'smooth' }); };
+        buttons.down.onclick = function () { inhalt.scrollBy({ top: Math.max(120, inhalt.clientHeight * 0.6), behavior: 'smooth' }); };
+        buttons.left.onclick = function () { inhalt.scrollBy({ left: -Math.max(160, inhalt.clientWidth * 0.6), behavior: 'smooth' }); };
+        buttons.right.onclick = function () { inhalt.scrollBy({ left: Math.max(160, inhalt.clientWidth * 0.6), behavior: 'smooth' }); };
+        inhalt.addEventListener('scroll', update, { passive: true });
+        window.addEventListener('resize', update, { passive: true });
+        setTimeout(update, 0);
+        setTimeout(update, 250);
     }
 
     function verbindeHasaUiButtons(neuAufbauen) {
@@ -2048,6 +2107,7 @@ return box;
             if (Number.isFinite(gespeichert) && gespeichert > 0) {
                 inhalt.scrollTop = gespeichert;
             }
+            if (bereich === 'techtree') installierePlanScrollHinweise(inhalt);
             inhalt.addEventListener('scroll', function () {
                 const aktuell = laden(STORAGE_UI_SCROLL, {});
                 const neu = aktuell && typeof aktuell === 'object' && !Array.isArray(aktuell) ? aktuell : {};
