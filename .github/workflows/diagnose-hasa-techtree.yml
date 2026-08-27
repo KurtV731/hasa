@@ -1,0 +1,23 @@
+name: Diagnose HASA TechTree HTML
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/diagnose-hasa-techtree.yml'
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch representative building pages
+        shell: bash
+        run: |
+          set -e
+          for id in SHIPYARD WEAPONFACTORY DARKENERGYTRANSMITTER; do
+            echo "===== $id ====="
+            curl -LfsS --compressed "https://techtree.kommandobasis.eu/objects/details/id/$id" -o "/tmp/$id.html"
+            echo "bytes: $(wc -c < /tmp/$id.html)"
+            echo "-- object/detail links --"
+            grep -oE 'href="[^"]*objects[^" ]*"' "/tmp/$id.html" | head -80 || true
+            echo "-- requirement-ish rows --"
+            grep -iE -B2 -A4 'voraus|benöt|Stufe|Level|Psychologie|Physik|Forschung|Gebäude' "/tmp/$id.html" | head -220 || true
+          done
