@@ -94,7 +94,7 @@
     ]);
 
     const HASA_VERSION = '1.1 – Forschungsmodul komplett · poliert';
-    const HASA_BUILD_LABEL = '1.1-poliert-gebaeude-parser-2026-08-26';
+    const HASA_BUILD_LABEL = '1.1-poliert-techtree-id-case-2026-08-27';
 
     /*
      * hasa-Positionswerte ab 0.7 Beta
@@ -1302,9 +1302,9 @@ return box;
         const requirements = [];
         const gesehen = new Set();
 
-        Array.from(doc.querySelectorAll('a[href*="/objects/details/id/"]')).forEach(function (link) {
+        Array.from(doc.querySelectorAll('a[href*="/objects/"][href*="/id/"]')).forEach(function (link) {
             const href = link.getAttribute('href') || '';
-            const idTreffer = href.match(/\/objects\/details\/id\/([^/?#]+)/i);
+            const idTreffer = href.match(/\/objects\/(?:[^/?#]+\/)*?id\/([^/?#]+)/i);
             if (!idTreffer) return;
             const id = decodeURIComponent(idTreffer[1]).toUpperCase();
             if (!id || id === objektId) return;
@@ -1346,7 +1346,7 @@ return box;
             type: ermittleTechTreeTypAusIdUndName(objektId, name),
             finalLevel: finaleStufe,
             requirements: requirements,
-            sourceUrl: TECHTREE_BASIS_URL + encodeURIComponent(objektId),
+            sourceUrl: TECHTREE_BASIS_URL + encodeURIComponent(String(objektId || '').toLowerCase()),
             fetchedAt: Date.now()
         };
     }
@@ -1760,7 +1760,11 @@ return box;
         try {
             // Planer-Neustart Teststufe 1:
             // Nur die ausgewählte Zielseite lesen. Keine Unterobjekte nachladen.
-            const html = await techTreeRequest(TECHTREE_BASIS_URL + encodeURIComponent(id));
+            // Der Community-TechTree führt seine Objekt-IDs in den URLs klein geschrieben
+  // (z. B. /id/weaponfactory, /id/darkenergytransmitter). Intern arbeitet
+  // HASA weiterhin mit den stabilen Großbuchstaben-IDs.
+  const techTreeUrlId = id.toLowerCase();
+  const html = await techTreeRequest(TECHTREE_BASIS_URL + encodeURIComponent(techTreeUrlId));
             const objekt = parseTechTreeObjekt(html, id);
             graph[id] = objekt;
             speichern(STORAGE_TECHTREE_GRAPH, graph);
