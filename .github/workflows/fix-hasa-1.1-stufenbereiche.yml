@@ -19,29 +19,21 @@ jobs:
           p = Path('2 src/current/hasa_1.1_forschungsmodul-komplett.user.js.txt')
           s = p.read_text(encoding='utf-8')
 
-          old = """            let m = t.match(/^ab\\s+Stufe\\s*:?[ \\t]*(\\d+)\\b/i);
-            if (m) return { level: Number(m[1]), reverse: true, text: t };
-            m = t.match(/^Stufe\\s*:?[ \\t]*(\\d+)\\b/i);
-            if (m) return { level: Number(m[1]), reverse: false, text: t };
-            return null;"""
-          new = """            let m = t.match(/^ab\\s+Stufe\\s*:?[ \\t]*(\\d+)\\b/i);
-            if (m) return { level: Number(m[1]), reverse: true, text: t };
-
-            // Der Community-TechTree verwendet sowohl „Stufe 1“ als auch
+          pattern = re.compile(r"(let m = t\.match\(/\^ab\\s\+Stufe.*?if \(m\) return \{ level: Number\(m\[1\]\), reverse: true, text: t \};\s*)m = t\.match\(/\^Stufe.*?if \(m\) return \{ level: Number\(m\[1\]\), reverse: false, text: t \};", re.S)
+          replacement = r"""\1// Der Community-TechTree verwendet sowohl „Stufe 1“ als auch
             // Bereiche wie „Stufen 1 - 8“, „Stufen 9 - 10“ usw.
             // Für die Planung gilt eine Forderung ab der ERSTEN Stufe des Bereichs.
-            m = t.match(/^Stufen?\\s*:?[ \\t]*(\\d+)\\s*(?:[-–—]\\s*(\\d+))?\\b/i);
+            m = t.match(/^Stufen?\s*:?\s*(\d+)\s*(?:[-–—]\s*(\d+))?\b/i);
             if (m) return {
                 level: Number(m[1]),
                 endLevel: m[2] ? Number(m[2]) : Number(m[1]),
                 reverse: false,
                 text: t
-            };
-            return null;"""
-          if old not in s:
+            };"""
+          s2, n = pattern.subn(replacement, s, count=1)
+          if n != 1:
               raise SystemExit('Stufenmarker-Funktion nicht gefunden')
-          s = s.replace(old, new, 1)
-
+          s = s2
           s = re.sub(r"const HASA_BUILD_LABEL = '[^']*';",
                      "const HASA_BUILD_LABEL = '1.1-poliert-stufenbereiche-2026-08-27';", s, count=1)
           p.write_text(s, encoding='utf-8')
