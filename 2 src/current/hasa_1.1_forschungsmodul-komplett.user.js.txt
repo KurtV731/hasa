@@ -94,7 +94,7 @@
     ]);
 
     const HASA_VERSION = '1.1 – Forschungsmodul komplett · poliert';
-    const HASA_BUILD_LABEL = '1.1-poliert-techtree-id-case-2026-08-27';
+    const HASA_BUILD_LABEL = '1.1-poliert-stufenbereiche-2026-08-27';
 
     /*
      * hasa-Positionswerte ab 0.7 Beta
@@ -1264,7 +1264,7 @@ return box;
             if (!t || t.length > 100) return null;
             let m = t.match(/^ab\s+Stufe\s*:?[ \t]*(\d+)\b/i);
             if (m) return { level: Number(m[1]), reverse: true, text: t };
-            m = t.match(/^Stufe\s*:?[ \t]*(\d+)\b/i);
+            m = t.match(/^Stufen?\s*:?[ \t]*(\d+)(?:\s*[-–—]\s*\d+)?\b/i);
             if (m) return { level: Number(m[1]), reverse: false, text: t };
             return null;
         }
