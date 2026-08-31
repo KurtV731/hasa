@@ -128,6 +128,15 @@ ist an genau einer dokumentierten Stelle zu konfigurieren; Zugangsdaten zur
 MariaDB gehören ausschließlich auf den Server. Einzelheiten stehen in
 `1 docs/backend-selbsthosting_und_datenfreigabe.md`.
 
+Für den rundenaktuellen Abgleich des Forschungsplaners wurde außerdem ein
+eigenes Werkstatt-Konzept festgehalten:
+
+`1 docs/werkstatt/konzept_horizon-voraussetzungen_und_techtree-rueckmeldung.md`
+
+Es beschreibt die offizielle Horizon-Seite „Voraussetzungen“, deren begrenzten
+Sichtbereich, einen freiwilligen Komplettscan sowie die bestätigte Rückmeldung
+an den Community-TechTree nach dem Wiki-Prinzip.
+
 ## 12. Hinweise für den Nachfolger
 
 Bitte zuerst diesen Übergabebericht und den aktuellen 1.1-Code lesen, bevor Änderungen vorgenommen werden. Alte Versionen sind wertvoll als Referenz, aber nicht als Ausgangspunkt für eine Neuimplementierung.
