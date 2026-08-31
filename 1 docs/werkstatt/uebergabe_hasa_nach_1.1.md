@@ -2,7 +2,7 @@
 
 **Stand:** 28.08.2026  
 **Projekt:** HASA – Horizon Ascension Assistant  
-**Übergabepunkt:** Forschungsplanung abgeschlossen / Version 1.1 veröffentlichungsreif
+**Übergabepunkt:** HASA 1.1 Final veröffentlicht / Beginn der Versionslinie 1.2
 
 ## 1. Zweck dieses Dokuments
 
@@ -14,7 +14,11 @@ Der nächste Entwickler/Chatty soll nicht mitten in einer offenen Reparatur begi
 
 Die maßgebliche Arbeitsdatei liegt unter:
 
-`2 src/current/hasa_1.1_forschungsmodul-komplett.user.js.txt`
+`2 src/current/hasa_1.1_final.user.js.txt`
+
+Diese Datei ist die bestätigte stabile Grundlage. Mit dem ersten Arbeitsschritt
+am Galaxiescanner beginnt die Versionslinie **HASA 1.2**. Auch begleitende
+Reparaturen werden ab diesem Zeitpunkt unter 1.2 weitergeführt.
 
 HASA wird als Tampermonkey-Userscript entwickelt. Vollständige Scriptdateien werden im Repository mit zusätzlicher `.txt`-Endung geführt.
 
@@ -118,6 +122,11 @@ Die Grundidee:
 Dieses Modul wird voraussichtlich nicht mehr rein lokal arbeiten. Für gemeinsame Daten ist eine serverseitige Datenbank vorgesehen. Für die vorhandene Webumgebung steht grundsätzlich MySQL/PHP zur Verfügung; die genaue Architektur ist noch festzulegen.
 
 Der Galaxien-Scanner ist Zukunftsarbeit und **nicht Bestandteil der abgeschlossenen 1.1**.
+
+Die Datenbankanbindung muss selbst hostbar bleiben. Die zentrale Backend-Adresse
+ist an genau einer dokumentierten Stelle zu konfigurieren; Zugangsdaten zur
+MariaDB gehören ausschließlich auf den Server. Einzelheiten stehen in
+`1 docs/backend-selbsthosting_und_datenfreigabe.md`.
 
 ## 12. Hinweise für den Nachfolger
 
