@@ -1,0 +1,26 @@
+{
+  "galaxy": 4,
+  "galaxy_name": "Deep water",
+  "galaxy_type": "normal",
+  "system": 566,
+  "system_name": "Temporia",
+  "discovered_by": "Phantom",
+  "observer": "Kurt",
+  "observed_at": "2026-09-02T08:00:00+02:00",
+  "source": "galaxy_view",
+  "visibility": "private",
+  "planets": [
+    {
+      "orbit": 1,
+      "name": "Roinomega VII",
+      "type": "ICPL"
+    },
+    {
+      "orbit": 5,
+      "name": "Ikan",
+      "ruler": "Styl",
+      "alliance": "404",
+      "status": "online"
+    }
+  ]
+}
