@@ -4379,12 +4379,15 @@ return box;
     setInterval(aktivierePlanStatusSticky, 700);
 })();
 
-/* HASA 1.1 – Forschungsmodul komplett
+/* HASA 1.2.0 Alpha 1 – Galaxiescanner-Lesetest
    - STAN-Daten als maßgebliche Quelle für TechTree-Typen
    - allgemeine Erkennung von Gebäude, Forschung, Schiff und Verteidigung
    - Forschungs-Iststand wird aus der sichtbaren Horizon-Seite übernommen
    - Ascension-Reset verhindert veraltete Forschungs- und Gebäudestände
    - TechTree-Soll/Ist-Vergleich wird nach erneutem Seitenscan aktualisiert
    - responsive HASA-Breite für kleinere Displays
+   - sichtbare Horizon-Systemseiten werden lokal als Galaxiescanner-Lesetest ausgewertet
+   - nicht erforschte Systeme löschen oder überschreiben keine vorhandenen Daten
+   - der Galaxiescanner-Lesetest sendet noch keine Daten an den Server
    - keine Horizon-Seiten werden im Hintergrund abgerufen
 */
