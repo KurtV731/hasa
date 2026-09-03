@@ -48,6 +48,15 @@ if (planeten[5].name !== 'Ikan' || planeten[5].type !== 'STPL' ||
     process.exit(1);
 }
 
+if (!Array.isArray(ergebnis.data.orbit_slots) || ergebnis.data.orbit_slots.length !== 14 ||
+    ergebnis.data.orbit_slots[0].occupied !== true ||
+    ergebnis.data.orbit_slots[1].occupied !== false ||
+    ergebnis.data.orbit_slots[13].orbit !== 14) {
+    console.error('TEST FEHLGESCHLAGEN: Umlaufbahnen 1 bis 14 sind nicht vollständig abgebildet.');
+    console.error(JSON.stringify(ergebnis.data.orbit_slots, null, 2));
+    process.exit(1);
+}
+
 const blind = parser.parseGalaxyHtml(
     '<html><body><h1>System 4:566 wurde noch nicht erforscht!</h1></body></html>',
     { observed_at: '2026-08-29T12:00:00+02:00' }
