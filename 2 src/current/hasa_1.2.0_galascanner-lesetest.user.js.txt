@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
-// @name         HASA 1.2.0 Alpha 1 - Galaxiescanner-Lesetest
+// @name         HASA 1.2.0 Alpha 2 - Galaxiescanner-Lesetest
 // @namespace    horiversum.hasa
-// @version      1.2.0-alpha.1
+// @version      1.2.0-alpha.2
 // @charset      UTF-8
 // @description  Horizon-Assistent mit lokalem Galaxiescanner-Lesetest (sendet noch nichts)
 // @match        https://horiversum.org/game/main/main.php*
@@ -15,7 +15,7 @@
 ==========================================================
  HASA – Horizon Ascension Assistant
 
- Version : 1.2.0 Alpha 1
+ Version : 1.2.0 Alpha 2
  Status  : Galaxiescanner-Lesetest ohne Serverversand
  Build   : 2026-09-03
 
@@ -23,6 +23,8 @@
  - sichtbare Horizon-Systemansicht lokal einlesen
  - Galaxie, System, Systemname, Entdecker und belegte Umlaufbahnen erkennen
  - Planetentyp, Herrscher, Allianz und Status übernehmen, soweit sichtbar
+ - alle Umlaufbahnen 1 bis 14 anzeigen, einschließlich leerer Positionen
+ - letzten erfolgreichen Systemscan lokal merken und außerhalb der Galaxieseite weiter anzeigen
  - bei „nicht erforscht“ niemals einen leeren Stand zum Speichern freigeben
  - reine Vorschau im neuen Bereich „Galaxiescanner – Lesetest“
  - noch keinerlei Übertragung an die HASA-API
@@ -98,8 +100,9 @@
         'PHYSICS', 'PSYCHOLOGY', 'NUCLEARPHYSICS', 'SOLARENERGYTECH'
     ]);
 
-    const HASA_VERSION = '1.2.0 Alpha 1';
-    const HASA_BUILD_LABEL = '1.2.0-galascanner-lesetest-2026-09-03';
+    const HASA_VERSION = '1.2.0 Alpha 2';
+    const HASA_BUILD_LABEL = '1.2.0-galascanner-lesetest-alpha2-2026-09-03';
+    const STORAGE_GALASCAN_LETZTER_STAND = 'hasa_galascan_letzter_stand_v1';
 
     function leseGalaxiesystemAusSichtbarerSeite() {
         const kopfElement = document.querySelector('.GalaxyContainerHeadText');
@@ -179,23 +182,45 @@
 
     function baueGalascannerLesetestHtml() {
         const scan = leseGalaxiesystemAusSichtbarerSeite();
+        let anzeigeScan = scan;
+        let letzterStand = laden(STORAGE_GALASCAN_LETZTER_STAND, null);
+
+        if (scan.state === 'visible') {
+            speichern(STORAGE_GALASCAN_LETZTER_STAND, scan);
+            letzterStand = scan;
+        } else if (letzterStand && letzterStand.state === 'visible') {
+            anzeigeScan = letzterStand;
+        }
+
         let html = '<div style="padding:4px 0 2px 0;">';
         html += '<div style="font-weight:bold;color:' + (scan.ok ? '#7CFF7C' : '#bbb') + ';">'
             + esc(scan.message) + '</div>';
         html += '<div style="margin-top:5px;color:#aaa;font-size:11px;">'
             + 'Diese Alpha-Stufe liest nur die sichtbare Seite. Es werden keine Daten gesendet.</div>';
 
-        if (scan.state === 'visible') {
+        if (scan.state !== 'visible' && anzeigeScan.state === 'visible') {
+            const zeit = anzeigeScan.observedAt ? new Date(anzeigeScan.observedAt).toLocaleString('de-DE') : 'unbekannt';
+            html += '<div style="margin-top:7px;color:#FFD27C;font-weight:bold;">'
+                + 'Zuletzt gelesener Stand vom ' + esc(zeit) + ':</div>';
+        }
+
+        if (anzeigeScan.state === 'visible') {
             html += '<div style="margin-top:8px;color:#FFD27C;">'
-                + esc(scan.systemName || '(ohne Systemnamen)')
-                + ' · entdeckt durch ' + esc(scan.discoveredBy || 'unbekannt') + '</div>';
+                + esc(anzeigeScan.systemName || '(ohne Systemnamen)')
+                + ' · System ' + esc(anzeigeScan.galaxy) + ':' + esc(anzeigeScan.system)
+                + ' · entdeckt durch ' + esc(anzeigeScan.discoveredBy || 'unbekannt') + '</div>';
             html += '<table style="width:100%;margin-top:5px;border-collapse:collapse;color:#eee;">';
             html += '<tr style="color:#aaa;"><td>Orbit</td><td>Planet</td><td>Typ</td><td>Herrscher</td><td>Status</td></tr>';
-            scan.planets.forEach(function (planet) {
-                html += '<tr><td>' + esc(planet.orbit) + '</td><td>' + esc(planet.name) + '</td>';
-                html += '<td>' + esc(planet.type) + '</td><td>' + esc(planet.ruler || '–') + '</td>';
-                html += '<td>' + esc(planet.status || '–') + '</td></tr>';
-            });
+            for (let orbit = 1; orbit <= 14; orbit++) {
+                const planet = anzeigeScan.planets.find(function (eintrag) { return eintrag.orbit === orbit; });
+                if (planet) {
+                    html += '<tr><td>' + esc(orbit) + '</td><td>' + esc(planet.name) + '</td>';
+                    html += '<td>' + esc(planet.type) + '</td><td>' + esc(planet.ruler || '–') + '</td>';
+                    html += '<td>' + esc(planet.status || '–') + '</td></tr>';
+                } else {
+                    html += '<tr style="color:#777;"><td>' + esc(orbit) + '</td><td>– leer –</td><td>–</td><td>–</td><td>–</td></tr>';
+                }
+            }
             html += '</table>';
         }
         html += '</div>';
@@ -4379,7 +4404,7 @@ return box;
     setInterval(aktivierePlanStatusSticky, 700);
 })();
 
-/* HASA 1.2.0 Alpha 1 – Galaxiescanner-Lesetest
+/* HASA 1.2.0 Alpha 2 – Galaxiescanner-Lesetest
    - STAN-Daten als maßgebliche Quelle für TechTree-Typen
    - allgemeine Erkennung von Gebäude, Forschung, Schiff und Verteidigung
    - Forschungs-Iststand wird aus der sichtbaren Horizon-Seite übernommen
@@ -4387,6 +4412,8 @@ return box;
    - TechTree-Soll/Ist-Vergleich wird nach erneutem Seitenscan aktualisiert
    - responsive HASA-Breite für kleinere Displays
    - sichtbare Horizon-Systemseiten werden lokal als Galaxiescanner-Lesetest ausgewertet
+   - alle Umlaufbahnen 1 bis 14 werden einschließlich leerer Positionen angezeigt
+   - der letzte erfolgreiche Systemscan bleibt lokal sichtbar
    - nicht erforschte Systeme löschen oder überschreiben keine vorhandenen Daten
    - der Galaxiescanner-Lesetest sendet noch keine Daten an den Server
    - keine Horizon-Seiten werden im Hintergrund abgerufen
