@@ -179,6 +179,11 @@
         const sichtbar = kopf.state === 'visible';
         const planeten = sichtbar ? planetenLesen(html) : [];
         const beobachtet = opts.observed_at || new Date().toISOString();
+        const slots = Array.from({ length: 14 }, (_, index) => {
+            const orbit = index + 1;
+            const planet = planeten.find(eintrag => eintrag.orbit === orbit) || null;
+            return { orbit, occupied: Boolean(planet), planet };
+        });
         const daten = {
             galaxy: kopf.galaxy,
             galaxy_name: opts.galaxy_name || null,
@@ -190,7 +195,8 @@
             observed_at: beobachtet,
             source: 'galaxy_view',
             visibility: opts.visibility || 'private',
-            planets: planeten
+            planets: planeten,
+            orbit_slots: slots
         };
 
         if (!sichtbar) {
