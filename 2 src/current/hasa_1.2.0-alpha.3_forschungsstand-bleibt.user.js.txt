@@ -4405,7 +4405,7 @@ return box;
     setInterval(aktivierePlanStatusSticky, 700);
 })();
 
-/* HASA 1.2.0 Alpha 2 – Galaxiescanner-Lesetest
+/* HASA 1.2.0 Alpha 3 – Forschungsstand bleibt erhalten
    - STAN-Daten als maßgebliche Quelle für TechTree-Typen
    - allgemeine Erkennung von Gebäude, Forschung, Schiff und Verteidigung
    - Forschungs-Iststand wird aus der sichtbaren Horizon-Seite übernommen
