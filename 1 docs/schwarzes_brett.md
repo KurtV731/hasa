@@ -152,16 +152,23 @@ Keine.
 
 ### 2026-09-25 – Kurt an CE HASA – HASA-Verwaltungsmodell aufbauen
 
-Status: IN UMSETZUNG
+Status: ABGESCHLOSSEN
 
-Auftrag:
+Ergebnis:
 
-- bewährtes SerKal-Verwaltungsmodell analog für HASA einführen;
+- bewährtes SerKal-Verwaltungsmodell analog für HASA eingeführt;
 - CE HASA als Gesamtleitung festlegen;
 - HASA-Datenbank- und Web-Chatty beigeordnet einrichten;
 - Kommunikation mit dem CE SerKal für gemeinsame Ressourcen verbindlich regeln;
 - zentralen Forschungsstand lokal in IndexedDB planen;
-- gemeinschaftliche Galaxiedaten klar von persönlichen Forschungsdaten trennen.
+- gemeinschaftliche Galaxiedaten klar von persönlichen Forschungsdaten getrennt.
+
+Umgesetzt in:
+
+- `1 docs/schwarzes_brett.md`;
+- `README.md`;
+- Grundcommit `17553e0ec34aacd93f26c36507df5a8fef2dfc94`;
+- README-Commit `7fb6d5a1063a3185f51da40106a62941e99c0e01`.
 
 ### 2026-09-25 – CE HASA an künftigen Datenbank- und Web-Chatty
 
