@@ -248,6 +248,52 @@ Restpunkte: Ist-Schema und Hostingpfad prüfen, Leseansicht erstellen,
 Schnittstelle und produktive Erreichbarkeit prüfen. Kein Auftrag an Kurt,
 technische Angaben zwischen den Chats zu überbringen.
 
+### 2026-09-26 – Datenbank- und Web-Chatty an CE HASA – erste Leseansicht im Repository
+
+Status: CODE ERSTELLT / SERVERTEST UND BEREITSTELLUNG OFFEN
+
+Ergebnis: Die Dateien `3 server/hasa-api/galaxy.php` (eigene Browserseite)
+und `3 server/hasa-api/galaxy-read.php` (nur GET) liegen im Repository.
+Die Ansicht bietet Filter für Galaxie und System; eine Systemnummer erfordert
+eine Galaxiennummer. Ohne Filter werden höchstens 100 Systeme geladen. Für
+jedes angezeigte System werden höchstens 255 Planeten in Umlaufbahn-Reihenfolge
+angezeigt. Die Seite ist für einen eigenen Tab oder ein zusätzliches Fenster
+geeignet; besondere Fensterparameter sind nicht erforderlich.
+
+Schnittstelle: Nach Übertragung beider Dateien direkt ins dokumentierte
+Webspace-Verzeichnis `/hasa/` ist der vorgesehene Aufruf
+`https://hasa.serkal.de/galaxy.php`. Die Seite ruft auf derselben Herkunft
+`galaxy-read.php?galaxy=<Nummer>&system=<Nummer>` auf; beide Filter sind
+optional, aber `system` setzt `galaxy` voraus. JSON-Antwort:
+`{"ok":true,"data":[{"galaxy":1,"system":2,"system_name":null,
+"last_observed_at":"...","planets":[{"orbit":1,"name":"...",
+"type":"...","ruler":"...","alliance":"...","status":"...",
+"last_observed_at":"..."}]}],"limit":100}`.
+Bei Fehlern stehen `ok:false` und `error` in der Antwort.
+
+Grenzen: Der Leseendpunkt zeigt nur ausdrücklich mit `public` markierte
+Systeme in normalen, nicht persönlich zugeordneten Galaxien und darin nur
+ebenfalls als `public` markierte Planeten. Er führt keine Schreiboperation
+aus und benötigt keinen Schlüssel im Browser. Die bestehende schlüsselgeschützte
+`systems.php` einschließlich POST bleibt unverändert. Keine Anmeldung und
+keine Rechteverwaltung in dieser ersten Ansicht. Ohne ausdrücklich öffentliche
+Datensätze ist die Anzeige leer.
+
+Prüfungen: Beide Dateien nach den Commits über die GitHub-App zurückgelesen.
+JavaScript-Syntax der Seite mit Node geprüft. PHP-Laufzeit und MariaDB stehen
+in der Arbeitsumgebung nicht zur Verfügung; PHP-Lint, Datenbankabfrage und
+HTTPS-Aufruf sind daher noch nicht praktisch geprüft. Der aktuelle Server ist
+durch das Commit allein nicht aktualisiert.
+
+Commits: Leseendpunkt `872f156b93fc9555cb20d36b823944d316dcf017`;
+Ansicht `92fbaa4def27ff65953f2399d6829716e508e147`.
+
+Restpunkte: PHP-Lint und Funktion am HASA-Server prüfen, beide Dateien nach
+dem vorgesehenen Serververfahren bereitstellen und die HTTPS-Adresse im
+Browser testen. Erst danach den Knopf im Userscript endgültig auf diese URL
+setzen. Für den Upload werden keine Zugangsdaten im Repository benötigt;
+vorhandene produktive `config.php` bleibt auf dem Server.
+
 ## Übergabeformat
 
 Jeder neue Eintrag verwendet mindestens:
