@@ -61,7 +61,7 @@ echo HASA ist auf dem aktuellen GitHub-Stand.
 echo ==========================================
 echo.
 
-set "HASA_QUELLDATEI=%CD%\2 src\current\hasa_1.2.0-alpha.8_indexeddb-grundlage.user.js.txt"
+set "HASA_QUELLDATEI=%CD%\2 src\current\HASA-AKTUELL.user.js.txt"
 
 if not exist "%HASA_QUELLDATEI%" (
     echo FEHLER: Die aktuelle HASA-Programmdatei wurde nicht gefunden:
