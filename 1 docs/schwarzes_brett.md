@@ -371,6 +371,42 @@ Einmalige Besonderheit: Damit die neue CMD-Datei erstmals lokal erscheint, ist n
 letztes manuelles `git pull` erforderlich. Danach kann der normale Aktualisierungsschritt
 per Doppelklick auf `HASA-AKTUALISIEREN.cmd` erfolgen.
 
+### 2026-09-26 – Kurt an Datenbank- und Web-Chatty / CE HASA – persönliche Sichtregel
+
+Status: ANFORDERUNG GEKLÄRT / SCHNITTSTELLENENTWURF OFFEN
+
+Kurt hat die Sichtregel präzisiert: Jeder Spieler soll in der
+Galaxiedatenbank mindestens sein eigenes Heimatsystem und alle Systeme
+sehen können, die er selbst besucht hat. Diese Anzeige darf nicht allein
+davon abhängen, dass ein Datensatz als `public` markiert wurde.
+Der derzeitige `galaxy-read.php` liefert dagegen nur `public`-Systeme
+normaler Galaxien und nur `public`-Planeten; damit erfüllt er diese Regel
+noch nicht. Die Aussage auf `galaxy.php` beschreibt nur den aktuellen
+Zwischenstand.
+
+Technische Klärung vor der Anpassung: Ohne Anmeldung kann die Server-API
+nicht zuverlässig erkennen, welcher Spieler gerade liest. Das bestehende
+Schema enthält zwar Beobachter-Namen in Datensätzen, aber keine
+zuverlässige Bindung zwischen Browser und Spieler und keine eigene
+Liste der pro Spieler besuchten Systeme. Ein frei zugänglicher Endpunkt,
+der bei Angabe eines Spielernamens private Daten liefert, wäre keine
+persönliche Ansicht. CE HASA und Datenbank-/Web-Chatty legen deshalb
+gemeinsam fest, wie Heimatsystem und besuchte Systeme erfasst und der
+Ansicht zugeordnet werden. Als erster Schritt ohne Server-Anmeldung
+kommen lokal im Userscript gespeicherte eigene Sichtungen in Betracht;
+die neue Webansicht benötigt dafür eine explizite, abgestimmte
+Übergabeschnittstelle. Private Serverdaten werden bis dahin nicht
+anonym freigegeben.
+
+Betroffene Bereiche: `2 src/current` (Erfassung und lokale
+Zuordnung beim CE HASA), `3 server/hasa-api/galaxy.php` und
+`galaxy-read.php` (Ansicht/API beim Datenbank- und Web-Chatty).
+Prüfung: vorhandenes Schema, PHP-Endpunkte und aktuelle
+Alpha-7-Übergabe auf GitHub gelesen. Nächster Schritt: gemeinsame
+Schnittstelle im Brett spezifizieren, dann Dateien ändern und testen.
+Keine Zugangsdaten im Browser und keine Änderung an der
+schlüsselgeschützten Schreib-API durch diese Übergabe.
+
 ## Übergabeformat
 
 Jeder neue Eintrag verwendet mindestens:
