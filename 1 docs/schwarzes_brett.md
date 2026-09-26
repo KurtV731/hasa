@@ -126,7 +126,7 @@ eine neue Runde wird durch eine eigene Rundenkennung getrennt.
   `c1d77a7a06efed47ced8256b44c7a5dda0c77724`.
 
 Alpha 7 behält den geprüften leichten Bereitschaftsmodus bei, ergänzt den Knopf
-„Galaxiedatenbank anzeigen“ mit dem Ziel `https://hasa.serkal.de/galaxy.php` und fasst
+„Galaxiedatenbank anzeigen“ mit dem Ziel `https://serkal.de/hasa/galaxy.php` und fasst
 Baualarm sowie Forschungsalarm in der gemeinsamen Gruppe „Alarme“ zusammen.
 
 ## Arbeitsregeln
@@ -262,7 +262,7 @@ geeignet; besondere Fensterparameter sind nicht erforderlich.
 
 Schnittstelle: Nach Übertragung beider Dateien direkt ins dokumentierte
 Webspace-Verzeichnis `/hasa/` ist der vorgesehene Aufruf
-`https://hasa.serkal.de/galaxy.php`. Die Seite ruft auf derselben Herkunft
+`https://serkal.de/hasa/galaxy.php`. Die Seite ruft auf derselben Herkunft
 `galaxy-read.php?galaxy=<Nummer>&system=<Nummer>` auf; beide Filter sind
 optional, aber `system` setzt `galaxy` voraus. JSON-Antwort:
 `{"ok":true,"data":[{"galaxy":1,"system":2,"system_name":null,
@@ -307,7 +307,7 @@ Ergebnis:
 - neue vollständige Testdatei
   `2 src/current/hasa_1.2.0-alpha.7_datenbankknopf-und-alarmgruppe.user.js.txt`;
 - neuer Knopf „Galaxiedatenbank anzeigen“ im Bereich „Galaxiescanner – Aufnahme“;
-- feste Zieladresse `https://hasa.serkal.de/galaxy.php`;
+- feste Zieladresse `https://serkal.de/hasa/galaxy.php`;
 - Öffnung in einem neuen Browser-Tab ohne Übergabe eines Datenbankpassworts;
 - Baualarm und Forschungsalarm optisch in der gemeinsamen Gruppe „Alarme“ zusammengeführt;
 - Bereitschaftsmodus und bestehende Alarmfunktionen bleiben erhalten.
@@ -323,10 +323,31 @@ Gemeinsamer Restpunkt:
 
 Die PHP-Dateien `galaxy.php` und `galaxy-read.php` müssen noch nach dem vorgesehenen
 Serververfahren in `/hasa/` bereitgestellt werden. Danach bitte PHP-Lint, Datenbankabfrage
-und `https://hasa.serkal.de/galaxy.php` praktisch prüfen und den erfolgreichen Serverstand
+und `https://serkal.de/hasa/galaxy.php` praktisch prüfen und den erfolgreichen Serverstand
 mit Commit beziehungsweise Bereitstellungsstand hier zurückmelden. Anschließend kann Kurt
 Alpha 7 per `git pull` holen und Knopf sowie Alarmgruppe praktisch testen. Kurt muss keine
 Schnittstellenangaben zwischen den Fachbereichen übertragen.
+
+
+### 2026-09-26 – CE HASA – Korrektur des tatsächlichen Webpfads
+
+Status: URL KORRIGIERT / UPLOAD UND PRAXISTEST OFFEN
+
+Kurts Browserprüfung zeigte, dass `hasa.serkal.de/galaxy.php` auf einem anderen leeren
+Apache-Verzeichnis landet und dort nur „Not Found“ über Port 80 liefert. Der bestehende,
+bereits funktionierende HASA-API-Pfad ist `https://serkal.de/hasa/`.
+
+Korrektur:
+
+- verbindliche Anzeigeadresse: `https://serkal.de/hasa/galaxy.php`;
+- Alpha 7 auf diesen Pfad korrigiert;
+- `galaxy.php` und `galaxy-read.php` müssen im selben Serververzeichnis wie
+  `bootstrap.php`, `health.php` und `systems.php` liegen;
+- lokaler Quellordner nach `git pull`: `C:\\Hasa\\3 server\\hasa-api\\`;
+- Ziel in WinSCP: das bereits verwendete Serververzeichnis `/hasa/`.
+
+Die frühere Subdomain-Adresse ist für diesen Versuch verworfen. Es ist keine DNS-,
+Subdomain- oder Zertifikatsänderung erforderlich.
 
 ## Übergabeformat
 
