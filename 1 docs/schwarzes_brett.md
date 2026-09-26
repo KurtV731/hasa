@@ -349,6 +349,28 @@ Korrektur:
 Die frühere Subdomain-Adresse ist für diesen Versuch verworfen. Es ist keine DNS-,
 Subdomain- oder Zertifikatsänderung erforderlich.
 
+
+### 2026-09-26 – CE HASA – Windows-Aktualisierer eingerichtet
+
+Status: FERTIG / ERSTER DOPPELKLICKTEST DURCH KURT OFFEN
+
+Im Repository-Hauptordner liegt nun `HASA-AKTUALISIEREN.cmd`.
+
+Verhalten:
+
+- wechselt unabhängig vom Startverzeichnis automatisch in den eigenen HASA-Ordner;
+- prüft, ob Git vorhanden ist und ob es sich um das HASA-Git-Repository handelt;
+- führt `git pull --ff-only` ohne automatische Zusammenführung aus;
+- löscht keine Dateien und führt keinen Reset aus;
+- zeigt Erfolg oder Fehler verständlich an;
+- öffnet bei Erfolg automatisch `2 src\\current`.
+
+Commit: `3abfb6dd9cfac37e7bfcf783acb4e150b570b42b`.
+
+Einmalige Besonderheit: Damit die neue CMD-Datei erstmals lokal erscheint, ist noch ein
+letztes manuelles `git pull` erforderlich. Danach kann der normale Aktualisierungsschritt
+per Doppelklick auf `HASA-AKTUALISIEREN.cmd` erfolgen.
+
 ## Übergabeformat
 
 Jeder neue Eintrag verwendet mindestens:
