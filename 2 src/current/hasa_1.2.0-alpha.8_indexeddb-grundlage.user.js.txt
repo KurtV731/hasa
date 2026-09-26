@@ -1,5 +1,5 @@
 ﻿// ==UserScript==
-// @name         HASA 1.2.0 Alpha 8 - Lokale IndexedDB-Grundlage
+// @name         HASA – Horizon Ascension Assistant
 // @namespace    horiversum.hasa
 // @version      1.2.0-alpha.8
 // @charset      UTF-8
@@ -16,65 +16,25 @@
 ==========================================================
  HASA – Horizon Ascension Assistant
 
- Version : 1.2.0 Alpha 7
+ Version : 1.2.0 Alpha 8
  Status  : Lokale IndexedDB-Grundlage mit sicherer Rückfallebene
  Build   : 2026-09-26
 
- Änderungen:
- - neuer Knopf „Galaxiedatenbank anzeigen“ im Galaxiescanner
- - feste lesende Zieladresse https://serkal.de/hasa/galaxy.php
- - Baualarm und Forschungsalarm in der gemeinsamen Gruppe „Alarme“
- - Forschungs- und Gebäudestände bleiben beim Wechsel der Horizon-Seite erhalten
- - fehlende Anzeige auf einer Unterseite löscht keine zuvor gelesene Stufe mehr
- - erneut tatsächlich gelesene Werte aktualisieren bekannte Stufen weiterhin
- - sichtbare Horizon-Systemansicht lokal einlesen
- - Galaxie, System, Systemname, Entdecker und belegte Umlaufbahnen erkennen
- - Planetentyp, Herrscher, Allianz und Status übernehmen, soweit sichtbar
- - alle Umlaufbahnen 1 bis 14 anzeigen, einschließlich leerer Positionen
- - letzten erfolgreichen Systemscan lokal merken und außerhalb der Galaxieseite weiter anzeigen
- - bei „nicht erforscht“ niemals einen leeren Stand zum Speichern freigeben
- - sichtbare Systeme auf ausdrücklichen Klick an die HASA-API senden
- - API-Schlüssel ausschließlich lokal im Tampermonkey-Speicher ablegen
- - Serverantwort mit gespeicherter Galaxie, System und Planetenzahl anzeigen
- - 1.1: Forschungsmodul als allgemeiner Mechanismus abgeschlossen
- - STAN-XML ist für bekannte Objekt-IDs die maßgebliche Typquelle
- - vor „Unbekannt“ wird immer der lokale STAN-Bestand geprüft
- - Logistik und weitere nicht namensbasierte Forschungen werden dadurch korrekt eingeordnet
- - Forschungs-Iststand wird vollständig aus der sichtbaren Horizon-Forschungsseite neu aufgebaut
- - nach Forschungsabschluss/F5/erneutem Öffnen wird der Soll/Ist-Vergleich ohne Sonderfall aktualisiert
- - Ascension-Reset aus 1.0.3l bleibt erhalten
- - HASA passt seine Breite an den verfügbaren rechten Bildschirmbereich an
- - auf kleinen Displays wird HASA horizontal scrollbar statt Horizon zu überdecken
- - 1.0.3l: Horizon-Seitenstand ist je Bereich autoritativ; alte Forschungs-/Gebäudewerte werden vor dem Scan entfernt
- - damit bleiben Werte aus dem Leben vor einer Ascension nicht als erledigt gespeichert
- - SOLARENERGYTECH / Solarenergietechnik wird verbindlich als Forschung eingeordnet
- - J bleibt J: UI-Korrektur in 1.0.3j integriert
- - Astrogation und Terraforming werden sicher als Forschung eingeordnet
- - Forschungsplan-Liste wieder ein-/ausklappbar
- - Forschungsseite wird bei jedem HASA-Seitenscan vollständig neu als Iststand eingelesen
- - zusätzlicher Horizon-Fallback liest Zeilen wie „Physik 16 (physics - Forschungsstufe 16)“
- - technische Horizon-ID wird dabei mitgespeichert (z. B. PHYSICS, PSYCHOLOGY, REFINERYTECH)
- - F5 bzw. erneutes Öffnen/Ändern der Forschungsseite bewertet den Plan danach sofort neu
- - Forschungsplaner neu begonnen: keine rekursive Sammlung in dieser Teststufe
- - nur die direkten Mindestanforderungen des ausgewählten Ziels werden gelesen
- - direkte Anforderungen werden sofort gegen den lokalen Horizon-Iststand geprüft
- - erfüllte Anforderungen verschwinden in der reduzierten Ansicht
- - keine Untervoraussetzungen, Reverse-Pfade oder Maximalstufen in dieser Teststufe
- - erfüllte Voraussetzungen beenden ihren Zweig sofort; keine Rekursion unter bereits vorhandene Gebäude/Forschungen
- - bereits erfüllte Zweige werden beim TechTree-Import nicht mehr nachgeladen
- - Namen mit der Endung „Technik“ werden verbindlich als Forschung eingeordnet
- - sichtbarer Debugbereich bleibt erhalten
- - STAN-Kategorien „Schwarm“ und „Arkane“ im Ziel-Explorer ausblenden
- - Fremdrassen-Daten bleiben im lokalen STAN-Bestand erhalten und können später für Kampfanalyse genutzt werden
- - Forschungs- und Gebäudestände weiterhin nur von der sichtbar geöffneten Horizon-Seite lesen
- - nach dem Öffnen eines Horizon-Unterbereichs automatisch erneut einlesen
- - Forschungsplanung danach ohne weiteren HASA-Klick aktualisieren
- - keine Horizon-Seiten im Hintergrund abrufen
- - Debugprotokoll für Auswahl und Sammlung der TechTree-Anforderungen
- - protokolliert Übernahme, Ablehnung, Zusammenführung und Rekursionssprünge
+ Neu in Alpha 8:
+ - große persönliche Datenbestände werden zusätzlich in IndexedDB gespiegelt
+ - der bisherige Tampermonkey-Speicher bleibt vollständig als Rückfallebene erhalten
+ - kleine Einstellungen und der API-Schlüssel verbleiben im Tampermonkey-Speicher
+ - IndexedDB startet erst nach dem Einschalten von HASA
+ - der Speicherstatus wird im HASA-Fenster angezeigt
+
+ Aus Alpha 7 übernommen:
+ - Galaxiedatenbank-Knopf und Galaxiescanner
+ - gemeinsame Gruppe für Bau- und Forschungsalarm
+ - dauerhafte Forschungs- und Gebäudestände beim Seitenwechsel
+ - Bereitschaftsmodus für einen schnellen Horizon-Start
 
  Idee & Konzept:
-   Styl
+   Kurt
 
  Programmierung:
    ChatGPT
@@ -84,8 +44,8 @@
    HASA spielt nicht.
 
  Speicherung:
-   Alle Einstellungen werden lokal im Tampermonkey-Speicher
-   (GM_getValue / GM_setValue) gespeichert.
+   Kleine Einstellungen und Geheimnisse: Tampermonkey GM-Speicher.
+   Große persönliche Bestände: ab Alpha 8 zusätzlich lokale IndexedDB.
    Fallback: Browser-localStorage, falls GM-Speicher nicht verfügbar ist.
 ==========================================================
 */
@@ -108,7 +68,7 @@
         'PHYSICS', 'PSYCHOLOGY', 'NUCLEARPHYSICS', 'SOLARENERGYTECH'
     ]);
 
-    const HASA_VERSION = '1.2.0 Alpha 7';
+    const HASA_VERSION = '1.2.0 Alpha 8';
     const HASA_BUILD_LABEL = '1.2.0-alpha8-indexeddb-grundlage-2026-09-26';
     const STORAGE_GALASCAN_LETZTER_STAND = 'hasa_galascan_letzter_stand_v1';
     const STORAGE_GALASCAN_API_KEY = 'hasa_galascan_api_key_v1';
