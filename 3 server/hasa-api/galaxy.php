@@ -33,9 +33,9 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
 </head>
 <body>
 <h1>HASA – Galaxiedatenbank</h1>
-<p>Erster Leseversuch: angezeigt werden nur ausdrücklich öffentlich markierte Systeme und Planeten.</p>
+<p>Erste Stufe: In den Galaxien 1 bis 6 sind alle erfassten Systeme und Planeten für jeden lesbar.</p>
 <form id="search">
-  <label>Galaxie <input name="galaxy" type="number" min="0" max="999999" step="1" inputmode="numeric"></label>
+  <label>Galaxie <input name="galaxy" type="number" min="1" max="6" step="1" inputmode="numeric"></label>
   <label>System <input name="system" type="number" min="0" max="999999" step="1" inputmode="numeric"></label>
   <button type="submit">Suchen</button>
 </form>
@@ -63,14 +63,14 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
     if (galaxy) params.set('galaxy', galaxy);
     if (system) params.set('system', system);
     results.replaceChildren();
-    status.textContent = 'Lade öffentliche Einträge …';
+    status.textContent = 'Lade Einträge aus den Galaxien 1 bis 6 …';
     try {
       const response = await fetch('galaxy-read.php?' + params, { credentials: 'omit' });
       const payload = await response.json();
       if (!response.ok || !payload.ok || !Array.isArray(payload.data)) throw new Error('read_failed');
       status.textContent = payload.data.length
         ? `${payload.data.length} System(e) angezeigt (höchstens ${payload.limit}).`
-        : 'Keine öffentlichen Einträge für diese Suche vorhanden.';
+        : 'Keine erfassten Einträge für diese Suche vorhanden.';
       for (const item of payload.data) {
         const card = document.createElement('article');
         const title = document.createElement('h2');
@@ -89,7 +89,7 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
         if (!body.rows.length) {
           const cell = body.insertRow().insertCell();
           cell.colSpan = columns.length;
-          cell.textContent = 'Keine öffentlich markierten Planeten.';
+          cell.textContent = 'Keine erfassten Planeten.';
         }
         wrap.append(table);
         card.append(wrap);
