@@ -19,15 +19,16 @@ Tampermonkey als neues Userscript eingefügt und gespeichert.
 
 ## Aktuelle Entwicklungsreihe
 
-**HASA 1.2.0 Alpha 6**
+**HASA 1.2.0 Alpha 7**
 
 Aktuelle Testdatei:
 
-`2 src/current/hasa_1.2.0-alpha.6_startschalter.user.js.txt`
+`2 src/current/hasa_1.2.0-alpha.7_datenbankknopf-und-alarmgruppe.user.js.txt`
 
-Alpha 6 führt einen leichten Bereitschaftsmodus ein. Die eigentlichen HASA-Module
-werden erst mit „HASA aktivieren“ gestartet, damit Horizon zunächst ohne unnötige
-Hintergrundlast laden und reagieren kann.
+Alpha 7 behält den leichten Bereitschaftsmodus bei, fasst Bau- und Forschungsalarm
+in der gemeinsamen Gruppe „Alarme“ zusammen und ergänzt im Galaxiescanner den Knopf
+„Galaxiedatenbank anzeigen“. Dieser öffnet die ausschließlich lesende Ansicht in
+einem neuen Tab.
 
 Die Entwicklungsreihe 1.2 umfasst unter anderem:
 
@@ -65,8 +66,8 @@ Verbindliche Rollen, Arbeitsregeln, Architekturentscheidungen und Übergaben ste
 `1 docs/schwarzes_brett.md`
 
 Vor jeder HASA-Arbeit wird dieses Dokument vollständig gelesen und nach einer
-Übergabe aktualisiert. Der CE HASA führt das Projekt; der HASA-Datenbank- und
-Web-Chatty arbeitet beigeordnet. Gemeinsam mit SerKal genutzte Ressourcen auf
+Übergabe aktualisiert. CE HASA und HASA-Datenbank-/Web-Chatty arbeiten als gleichwertige Fachbereiche mit
+klar getrennten Dateien und gemeinsam abgestimmten Schnittstellen. Gemeinsam mit SerKal genutzte Ressourcen auf
 `serkal.de` werden zwischen CE HASA und CE SerKal abgestimmt.
 
 Weitere technische Hinweise stehen unter `1 docs`.
