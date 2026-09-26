@@ -424,6 +424,44 @@ Ziel für die nächste vollständige Testfassung:
 Der Auftrag betrifft ausschließlich das HASA-Hauptskript. Die serverseitige Galaxiedatenbank
 des Datenbank-/Web-Fachbereichs wird dadurch nicht verändert.
 
+### 2026-09-26 – Kurt an beide HASA-Fachbereiche – Galaxien 1 bis 6 allgemein lesbar
+
+Status: PRODUKTREGEL GEKLÄRT / LESECODE ANGEPASST / SERVERTEST OFFEN
+
+Kurt hat die erste Stufe ausdrücklich festgelegt: Die erfassten
+Spielinformationen in den Galaxien 1 bis 6 sind für jeden Spieler
+lesbar, einschließlich aller dort erfassten Systeme und Planeten.
+Das gilt unabhängig von der bisherigen `private`, `alliance`
+oder `public`-Markierung. Ein Spieler soll damit sein Heimatsystem
+und jedes selbst besuchte System sehen können; ebenso die in diesen
+sechs Galaxien von anderen erfassten Daten. Die spätere Regelung für
+geheime oder private Galaxien wird erst bei deren Einführung benötigt.
+Diese vorläufige Regel soll nach Kurts Vorgabe mindestens etwa ein
+halbes Jahr gelten, sofern er sie nicht vorher ändert.
+
+Umsetzung im eigenen Fachbereich: `galaxy-read.php` beschränkt
+anonyme Leseabfragen serverseitig auf `g.game_id BETWEEN 1 AND 6`
+und filtert dort weder Systeme noch Planeten nach `visibility`.
+Abfrageparameter `galaxy` akzeptiert nur 1 bis 6; außerhalb
+dieses Bereichs wird die Anfrage abgewiesen. `galaxy.php` erklärt
+die Regel und begrenzt das Galaxie-Eingabefeld auf 1 bis 6.
+Die schlüsselgeschützte Schreib-API `systems.php`, persönliche
+Forschungsdaten und Galaxien außerhalb 1 bis 6 bleiben unberührt.
+
+Prüfung: Beide geänderten Dateien über GitHub zurückgelesen;
+Abfragegrenze 1 bis 6 und Entfernung des `public`-Filters im
+Leseendpunkt kontrolliert. PHP-Ausführung und Produktivserver sind
+noch nicht geprüft. Commits: API
+`59de8b2fa7065726ea9781f2d740db74cdca6e25`, Ansicht
+`09d5b4920ddd37dd4a9a4340941ff50935b9ca71`.
+
+Restpunkt: geänderte Dateien im bestehenden Verzeichnis
+`https://serkal.de/hasa/` bereitstellen, PHP/DB und Browseranzeige
+praktisch testen. Die frühere Übergabe zur personenbezogenen
+Zuordnung ist für diese erste Stufe durch Kurts pauschale Regel
+ersetzt; sie wird erst für spätere nicht allgemein sichtbare
+Galaxien wieder relevant.
+
 ## Übergabeformat
 
 Jeder neue Eintrag verwendet mindestens:
