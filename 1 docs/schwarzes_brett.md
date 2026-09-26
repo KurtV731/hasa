@@ -37,8 +37,7 @@ Kurt entscheidet insbesondere über:
 
 ### CE HASA – Chefentwickler HASA
 
-Der CE HASA trägt die fachliche und technische Gesamtverantwortung für HASA und koordiniert
-die beigeordneten HASA-Chattys.
+Der CE HASA trägt die fachliche und technische Gesamtverantwortung für das Hauptskript und koordiniert die gemeinsamen HASA-Schnittstellen mit den beteiligten Fachbereichen.
 
 Zuständigkeit:
 
@@ -62,8 +61,7 @@ Zuständigkeit:
 - serverseitige Sicherung, Migration und Administration;
 - Rückmeldung aller Schnittstellenänderungen an den CE HASA.
 
-Er verändert ohne vorherige Abstimmung weder das Tampermonkey-Hauptprogramm noch die
-lokale IndexedDB-Architektur.
+Kein Fachbereich verändert ohne vorherige Abstimmung Dateien oder Schnittstellen des anderen Fachbereichs.
 
 ### CE SerKal – gleichgeordnete Nachbarprojektleitung
 
