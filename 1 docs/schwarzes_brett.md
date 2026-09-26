@@ -352,7 +352,7 @@ Subdomain- oder Zertifikatsänderung erforderlich.
 
 ### 2026-09-26 – CE HASA – Windows-Aktualisierer eingerichtet
 
-Status: FERTIG / ERSTER DOPPELKLICKTEST DURCH KURT OFFEN
+Status: FERTIG / DOPPELKLICKTEST DURCH KURT BESTANDEN
 
 Im Repository-Hauptordner liegt nun `HASA-AKTUALISIEREN.cmd`.
 
@@ -367,9 +367,8 @@ Verhalten:
 
 Commit: `3abfb6dd9cfac37e7bfcf783acb4e150b570b42b`.
 
-Einmalige Besonderheit: Damit die neue CMD-Datei erstmals lokal erscheint, ist noch ein
-letztes manuelles `git pull` erforderlich. Danach kann der normale Aktualisierungsschritt
-per Doppelklick auf `HASA-AKTUALISIEREN.cmd` erfolgen.
+Kurts erster Doppelklicktest am 26.09.2026 war erfolgreich. Der normale
+Aktualisierungsschritt erfolgt künftig per Doppelklick auf `HASA-AKTUALISIEREN.cmd`.
 
 ### 2026-09-26 – Kurt an Datenbank- und Web-Chatty / CE HASA – persönliche Sichtregel
 
@@ -406,6 +405,24 @@ Alpha-7-Übergabe auf GitHub gelesen. Nächster Schritt: gemeinsame
 Schnittstelle im Brett spezifizieren, dann Dateien ändern und testen.
 Keine Zugangsdaten im Browser und keine Änderung an der
 schlüsselgeschützten Schreib-API durch diese Übergabe.
+
+
+### 2026-09-26 – CE HASA – Alpha 8 lokale IndexedDB-Grundlage
+
+Status: IN ARBEIT
+
+Ziel für die nächste vollständige Testfassung:
+
+- lokale IndexedDB als strukturierter HASA-Datenspeicher einführen;
+- größere persönliche Forschungs-, Gebäude-, Planungs- und Scanbestände kontrolliert übernehmen;
+- kleine Einstellungen, Fensterpositionen und Geheimnisse zunächst im Tampermonkey-Speicher belassen;
+- vorhandene Daten beim ersten Schritt nur kopieren und nicht löschen, damit Alpha 7 als
+  Rückfallstand verwendbar bleibt;
+- Bereitschaftsmodus darf dadurch nicht wieder langsamer werden;
+- Datenbankstatus innerhalb von HASA sichtbar und prüfbar machen.
+
+Der Auftrag betrifft ausschließlich das HASA-Hauptskript. Die serverseitige Galaxiedatenbank
+des Datenbank-/Web-Fachbereichs wird dadurch nicht verändert.
 
 ## Übergabeformat
 
