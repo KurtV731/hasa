@@ -6,6 +6,18 @@ Ascension, Forschung, Bauüberwachung und Galaxieerfassung.
 
 HASA informiert, analysiert und erinnert. HASA spielt nicht selbst.
 
+## HASA auf dem PC aktualisieren
+
+Im Hauptordner des lokal geklonten Repositorys liegt:
+
+`HASA-AKTUALISIEREN.cmd`
+
+Ein Doppelklick führt ein sicheres `git pull --ff-only` aus. Bei Erfolg öffnet
+sich automatisch der Ordner `2 src/current` mit der aktuellen vollständigen
+Tampermonkey-Datei. Bei einem Fehler bleibt das Fenster mit einer verständlichen
+Meldung geöffnet. Die CMD-Datei löscht keine lokalen Dateien und führt keinen
+automatischen Reset aus.
+
 ## Aktuelle stabile Version
 
 **HASA 1.1 Final**
@@ -66,8 +78,9 @@ Verbindliche Rollen, Arbeitsregeln, Architekturentscheidungen und Übergaben ste
 `1 docs/schwarzes_brett.md`
 
 Vor jeder HASA-Arbeit wird dieses Dokument vollständig gelesen und nach einer
-Übergabe aktualisiert. CE HASA und HASA-Datenbank-/Web-Chatty arbeiten als gleichwertige Fachbereiche mit
-klar getrennten Dateien und gemeinsam abgestimmten Schnittstellen. Gemeinsam mit SerKal genutzte Ressourcen auf
-`serkal.de` werden zwischen CE HASA und CE SerKal abgestimmt.
+Übergabe aktualisiert. CE HASA und HASA-Datenbank-/Web-Chatty arbeiten als
+gleichwertige Fachbereiche mit klar getrennten Dateien und gemeinsam abgestimmten
+Schnittstellen. Gemeinsam mit SerKal genutzte Ressourcen auf `serkal.de` werden
+zwischen CE HASA und CE SerKal abgestimmt.
 
 Weitere technische Hinweise stehen unter `1 docs`.
