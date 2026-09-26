@@ -409,20 +409,33 @@ schlüsselgeschützten Schreib-API durch diese Übergabe.
 
 ### 2026-09-26 – CE HASA – Alpha 8 lokale IndexedDB-Grundlage
 
-Status: IN ARBEIT
+Status: FERTIG / AUF GITHUB / PRAXISTEST OFFEN
 
-Ziel für die nächste vollständige Testfassung:
+Neue vollständige Testfassung:
 
-- lokale IndexedDB als strukturierter HASA-Datenspeicher einführen;
-- größere persönliche Forschungs-, Gebäude-, Planungs- und Scanbestände kontrolliert übernehmen;
-- kleine Einstellungen, Fensterpositionen und Geheimnisse zunächst im Tampermonkey-Speicher belassen;
-- vorhandene Daten beim ersten Schritt nur kopieren und nicht löschen, damit Alpha 7 als
-  Rückfallstand verwendbar bleibt;
-- Bereitschaftsmodus darf dadurch nicht wieder langsamer werden;
-- Datenbankstatus innerhalb von HASA sichtbar und prüfbar machen.
+`2 src/current/hasa_1.2.0-alpha.8_indexeddb-grundlage.user.js.txt`
 
-Der Auftrag betrifft ausschließlich das HASA-Hauptskript. Die serverseitige Galaxiedatenbank
-des Datenbank-/Web-Fachbereichs wird dadurch nicht verändert.
+Umsetzung:
+
+- lokale IndexedDB `hasa_lokale_daten_v1` mit strukturiertem Objektspeicher `werte`;
+- größere Galaxiescan-, TechTree-, Forschungs- und STAN-Bestände werden beim ersten
+  eingeschalteten Start aus dem bisherigen Speicher sicher in IndexedDB kopiert;
+- spätere Änderungen dieser Bestände werden parallel in IndexedDB nachgeführt;
+- Alpha 8 liest vorerst weiterhin aus dem bewährten Tampermonkey-/localStorage-Bestand;
+- es wird nichts aus dem bisherigen Speicher gelöscht, Alpha 7 bleibt Rückfallstand;
+- kleine Einstellungen und der API-Schlüssel bleiben bewusst im bisherigen Speicher;
+- IndexedDB startet erst nach dem Einschalten von HASA, nicht im schnellen Bereitschaftsmodus;
+- die HASA-Statusanzeige meldet Bereitschaft und Anzahl erstmals übernommener Bestände;
+- bei fehlender oder blockierter IndexedDB läuft HASA mit dem bisherigen Speicher weiter.
+
+Prüfung: vollständige Datei nach dem GitHub-Commit erneut gelesen; JavaScript-Syntax
+über die gesamte Datei geprüft; Versionskennung, Initialisierung und Rückfallpfad kontrolliert.
+
+Commit: `9c03218abd3442d5ff01fdcc5d2203039c08e170`.
+
+Restpunkt: praktischer Browsertest durch Kurt nach Installation. Erst nach erfolgreichem
+Praxistest darf eine spätere Version ausgewählte Lesezugriffe auf IndexedDB umstellen
+oder alte Großbestände aus dem Tampermonkey-Speicher entfernen.
 
 ### 2026-09-26 – Kurt an beide HASA-Fachbereiche – Galaxien 1 bis 6 allgemein lesbar
 
