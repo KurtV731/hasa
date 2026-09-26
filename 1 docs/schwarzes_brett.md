@@ -1,6 +1,6 @@
 # HASA – Schwarzes Brett
 
-Stand: 25.09.2026
+Stand: 26.09.2026
 
 Dieses Dokument ist die verbindliche gemeinsame Übergabe- und Verwaltungsstelle für die
 HASA-Entwicklung. Vor jeder HASA-Arbeit wird es vollständig gelesen. Entscheidungen,
@@ -49,9 +49,9 @@ Zuständigkeit:
 - Versionsführung, Quellfreigabe und Arbeitsaufträge;
 - Abstimmung mit dem CE SerKal bei gemeinsam genutzten Ressourcen.
 
-### HASA-Datenbank- und Web-Chatty – beigeordnet
+### HASA-Datenbank- und Web-Chatty – eigener Fachbereich
 
-Der Datenbank- und Web-Chatty arbeitet im Auftrag und innerhalb der Vorgaben des CE HASA.
+Der Datenbank- und Web-Chatty arbeitet eigenständig als gleichwertiges Teammitglied in seinem Fachbereich. Der CE HASA koordiniert lediglich die gemeinsamen Schnittstellen und den HASA-Gesamtstand.
 
 Zuständigkeit:
 
@@ -158,7 +158,7 @@ Ergebnis:
 
 - bewährtes SerKal-Verwaltungsmodell analog für HASA eingeführt;
 - CE HASA als Gesamtleitung festlegen;
-- HASA-Datenbank- und Web-Chatty beigeordnet einrichten;
+- HASA-Datenbank- und Web-Chatty als eigenen Fachbereich einrichten;
 - Kommunikation mit dem CE SerKal für gemeinsame Ressourcen verbindlich regeln;
 - zentralen Forschungsstand lokal in IndexedDB planen;
 - gemeinschaftliche Galaxiedaten klar von persönlichen Forschungsdaten getrennt.
@@ -170,9 +170,9 @@ Umgesetzt in:
 - Grundcommit `17553e0ec34aacd93f26c36507df5a8fef2dfc94`;
 - README-Commit `7fb6d5a1063a3185f51da40106a62941e99c0e01`.
 
-### 2026-09-25 – CE HASA an künftigen Datenbank- und Web-Chatty
+### 2026-09-25 – CE HASA an Datenbank- und Web-Chatty
 
-Status: VORBEREITET / CHAT NOCH NICHT EINGERICHTET
+Status: CHAT EINGERICHTET / EINARBEITUNG ERFOLGT
 
 Vor der ersten Änderung:
 
@@ -183,6 +183,42 @@ Vor der ersten Änderung:
 5. Benutzerverwaltung und externe Leseoberfläche zunächst konzipieren;
 6. Schnittstellen zum Userscript vor Umsetzung mit dem CE HASA abstimmen;
 7. persönliche Forschungsdaten ausdrücklich nicht in die zentrale MariaDB einplanen.
+
+
+### 2026-09-26 – CE HASA an Datenbank- und Web-Chatty – erste lesende Galaxiedatenbank
+
+Status: OFFEN / SCHNITTSTELLENRÜCKMELDUNG ERBETEN
+
+Kurt möchte als ersten gemeinsamen Schritt eine einfache, nur lesende Anzeige der
+Galaxiedatenbank ohne Benutzerkonten und ohne Rechteverwaltung. Im HASA-Bereich
+„Galaxiescan“ wird der CE HASA anschließend einen zuschaltbaren Knopf
+„Galaxiedatenbank anzeigen“ einbauen. Ein Klick soll ein zusätzliches Fenster mit der
+vom Datenbank- und Web-Chatty erstellten Ansicht öffnen.
+
+Bitte im eigenen Fachbereich umsetzen beziehungsweise festlegen und anschließend hier
+auf dem Schwarzen Brett zurückmelden:
+
+1. die endgültige feste HTTPS-Adresse der Anzeige, die der Knopf öffnen soll;
+2. ob die Ansicht als eigenes Browserfenster beziehungsweise eigener Tab geöffnet werden
+   soll und ob besondere Fensterparameter erforderlich sind;
+3. den verwendeten lesenden API-Endpunkt und das zurückgegebene Datenformat;
+4. welche Filter die erste Ansicht anbietet, mindestens Galaxie und System, soweit die
+   vorhandenen Daten dies ermöglichen;
+5. betroffene Dateien, Prüfungsergebnis und GitHub-Commit;
+6. gegebenenfalls noch fehlende Voraussetzungen für die Einbindung ins Userscript.
+
+Verbindliche Grenzen des ersten Versuchs:
+
+- keine Benutzerkonten und keine Rechteverwaltung;
+- ausschließlich lesender Zugriff für die Anzeige;
+- kein MariaDB-Passwort, API-Schlüssel oder anderes Geheimnis im Browsercode;
+- keine Schreib-, Änderungs- oder Löschfunktion in der Anzeige;
+- keine persönlichen Forschungsdaten;
+- vorhandene Serverkonfiguration und Zugangsdaten bleiben außerhalb von GitHub.
+
+Der CE HASA wartet für die endgültige Verdrahtung des Knopfes nicht auf eine mündliche
+Nachricht von Kurt, sondern liest die Rückmeldung direkt aus diesem Schwarzen Brett.
+Kurt muss keine technischen Angaben zwischen den Chats übertragen.
 
 ## Übergabeformat
 
