@@ -61,11 +61,45 @@ echo HASA ist auf dem aktuellen GitHub-Stand.
 echo ==========================================
 echo.
 
-if exist "2 src\current\" (
-    start "" explorer.exe "%CD%\2 src\current"
-) else (
-    echo HINWEIS: Der Ordner "2 src\current" wurde nicht gefunden.
+set "HASA_QUELLDATEI=%CD%\2 src\current\hasa_1.2.0-alpha.8_indexeddb-grundlage.user.js.txt"
+
+if not exist "%HASA_QUELLDATEI%" (
+    echo FEHLER: Die aktuelle HASA-Programmdatei wurde nicht gefunden:
+    echo %HASA_QUELLDATEI%
+    echo.
+    echo Der Quellordner wird stattdessen geoeffnet.
+    if exist "2 src\current\" start "" explorer.exe "%CD%\2 src\current"
+    popd
+    pause
+    exit /b 1
 )
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$p = [System.IO.Path]::GetFullPath($env:HASA_QUELLDATEI); $t = [System.IO.File]::ReadAllText($p, [System.Text.Encoding]::UTF8); Set-Clipboard -Value $t"
+if errorlevel 1 (
+    echo.
+    echo FEHLER: Die HASA-Datei konnte nicht in die Zwischenablage kopiert werden.
+    echo Die Datei wird deshalb im Explorer angezeigt.
+    start "" explorer.exe /select,"%HASA_QUELLDATEI%"
+    echo.
+    popd
+    pause
+    exit /b 1
+)
+
+echo.
+echo ==========================================
+echo HASA Alpha 8 liegt jetzt vollstaendig
+echo in der Windows-Zwischenablage.
+echo ==========================================
+echo.
+echo Naechster Schritt in Tampermonkey:
+echo   1. Vorhandenes HASA-Skript im Editor oeffnen.
+echo   2. Strg+A druecken.
+echo   3. Strg+V druecken.
+echo   4. Speichern.
+echo.
+echo Es wurde kein zweites Tampermonkey-Skript angelegt.
+echo.
 
 popd
 pause
