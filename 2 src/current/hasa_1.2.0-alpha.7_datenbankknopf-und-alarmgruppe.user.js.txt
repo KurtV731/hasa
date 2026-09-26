@@ -22,7 +22,7 @@
 
  Änderungen:
  - neuer Knopf „Galaxiedatenbank anzeigen“ im Galaxiescanner
- - feste lesende Zieladresse https://hasa.serkal.de/galaxy.php
+ - feste lesende Zieladresse https://serkal.de/hasa/galaxy.php
  - Baualarm und Forschungsalarm in der gemeinsamen Gruppe „Alarme“
  - Forschungs- und Gebäudestände bleiben beim Wechsel der Horizon-Seite erhalten
  - fehlende Anzeige auf einer Unterseite löscht keine zuvor gelesene Stufe mehr
@@ -109,11 +109,11 @@
     ]);
 
     const HASA_VERSION = '1.2.0 Alpha 7';
-    const HASA_BUILD_LABEL = '1.2.0-alpha7-datenbankknopf-alarmgruppe-2026-09-26';
+    const HASA_BUILD_LABEL = '1.2.0-alpha7-datenbankknopf-alarmgruppe-urlfix-2026-09-26';
     const STORAGE_GALASCAN_LETZTER_STAND = 'hasa_galascan_letzter_stand_v1';
     const STORAGE_GALASCAN_API_KEY = 'hasa_galascan_api_key_v1';
     const HASA_GALASCAN_API_URL = 'https://serkal.de/hasa/systems.php';
-    const HASA_GALAXY_DB_URL = 'https://hasa.serkal.de/galaxy.php';
+    const HASA_GALAXY_DB_URL = 'https://serkal.de/hasa/galaxy.php';
     const STORAGE_GALASCAN_AUFNAHME = 'hasa_galascan_aufnahme_aktiv_v1';
     let galascannerServerStatus = null;
     let galascannerSendet = false;
