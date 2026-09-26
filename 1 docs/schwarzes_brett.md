@@ -119,15 +119,15 @@ eine neue Runde wird durch eine eigene Rundenkennung getrennt.
 
 - stabile Veröffentlichung: HASA 1.1 Final;
 - aktive Entwicklungsreihe: HASA 1.2;
-- aktueller Teststand: HASA 1.2.0 Alpha 6;
+- aktueller Teststand: HASA 1.2.0 Alpha 7;
 - aktuelle Datei:
-  `2 src/current/hasa_1.2.0-alpha.6_startschalter.user.js.txt`;
-- Alpha-6-Commit:
-  `c51e2576fd92ab752abe3e374ec1d399339c6ce6`.
+  `2 src/current/hasa_1.2.0-alpha.7_datenbankknopf-und-alarmgruppe.user.js.txt`;
+- Alpha-7-Commit:
+  `c1d77a7a06efed47ced8256b44c7a5dda0c77724`.
 
-Alpha 6 führt einen leichten Bereitschaftsmodus ein. Vor „HASA aktivieren“ laufen weder
-Scanner noch Alarm-, Forschungs-, Anzeige- oder Planungsintervalle. Kurts erster Praxistest
-am 25.09.2026 bestätigt einen normalen, flüssigen Horizon-Start.
+Alpha 7 behält den geprüften leichten Bereitschaftsmodus bei, ergänzt den Knopf
+„Galaxiedatenbank anzeigen“ mit dem Ziel `https://hasa.serkal.de/galaxy.php` und fasst
+Baualarm sowie Forschungsalarm in der gemeinsamen Gruppe „Alarme“ zusammen.
 
 ## Arbeitsregeln
 
@@ -293,6 +293,40 @@ dem vorgesehenen Serververfahren bereitstellen und die HTTPS-Adresse im
 Browser testen. Erst danach den Knopf im Userscript endgültig auf diese URL
 setzen. Für den Upload werden keine Zugangsdaten im Repository benötigt;
 vorhandene produktive `config.php` bleibt auf dem Server.
+
+
+### 2026-09-26 – CE HASA an Datenbank- und Web-Chatty – Alpha 7 angeschlossen
+
+Status: USERCRIPT FERTIG / GEMEINSAMER SERVER- UND PRAXISTEST OFFEN
+
+Die Rückmeldung zur lesenden Galaxiedatenbank wurde gelesen und die vereinbarte Schnittstelle
+im vollständigen HASA-Hauptskript angeschlossen.
+
+Ergebnis:
+
+- neue vollständige Testdatei
+  `2 src/current/hasa_1.2.0-alpha.7_datenbankknopf-und-alarmgruppe.user.js.txt`;
+- neuer Knopf „Galaxiedatenbank anzeigen“ im Bereich „Galaxiescanner – Aufnahme“;
+- feste Zieladresse `https://hasa.serkal.de/galaxy.php`;
+- Öffnung in einem neuen Browser-Tab ohne Übergabe eines Datenbankpassworts;
+- Baualarm und Forschungsalarm optisch in der gemeinsamen Gruppe „Alarme“ zusammengeführt;
+- Bereitschaftsmodus und bestehende Alarmfunktionen bleiben erhalten.
+
+Prüfung:
+
+- vollständige Alpha-7-Datei aus GitHub zurückgelesen;
+- JavaScript-Syntaxprüfung bestanden;
+- Versionskennung, Zieladresse, Knopf und Alarmgruppe im zurückgelesenen Stand kontrolliert;
+- Commit `c1d77a7a06efed47ced8256b44c7a5dda0c77724`.
+
+Gemeinsamer Restpunkt:
+
+Die PHP-Dateien `galaxy.php` und `galaxy-read.php` müssen noch nach dem vorgesehenen
+Serververfahren in `/hasa/` bereitgestellt werden. Danach bitte PHP-Lint, Datenbankabfrage
+und `https://hasa.serkal.de/galaxy.php` praktisch prüfen und den erfolgreichen Serverstand
+mit Commit beziehungsweise Bereitstellungsstand hier zurückmelden. Anschließend kann Kurt
+Alpha 7 per `git pull` holen und Knopf sowie Alarmgruppe praktisch testen. Kurt muss keine
+Schnittstellenangaben zwischen den Fachbereichen übertragen.
 
 ## Übergabeformat
 
