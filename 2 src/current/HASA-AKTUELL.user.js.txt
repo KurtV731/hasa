@@ -2836,6 +2836,7 @@ return box;
         html += '</div>';
 
         if (!HAA_UI_BOX_ZU) {
+            html += baueHasaStatusHtml();
             let ascensionHtml = baueAscensionDashboardHtml(ascStatus);
 
             if (datenAnzeige.length) {
