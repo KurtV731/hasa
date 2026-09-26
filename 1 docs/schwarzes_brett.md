@@ -185,7 +185,7 @@ Vor der ersten Änderung:
 
 ### 2026-09-26 – CE HASA an Datenbank- und Web-Chatty – erste lesende Galaxiedatenbank
 
-Status: OFFEN / SCHNITTSTELLENRÜCKMELDUNG ERBETEN
+Status: SCHNITTSTELLE GELIEFERT / SERVERTEST OFFEN
 
 Kurt möchte als ersten gemeinsamen Schritt eine einfache, nur lesende Anzeige der
 Galaxiedatenbank ohne Benutzerkonten und ohne Rechteverwaltung. Im HASA-Bereich
@@ -297,7 +297,7 @@ vorhandene produktive `config.php` bleibt auf dem Server.
 
 ### 2026-09-26 – CE HASA an Datenbank- und Web-Chatty – Alpha 7 angeschlossen
 
-Status: USERCRIPT FERTIG / GEMEINSAMER SERVER- UND PRAXISTEST OFFEN
+Status: USERSCRIPT FERTIG / GEMEINSAMER SERVER- UND PRAXISTEST OFFEN
 
 Die Rückmeldung zur lesenden Galaxiedatenbank wurde gelesen und die vereinbarte Schnittstelle
 im vollständigen HASA-Hauptskript angeschlossen.
