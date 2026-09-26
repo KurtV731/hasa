@@ -9,7 +9,6 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
 }
 
 header('X-Content-Type-Options: nosniff');
-header('Access-Control-Allow-Origin: https://hasa.serkal.de');
 
 function readNumber(mixed $value, string $name, int $maximum): ?int
 {
@@ -26,15 +25,17 @@ function readNumber(mixed $value, string $name, int $maximum): ?int
     return $number;
 }
 
-$galaxy = readNumber($_GET['galaxy'] ?? null, 'galaxy', 999999);
+$galaxy = readNumber($_GET['galaxy'] ?? null, 'galaxy', 6);
+if ($galaxy === 0) {
+    hasaJson(['ok' => false, 'error' => 'invalid_galaxy'], 400);
+}
 $system = readNumber($_GET['system'] ?? null, 'system', 999999);
 if ($system !== null && $galaxy === null) {
     hasaJson(['ok' => false, 'error' => 'galaxy_required'], 400);
 }
 
 $pdo = hasaPdo();
-$where = "g.galaxy_type = 'normal' AND g.owner_user_id IS NULL
-          AND s.visibility = 'public'";
+$where = 'g.game_id BETWEEN 1 AND 6';
 $params = [];
 if ($galaxy !== null) {
     $where .= ' AND g.game_id = ?';
@@ -60,8 +61,8 @@ $planetQuery = $pdo->prepare(
             ruler_name AS ruler, alliance_tag AS alliance, game_status AS status,
             last_observed_at
      FROM hasa_planets
-     WHERE system_id = ? AND visibility = 'public'
-     ORDER BY orbit_position LIMIT 255"
+     WHERE system_id = ?
+     ORDER BY orbit_position"
 );
 foreach ($systems as &$row) {
     $planetQuery->execute([(int)$row['id']]);
