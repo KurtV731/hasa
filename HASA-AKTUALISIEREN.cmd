@@ -93,10 +93,12 @@ echo in der Windows-Zwischenablage.
 echo ==========================================
 echo.
 echo Naechster Schritt in Tampermonkey:
-echo   1. Vorhandenes HASA-Skript im Editor oeffnen.
-echo   2. Strg+A druecken.
-echo   3. Strg+V druecken.
-echo   4. Speichern.
+echo   1. Tampermonkey-Symbol und dann Uebersicht oeffnen.
+echo   2. Vorhandenes HASA-Skript ueber Name oder Stift oeffnen.
+echo   3. Einmal an beliebiger Stelle IN DEN CODETEXT klicken.
+echo   4. Erst jetzt Strg+A druecken.
+echo   5. Strg+V druecken.
+echo   6. Speichern.
 echo.
 echo Es wurde kein zweites Tampermonkey-Skript angelegt.
 echo.
