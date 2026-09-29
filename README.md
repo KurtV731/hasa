@@ -12,11 +12,12 @@ Im Hauptordner des lokal geklonten Repositorys liegt:
 
 `HASA-AKTUALISIEREN.cmd`
 
-Ein Doppelklick führt ein sicheres `git pull --ff-only` aus. Bei Erfolg öffnet
-sich automatisch der Ordner `2 src/current` mit der aktuellen vollständigen
-Tampermonkey-Datei. Bei einem Fehler bleibt das Fenster mit einer verständlichen
-Meldung geöffnet. Die CMD-Datei löscht keine lokalen Dateien und führt keinen
-automatischen Reset aus.
+Ein Doppelklick führt ein sicheres `git pull --ff-only` aus und lädt anschließend
+den vollständigen Inhalt von `2 src/current/HASA-AKTUELL.user.js.txt` direkt in
+die Windows-Zwischenablage. Danach wird das vorhandene HASA-Skript über die
+Tampermonkey-Übersicht geöffnet, einmal in den Codetext geklickt und mit
+`Strg+A`, `Strg+V` sowie Speichern aktualisiert. Die CMD-Datei löscht keine
+lokalen Dateien und führt keinen automatischen Reset aus.
 
 ## Aktuelle stabile Version
 
@@ -31,24 +32,28 @@ Tampermonkey als neues Userscript eingefügt und gespeichert.
 
 ## Aktuelle Entwicklungsreihe
 
-**HASA 1.2.0 Alpha 7**
+**HASA 1.2.0 Alpha 9**
 
-Aktuelle Testdatei:
+Aktuelle Testdateien:
 
-`2 src/current/hasa_1.2.0-alpha.7_datenbankknopf-und-alarmgruppe.user.js.txt`
+- fester Aktualisierungspfad: `2 src/current/HASA-AKTUELL.user.js.txt`
+- archivierte Fassung: `2 src/current/hasa_1.2.0-alpha.9_indexeddb-aktiv.user.js.txt`
 
-Alpha 7 behält den leichten Bereitschaftsmodus bei, fasst Bau- und Forschungsalarm
-in der gemeinsamen Gruppe „Alarme“ zusammen und ergänzt im Galaxiescanner den Knopf
-„Galaxiedatenbank anzeigen“. Dieser öffnet die ausschließlich lesende Ansicht in
-einem neuen Tab.
+Alpha 9 macht IndexedDB zur aktiven lokalen Datenquelle für größere persönliche
+Galaxiescan-, TechTree-, Forschungs- und STAN-Bestände. Beim Einschalten von HASA
+werden diese Bestände aus IndexedDB in den Arbeitsspeicher geladen; weitere Änderungen
+werden direkt in IndexedDB geschrieben. Der bisherige Tampermonkey-Bestand bleibt
+unverändert als Rückfallebene erhalten. Kleine Einstellungen und der API-Schlüssel
+verbleiben bewusst im Tampermonkey-Speicher.
 
-Die Entwicklungsreihe 1.2 umfasst unter anderem:
+Die Entwicklungsreihe 1.2 umfasst außerdem:
 
+- leichten Bereitschaftsmodus vor der ausdrücklichen HASA-Aktivierung;
 - Galaxiescanner und serverseitige API;
 - automatische Erfassung sichtbarer Systeme;
 - dauerhaft erhaltenen Forschungsstand beim Seitenwechsel;
-- lokale persönliche Forschungsdaten in IndexedDB;
-- spätere externe Galaxiekarte mit Benutzer- und Sichtbarkeitsverwaltung.
+- gemeinsame Gruppe für Bau- und Forschungsalarm;
+- lesende externe Galaxiedatenbank für die Galaxien 1 bis 6.
 
 ## Funktionen der Version 1.1
 
