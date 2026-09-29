@@ -32,14 +32,20 @@ Tampermonkey als neues Userscript eingefügt und gespeichert.
 
 ## Aktuelle Entwicklungsreihe
 
-**HASA 1.2.0 Alpha 9**
+**HASA 1.2.0 Alpha 10**
 
 Aktuelle Testdateien:
 
 - fester Aktualisierungspfad: `2 src/current/HASA-AKTUELL.user.js.txt`
-- archivierte Fassung: `2 src/current/hasa_1.2.0-alpha.9_indexeddb-aktiv.user.js.txt`
+- archivierte Fassung: `2 src/current/hasa_1.2.0-alpha.10_galascanner-kompakt.user.js.txt`
 
-Alpha 9 macht IndexedDB zur aktiven lokalen Datenquelle für größere persönliche
+Alpha 10 zeigt den Galaxiescanner als ruhige Arbeitsfläche: Systemkoordinaten stehen
+nur einmal in der Systemüberschrift, normale Speicherungen laufen ohne dauerhafte
+Erfolgs-, Zähler- oder Warteschlangentexte und die erklärenden Hinweiszeilen wurden
+entfernt. Sichtbar bleiben echte Fehler. Der Aufnahmezustand ist eindeutig am Knopf
+`Aufnahme starten` beziehungsweise `Aufnahme beenden` erkennbar.
+
+Die aus Alpha 9 übernommene IndexedDB ist die aktive lokale Datenquelle für größere persönliche
 Galaxiescan-, TechTree-, Forschungs- und STAN-Bestände. Beim Einschalten von HASA
 werden diese Bestände aus IndexedDB in den Arbeitsspeicher geladen; weitere Änderungen
 werden direkt in IndexedDB geschrieben. Der bisherige Tampermonkey-Bestand bleibt
