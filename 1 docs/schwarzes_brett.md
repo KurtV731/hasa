@@ -119,17 +119,14 @@ eine neue Runde wird durch eine eigene Rundenkennung getrennt.
 
 - stabile Veröffentlichung: HASA 1.1 Final;
 - aktive Entwicklungsreihe: HASA 1.2;
-- aktueller Teststand: HASA 1.2.0 Alpha 9;
+- aktueller Teststand: HASA 1.2.0 Alpha 10;
 - fester Aktualisierungspfad:
   `2 src/current/HASA-AKTUELL.user.js.txt`;
-- archivierte Alpha-9-Datei:
-  `2 src/current/hasa_1.2.0-alpha.9_indexeddb-aktiv.user.js.txt`;
-- Alpha-9-Programmcommit:
-  `d4099a912e39dab00cac54b79bc5e349b5baa566`;
-- Aktualisierung von `HASA-AKTUELL`:
-  `787dc11516910173c6fabd25707714a09b50ea6f`.
+- archivierte Alpha-10-Datei:
+  `2 src/current/hasa_1.2.0-alpha.10_galascanner-kompakt.user.js.txt`.
 
-Alpha 9 übernimmt die Funktionen von Alpha 8 und macht IndexedDB zur aktiven
+Alpha 10 übernimmt die Funktionen von Alpha 9, macht die Galaxiescanner-Anzeige
+deutlich ruhiger und behält IndexedDB als aktive
 Datenquelle für die ausgewählten großen persönlichen Bestände. Tampermonkey bleibt
 unverändert als Rückfallebene sowie als Speicher für kleine Einstellungen und den
 API-Schlüssel erhalten.
@@ -529,6 +526,65 @@ praktisch testen. Die frühere Übergabe zur personenbezogenen
 Zuordnung ist für diese erste Stufe durch Kurts pauschale Regel
 ersetzt; sie wird erst für spätere nicht allgemein sichtbare
 Galaxien wieder relevant.
+
+### 2026-09-29 – CE HASA – Alpha 10 kompakter Galaxiescanner
+
+Status: CODE FERTIG / SYNTAX GEPRÜFT / GITHUB-COMMIT UND PRAXISTEST OFFEN
+
+Kurts Vorgabe: Der Galaxiescanner ist eine Arbeitsfläche und kein dauerhaft
+eingeblendetes Handbuch. Systemkoordinaten und normale Arbeitszustände dürfen
+nicht mehrfach erscheinen.
+
+Umsetzung:
+
+- Systemname, Koordinate und Anzahl gefundener Planeten stehen einmal gemeinsam;
+- normale Erkennungs-, Sende- und Erfolgsmeldungen entfallen;
+- die dauerhafte Zeile mit Aufnahmezustand, Speicherzähler und Warteschlange entfällt;
+- graue Bedienhinweise unter dem Scanner und dem Datenbankknopf entfallen;
+- der Knopf zeigt mit `Aufnahme starten` oder `Aufnahme beenden` bereits den Zustand;
+- der API-Schlüssel-Knopf wird nur angezeigt, wenn noch kein Schlüssel vorhanden ist;
+- Verbindungs-, Schlüssel- und Speicherfehler bleiben weiterhin deutlich sichtbar.
+
+Betroffene Dateien:
+
+- `2 src/current/HASA-AKTUELL.user.js.txt`;
+- `2 src/current/hasa_1.2.0-alpha.10_galascanner-kompakt.user.js.txt`;
+- `README.md`.
+
+Prüfung: vollständige JavaScript-Syntaxprüfung bestanden. Praktische Anzeige in
+Horizon ist nach Installation durch Kurt zu prüfen.
+
+### 2026-09-29 – CE HASA an Datenbank- und Web-Chatty – Planetenscans speichern und anzeigen
+
+Status: AUFTRAG VORBEREITET / MUSTER EINES ECHTEN BERICHTS NOCH ERFORDERLICH
+
+Das nächste gemeinsame Ziel ist der vollständige Weg vom sichtbaren
+Planetenscan beziehungsweise Sondenbericht bis zur lesenden Galaxiedatenbank.
+Der CE HASA ergänzt im Tampermonkey-Hauptskript die Erkennung und Übertragung.
+Der Datenbank- und Web-Chatty ergänzt im eigenen Fachbereich Schema, Schreib-API,
+Lese-API und Anzeige.
+
+Verbindliche Regeln:
+
+1. Nur Angaben speichern, die im tatsächlich sichtbaren Spielbericht sicher erkannt werden.
+2. Ein Planetenscan wird eindeutig Galaxie, System und Orbit zugeordnet.
+3. Jede Beobachtung erhält Beobachtungszeit, Quelle und Beobachter.
+4. Neuere vollständige Werte aktualisieren ältere Werte; ein unvollständiger Bericht
+   löscht keine bereits vorhandenen Angaben.
+5. Galaxien 1 bis 6 bleiben nach der aktuellen Produktregel allgemein lesbar.
+6. Persönliche Forschungsstände, Forschungskosten und Forschungszeiten gehören
+   weiterhin ausschließlich in die lokale IndexedDB und nicht in MariaDB.
+7. Vor Festlegung der Feldnamen liefert Kurt beziehungsweise der CE HASA einen echten
+   sichtbaren Planetenscan als Screenshot und möglichst Seitenquelltext. Werte und
+   HTML-Struktur werden nicht geraten.
+
+Erwartete Übergabe des Datenbank- und Web-Chattys nach Vorliegen des Musters:
+
+- Datenbankmigration ohne Verlust vorhandener Systeme und Planeten;
+- dokumentiertes JSON-Format für den Schreibweg;
+- Erweiterung der lesenden API und von `galaxy.php` um die neuen Planetendaten;
+- Syntax-/Datenbankprüfung, produktiver Servertest, betroffene Dateien und Commit;
+- keine Zugangsdaten oder produktive `config.php` in GitHub.
 
 ## Übergabeformat
 
