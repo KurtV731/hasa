@@ -1,9 +1,9 @@
 ﻿// ==UserScript==
 // @name         HASA – Horizon Ascension Assistant
 // @namespace    horiversum.hasa
-// @version      1.2.0-alpha.8
+// @version      1.2.0-alpha.9
 // @charset      UTF-8
-// @description  Horizon-Assistent mit lokaler IndexedDB-Grundlage, Galaxiedatenbank und Bereitschaftsmodus
+// @description  Horizon-Assistent mit aktiver lokaler IndexedDB, Galaxiedatenbank und Bereitschaftsmodus
 // @match        https://horiversum.org/game/main/main.php*
 // @grant        GM_getValue
 // @grant        GM_setValue
@@ -16,18 +16,18 @@
 ==========================================================
  HASA – Horizon Ascension Assistant
 
- Version : 1.2.0 Alpha 8
- Status  : Lokale IndexedDB-Grundlage mit sicherer Rückfallebene
+ Version : 1.2.0 Alpha 9
+ Status  : IndexedDB aktiv mit sicherer Tampermonkey-Rückfallebene
  Build   : 2026-09-26
 
- Neu in Alpha 8:
- - große persönliche Datenbestände werden zusätzlich in IndexedDB gespiegelt
- - der bisherige Tampermonkey-Speicher bleibt vollständig als Rückfallebene erhalten
+ Neu in Alpha 9:
+ - große persönliche Datenbestände werden aktiv aus IndexedDB gelesen
+ - Änderungen dieser Bestände werden direkt in IndexedDB geschrieben
+ - der bisherige Tampermonkey-Bestand bleibt unverändert als Rückfallebene erhalten
  - kleine Einstellungen und der API-Schlüssel verbleiben im Tampermonkey-Speicher
- - IndexedDB startet erst nach dem Einschalten von HASA
- - der Speicherstatus wird im HASA-Fenster angezeigt
+ - bei einem IndexedDB-Fehler arbeitet HASA automatisch mit dem bisherigen Speicher weiter
 
- Aus Alpha 7 übernommen:
+ Aus Alpha 8 übernommen:
  - Galaxiedatenbank-Knopf und Galaxiescanner
  - gemeinsame Gruppe für Bau- und Forschungsalarm
  - dauerhafte Forschungs- und Gebäudestände beim Seitenwechsel
@@ -45,7 +45,7 @@
 
  Speicherung:
    Kleine Einstellungen und Geheimnisse: Tampermonkey GM-Speicher.
-   Große persönliche Bestände: ab Alpha 8 zusätzlich lokale IndexedDB.
+   Große persönliche Bestände: ab Alpha 9 aktive lokale IndexedDB.
    Fallback: Browser-localStorage, falls GM-Speicher nicht verfügbar ist.
 ==========================================================
 */
@@ -68,8 +68,8 @@
         'PHYSICS', 'PSYCHOLOGY', 'NUCLEARPHYSICS', 'SOLARENERGYTECH'
     ]);
 
-    const HASA_VERSION = '1.2.0 Alpha 8';
-    const HASA_BUILD_LABEL = '1.2.0-alpha8-indexeddb-grundlage-2026-09-26';
+    const HASA_VERSION = '1.2.0 Alpha 9';
+    const HASA_BUILD_LABEL = '1.2.0-alpha9-indexeddb-aktiv-2026-09-29';
     const STORAGE_GALASCAN_LETZTER_STAND = 'hasa_galascan_letzter_stand_v1';
     const STORAGE_GALASCAN_API_KEY = 'hasa_galascan_api_key_v1';
     const HASA_GALASCAN_API_URL = 'https://serkal.de/hasa/systems.php';
@@ -527,7 +527,13 @@
     const HASA_INDEXEDDB_VERSION = 1;
     const HASA_INDEXEDDB_STORE = 'werte';
     let HAA_INDEXEDDB_DB = null;
-    let HAA_INDEXEDDB_STATUS = { zustand: 'wartet', kopiert: 0, text: 'startet erst mit HASA' };
+    const HAA_INDEXEDDB_CACHE = new Map();
+    let HAA_INDEXEDDB_STATUS = {
+        zustand: 'wartet',
+        kopiert: 0,
+        geladen: 0,
+        text: 'startet erst mit HASA'
+    };
     const TECHTREE_BASIS_URL = 'https://techtree.kommandobasis.eu/objects/details/id/';
     const STAN_START_DATENSTAND = '20260802';
     const STAN_RHYTHMUS_TAGE = 7;
@@ -759,12 +765,22 @@
     }
 
     function hasaSpeicherName() {
-        return gmSpeicherVerfuegbar() ? 'Tampermonkey GM + lokale DB' : 'localStorage + lokale DB';
+        if (HAA_INDEXEDDB_STATUS.zustand === 'bereit') {
+            return 'lokale DB aktiv · Tampermonkey als Rückfall';
+        }
+        return gmSpeicherVerfuegbar() ? 'Tampermonkey GM' : 'localStorage';
     }
 
     function hasaIndexedDbStatusText() {
         if (HAA_INDEXEDDB_STATUS.zustand === 'bereit') {
-            return 'bereit' + (HAA_INDEXEDDB_STATUS.kopiert > 0 ? ' · ' + HAA_INDEXEDDB_STATUS.kopiert + ' Bestände übernommen' : '');
+            let text = 'aktiv · Lesen und Schreiben';
+            if (HAA_INDEXEDDB_STATUS.geladen > 0) {
+                text += ' · ' + HAA_INDEXEDDB_STATUS.geladen + ' Bestände geladen';
+            }
+            if (HAA_INDEXEDDB_STATUS.kopiert > 0) {
+                text += ' · ' + HAA_INDEXEDDB_STATUS.kopiert + ' neu übernommen';
+            }
+            return text;
         }
         if (HAA_INDEXEDDB_STATUS.zustand === 'fehler') return 'nicht verfügbar · bisheriger Speicher bleibt aktiv';
         if (HAA_INDEXEDDB_STATUS.zustand === 'startet') return 'wird vorbereitet';
@@ -945,39 +961,87 @@
     }
 
     function speichern(key, wert) {
-        speichernKlassisch(key, wert);
-        if (HAA_INDEXEDDB_DB && istHasaIndexedDbSchluessel(key)) {
-            schreibeHasaIndexedDbWert(HAA_INDEXEDDB_DB, key, wert).catch(function (fehler) {
-                console.warn('HASA IndexedDB-Spiegelung fehlgeschlagen:', fehler);
-            });
+        if (!istHasaIndexedDbSchluessel(key)) {
+            speichernKlassisch(key, wert);
+            return;
         }
+
+        if (HAA_INDEXEDDB_DB && HAA_INDEXEDDB_STATUS.zustand === 'bereit') {
+            HAA_INDEXEDDB_CACHE.set(key, wert);
+            schreibeHasaIndexedDbWert(HAA_INDEXEDDB_DB, key, wert).catch(function (fehler) {
+                console.warn('HASA IndexedDB-Speichern fehlgeschlagen; sichere im Rückfallspeicher:', fehler);
+                speichernKlassisch(key, wert);
+            });
+            return;
+        }
+
+        // Vor der Initialisierung oder bei einem DB-Fehler bleibt der alte Speicher sicher aktiv.
+        speichernKlassisch(key, wert);
     }
 
     function laden(key, fallback) {
-        // Alpha 8 liest absichtlich noch aus dem bewährten Speicher.
-        // IndexedDB wird zunächst parallel aufgebaut, damit keine Daten verloren gehen.
+        if (istHasaIndexedDbSchluessel(key)
+            && HAA_INDEXEDDB_STATUS.zustand === 'bereit'
+            && HAA_INDEXEDDB_CACHE.has(key)) {
+            const wert = HAA_INDEXEDDB_CACHE.get(key);
+            if (wert !== undefined && wert !== null && wert !== '') {
+                return wert;
+            }
+            return fallback;
+        }
+
         return ladenKlassisch(key, fallback);
     }
 
     async function initialisiereHasaIndexedDb() {
-        HAA_INDEXEDDB_STATUS = { zustand: 'startet', kopiert: 0, text: 'wird vorbereitet' };
+        HAA_INDEXEDDB_STATUS = {
+            zustand: 'startet',
+            kopiert: 0,
+            geladen: 0,
+            text: 'wird vorbereitet'
+        };
+        HAA_INDEXEDDB_CACHE.clear();
+
         try {
             const db = await oeffneHasaIndexedDb();
             HAA_INDEXEDDB_DB = db;
             let kopiert = 0;
+            let geladen = 0;
+
             for (const key of hasaIndexedDbSchluessel()) {
                 const vorhanden = await leseHasaIndexedDbWert(db, key);
-                if (vorhanden !== null) continue;
+
+                if (vorhanden !== null
+                    && Object.prototype.hasOwnProperty.call(vorhanden, 'wert')) {
+                    HAA_INDEXEDDB_CACHE.set(key, vorhanden.wert);
+                    geladen += 1;
+                    continue;
+                }
+
                 const alterWert = ladenKlassisch(key, undefined);
-                if (alterWert === undefined || alterWert === null || alterWert === '') continue;
+                if (alterWert === undefined || alterWert === null || alterWert === '') {
+                    continue;
+                }
+
                 await schreibeHasaIndexedDbWert(db, key, alterWert);
+                HAA_INDEXEDDB_CACHE.set(key, alterWert);
                 kopiert += 1;
+                geladen += 1;
             }
-            HAA_INDEXEDDB_STATUS = { zustand: 'bereit', kopiert: kopiert, text: 'lokale Datenbank bereit' };
+
+            HAA_INDEXEDDB_STATUS = {
+                zustand: 'bereit',
+                kopiert: kopiert,
+                geladen: geladen,
+                text: 'IndexedDB ist aktive Datenquelle'
+            };
         } catch (fehler) {
             HAA_INDEXEDDB_DB = null;
+            HAA_INDEXEDDB_CACHE.clear();
             HAA_INDEXEDDB_STATUS = {
-                zustand: 'fehler', kopiert: 0,
+                zustand: 'fehler',
+                kopiert: 0,
+                geladen: 0,
                 text: fehler && fehler.message ? fehler.message : 'unbekannter Fehler'
             };
             console.warn('HASA lokale IndexedDB konnte nicht gestartet werden. Der bisherige Speicher bleibt vollständig aktiv:', fehler);
@@ -4829,13 +4893,13 @@ return box;
     setTimeout(starteSicher, 800);
 })();
 
-/* HASA 1.2.0 Alpha 8 – lokale IndexedDB-Grundlage
-   - große persönliche HASA-Daten werden sicher in IndexedDB gespiegelt
-   - Änderungen werden parallel in der lokalen Datenbank nachgeführt
-   - der bisherige Speicher bleibt als vollständige Rückfallebene erhalten
+/* HASA 1.2.0 Alpha 9 – IndexedDB als aktive Datenquelle
+   - große persönliche HASA-Daten werden aus IndexedDB gelesen und dorthin geschrieben
+   - vorhandene Alpha-8-Bestände werden beim Start in einen synchronen Arbeitsspeicher geladen
+   - der bisherige Speicher bleibt unverändert als vollständige Rückfallebene erhalten
    - kleine Einstellungen und der API-Schlüssel bleiben bewusst im bisherigen Speicher
-   - IndexedDB startet erst nach dem Einschalten von HASA
-   - Statusanzeige meldet Bereitschaft und übernommene Bestände
+   - IndexedDB startet weiterhin erst nach dem Einschalten von HASA
+   - Statusanzeige meldet aktive Datenquelle sowie geladene und neu übernommene Bestände
 
    - STAN-Daten als maßgebliche Quelle für TechTree-Typen
    - allgemeine Erkennung von Gebäude, Forschung, Schiff und Verteidigung
