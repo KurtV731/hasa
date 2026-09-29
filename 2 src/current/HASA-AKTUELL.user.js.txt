@@ -1,9 +1,9 @@
 ﻿// ==UserScript==
 // @name         HASA – Horizon Ascension Assistant
 // @namespace    horiversum.hasa
-// @version      1.2.0-alpha.9
+// @version      1.2.0-alpha.10
 // @charset      UTF-8
-// @description  Horizon-Assistent mit aktiver lokaler IndexedDB, Galaxiedatenbank und Bereitschaftsmodus
+// @description  Horizon-Assistent mit kompakter Galaxiescanner-Anzeige und aktiver lokaler IndexedDB
 // @match        https://horiversum.org/game/main/main.php*
 // @grant        GM_getValue
 // @grant        GM_setValue
@@ -16,11 +16,17 @@
 ==========================================================
  HASA – Horizon Ascension Assistant
 
- Version : 1.2.0 Alpha 9
- Status  : IndexedDB aktiv mit sicherer Tampermonkey-Rückfallebene
- Build   : 2026-09-26
+ Version : 1.2.0 Alpha 10
+ Status  : kompakter Galaxiescanner und aktive lokale IndexedDB
+ Build   : 2026-09-29
 
- Neu in Alpha 9:
+ Neu in Alpha 10:
+ - Galaxiescanner zeigt Systemkoordinaten nur noch einmal
+ - dauerhafte Aufnahme-, Zähler-, Warteschlangen- und Erklärungstexte entfernt
+ - normale Speichervorgänge laufen still; sichtbar bleiben nur echte Fehler
+ - API-Schlüssel-Knopf erscheint nur, wenn noch kein Schlüssel gespeichert ist
+
+ Aus Alpha 9 übernommen:
  - große persönliche Datenbestände werden aktiv aus IndexedDB gelesen
  - Änderungen dieser Bestände werden direkt in IndexedDB geschrieben
  - der bisherige Tampermonkey-Bestand bleibt unverändert als Rückfallebene erhalten
@@ -68,8 +74,8 @@
         'PHYSICS', 'PSYCHOLOGY', 'NUCLEARPHYSICS', 'SOLARENERGYTECH'
     ]);
 
-    const HASA_VERSION = '1.2.0 Alpha 9';
-    const HASA_BUILD_LABEL = '1.2.0-alpha9-indexeddb-aktiv-2026-09-29';
+    const HASA_VERSION = '1.2.0 Alpha 10';
+    const HASA_BUILD_LABEL = '1.2.0-alpha10-galascanner-kompakt-2026-09-29';
     const STORAGE_GALASCAN_LETZTER_STAND = 'hasa_galascan_letzter_stand_v1';
     const STORAGE_GALASCAN_API_KEY = 'hasa_galascan_api_key_v1';
     const HASA_GALASCAN_API_URL = 'https://serkal.de/hasa/systems.php';
@@ -77,7 +83,6 @@
     const STORAGE_GALASCAN_AUFNAHME = 'hasa_galascan_aufnahme_aktiv_v1';
     let galascannerServerStatus = null;
     let galascannerSendet = false;
-    let galascannerGespeichert = 0;
     const galascannerWarteschlange = [];
     const galascannerVorgemerkt = new Set();
 
@@ -152,8 +157,7 @@
             source: 'galaxy_view',
             visibility: 'private',
             planets: planeten,
-            message: 'System ' + kopf[2] + ':' + kopf[3] + ' erkannt – '
-                + planeten.length + ' Planeten gefunden – noch nicht gesendet.'
+            message: 'System erkannt.'
         };
     }
 
@@ -244,11 +248,6 @@
             fingerabdruck: fingerabdruck,
             scan: JSON.parse(JSON.stringify(scan))
         });
-        galascannerServerStatus = {
-            ok: true,
-            text: 'Aufgenommen: System ' + scan.galaxy + ':' + scan.system
-                + ' wartet auf Speicherung.'
-        };
         setTimeout(verarbeiteGalascannerWarteschlange, 0);
     }
 
@@ -271,21 +270,9 @@
         const eintrag = galascannerWarteschlange.shift();
         const scan = eintrag.scan;
         galascannerSendet = true;
-        galascannerServerStatus = {
-            ok: true,
-            text: 'Speichere System ' + scan.galaxy + ':' + scan.system
-                + ' – noch ' + galascannerWarteschlange.length + ' in der Warteschlange.'
-        };
-
         try {
-            const antwort = await galascannerRequest(galascannerPayload(scan), apiSchluessel);
-            const gespeichert = antwort.stored || {};
-            galascannerGespeichert += 1;
-            galascannerServerStatus = {
-                ok: true,
-                text: 'Gespeichert: System ' + gespeichert.galaxy + ':' + gespeichert.system
-                    + ' mit ' + gespeichert.planets + ' Planeten. Aufnahme läuft weiter.'
-            };
+            await galascannerRequest(galascannerPayload(scan), apiSchluessel);
+            galascannerServerStatus = null;
         } catch (fehler) {
             const text = String(fehler && fehler.message ? fehler.message : fehler);
             if (text === 'unauthorized') {
@@ -311,10 +298,7 @@
         if (galascannerAufnahmeAktiv()) {
             speichern(STORAGE_GALASCAN_AUFNAHME, false);
             galascannerWarteschlange.length = 0;
-            galascannerServerStatus = {
-                ok: true,
-                text: 'Aufnahme beendet. Bereits gespeicherte Systeme bleiben erhalten.'
-            };
+            galascannerServerStatus = null;
             baueBox();
             return;
         }
@@ -330,12 +314,8 @@
         }
 
         galascannerVorgemerkt.clear();
-        galascannerGespeichert = 0;
         speichern(STORAGE_GALASCAN_AUFNAHME, true);
-        galascannerServerStatus = {
-            ok: true,
-            text: 'Aufnahme bereit. Mit den Horizon-Pfeiltasten durch die Systeme gehen.'
-        };
+        galascannerServerStatus = null;
         planeAutomatischeGalascannerAufnahme(leseGalaxiesystemAusSichtbarerSeite());
         baueBox();
     }
@@ -360,10 +340,7 @@
                 ) || '').trim();
                 if (!neu) return;
                 speichern(STORAGE_GALASCAN_API_KEY, neu);
-                galascannerServerStatus = {
-                    ok: true,
-                    text: 'API-Schlüssel dauerhaft lokal in Tampermonkey gespeichert.'
-                };
+                galascannerServerStatus = null;
                 baueBox();
             };
         }
@@ -383,12 +360,12 @@
         }
 
         let html = '<div style="padding:4px 0 2px 0;">';
-        html += '<div style="font-weight:bold;color:' + (scan.ok ? '#7CFF7C' : '#bbb') + ';">'
-            + esc(scan.message) + '</div>';
-        html += '<div style="margin-top:5px;color:#aaa;font-size:11px;">'
-            + 'Aufnahme einmal starten; danach speichert HASA jedes mit den Horizon-Pfeiltasten sichtbar gemachte System automatisch.</div>';
+        if (scan.state !== 'visible') {
+            html += '<div style="font-weight:bold;color:' + (scan.ok ? '#FFD27C' : '#bbb') + ';">'
+                + esc(scan.message) + '</div>';
+        }
 
-        if (galascannerServerStatus) {
+        if (galascannerServerStatus && !galascannerServerStatus.ok) {
             html += '<div style="margin-top:7px;padding:6px;border:1px solid '
                 + (galascannerServerStatus.ok ? '#4c8' : '#c66') + ';color:'
                 + (galascannerServerStatus.ok ? '#7CFF7C' : '#FF9090') + ';">'
@@ -405,7 +382,8 @@
         if (anzeigeScan.state === 'visible') {
             html += '<div style="margin-top:8px;color:#FFD27C;">'
                 + esc(anzeigeScan.systemName || '(ohne Systemnamen)')
-                + ' · System ' + esc(anzeigeScan.galaxy) + ':' + esc(anzeigeScan.system)
+                + ' · ' + esc(anzeigeScan.galaxy) + ':' + esc(anzeigeScan.system)
+                + ' · ' + esc(anzeigeScan.planets.length) + ' Planeten'
                 + ' · entdeckt durch ' + esc(anzeigeScan.discoveredBy || 'unbekannt') + '</div>';
             html += '<table style="width:100%;margin-top:5px;border-collapse:collapse;color:#eee;">';
             html += '<tr style="color:#aaa;"><td>Orbit</td><td>Planet</td><td>Typ</td><td>Herrscher</td><td>Status</td></tr>';
@@ -426,25 +404,16 @@
         }
 
         const aufnahmeAktiv = galascannerAufnahmeAktiv();
-        html += '<div style="margin-top:8px;font-weight:bold;color:'
-            + (aufnahmeAktiv ? '#7CFF7C' : '#FFD27C') + ';">'
-            + (aufnahmeAktiv
-                ? '● Aufnahme läuft · gespeichert: ' + esc(galascannerGespeichert)
-                    + ' · Warteschlange: ' + esc(galascannerWarteschlange.length)
-                : '○ Aufnahme ist aus') + '</div>';
         html += '<div style="display:flex;gap:6px;margin-top:8px;">';
         html += '<button id="haa-galascan-aufnahme" style="flex:1;font-weight:bold;">'
             + (aufnahmeAktiv ? 'Aufnahme beenden' : 'Aufnahme starten') + '</button>';
         const apiVorhanden = Boolean(galascannerApiSchluessel(false));
-        html += '<button id="haa-galascan-schluessel" style="flex:1;"'
-            + (apiVorhanden ? ' disabled title="Der gespeicherte Schlüssel wird automatisch verwendet."' : '') + '>'
-            + (apiVorhanden ? 'API-Schlüssel vorhanden' : 'API-Schlüssel eintragen') + '</button>';
-        html += '</div>';
+        if (!apiVorhanden) {
+            html += '<button id="haa-galascan-schluessel" style="flex:1;">API-Schlüssel eintragen</button>';
+        }
         html += '<button id="haa-galascan-datenbank" type="button" '
-            + 'style="width:100%;margin-top:8px;padding:7px;font-weight:bold;cursor:pointer;">'
-            + 'Galaxiedatenbank anzeigen</button>';
-        html += '<div style="margin-top:4px;color:#999;font-size:11px;">'
-            + 'Öffnet die ausschließlich lesende öffentliche Datenbankansicht in einem neuen Tab.</div>';
+            + 'style="flex:1;font-weight:bold;cursor:pointer;">Galaxiedatenbank anzeigen</button>';
+        html += '</div>';
         html += '</div>';
         return html;
     }
@@ -4893,7 +4862,15 @@ return box;
     setTimeout(starteSicher, 800);
 })();
 
-/* HASA 1.2.0 Alpha 9 – IndexedDB als aktive Datenquelle
+/* HASA 1.2.0 Alpha 10 – kompakter Galaxiescanner
+   - Systemkoordinaten erscheinen nur noch in der eigentlichen Systemüberschrift
+   - normale Aufnahme und Speicherung laufen ohne wiederholte Statusmeldungen
+   - Aufnahmezustand ergibt sich eindeutig aus „Aufnahme starten/beenden“
+   - Zähler, Warteschlangenstand und graue Bedienhinweise entfallen
+   - echte Fehler bleiben deutlich sichtbar
+   - der API-Schlüssel-Knopf erscheint nur, solange noch kein Schlüssel vorhanden ist
+
+   Aus Alpha 9 übernommen:
    - große persönliche HASA-Daten werden aus IndexedDB gelesen und dorthin geschrieben
    - vorhandene Alpha-8-Bestände werden beim Start in einen synchronen Arbeitsspeicher geladen
    - der bisherige Speicher bleibt unverändert als vollständige Rückfallebene erhalten
