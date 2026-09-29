@@ -1,6 +1,6 @@
 # HASA – Schwarzes Brett
 
-Stand: 26.09.2026
+Stand: 29.09.2026
 
 Dieses Dokument ist die verbindliche gemeinsame Übergabe- und Verwaltungsstelle für die
 HASA-Entwicklung. Vor jeder HASA-Arbeit wird es vollständig gelesen. Entscheidungen,
@@ -119,15 +119,20 @@ eine neue Runde wird durch eine eigene Rundenkennung getrennt.
 
 - stabile Veröffentlichung: HASA 1.1 Final;
 - aktive Entwicklungsreihe: HASA 1.2;
-- aktueller Teststand: HASA 1.2.0 Alpha 7;
-- aktuelle Datei:
-  `2 src/current/hasa_1.2.0-alpha.7_datenbankknopf-und-alarmgruppe.user.js.txt`;
-- Alpha-7-Commit:
-  `c1d77a7a06efed47ced8256b44c7a5dda0c77724`.
+- aktueller Teststand: HASA 1.2.0 Alpha 9;
+- fester Aktualisierungspfad:
+  `2 src/current/HASA-AKTUELL.user.js.txt`;
+- archivierte Alpha-9-Datei:
+  `2 src/current/hasa_1.2.0-alpha.9_indexeddb-aktiv.user.js.txt`;
+- Alpha-9-Programmcommit:
+  `d4099a912e39dab00cac54b79bc5e349b5baa566`;
+- Aktualisierung von `HASA-AKTUELL`:
+  `787dc11516910173c6fabd25707714a09b50ea6f`.
 
-Alpha 7 behält den geprüften leichten Bereitschaftsmodus bei, ergänzt den Knopf
-„Galaxiedatenbank anzeigen“ mit dem Ziel `https://serkal.de/hasa/galaxy.php` und fasst
-Baualarm sowie Forschungsalarm in der gemeinsamen Gruppe „Alarme“ zusammen.
+Alpha 9 übernimmt die Funktionen von Alpha 8 und macht IndexedDB zur aktiven
+Datenquelle für die ausgewählten großen persönlichen Bestände. Tampermonkey bleibt
+unverändert als Rückfallebene sowie als Speicher für kleine Einstellungen und den
+API-Schlüssel erhalten.
 
 ## Arbeitsregeln
 
@@ -409,7 +414,7 @@ schlüsselgeschützten Schreib-API durch diese Übergabe.
 
 ### 2026-09-26 – CE HASA – Alpha 8 lokale IndexedDB-Grundlage
 
-Status: FERTIG / AUF GITHUB / PRAXISTEST OFFEN
+Status: FERTIG / PRAXISTEST BESTANDEN / DURCH ALPHA 9 ABGELÖST
 
 Neue vollständige Testfassung:
 
@@ -433,9 +438,59 @@ Prüfung: vollständige Datei nach dem GitHub-Commit erneut gelesen; JavaScript-
 
 Commit: `9c03218abd3442d5ff01fdcc5d2203039c08e170`.
 
-Restpunkt: praktischer Browsertest durch Kurt nach Installation. Erst nach erfolgreichem
-Praxistest darf eine spätere Version ausgewählte Lesezugriffe auf IndexedDB umstellen
-oder alte Großbestände aus dem Tampermonkey-Speicher entfernen.
+Praxistest durch Kurt am 26.09.2026 bestanden: Bereitschaftsmodus, Aktivierung,
+sichtbarer Versions- und Speicherstatus, API-Schlüssel-Erhalt sowie
+`Lokale DB: bereit` wurden im Browser bestätigt. Damit war die Freigabe für
+die kontrollierte Lese-/Schreibumschaltung in Alpha 9 gegeben.
+
+
+### 2026-09-29 – CE HASA – Alpha 9 IndexedDB aktiv
+
+Status: FERTIG / AUF GITHUB / PRAXISTEST OFFEN
+
+Neue vollständige Testfassung:
+
+`2 src/current/hasa_1.2.0-alpha.9_indexeddb-aktiv.user.js.txt`
+
+Fester Aktualisierungspfad:
+
+`2 src/current/HASA-AKTUELL.user.js.txt`
+
+Umsetzung:
+
+- die ausgewählten großen Galaxiescan-, TechTree-, Forschungs- und STAN-Bestände
+  werden beim Einschalten von HASA aus IndexedDB in einen Arbeitsspeicher geladen;
+- die bestehenden synchronen HASA-Module lesen diese Bestände anschließend aus
+  diesem Arbeitsspeicher und damit aus der vorgelagerten IndexedDB;
+- Änderungen dieser Bestände werden direkt in IndexedDB gespeichert;
+- bei einem Schreibfehler wird der betreffende Wert zusätzlich im bisherigen
+  Rückfallspeicher gesichert;
+- kann IndexedDB nicht geöffnet werden, bleibt der bisherige Tampermonkey-/
+  localStorage-Weg vollständig aktiv;
+- bestehende Tampermonkey-Großbestände werden noch nicht gelöscht;
+- kleine Einstellungen und der API-Schlüssel bleiben weiterhin im
+  Tampermonkey-Speicher;
+- die Statusanzeige nennt IndexedDB ausdrücklich als aktive Datenquelle und
+  zeigt geladene beziehungsweise neu übernommene Bestände.
+
+Prüfung:
+
+- vollständige archivierte Alpha-9-Datei und `HASA-AKTUELL` nach den Commits
+  erneut von GitHub gelesen;
+- beide Inhalte sind bytegleich;
+- JavaScript-Syntaxprüfung der vollständigen Datei bestanden;
+- Versionskennung, aktiver IndexedDB-Lesepfad, Schreibpfad und Rückfalllogik
+  kontrolliert.
+
+Commits: Alpha-9-Datei
+`d4099a912e39dab00cac54b79bc5e349b5baa566`;
+`HASA-AKTUELL`
+`787dc11516910173c6fabd25707714a09b50ea6f`.
+
+Restpunkt: praktischer Browsertest durch Kurt. Zu prüfen sind Statusanzeige
+`Lokale DB: aktiv · Lesen und Schreiben`, Erhalt der Forschungs-/Gebäudestände
+beim Horizon-Seitenwechsel sowie nach vollständigem Browserneustart. Vor diesem
+Test werden keine alten Tampermonkey-Großbestände entfernt.
 
 ### 2026-09-26 – Kurt an beide HASA-Fachbereiche – Galaxien 1 bis 6 allgemein lesbar
 
