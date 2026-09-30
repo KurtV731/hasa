@@ -119,13 +119,14 @@ eine neue Runde wird durch eine eigene Rundenkennung getrennt.
 
 - stabile Veröffentlichung: HASA 1.1 Final;
 - aktive Entwicklungsreihe: HASA 1.2;
-- aktueller Teststand: HASA 1.2.0 Alpha 10;
+- aktueller Teststand: HASA 1.2.0 Alpha 11;
 - fester Aktualisierungspfad:
   `2 src/current/HASA-AKTUELL.user.js.txt`;
-- archivierte Alpha-10-Datei:
-  `2 src/current/hasa_1.2.0-alpha.10_galascanner-kompakt.user.js.txt`.
+- archivierte Alpha-11-Datei:
+  `2 src/current/hasa_1.2.0-alpha.11_einfachstart.user.js.txt`.
 
-Alpha 10 übernimmt die Funktionen von Alpha 9, macht die Galaxiescanner-Anzeige
+Alpha 11 übernimmt die Funktionen von Alpha 10 und verhindert zusätzliche Starts
+in eingebetteten Horizon-Unterfenstern. Alpha 10 macht die Galaxiescanner-Anzeige
 deutlich ruhiger und behält IndexedDB als aktive
 Datenquelle für die ausgewählten großen persönlichen Bestände. Tampermonkey bleibt
 unverändert als Rückfallebene sowie als Speicher für kleine Einstellungen und den
@@ -585,6 +586,33 @@ Erwartete Übergabe des Datenbank- und Web-Chattys nach Vorliegen des Musters:
 - Erweiterung der lesenden API und von `galaxy.php` um die neuen Planetendaten;
 - Syntax-/Datenbankprüfung, produktiver Servertest, betroffene Dateien und Commit;
 - keine Zugangsdaten oder produktive `config.php` in GitHub.
+
+### 2026-09-30 – CE HASA – Alpha 11 nur einmal im Hauptfenster starten
+
+Status: CODE FERTIG / SYNTAX GEPRÜFT / PRAXISTEST OFFEN
+
+Kurts Screenshot zeigte gleichzeitig die aktive HASA-Oberfläche und eine zweite
+Bereitschaftsanzeige. Ursache sind die eingebetteten Horizon-Seitenbereiche:
+Tampermonkey konnte dasselbe Userscript im Hauptfenster und zusätzlich in einem
+Unterfenster ausführen. Die beiden Ausführungen besitzen getrennte Dokumente und
+konnten sich deshalb nicht über dieselbe Element-ID erkennen.
+
+Umsetzung:
+
+- Metadatenanweisung `@noframes` ergänzt;
+- zusätzliche Laufzeitprüfung `window.top !== window.self` ergänzt;
+- HASA beendet sich in einem Unterfenster, bevor Oberfläche, Scanner oder Timer starten;
+- alle Funktionen von Alpha 10 bleiben im Hauptfenster erhalten.
+
+Betroffene Dateien:
+
+- `2 src/current/HASA-AKTUELL.user.js.txt`;
+- `2 src/current/hasa_1.2.0-alpha.11_einfachstart.user.js.txt`;
+- `README.md`.
+
+Prüfung: vollständige JavaScript-Syntaxprüfung bestanden; beide vollständigen
+Userscript-Dateien bytegleich. Praktisch nach Installation und vollständigem
+Neuladen von Horizon zu prüfen: Es darf nur eine HASA-Oberfläche erscheinen.
 
 ## Übergabeformat
 
