@@ -713,6 +713,55 @@ Nächster Schritt: ersten realen Bericht anhand von Screenshot und möglichst
 Seitenquelltext gemeinsam bestimmen, Schreibformat im Brett festlegen,
 dann Speicherung und Anzeige umsetzen.
 
+### 2026-09-30 – Kurt an beide Fachbereiche – Sondenwerte sind Schätzungen und altern
+
+Status: VERBINDLICHE FACHANFORDERUNG / BERICHTSMUSTER UND ZERFALLSREGEL OFFEN
+
+Sonden liefern laut Kurt niemals exakt die tatsächlichen Planetenwerte.
+Erst die Besiedlung liefert die tatsächlichen Werte zum jeweiligen Zeitpunkt.
+Sondenmessungen und durch Besiedlung bestätigte Werte müssen deshalb als
+unterschiedliche Quellen erkennbar bleiben. Eine größere Sondenzahl darf
+einen Messwert nicht automatisch als exakt kennzeichnen.
+
+Kurt beschreibt 100 Sonden pro Messung als übliche Grundlage für hinreichend
+genaue Näherungswerte, typischerweise mit weniger als etwa 1 Prozent
+Abweichung. Dies ist eine Spielpraxis-Angabe, keine durch HASA nachgewiesene
+Fehlergarantie. Mehrere getrennte Messungen, beispielsweise vier oder fünf
+Berichte mit je 100 Sonden, sollen gemeinsam ausgewertet werden können.
+
+Speicher- und Anzeigesoll:
+- Jeden einzelnen Bericht mit Planetenkoordinate, Messzeit, Quelle,
+  Beobachter, Sondenzahl und den tatsächlich berichteten Ressourcenwerten
+  erhalten; fehlende Angaben nicht als null behandeln.
+- Für einen ausgewählten Satz vergleichbarer Berichte Mittelwerte
+  je Ressource bilden und als Schätzung kennzeichnen.
+- Dazu Anzahl der ausgewerteten Berichte und Summe der eingesetzten
+  Sonden anzeigen, etwa vier Messungen mit insgesamt 400 Sonden.
+- Fehlende Sondenzahlen ausdrücklich kenntlich machen; die Gesamtsumme
+  nicht als vollständig ausgeben, wenn sie nicht bekannt ist.
+- Wiederholtes Einlesen desselben Berichts darf Messungszahl und
+  Sondensumme nicht künstlich erhöhen.
+- Unterschiedliche Sondenzahlen, unvollständige Messungen und die
+  genaue Mittelwertregel werden anhand der echten Berichte abgestimmt;
+  keine unbelegte Gewichtung oder statistische Fehlergrenze erfinden.
+
+Jeder Planet besitzt nach Kurts Erklärung eigene Ressourcenzerfallsraten.
+Ressourcenwerte sind daher zeitabhängig. Messungen verschiedener Zeitpunkte
+dürfen nicht ungekennzeichnet als gleichzeitiger aktueller Bestand
+zusammengefasst werden. Die Anzeige nennt Messzeit beziehungsweise Zeitraum.
+Eine Hochrechnung auf den aktuellen Zeitpunkt erfolgt erst, wenn
+Zerfallsraten, Einheiten und Spielregel bekannt sind, und wird dann als
+berechneter Wert ausgewiesen. Auch ein durch Besiedlung bestätigter Wert
+bleibt an seinen Beobachtungszeitpunkt gebunden.
+
+Zuständigkeiten: CE HASA erfasst die sichtbaren Berichte und überträgt die
+gemeinsam vereinbarten Angaben; Datenbank-/Web-Chatty speichert die
+Einzelmessungen und ergänzt Auswertung sowie Anzeige.
+Prüfung: Kurts heutige Erklärung und aktuelles Schwarzes Brett gelesen.
+Noch keine Berechnungsformel, Schemaänderung oder Fehlergarantie umgesetzt.
+Restpunkte: echter Bericht, sichtbare Sondenzahl, Ressourcen-Einheiten,
+Berichtskennung, Mittelwertregel und planetenbezogener Zerfall.
+
 ## Übergabeformat
 
 Jeder neue Eintrag verwendet mindestens:
