@@ -1,6 +1,6 @@
 # HASA – Schwarzes Brett
 
-Stand: 29.09.2026
+Stand: 30.09.2026
 
 Dieses Dokument ist die verbindliche gemeinsame Übergabe- und Verwaltungsstelle für die
 HASA-Entwicklung. Vor jeder HASA-Arbeit wird es vollständig gelesen. Entscheidungen,
@@ -678,6 +678,40 @@ Status: FERTIG / GITHUB-ÜBERTRAGUNG OFFEN
 fest eingebrannt `HASA Alpha 8`. Die Meldung wurde versionsneutral geändert zu:
 `Die aktuelle HASA-Version liegt vollständig in der Windows-Zwischenablage.`
 Damit kann die Erfolgsmeldung bei künftigen Alpha-Versionen nicht erneut veralten.
+
+### 2026-09-30 – Datenbank- und Web-Chatty an CE HASA – Sondenberichte und Bedienung vorbereitet
+
+Status: AUFTRAG GELESEN / ECHTES BERICHTSMUSTER AUSSTEHEND
+
+Kurt startet nun die ersten Sonden. Die darin sichtbaren Ressourcenwerte
+müssen später in MariaDB gespeichert und in der Galaxiedatenbank angezeigt
+werden. Der Auftrag vom 29.09.2026 wurde gelesen und übernommen.
+Vor Festlegung der Feldnamen, Einheiten und Auswertungslogik wird der
+erste echte Bericht benötigt; es werden keine Messwerte oder Berichtsfelder
+erfunden. CE HASA betreut Erkennung und Übertragung, der Datenbank-
+und Web-Chatty Migration, API und Anzeige. Galaxien 1 bis 6 bleiben
+für alle lesbar. Einzelmessungen müssen mit Koordinaten, Beobachtungszeit,
+Quelle und Beobachter nachvollziehbar bleiben; fehlende Werte bedeuten
+nicht null und löschen keine bestehenden Angaben.
+
+Kurt hat außerdem seine Anekdote zur Benutzerfreundlichkeit mit Word-Text
+und drei Screenshots geliefert und erläutert. Verbindliche Bedienabsicht
+für unsere eigenen Dialoge: Abbrechen beendet den Vorgang ohne
+Fehlermeldung und ohne Datenänderung; der vorherige Arbeitszustand bleibt
+erhalten. Tatsächliche Fehler erhalten eine verständliche Anzeige im
+bestehenden dunklen Erscheinungsbild. Ein absichtlicher Abbruch darf nicht
+als falsches Passwort oder technischer Fehler dargestellt werden.
+Die gezeigte fremde Browser-HTTP-Anmeldung ist nicht unser eigener Dialog;
+deren Verhalten wird nicht als bereits durch HASA behoben ausgegeben.
+
+Betroffene Bereiche nach Vorliegen des Musters: `4 database`,
+`3 server/hasa-api` und Erkennung im Hauptskript beim CE.
+Prüfung: aktuelles Schwarzes Brett vollständig gelesen; Kurts angehängte
+Word-Datei einschließlich der drei Bilder gelesen. Heute noch keine
+Schema- oder Parseränderung und kein Servereingriff.
+Nächster Schritt: ersten realen Bericht anhand von Screenshot und möglichst
+Seitenquelltext gemeinsam bestimmen, Schreibformat im Brett festlegen,
+dann Speicherung und Anzeige umsetzen.
 
 ## Übergabeformat
 
