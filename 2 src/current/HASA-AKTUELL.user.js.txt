@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         HASA – Horizon Ascension Assistant
 // @namespace    horiversum.hasa
-// @version      1.2.0-alpha.11
+// @version      1.2.0-alpha.12
 // @charset      UTF-8
 // @description  Horizon-Assistent mit kompakter Galaxiescanner-Anzeige und aktiver lokaler IndexedDB
 // @match        https://horiversum.org/game/main/main.php*
@@ -17,11 +17,16 @@
 ==========================================================
  HASA – Horizon Ascension Assistant
 
- Version : 1.2.0 Alpha 11
- Status  : einfacher HASA-Start nur im Horizon-Hauptfenster
+ Version : 1.2.0 Alpha 12
+ Status  : sichtbare unerforschte Forschungen werden als Stufe 0 übernommen
  Build   : 2026-09-30
 
- Neu in Alpha 11:
+ Neu in Alpha 12:
+ - sichtbare Forschung mit „Forschen“, aber ohne Forschungsstufe, wird als Stufe 0 erkannt
+ - alte gespeicherte Forschungswerte werden dadurch zuverlässig nach unten korrigiert
+ - Forschungs- und Gebäudezeilen werden mit ihren jeweiligen Horizon-Klassen gelesen
+
+ Aus Alpha 11 übernommen:
  - HASA startet nur noch im Hauptfenster und nicht zusätzlich in Horizon-Unterfenstern
  - doppelte Bereitschaftsanzeige neben einem bereits laufenden HASA wird verhindert
 
@@ -83,8 +88,8 @@
         'PHYSICS', 'PSYCHOLOGY', 'NUCLEARPHYSICS', 'SOLARENERGYTECH'
     ]);
 
-    const HASA_VERSION = '1.2.0 Alpha 11';
-    const HASA_BUILD_LABEL = '1.2.0-alpha11-einfachstart-2026-09-30';
+    const HASA_VERSION = '1.2.0 Alpha 12';
+    const HASA_BUILD_LABEL = '1.2.0-alpha12-forschungs-nullstand-2026-09-30';
     const STORAGE_GALASCAN_LETZTER_STAND = 'hasa_galascan_letzter_stand_v1';
     const STORAGE_GALASCAN_API_KEY = 'hasa_galascan_api_key_v1';
     const HASA_GALASCAN_API_URL = 'https://serkal.de/hasa/systems.php';
@@ -1999,7 +2004,9 @@ return box;
         if (!kopf) return null;
 
         const body = findeKoerperZeileZumKopf(kopf);
-        const container = kopf.closest('form, .BldTable, .BldContainerAccordionBox') || kopf.parentElement;
+        const container = kopf.closest(
+            'form, .BldTable, .ResTable, .BldContainerAccordionBox, .ResContainerAccordionBox'
+        ) || kopf.parentElement;
         const texte = [text(kopf), text(body), text(container)].filter(Boolean);
         const muster = [
             /(?:Ausbaustufe|Forschungsstufe|Forschungslevel|Stufe|Level|Lvl\.?)\s*:?\s*(\d+)/i,
@@ -2045,7 +2052,16 @@ return box;
         const alt = bild ? String(bild.getAttribute('alt') || '').trim().toUpperCase() : '';
         if (/^[A-Z0-9_-]{2,40}$/.test(alt)) return alt;
         const datenId = String((kopf.dataset && (kopf.dataset.id || kopf.dataset.object || kopf.dataset.key)) || '').trim().toUpperCase();
-        return /^[A-Z0-9_-]{2,40}$/.test(datenId) ? datenId : '';
+        if (/^[A-Z0-9_-]{2,40}$/.test(datenId)) return datenId;
+
+        // Noch nicht erforschte Horizon-Einträge tragen teilweise keine
+        // Stufenangabe und zeigen als Überschrift nur die interne Kennung,
+        // beispielsweise „sensortech“. Diese Kennung muss den alten
+        // id:SENSORTECH-Eintrag gezielt überschreiben können.
+        const titel = kopf.querySelector('b, strong') || kopf;
+        const rohTitel = String(titel.textContent || '').replace(/\s+/g, ' ').trim();
+        if (/^[a-z][a-z0-9_-]{1,39}$/.test(rohTitel)) return rohTitel.toUpperCase();
+        return '';
     }
 
     function speichereTechTreeSpielstandAusSeite() {
@@ -2072,6 +2088,16 @@ return box;
             if (!kopf || kopf.closest('#haa-box')) return;
             const name = leseTechTreeNameAusKopf(kopf);
             let level = ermittleTechTreeStufeAusKopf(kopf);
+            const body = findeKoerperZeileZumKopf(kopf);
+            if (typ === 'research' && !Number.isFinite(level) && body) {
+                const hatForschen = Array.from(body.querySelectorAll('a, button, input[type="button"], input[type="submit"]'))
+                    .some(function (element) {
+                        const beschriftung = element.tagName === 'INPUT'
+                            ? String(element.value || '') : text(element);
+                        return /^forschen$/i.test(beschriftung.trim());
+                    });
+                if (hatForschen) level = 0;
+            }
             if (typ === 'ship' && !Number.isFinite(level)) level = 1;
             if (!name || name === 'Bauauftrag' || !Number.isFinite(level)) return;
 
@@ -4226,10 +4252,11 @@ return box;
         let el = kopfZeile ? kopfZeile.nextElementSibling : null;
 
         while (el) {
-            if (el.classList && el.classList.contains('BldClsBody')) {
+            if (el.classList && (el.classList.contains('BldClsBody')
+                    || el.classList.contains('ResClsBody'))) {
                 return el;
             }
-            if (el.querySelector && el.querySelector('.BldClsRow')) {
+            if (el.querySelector && el.querySelector('.BldClsRow, .ResClsRow')) {
                 break;
             }
             el = el.nextElementSibling;
@@ -4871,7 +4898,13 @@ return box;
     setTimeout(starteSicher, 800);
 })();
 
-/* HASA 1.2.0 Alpha 11 – nur ein Start im Horizon-Hauptfenster
+/* HASA 1.2.0 Alpha 12 – sichtbarer Forschungs-Nullstand
+   - ein sichtbarer „Forschen“-Eintrag ohne Stufenangabe bedeutet Forschungsstufe 0
+   - ein alter gespeicherter höherer Wert wird mit diesem sichtbaren Nullstand überschrieben
+   - ResClsBody und ResClsRow werden neben den Gebäudeklassen ausdrücklich unterstützt
+   - nicht sichtbare Forschungen bleiben weiterhin erhalten und werden nicht pauschal gelöscht
+
+   Aus Alpha 11 übernommen:
    - @noframes verhindert den regulären Tampermonkey-Start in Unterfenstern
    - eine zusätzliche Laufzeitprüfung beendet versehentliche Unterfenster-Starts
    - dadurch erscheint keine zweite Bereitschaftsanzeige neben dem aktiven HASA
