@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         HASA – Horizon Ascension Assistant
 // @namespace    horiversum.hasa
-// @version      1.2.0-alpha.10
+// @version      1.2.0-alpha.11
 // @charset      UTF-8
 // @description  Horizon-Assistent mit kompakter Galaxiescanner-Anzeige und aktiver lokaler IndexedDB
 // @match        https://horiversum.org/game/main/main.php*
@@ -10,17 +10,22 @@
 // @grant        GM_xmlhttpRequest
 // @connect      techtree.kommandobasis.eu
 // @connect      serkal.de
+// @noframes
 // ==/UserScript==
 
 /*
 ==========================================================
  HASA – Horizon Ascension Assistant
 
- Version : 1.2.0 Alpha 10
- Status  : kompakter Galaxiescanner und aktive lokale IndexedDB
- Build   : 2026-09-29
+ Version : 1.2.0 Alpha 11
+ Status  : einfacher HASA-Start nur im Horizon-Hauptfenster
+ Build   : 2026-09-30
 
- Neu in Alpha 10:
+ Neu in Alpha 11:
+ - HASA startet nur noch im Hauptfenster und nicht zusätzlich in Horizon-Unterfenstern
+ - doppelte Bereitschaftsanzeige neben einem bereits laufenden HASA wird verhindert
+
+ Aus Alpha 10 übernommen:
  - Galaxiescanner zeigt Systemkoordinaten nur noch einmal
  - dauerhafte Aufnahme-, Zähler-, Warteschlangen- und Erklärungstexte entfernt
  - normale Speichervorgänge laufen still; sichtbar bleiben nur echte Fehler
@@ -59,6 +64,10 @@
 (function () {
     'use strict';
 
+    // Horizon verwendet eingebettete Seitenbereiche. Ohne diese zusätzliche
+    // Sicherung könnte Tampermonkey HASA dort ein zweites Mal starten.
+    if (window.top !== window.self) return;
+
     // Fremdrassen: nicht als erreichbare Spielerziele im Explorer anzeigen.
     // Die Datensätze bleiben bewusst gespeichert, damit sie später z. B.
     // für einen Kampfsimulator oder Flottenvergleich genutzt werden können.
@@ -74,8 +83,8 @@
         'PHYSICS', 'PSYCHOLOGY', 'NUCLEARPHYSICS', 'SOLARENERGYTECH'
     ]);
 
-    const HASA_VERSION = '1.2.0 Alpha 10';
-    const HASA_BUILD_LABEL = '1.2.0-alpha10-galascanner-kompakt-2026-09-29';
+    const HASA_VERSION = '1.2.0 Alpha 11';
+    const HASA_BUILD_LABEL = '1.2.0-alpha11-einfachstart-2026-09-30';
     const STORAGE_GALASCAN_LETZTER_STAND = 'hasa_galascan_letzter_stand_v1';
     const STORAGE_GALASCAN_API_KEY = 'hasa_galascan_api_key_v1';
     const HASA_GALASCAN_API_URL = 'https://serkal.de/hasa/systems.php';
@@ -4862,7 +4871,12 @@ return box;
     setTimeout(starteSicher, 800);
 })();
 
-/* HASA 1.2.0 Alpha 10 – kompakter Galaxiescanner
+/* HASA 1.2.0 Alpha 11 – nur ein Start im Horizon-Hauptfenster
+   - @noframes verhindert den regulären Tampermonkey-Start in Unterfenstern
+   - eine zusätzliche Laufzeitprüfung beendet versehentliche Unterfenster-Starts
+   - dadurch erscheint keine zweite Bereitschaftsanzeige neben dem aktiven HASA
+
+   Aus Alpha 10 übernommen:
    - Systemkoordinaten erscheinen nur noch in der eigentlichen Systemüberschrift
    - normale Aufnahme und Speicherung laufen ohne wiederholte Statusmeldungen
    - Aufnahmezustand ergibt sich eindeutig aus „Aufnahme starten/beenden“
