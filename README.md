@@ -32,12 +32,16 @@ Tampermonkey als neues Userscript eingefügt und gespeichert.
 
 ## Aktuelle Entwicklungsreihe
 
-**HASA 1.2.0 Alpha 11**
+**HASA 1.2.0 Alpha 12**
 
 Aktuelle Testdateien:
 
 - fester Aktualisierungspfad: `2 src/current/HASA-AKTUELL.user.js.txt`
-- archivierte Fassung: `2 src/current/hasa_1.2.0-alpha.11_einfachstart.user.js.txt`
+- archivierte Fassung: `2 src/current/hasa_1.2.0-alpha.12_forschungs-nullstand.user.js.txt`
+
+Alpha 12 erkennt eine sichtbare, noch unerforschte Forschung mit dem Knopf `Forschen`
+als tatsächliche Stufe 0. Dadurch werden alte gespeicherte höhere Forschungsstände
+zuverlässig korrigiert, sobald das Forschungsfenster geöffnet ist.
 
 Alpha 11 verhindert einen zusätzlichen HASA-Start in eingebetteten Horizon-Unterfenstern.
 Damit erscheint neben einem bereits aktiven HASA keine zweite Bereitschaftsanzeige.
