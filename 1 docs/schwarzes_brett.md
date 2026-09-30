@@ -119,13 +119,15 @@ eine neue Runde wird durch eine eigene Rundenkennung getrennt.
 
 - stabile Veröffentlichung: HASA 1.1 Final;
 - aktive Entwicklungsreihe: HASA 1.2;
-- aktueller Teststand: HASA 1.2.0 Alpha 11;
+- aktueller Teststand: HASA 1.2.0 Alpha 12;
 - fester Aktualisierungspfad:
   `2 src/current/HASA-AKTUELL.user.js.txt`;
-- archivierte Alpha-11-Datei:
-  `2 src/current/hasa_1.2.0-alpha.11_einfachstart.user.js.txt`.
+- archivierte Alpha-12-Datei:
+  `2 src/current/hasa_1.2.0-alpha.12_forschungs-nullstand.user.js.txt`.
 
-Alpha 11 übernimmt die Funktionen von Alpha 10 und verhindert zusätzliche Starts
+Alpha 12 übernimmt die Funktionen von Alpha 11 und korrigiert alte Forschungsstände,
+wenn Horizon eine sichtbare unerforschte Forschung ohne Stufenangabe, aber mit dem
+Knopf `Forschen` zeigt. Alpha 11 verhindert zusätzliche Starts
 in eingebetteten Horizon-Unterfenstern. Alpha 10 macht die Galaxiescanner-Anzeige
 deutlich ruhiger und behält IndexedDB als aktive
 Datenquelle für die ausgewählten großen persönlichen Bestände. Tampermonkey bleibt
@@ -613,6 +615,39 @@ Betroffene Dateien:
 Prüfung: vollständige JavaScript-Syntaxprüfung bestanden; beide vollständigen
 Userscript-Dateien bytegleich. Praktisch nach Installation und vollständigem
 Neuladen von Horizon zu prüfen: Es darf nur eine HASA-Oberfläche erscheinen.
+
+### 2026-09-30 – Kurt an CE HASA – falscher Sensortechnik-Iststand
+
+Status: FEHLER NACHGEWIESEN / ALPHA 12 CODE FERTIG / PRAXISTEST OFFEN
+
+HASA zeigte für die Voraussetzung `SENSORTECH` den alten Stand `vorhanden 8`.
+Die geöffnete Horizon-Forschungsseite zeigte `sensortech` dagegen ohne eine
+Forschungsstufe und mit dem Knopf `Forschen`; tatsächlich ist die Forschung im
+aktuellen Spielstand noch nicht vorhanden. Dadurch erklärte HASA die Voraussetzung
+für PR/DR fälschlich als erfüllt.
+
+Ursache: Der Seitenscanner ersetzte gespeicherte Werte nur, wenn Horizon eine
+ausdrückliche Stufenzahl anzeigte. Eine sichtbare unerforschte Forschung wurde
+übersprungen, sodass der ältere Wert 8 erhalten blieb.
+
+Korrektur in Alpha 12:
+
+- sichtbare Forschung mit Stufenangabe übernimmt weiterhin diese Stufe;
+- sichtbare Forschung ohne Stufenangabe, aber mit `Forschen`, wird als Stufe 0 gespeichert;
+- ein alter höherer Wert wird dadurch gezielt überschrieben;
+- `ResClsBody` und `ResClsRow` werden beim Zuordnen der Forschungszeile unterstützt;
+- nicht sichtbare Forschungen werden weiterhin nicht pauschal gelöscht.
+
+Betroffene Dateien:
+
+- `2 src/current/HASA-AKTUELL.user.js.txt`;
+- `2 src/current/hasa_1.2.0-alpha.12_forschungs-nullstand.user.js.txt`;
+- `README.md`.
+
+Prüfung: vollständige JavaScript-Syntaxprüfung bestanden; beide vollständigen
+Userscript-Dateien bytegleich. Praxistest: Forschungsseite mit `sensortech` öffnen,
+HASA aktivieren beziehungsweise neu aufbauen und kontrollieren, dass im Planer
+`vorhanden 0` sowie die Voraussetzung als offen erscheint.
 
 ## Übergabeformat
 
