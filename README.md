@@ -32,14 +32,17 @@ Tampermonkey als neues Userscript eingefügt und gespeichert.
 
 ## Aktuelle Entwicklungsreihe
 
-**HASA 1.2.0 Alpha 10**
+**HASA 1.2.0 Alpha 11**
 
 Aktuelle Testdateien:
 
 - fester Aktualisierungspfad: `2 src/current/HASA-AKTUELL.user.js.txt`
-- archivierte Fassung: `2 src/current/hasa_1.2.0-alpha.10_galascanner-kompakt.user.js.txt`
+- archivierte Fassung: `2 src/current/hasa_1.2.0-alpha.11_einfachstart.user.js.txt`
 
-Alpha 10 zeigt den Galaxiescanner als ruhige Arbeitsfläche: Systemkoordinaten stehen
+Alpha 11 verhindert einen zusätzlichen HASA-Start in eingebetteten Horizon-Unterfenstern.
+Damit erscheint neben einem bereits aktiven HASA keine zweite Bereitschaftsanzeige.
+
+Der aus Alpha 10 übernommene Galaxiescanner ist eine ruhige Arbeitsfläche: Systemkoordinaten stehen
 nur einmal in der Systemüberschrift, normale Speicherungen laufen ohne dauerhafte
 Erfolgs-, Zähler- oder Warteschlangentexte und die erklärenden Hinweiszeilen wurden
 entfernt. Sichtbar bleiben echte Fehler. Der Aufnahmezustand ist eindeutig am Knopf
