@@ -649,6 +649,36 @@ Userscript-Dateien bytegleich. Praxistest: Forschungsseite mit `sensortech` öff
 HASA aktivieren beziehungsweise neu aufbauen und kontrollieren, dass im Planer
 `vorhanden 0` sowie die Voraussetzung als offen erscheint.
 
+### 2026-09-30 – Kurt an CE HASA – laufende Forschung nicht vorzeitig als erledigt werten
+
+Status: FEHLER BESTÄTIGT / FÜR ALPHA 13 BIS 15 VORGEMERKT
+
+HASA erhöht den Iststand einer Forschung derzeit teilweise bereits beim Start des
+Forschungsauftrags. Dadurch kann der Forschungsplaner eine Voraussetzung mit Häkchen
+als erledigt anzeigen, obwohl Horizon noch daran forscht.
+
+Verbindliches Sollverhalten:
+
+- `Forschung gestartet` bedeutet nicht `Forschungsstufe vorhanden`;
+- `Forschung läuft` bedeutet nicht `Voraussetzung erledigt`;
+- während der Laufzeit bleibt ausschließlich die zuletzt abgeschlossene Stufe gültig;
+- die neue Stufe wird erst übernommen, wenn Horizon sie nach Abschluss ausdrücklich
+  als vorhandene Forschungsstufe anzeigt;
+- Forschungsalarm und Anzeige der laufenden Forschung bleiben davon unberührt.
+
+Die Korrektur wird in Alpha 13, 14 oder 15 mit den nächsten zusammengehörigen
+Forschungsänderungen gebündelt. Alpha 12 wird zunächst praktisch getestet.
+
+### 2026-09-30 – CE HASA – Aktualisierer meldet keine veraltete Alpha-Nummer mehr
+
+Status: FERTIG / GITHUB-ÜBERTRAGUNG OFFEN
+
+`HASA-AKTUALISIEREN.cmd` kopierte bereits den festen aktuellen Pfad
+`2 src\\current\\HASA-AKTUELL.user.js.txt`, meldete anschließend jedoch weiterhin
+fest eingebrannt `HASA Alpha 8`. Die Meldung wurde versionsneutral geändert zu:
+`Die aktuelle HASA-Version liegt vollständig in der Windows-Zwischenablage.`
+Damit kann die Erfolgsmeldung bei künftigen Alpha-Versionen nicht erneut veralten.
+
 ## Übergabeformat
 
 Jeder neue Eintrag verwendet mindestens:
