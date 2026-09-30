@@ -88,7 +88,7 @@ if errorlevel 1 (
 
 echo.
 echo ==========================================
-echo HASA Alpha 8 liegt jetzt vollstaendig
+echo Die aktuelle HASA-Version liegt vollstaendig
 echo in der Windows-Zwischenablage.
 echo ==========================================
 echo.
