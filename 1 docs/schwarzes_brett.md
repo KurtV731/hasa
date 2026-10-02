@@ -831,10 +831,26 @@ Betroffene Dateien: `2 src/current/HASA-AKTUELL.user.js.txt`,
 `3 server/hasa-api/prospection-reports.php`, `3 server/hasa-api/bootstrap.php`,
 `3 server/hasa-api/index.php`, `4 database/hasa_1_2_0_schema.sql` und die Migration.
 
-Prüfung: JavaScript-Syntax und `git diff --check` fehlerfrei. PHP-Laufzeit steht in der
-lokalen Arbeitsumgebung nicht zur Verfügung; verbindlicher PHP- und Datenbank-Live-Test
-erfolgt nach Upload und Import auf `serkal.de`. Bis dahin darf die Übertragung nicht als
-produktiv bestätigt werden.
+Prüfung: JavaScript-Syntax und `git diff --check` fehlerfrei. Migration und PHP-Dateien
+wurden am 02.10.2026 auf `serkal.de` installiert. Der geschützte Endpunkt antwortet
+ohne Schlüssel erwartungsgemäß mit `unauthorized`; anschließend wurden alle fünf lokal
+gespeicherten Sondenberichte erfolgreich an MariaDB übertragen.
+
+### 2026-10-03 – Kurt und CE HASA – kompakter Sondenscanner Alpha 15
+
+Status: UMGESETZT / TEST DURCH KURT OFFEN
+
+Nach Kurts Sichtprüfung entfallen die ausführlichen Protokoll- und Erklärungstexte
+im Galaxiescanner. Systemname, Koordinate, Entdecker, letzter Scanzeitpunkt und die
+Aufforderung zum Öffnen eines Galaxiesystems werden nicht erneut neben der bereits
+sichtbaren Horizon-Ansicht ausgegeben. Lokale Erfassung, Serverübertragung und
+Sendbarkeit erscheinen oben nur noch als kleine farbige Punkte; ihre Bedeutung ist
+per Mouseover-Tooltip verfügbar.
+
+Gespeicherte Sondenberichte werden nun direkt am Zielplaneten markiert. `★1`, `★3`
+oder `★5` nennt die Zahl der für diesen Planeten lokal vorhandenen Einzelberichte.
+Damit steht die für die spätere Mittelwertbildung wichtige Messungszahl dort, wo sie
+gebraucht wird, ohne zusätzliche Informationszeile.
 
 ## Übergabeformat
 

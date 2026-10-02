@@ -32,12 +32,17 @@ Tampermonkey als neues Userscript eingefügt und gespeichert.
 
 ## Aktuelle Entwicklungsreihe
 
-**HASA 1.2.0 Alpha 14**
+**HASA 1.2.0 Alpha 15**
 
 Aktuelle Testdateien:
 
 - fester Aktualisierungspfad: `2 src/current/HASA-AKTUELL.user.js.txt`
-- archivierte Fassung: `2 src/current/hasa_1.2.0-alpha.14_sonden-mariadb.user.js.txt`
+- archivierte Fassung: `2 src/current/hasa_1.2.0-alpha.15_kompakter-sondenscanner.user.js.txt`
+
+Alpha 15 entfernt die ausführlichen Scanner-, Zeit- und Wiederholungshinweise aus
+der Arbeitsansicht. Kleine Statuspunkte erklären technische Zustände nur noch per
+Tooltip. Planeten mit gespeicherten Sondenberichten tragen direkt in der Tabelle
+eine Markierung wie `★3`; die Zahl nennt die vorhandenen Berichte dieses Planeten.
 
 Alpha 14 trennt die dauerhafte lokale Sondenerfassung von der freiwilligen
 MariaDB-Übertragung. Der Schalter `Sonden-Übertragung starten/beenden` entscheidet
