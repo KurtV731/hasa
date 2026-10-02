@@ -32,14 +32,20 @@ Tampermonkey als neues Userscript eingefügt und gespeichert.
 
 ## Aktuelle Entwicklungsreihe
 
-**HASA 1.2.0 Alpha 12**
+**HASA 1.2.0 Alpha 13**
 
 Aktuelle Testdateien:
 
 - fester Aktualisierungspfad: `2 src/current/HASA-AKTUELL.user.js.txt`
-- archivierte Fassung: `2 src/current/hasa_1.2.0-alpha.12_forschungs-nullstand.user.js.txt`
+- archivierte Fassung: `2 src/current/hasa_1.2.0-alpha.13_prdr-sofortwaechter.user.js.txt`
 
-Alpha 12 erkennt eine sichtbare, noch unerforschte Forschung mit dem Knopf `Forschen`
+Alpha 13 erkennt die Horizon-Einblendung `Planet Prospektiert!`, liest den verlinkten
+Bericht im Hintergrund und speichert jede Messung einzeln in der lokalen IndexedDB.
+Die Nachrichtenübersicht dient als Sicherheitsnetz. Tatsächlich nicht genannte
+Planeteneigenschaften bleiben unbekannt; Nachrichtenkennung und Fingerabdruck verhindern
+doppelte Messungen. Die Übergabe an MariaDB folgt, sobald die dazugehörige API bereitsteht.
+
+Die aus Alpha 12 übernommene Erkennung behandelt eine sichtbare, noch unerforschte Forschung mit dem Knopf `Forschen`
 als tatsächliche Stufe 0. Dadurch werden alte gespeicherte höhere Forschungsstände
 zuverlässig korrigiert, sobald das Forschungsfenster geöffnet ist.
 

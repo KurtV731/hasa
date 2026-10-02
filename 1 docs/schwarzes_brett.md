@@ -666,8 +666,9 @@ Verbindliches Sollverhalten:
   als vorhandene Forschungsstufe anzeigt;
 - Forschungsalarm und Anzeige der laufenden Forschung bleiben davon unberührt.
 
-Die Korrektur wird in Alpha 13, 14 oder 15 mit den nächsten zusammengehörigen
-Forschungsänderungen gebündelt. Alpha 12 wird zunächst praktisch getestet.
+Die Korrektur wird in Alpha 14, 15 oder einer späteren zusammengehörigen
+Forschungsfassung gebündelt. Alpha 13 ergänzt zunächst ausschließlich die
+automatische PRDR-Erfassung; der Forschungsfehler bleibt offen.
 
 ### 2026-09-30 – CE HASA – Aktualisierer meldet keine veraltete Alpha-Nummer mehr
 
@@ -761,6 +762,41 @@ Prüfung: Kurts heutige Erklärung und aktuelles Schwarzes Brett gelesen.
 Noch keine Berechnungsformel, Schemaänderung oder Fehlergarantie umgesetzt.
 Restpunkte: echter Bericht, sichtbare Sondenzahl, Ressourcen-Einheiten,
 Berichtskennung, Mittelwertregel und planetenbezogener Zerfall.
+
+### 2026-10-02 – CE HASA an Datenbank- und Web-Chatty – PRDR-Erfassung Alpha 13
+
+Status: LOKALE ERFASSUNG FERTIG / MARIA-DB-SCHNITTSTELLE OFFEN
+
+Kurts erste echten Prospektionsberichte liegen vor. Zwei Berichte mit je 10 Sonden
+nannten unterschiedliche Teilmengen von jeweils 7 Merkmalen; ein Bericht mit 100
+Sonden nannte 15 Merkmale. Nicht berichtete Eigenschaften sind unbekannt und dürfen
+nicht als null, 100 Prozent oder nicht vorhanden gespeichert werden. Auffällige Werte
+wie 5.347 Prozent orbitales Treibstoffvorkommen und 54.492 Prozent Artefakthäufigkeit
+werden als gemeldete Rohwerte erhalten und nicht ungefragt korrigiert.
+
+Alpha 13 ergänzt in `2 src/current/HASA-AKTUELL.user.js.txt` einen PRDR-Sofortwächter:
+
+- `MutationObserver` erkennt die kurz eingeblendete Meldung `Planet Prospektiert!`;
+- der hinterlegte Nachrichtenlink wird mit der laufenden Horizon-Sitzung gelesen;
+- die Nachrichtenübersicht wird als Sicherheitsnetz ebenfalls ausgewertet;
+- jeder Bericht erhält message_id beziehungsweise Fingerabdruck als Doppelungsschutz;
+- gespeichert werden Zeitpunkt, Ausgangsplanet, Zielplanet, Planetentyp, Sondenzahl
+  und eine offene Liste der tatsächlich genannten Merkmale;
+- einzelne Rohberichte liegen zunächst privat in IndexedDB unter
+  `hasa_prdr_berichte_v1`;
+- im Galaxiescanner erscheint nur ein kompakter Zähler mit letztem Zielplanet;
+- der Sofortwächter läuft erst nach ausdrücklicher Aktivierung von HASA und wird mit
+  `HASA aus` vollständig beendet.
+
+Prüfung: JavaScript-Syntax fehlerfrei; `git diff --check` fehlerfrei; der Parser wurde
+gegen Kurts vollständigen ersten Horizon-Seitenquelltext geprüft und erkannte Ikan
+`4:566:5`, Mokanla `4:566:7`, 10 Sonden sowie alle sieben dort vorhandenen Messwerte.
+
+Offene Schnittstelle für Datenbank-/Web-Chatty: API und MariaDB müssen eine einzelne
+PRDR-Rohmessung mit den oben genannten Metadaten und beliebig vielen benannten
+Merkmalen annehmen. Erst nach Bereitstellung des Endpunkts wird der bereits lokal
+funktionierende Wächter um die Übertragung ergänzt. Mittelwerte, Gewichtungen und
+Zerfallshochrechnung werden nicht in Alpha 13 erfunden.
 
 ## Übergabeformat
 
