@@ -19,7 +19,7 @@
 
  Version : 1.2.0 Alpha 15
  Status  : kompakte Scanneranzeige mit Sondenmarkierung am Planeten
- Build   : 2026-10-02
+ Build   : 2026-10-03
 
  Neu in Alpha 15:
  - Sondenberichte werden unmittelbar am betreffenden Planeten als Stern mit Anzahl markiert
