@@ -11,5 +11,6 @@ hasaJson([
         'health' => 'GET /health.php',
         'read_system' => 'GET /systems.php?galaxy=4&system=566',
         'store_system' => 'POST /systems.php',
+        'store_sonde_report' => 'POST /prospection-reports.php',
     ],
 ]);

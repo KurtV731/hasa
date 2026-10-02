@@ -798,6 +798,44 @@ Merkmalen annehmen. Erst nach Bereitstellung des Endpunkts wird der bereits loka
 funktionierende Wächter um die Übertragung ergänzt. Mittelwerte, Gewichtungen und
 Zerfallshochrechnung werden nicht in Alpha 13 erfunden.
 
+### 2026-10-02 – Kurt und CE HASA – steuerbare Sondenübertragung Alpha 14
+
+Status: CODE UND DATENBANKMIGRATION FERTIG / SERVERINSTALLATION UND LIVE-TEST OFFEN
+
+Auf Kurts ausdrücklichen Auftrag werden die lokal erfassten Sondenberichte nun auch
+an MariaDB übertragen. Die Entscheidung bleibt jederzeit beim Spieler:
+
+- lokale Sondenerfassung läuft bei aktiviertem HASA immer;
+- `Sonden-Übertragung starten` aktiviert ausschließlich den Serverversand;
+- `Sonden-Übertragung beenden` stoppt ihn, ohne lokale Berichte zu löschen;
+- Standardzustand beim ersten Einsatz ist aus;
+- beim späteren Einschalten werden alle noch nicht übertragenen lokalen Berichte
+  automatisch nachgereicht;
+- die Oberfläche verwendet bewusst `Sonden` statt `PRDR`, weil künftig weitere
+  Sondentypen hinzukommen sollen;
+- jeder Bericht speichert Sondencode, Sondenname und Anzahl getrennt.
+
+Neue Serverschnittstelle: `POST /hasa/prospection-reports.php`. Sie verwendet den
+bereits lokal gespeicherten HASA-API-Schlüssel und nimmt einzelne, private
+Sonden-Rohberichte idempotent entgegen. `report_key` verhindert Doppelungen. Zielplanet,
+Beobachtungszeit, Ausgangsplanet, Planetentyp, Sondentyp, Sondenzahl und eine offene
+Liste der tatsächlich berichteten Messwerte werden gespeichert.
+
+Neue Tabellen: `hasa_prospection_reports` und `hasa_prospection_measurements`.
+Für die bestehende Datenbank liegt die sichere Migration
+`4 database/hasa_1_2_0_sonden_migration.sql` bereit. Zusätzlich wurde das vollständige
+Grundschema auf Version `1.2.0-2` angehoben. Persönliche Forschungsdaten werden davon
+nicht berührt.
+
+Betroffene Dateien: `2 src/current/HASA-AKTUELL.user.js.txt`,
+`3 server/hasa-api/prospection-reports.php`, `3 server/hasa-api/bootstrap.php`,
+`3 server/hasa-api/index.php`, `4 database/hasa_1_2_0_schema.sql` und die Migration.
+
+Prüfung: JavaScript-Syntax und `git diff --check` fehlerfrei. PHP-Laufzeit steht in der
+lokalen Arbeitsumgebung nicht zur Verfügung; verbindlicher PHP- und Datenbank-Live-Test
+erfolgt nach Upload und Import auf `serkal.de`. Bis dahin darf die Übertragung nicht als
+produktiv bestätigt werden.
+
 ## Übergabeformat
 
 Jeder neue Eintrag verwendet mindestens:

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-const HASA_API_VERSION = '1.2.0-alpha.1';
+const HASA_API_VERSION = '1.2.0-alpha.2';
 
 function hasaJson(array $data, int $status = 200): never
 {

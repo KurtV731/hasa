@@ -32,18 +32,24 @@ Tampermonkey als neues Userscript eingefügt und gespeichert.
 
 ## Aktuelle Entwicklungsreihe
 
-**HASA 1.2.0 Alpha 13**
+**HASA 1.2.0 Alpha 14**
 
 Aktuelle Testdateien:
 
 - fester Aktualisierungspfad: `2 src/current/HASA-AKTUELL.user.js.txt`
-- archivierte Fassung: `2 src/current/hasa_1.2.0-alpha.13_prdr-sofortwaechter.user.js.txt`
+- archivierte Fassung: `2 src/current/hasa_1.2.0-alpha.14_sonden-mariadb.user.js.txt`
 
-Alpha 13 erkennt die Horizon-Einblendung `Planet Prospektiert!`, liest den verlinkten
+Alpha 14 trennt die dauerhafte lokale Sondenerfassung von der freiwilligen
+MariaDB-Übertragung. Der Schalter `Sonden-Übertragung starten/beenden` entscheidet
+ausschließlich über den Serverversand. Beim Einschalten werden auch ältere, noch
+nicht übertragene Berichte nachgereicht. Sondencode und Sondenname bleiben erhalten,
+damit später weitere Sondentypen ergänzt werden können.
+
+Die aus Alpha 13 übernommene Erkennung bemerkt die Horizon-Einblendung `Planet Prospektiert!`, liest den verlinkten
 Bericht im Hintergrund und speichert jede Messung einzeln in der lokalen IndexedDB.
 Die Nachrichtenübersicht dient als Sicherheitsnetz. Tatsächlich nicht genannte
 Planeteneigenschaften bleiben unbekannt; Nachrichtenkennung und Fingerabdruck verhindern
-doppelte Messungen. Die Übergabe an MariaDB folgt, sobald die dazugehörige API bereitsteht.
+doppelte Messungen.
 
 Die aus Alpha 12 übernommene Erkennung behandelt eine sichtbare, noch unerforschte Forschung mit dem Knopf `Forschen`
 als tatsächliche Stufe 0. Dadurch werden alte gespeicherte höhere Forschungsstände
