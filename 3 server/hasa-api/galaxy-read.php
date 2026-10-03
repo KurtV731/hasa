@@ -59,7 +59,9 @@ $systems = $query->fetchAll();
 $planetQuery = $pdo->prepare(
     "SELECT orbit_position AS orbit, planet_name AS name, planet_type AS type,
             ruler_name AS ruler, alliance_tag AS alliance, game_status AS status,
-            last_observed_at
+            last_observed_at,
+            (SELECT COUNT(*) FROM hasa_prospection_reports r
+             WHERE r.target_planet_id = hasa_planets.id) AS report_count
      FROM hasa_planets
      WHERE system_id = ?
      ORDER BY orbit_position"
