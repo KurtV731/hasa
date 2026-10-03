@@ -852,6 +852,73 @@ oder `★5` nennt die Zahl der für diesen Planeten lokal vorhandenen Einzelberi
 Damit steht die für die spätere Mittelwertbildung wichtige Messungszahl dort, wo sie
 gebraucht wird, ohne zusätzliche Informationszeile.
 
+### 2026-10-03 – Datenbank- und Web-Chatty an Kurt und CE HASA – Sondenansicht 1.2.0-web.2
+
+Status: IN GITHUB FERTIG / SERVERUPLOAD UND LIVE-TEST OFFEN
+
+Kurts Auftrag für eine bessere Ansicht der ersten Scannergebnisse ist umgesetzt.
+Die Webansicht zeigt je Planet die Anzahl der in MariaDB vorhandenen Sondenberichte
+als klickbares ★N. Das Öffnen zeigt die einzelnen Berichte mit Zeitpunkt (UTC),
+Sondentyp, Sondenzahl und sämtlichen tatsächlich gespeicherten Prozentwerten.
+Die Anzahl kann von Alpha 15 abweichen: dort werden lokale Berichte gezählt,
+hier ausschließlich erfolgreich an MariaDB übertragene Berichte.
+
+Per Auswahl können vergleichbare Berichte desselben Sondentyps gemeinsam ausgewertet
+werden. Angezeigt werden arithmetische Mittelwerte je Merkmal, die Zahl der ausgewählten
+Berichte, die Sondensumme und der Beobachtungszeitraum. Jede Tabellenzeile nennt zudem
+ihre tatsächlich vorhandene Messungsanzahl. Fehlende Merkmale werden nicht als null
+einbezogen. Fehlende Sondenzahlen kennzeichnen die Summe als unvollständig.
+Unterschiedliche Sondenzahlen führen nicht zu einer stillen Gewichtung; jeder
+ausgewählte Bericht zählt je vorhandenem Merkmal einmal. Die Auswahl entscheidet der
+Nutzer. Auffällige Rohwerte über 100 Prozent bleiben erhalten. Keine Genauigkeitsgarantie
+und keine Zerfallshochrechnung. Der Berichtsabruf ist auf die neuesten 200 Berichte
+je Planet begrenzt; bei mehr Berichten nennt die Anzeige die Begrenzung.
+
+Die vereinbarte erste Stufe bleibt gültig: alle erfassten Daten der Galaxien 1–6 sind
+lesbar, unabhängig vom gespeicherten Sichtbarkeitsmerkmal. Kein Anmeldefenster und
+kein zusätzlicher Datenbankpasswort-Dialog. Schreibschnittstelle und API-Schlüssel
+bleiben unverändert. Beobachter und Ausgangsplanet werden vom neuen Leseendpunkt
+nicht ausgegeben. Galaxien außerhalb 1–6 werden nicht angeboten.
+
+Betroffene Dateien in `3 server/hasa-api`:
+- `galaxy.php`: dunkle Webansicht, Berichtsauswahl und Mittelwertanzeige;
+- `galaxy-read.php`: Anzahl der gespeicherten Berichte je Planet;
+- `prospection-read.php` (neu): koordinatenbezogener GET-Leseendpunkt.
+
+Prüfungen: alle drei PHP-Dateien durch PHP-Parser auf Syntax geprüft, JavaScript-Syntax
+geprüft. Aus der tatsächlichen Anzeigenfunktion geprüfte Testfälle: Teilmessungen,
+Mittelwert 40/60 = 50, Rohwert 54.492 Prozent, fehlende Sondenzahl, unterschiedliche
+Sondentypen, unterschiedliche Sondenzahlen ohne Gewichtung und Zeitspanne.
+DOM-Test der tatsächlichen Seite: Suche mit Koordinaten, Stern öffnen, Berichte laden,
+Auswahl und Ergebnistabelle, Schließen/Wiederöffnen ohne zweiten Abruf sowie sichere
+Textausgabe. Ein vollständiger visueller Browsertest konnte wegen fehlgeschlagenem
+Browserdownload nicht durchgeführt werden. PHP-Ausführung mit echter MariaDB und
+Live-Anzeige stehen aus; die Syntaxprüfung ersetzt diese nicht.
+
+Commits:
+- `b5d39a159f338f666695726a287e5d4d62aaae0d`: neuer Berichts-Leseendpunkt;
+- `ace607e80bbaaf0963c7f6c846f74e1b2f96f2a5`: Berichtsanzahl;
+- `4e1421e2dff9bb5b6453487a9ff1d0d487e3fbbc`: Ansicht;
+- `f10cb7c4fa1a054fec5a6a017f8a63fc5bd82423`: ausdrückliche Mittelwertregel.
+Dateiinhalte nach GitHub-Übertragung erneut gelesen und auf Übereinstimmung geprüft.
+
+Installation durch Kurt: `HASA-AKTUALISIEREN.cmd` in `C:\\Hasa` ausführen
+(oder dort `git pull`). Danach die drei oben genannten PHP-Dateien aus
+`C:\\Hasa\\3 server\\hasa-api` gemeinsam nach `/hasa/` auf `serkal.de`
+hochladen; die vorhandene Serverkonfiguration bleibt erhalten.
+Keine neue Datenbankmigration erforderlich: die Sondentabellen wurden am 02.10.
+bereits installiert. Zielseite: https://serkal.de/hasa/galaxy.php .
+Live-Test: Galaxie 4, System 566 suchen, ★ bei Ikan beziehungsweise Mokanla öffnen
+und zwei passende Berichte auswählen. Erwartung: Einzelwerte, passende Berichtsanzahl,
+Sondensumme und Mittelwerte; unbekannte Felder bleiben unbekannt.
+
+Restpunkte: Serverupload, Live-Test mit den fünf übertragenen Berichten, weitere
+Zerfallsregeln und später durch Besiedlung bestätigte Werte. Kurt hat vorgeschaltete
+Anmeldung mit Benutzer/Passwort ab Montag, 05.10.2026, angekündigt. Diese ist heute
+nicht eingebaut; bei ihrer Umsetzung müssen auch die beiden Leseendpunkte in das
+Zugriffskonzept aufgenommen werden. Keine weitere Freigabe für die heutige Fassung
+erforderlich; Serverzugang ist hier nicht vorhanden.
+
 ## Übergabeformat
 
 Jeder neue Eintrag verwendet mindestens:
