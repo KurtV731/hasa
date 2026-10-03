@@ -919,6 +919,21 @@ nicht eingebaut; bei ihrer Umsetzung müssen auch die beiden Leseendpunkte in da
 Zugriffskonzept aufgenommen werden. Keine weitere Freigabe für die heutige Fassung
 erforderlich; Serverzugang ist hier nicht vorhanden.
 
+### 2026-10-03 – Kurt und CE HASA – laufende Gebäude Alpha 16
+
+Status: UMGESETZT / TEST DURCH KURT OFFEN
+
+Horizon zeigt einen laufenden Gebäudeausbau bereits mit seiner Zielstufe an. Kurts
+laufende Eliteuniversität wurde deshalb als vorhandene Forschungseinrichtung Stufe 10
+gewertet, obwohl die Fertigstellung noch mehr als vier Stunden ausstand und tatsächlich
+nur Stufe 9 vorhanden war. Dadurch erschien die Gebäudevoraussetzung für
+Hyperraumtechnik vorzeitig als erledigt.
+
+Alpha 16 korrigiert beide Gebäude-Einlesewege: Enthält der Eintrag einen nachweislich
+laufenden Bauauftrag mit `wird gebaut`, Abbrechen-Knopf und Restzeit, speichert HASA
+bis zur Fertigstellung Zielstufe minus eins. Erst nach Abschluss und neuem Einlesen
+gilt die neue Stufe als vorhanden.
+
 ## Übergabeformat
 
 Jeder neue Eintrag verwendet mindestens:

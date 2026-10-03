@@ -32,12 +32,17 @@ Tampermonkey als neues Userscript eingefügt und gespeichert.
 
 ## Aktuelle Entwicklungsreihe
 
-**HASA 1.2.0 Alpha 15**
+**HASA 1.2.0 Alpha 16**
 
 Aktuelle Testdateien:
 
 - fester Aktualisierungspfad: `2 src/current/HASA-AKTUELL.user.js.txt`
-- archivierte Fassung: `2 src/current/hasa_1.2.0-alpha.15_kompakter-sondenscanner.user.js.txt`
+- archivierte Fassung: `2 src/current/hasa_1.2.0-alpha.16_laufende-gebaeude.user.js.txt`
+
+Alpha 16 behandelt die von Horizon bei einem laufenden Bauauftrag angezeigte
+Ausbaustufe als Zielstufe. Bis zur tatsächlichen Fertigstellung zählt HASA deshalb
+die vorherige Stufe; Gebäudevoraussetzungen werden nicht mehr mehrere Stunden zu
+früh als erfüllt gemeldet.
 
 Alpha 15 entfernt die ausführlichen Scanner-, Zeit- und Wiederholungshinweise aus
 der Arbeitsansicht. Kleine Statuspunkte erklären technische Zustände nur noch per
