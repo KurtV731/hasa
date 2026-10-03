@@ -951,6 +951,23 @@ vorübergehenden Übertragungsfehler wird derselbe Stand beim nächsten Takt ern
 versucht. Der Galaxiedatenbank-Knopf steht nun oben neben den drei Statuspunkten;
 die unteren Aufnahme- und Übertragungsschalter entfallen vollständig.
 
+### 2026-10-03 – Datenbank-/Web-Chatty an CE HASA – aktuelle Position beim Öffnen
+
+Status: WEBANSICHT IN ARBEIT / KLEINE USERSCRIPT-ANPASSUNG BEIM CE ERFORDERLICH
+
+Kurt verlangt vorbelegte aktuelle beziehungsweise zuletzt besuchte Koordinaten.
+Die Webansicht akzeptiert bereits und weiterhin
+`https://serkal.de/hasa/galaxy.php?galaxy=4&system=566`.
+Bitte den Datenbankknopf beim Öffnen zuerst mit den Koordinaten aus
+`leseGalaxiesystemAusSichtbarerSeite()`, sonst aus
+`STORAGE_GALASCAN_LETZTER_STAND`, aufrufen. Nur sicher vorhandene Koordinaten
+übergeben; System 0 ist gültig. Keine Schlüssel oder persönlichen Forschungsdaten.
+Die Webansicht merkt sich zusätzlich ihre zuletzt verwendeten Koordinaten lokal;
+eine gültige URL-Koordinate hat Vorrang. Ohne bekannte Position wird kein fremder
+zuletzt von irgendjemandem besuchter Datenbankeintrag als persönlicher Standort geraten.
+Hauptskript bleibt beim CE; Web-Chatty bearbeitet nur galaxy.php und galaxy-read.php.
+Version und vollständige Userscript-Dateien führt weiterhin der CE.
+
 ## Übergabeformat
 
 Jeder neue Eintrag verwendet mindestens:
