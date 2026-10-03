@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+// HASA Webansicht 1.2.0-web.2 – Sondenberichte und auswählbare Mittelwerte.
 header('Content-Type: text/html; charset=utf-8');
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: no-referrer');
@@ -19,7 +20,8 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
   form { display: flex; flex-wrap: wrap; gap: .8rem; align-items: end; padding: 1rem; background: #1f2937; border-radius: .7rem; }
   label { display: grid; gap: .25rem; }
   input, button { font: inherit; padding: .55rem; border-radius: .4rem; border: 1px solid #9ca3af; }
-  input { width: 9rem; background: #fff; color: #111827; }
+  input { width: 9rem; background: #172033; color: #f3f4f6; }
+  input[type=checkbox] { width: 1.2rem; height: 1.2rem; accent-color: #60a5fa; }
   button { background: #2563eb; color: white; cursor: pointer; border-color: #2563eb; }
   button:focus-visible, input:focus-visible { outline: 3px solid #facc15; outline-offset: 2px; }
   #status { margin: 1rem 0; min-height: 1.5rem; }
@@ -29,11 +31,17 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
   table { border-collapse: collapse; width: 100%; min-width: 680px; }
   th, td { padding: .45rem; border-bottom: 1px solid #4b5563; text-align: left; }
   th { color: #bfdbfe; }
+  .scan { background: #facc15; color: #111827; border-color: #facc15; padding: .1rem .5rem; margin-right: .5rem; }
+  .report { margin: .7rem 0; padding: .8rem; background: #111827; border-radius: .4rem; }
+  .report label { display: flex; align-items: center; flex-wrap: wrap; gap: .6rem; font-weight: 600; }
+  .report table { min-width: 0; }
+  .muted { color: #cbd5e1; font-size: .9rem; }
+  .average { padding: .8rem; border: 1px solid #60a5fa; border-radius: .4rem; margin: .7rem 0; }
 </style>
 </head>
 <body>
 <h1>HASA – Galaxiedatenbank</h1>
-<p>Erste Stufe: In den Galaxien 1 bis 6 sind alle erfassten Systeme und Planeten für jeden lesbar.</p>
+<p>Galaxien 1 bis 6 · <span style="color:#facc15">★</span> Sondenberichte am Planeten öffnen</p>
 <form id="search">
   <label>Galaxie <input name="galaxy" type="number" min="1" max="6" step="1" inputmode="numeric"></label>
   <label>System <input name="system" type="number" min="0" max="999999" step="1" inputmode="numeric"></label>
@@ -49,6 +57,75 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
   const results = document.querySelector('#results');
   const columns = ['Bahn', 'Name', 'Typ', 'Spieler', 'Allianz', 'Status', 'Beobachtet (UTC)'];
   const fields = ['orbit', 'name', 'type', 'ruler', 'alliance', 'status', 'last_observed_at'];
+  const number = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 3 });
+  let searchController;
+  function element(tag, text, className) {
+    const node = document.createElement(tag);
+    if (text !== undefined) node.textContent = text;
+    if (className) node.className = className;
+    return node;
+  }
+  function metricsTable(values) {
+    const table = element('table');
+    const head = table.createTHead().insertRow();
+    for (const label of ['Merkmal', 'Schätzwert (%)', 'Messungen']) head.append(element('th', label));
+    const body = table.createTBody();
+    for (const metric of values) {
+      const row = body.insertRow();
+      row.insertCell().textContent = metric.metric_name;
+      row.insertCell().textContent = number.format(Number(metric.value_percent));
+      row.insertCell().textContent = metric.count ?? '1';
+    }
+    return table;
+  }
+  async function showReports(container, item, planet) {
+    container.textContent = 'Lade Sondenberichte …';
+    try {
+      const params = new URLSearchParams({ galaxy: item.galaxy, system: item.system, orbit: planet.orbit });
+      const response = await fetch('prospection-read.php?' + params, { credentials: 'same-origin' });
+      const payload = await response.json();
+      if (!response.ok || !payload.ok || !Array.isArray(payload.data)) throw new Error('read_failed');
+      container.replaceChildren();
+      const reports = payload.data;
+      if (!reports.length) { container.textContent = 'Noch keine Sondenberichte vorhanden.'; return; }
+      const average = element('div', undefined, 'average');
+      const selected = new Set();
+      function updateAverage() {
+        average.replaceChildren();
+        const chosen = [...selected].map(index => reports[index]);
+        if (!chosen.length) { average.textContent = 'Berichte für einen Mittelwert auswählen.'; return; }
+        const types = new Set(chosen.map(r => r.probe_type_code || r.probe_type_name || 'unbekannt'));
+        if (types.size > 1) { average.textContent = 'Für einen Mittelwert bitte denselben Sondentyp auswählen.'; return; }
+        const known = chosen.filter(r => r.probe_count !== null && r.probe_count !== undefined);
+        const sum = known.reduce((total, r) => total + Number(r.probe_count), 0);
+        const times = chosen.map(r => r.observed_at).sort();
+        average.append(element('strong', `${chosen.length} Messungen · ${number.format(sum)} Sonden${known.length < chosen.length ? ' bekannt (Summe unvollständig)' : ' insgesamt'}`));
+        average.append(element('p', `${times[0]} bis ${times[times.length - 1]} UTC · Schätzung ohne Zerfallskorrektur`, 'muted'));
+        const totals = new Map();
+        for (const report of chosen) {
+          for (const metric of report.measurements || []) {
+            const current = totals.get(metric.metric_name) || { sum: 0, count: 0 };
+            current.sum += Number(metric.value_percent); current.count++;
+            totals.set(metric.metric_name, current);
+          }
+        }
+        const values = [...totals].sort(([a], [b]) => a.localeCompare(b, 'de')).map(([name, value]) => ({ metric_name: name, value_percent: value.sum / value.count, count: value.count }));
+        average.append(metricsTable(values));
+      }
+      container.append(average);
+      updateAverage();
+      if (Number(planet.report_count) > reports.length) container.append(element('p', `Die neuesten ${reports.length} von ${planet.report_count} Berichten werden angezeigt.`, 'muted'));
+      reports.forEach((report, index) => {
+        const card = element('section', undefined, 'report');
+        const label = element('label');
+        const checkbox = element('input'); checkbox.type = 'checkbox';
+        checkbox.addEventListener('change', () => { checkbox.checked ? selected.add(index) : selected.delete(index); updateAverage(); });
+        label.append(checkbox, element('span', `${report.observed_at} UTC · ${report.probe_count ?? '?'} ${report.probe_type_name || report.probe_type_code || 'Sonden'}`));
+        card.append(label, metricsTable(report.measurements || []));
+        container.append(card);
+      });
+    } catch (_) { container.textContent = 'Die Sondenberichte konnten nicht geladen werden. Bitte schließen und erneut öffnen.'; }
+  }
 
   form.addEventListener('submit', async event => {
     event.preventDefault();
@@ -63,9 +140,11 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
     if (galaxy) params.set('galaxy', galaxy);
     if (system) params.set('system', system);
     results.replaceChildren();
+    if (searchController) searchController.abort();
+    searchController = new AbortController();
     status.textContent = 'Lade Einträge aus den Galaxien 1 bis 6 …';
     try {
-      const response = await fetch('galaxy-read.php?' + params, { credentials: 'omit' });
+      const response = await fetch('galaxy-read.php?' + params, { credentials: 'same-origin', signal: searchController.signal });
       const payload = await response.json();
       if (!response.ok || !payload.ok || !Array.isArray(payload.data)) throw new Error('read_failed');
       status.textContent = payload.data.length
@@ -85,6 +164,27 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
         for (const planet of item.planets || []) {
           const row = body.insertRow();
           for (const field of fields) row.insertCell().textContent = planet[field] ?? '–';
+          if (Number(planet.report_count) > 0) {
+            const button = element('button', `★${planet.report_count}`, 'scan');
+            button.type = 'button';
+            button.setAttribute('aria-label', `${planet.report_count} Sondenberichte für ${planet.name || 'Bahn ' + planet.orbit} öffnen`);
+            button.setAttribute('aria-expanded', 'false');
+            row.cells[1].prepend(button);
+            const detailRow = body.insertRow(); detailRow.hidden = true;
+            const cell = detailRow.insertCell(); cell.colSpan = columns.length;
+            let loaded = false;
+            let loading = false;
+            button.addEventListener('click', async () => {
+              detailRow.hidden = !detailRow.hidden;
+              button.setAttribute('aria-expanded', String(!detailRow.hidden));
+              if (!detailRow.hidden && !loaded && !loading) {
+                loading = true;
+                await showReports(cell, item, planet);
+                loaded = !!cell.querySelector('.report');
+                loading = false;
+              }
+            });
+          }
         }
         if (!body.rows.length) {
           const cell = body.insertRow().insertCell();
@@ -96,9 +196,14 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
         results.append(card);
       }
     } catch (_) {
+      if (_.name === 'AbortError') return;
       status.textContent = 'Die Galaxiedatenbank ist derzeit nicht erreichbar.';
     }
   });
+  const initial = new URLSearchParams(location.search);
+  if (initial.has('galaxy')) form.elements.galaxy.value = initial.get('galaxy');
+  if (initial.has('system')) form.elements.system.value = initial.get('system');
+  form.requestSubmit();
 })();
 </script>
 </body>
