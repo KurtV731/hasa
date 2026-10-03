@@ -934,6 +934,23 @@ laufenden Bauauftrag mit `wird gebaut`, Abbrechen-Knopf und Restzeit, speichert 
 bis zur Fertigstellung Zielstufe minus eins. Erst nach Abschluss und neuem Einlesen
 gilt die neue Stufe als vorhanden.
 
+### 2026-10-03 – Kurt und CE HASA – automatische Erfassung Alpha 17
+
+Status: UMGESETZT / TEST DURCH KURT OFFEN
+
+Kurt hat die beiden getrennten Schalter für Galaxieaufnahme und Sondenübertragung
+als unnötige Bedienlast gestrichen. Bei aktivem HASA und vorhandenem API-Schlüssel
+werden sichtbare Galaxiesysteme sowie neue Sondenberichte jetzt automatisch an
+MariaDB übertragen. Fehlt der Schlüssel, bleibt die lokale Sondenerfassung erhalten
+und der vorhandene Schlüsselknopf ermöglicht weiterhin die einmalige Einrichtung.
+
+Der Galaxiescan prüft alle 35 Sekunden. Sein Fingerabdruck enthält System- und
+Planetendaten statt nur die Koordinate: Ein unverändertes System wird innerhalb der
+Sitzung nicht erneut gesendet, eine tatsächliche Änderung dagegen schon. Nach einem
+vorübergehenden Übertragungsfehler wird derselbe Stand beim nächsten Takt erneut
+versucht. Der Galaxiedatenbank-Knopf steht nun oben neben den drei Statuspunkten;
+die unteren Aufnahme- und Übertragungsschalter entfallen vollständig.
+
 ## Übergabeformat
 
 Jeder neue Eintrag verwendet mindestens:

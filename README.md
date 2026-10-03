@@ -32,12 +32,18 @@ Tampermonkey als neues Userscript eingefügt und gespeichert.
 
 ## Aktuelle Entwicklungsreihe
 
-**HASA 1.2.0 Alpha 16**
+**HASA 1.2.0 Alpha 17**
 
 Aktuelle Testdateien:
 
 - fester Aktualisierungspfad: `2 src/current/HASA-AKTUELL.user.js.txt`
-- archivierte Fassung: `2 src/current/hasa_1.2.0-alpha.16_laufende-gebaeude.user.js.txt`
+- archivierte Fassung: `2 src/current/hasa_1.2.0-alpha.17_automatischer-galaxiescan.user.js.txt`
+
+Alpha 17 entfernt die getrennten Schalter für Galaxieaufnahme und Sondenübertragung.
+Solange HASA aktiv ist und der einmalig gespeicherte API-Schlüssel vorliegt, werden
+sichtbare Galaxiesysteme und neue Sondenberichte automatisch übertragen. Der
+Galaxiescan prüft alle 35 Sekunden und sendet ein System nur bei geändertem Inhalt.
+Der Knopf zur Galaxiedatenbank steht oben neben den drei Statuspunkten.
 
 Alpha 16 behandelt die von Horizon bei einem laufenden Bauauftrag angezeigte
 Ausbaustufe als Zielstufe. Bis zur tatsächlichen Fertigstellung zählt HASA deshalb
