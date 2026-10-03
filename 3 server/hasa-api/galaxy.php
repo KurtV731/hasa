@@ -99,8 +99,8 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
         const known = chosen.filter(r => r.probe_count !== null && r.probe_count !== undefined);
         const sum = known.reduce((total, r) => total + Number(r.probe_count), 0);
         const times = chosen.map(r => r.observed_at).sort();
-        average.append(element('strong', `${chosen.length} Messungen · ${number.format(sum)} Sonden${known.length < chosen.length ? ' bekannt (Summe unvollständig)' : ' insgesamt'}`));
-        average.append(element('p', `${times[0]} bis ${times[times.length - 1]} UTC · Schätzung ohne Zerfallskorrektur`, 'muted'));
+        average.append(element('strong', `Mittelwerte · ${chosen.length} Messungen · ${number.format(sum)} Sonden${known.length < chosen.length ? ' bekannt (Summe unvollständig)' : ' insgesamt'}`));
+        average.append(element('p', `${times[0]} bis ${times[times.length - 1]} UTC · Arithmetische Mittelwerte je Merkmal, ohne Zerfallskorrektur`, 'muted'));
         const totals = new Map();
         for (const report of chosen) {
           for (const metric of report.measurements || []) {
