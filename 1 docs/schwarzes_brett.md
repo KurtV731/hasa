@@ -968,6 +968,78 @@ zuletzt von irgendjemandem besuchter Datenbankeintrag als persönlicher Standort
 Hauptskript bleibt beim CE; Web-Chatty bearbeitet nur galaxy.php und galaxy-read.php.
 Version und vollständige Userscript-Dateien führt weiterhin der CE.
 
+### 2026-10-03 – Datenbank-/Web-Chatty an Kurt und CE HASA – Web 1.2.0-web.3
+
+Status: WEBFASSUNG IN GITHUB FERTIG / UPLOAD, LIVE-TEST UND CE-KOORDINATENÜBERGABE OFFEN
+
+Kurts drei Bedienaufträge sind im Webbereich umgesetzt:
+
+1. Die letzte in der Webansicht verwendete vollständige Koordinate wird lokal im
+   Browser gespeichert und beim nächsten Öffnen vorbelegt. Gültige URL-Koordinaten
+   haben Vorrang; System 0 ist ausdrücklich gültig. Der Knopf „Standort anzeigen“
+   stellt diese Koordinate ohne erneutes Tippen wieder her und leert Zusatzfilter.
+   Bei blockiertem lokalem Speicher funktioniert die URL-Übergabe weiterhin.
+   Für die aktuelle beziehungsweise zuletzt besuchte Horizon-Position bleibt die
+   unmittelbar vorstehende Übergabe an den CE erforderlich. Die jetzige Alpha 17
+   öffnet laut geprüftem Stand noch die feste URL ohne Koordinaten. Keine
+   Hauptskriptdatei wurde vom Web-Chatty verändert.
+
+2. Serverseitige Suche mit Galaxie, System, freiem Suchbegriff, Spieler, Allianz,
+   Umlaufbahn, Planetenname, Planetentyp und Status. Textfelder suchen Teilstrings,
+   alle ausgefüllten Filter werden gemeinsam angewendet. Freier Suchbegriff
+   durchsucht Systemname, Planetenname, Spieler, Allianz und Planetentyp.
+   „Alle Galaxien durchsuchen“ entfernt die Koordinatenbegrenzung und erhält die
+   übrigen Suchfelder. Keine Beschränkung der Suche auf schon geladene Ergebnisse:
+   je Seite 20 passende Systeme, Gesamtzahl und Zurück/Weiter. Nur passende
+   Planeten erscheinen. Keine Claims erfunden; hierfür fehlen bisher Daten.
+
+3. Kompakter Vergleich: links hervorgehobenes Startsystem mit Koordinate und Name,
+   rechts Planeten als nebeneinanderstehende Spalten. Die Merkmalszeilen bleiben
+   beim waagerechten Scrollen stehen. Die Seite nutzt die verfügbare Breite;
+   auf kleinen Bildschirmen steht der Systemkopf oberhalb des Vergleichs.
+   Die letzten Sondenwerte jedes Planeten stehen direkt auf gleicher Höhe,
+   einschließlich Zeitpunkt und Sondentyp/-zahl. Fehlende Werte erscheinen als
+   „–“, nicht als null. Diese Vergleichswerte stammen jeweils aus genau dem
+   letzten Bericht; keine stillen Mischwerte aus verschieden alten Berichten.
+   ★ öffnet darunter weiterhin Einzelberichte und die ausdrücklich gewählten
+   Mittelwerte. Wechseln, Schließen und Wiederöffnen erhält die jeweilige Auswahl.
+
+Dateien: `3 server/hasa-api/galaxy.php` und `galaxy-read.php`.
+Bestehende Antwortfelder bleiben erhalten. Der GET-Endpunkt akzeptiert zusätzlich
+`q, player, alliance, orbit, name, type, status, offset` und liefert
+`total, offset, has_more`. Pro Planet kommt `latest_scan` mit Zeitpunkt,
+Sondenzahl/-typ und Messwerten hinzu (oder null). SQL-Werte sind gebunden,
+Prozentzeichen und Unterstriche in Textsuchen sind literal. Galaxien 1–6 bleiben
+allgemein lesbar. Schreibendpunkt, Schlüssel, Schema und Serverkonfiguration
+unverändert; keine neue Migration.
+
+Prüfungen: beide PHP-Dateien mit PHP-Parser syntaktisch geprüft, eingebettetes
+JavaScript syntaktisch geprüft. DOM-Test der tatsächlichen Seite mit Testdaten:
+URL vor gespeicherter Position, System 0, Wiederaufnahme, gesperrter Speicher,
+fehlende Position, Vergleichswerte/Teilmessungen/Rohwerte über 100 %, Bericht öffnen,
+Mittelwertauswahl, Wiederöffnen, Suchparameter, Blättern unter Erhalt der Filter,
+alle Galaxien, Standortknopf, Erhalt der bisherigen Ergebnisse bei Ladefehler,
+sichere Textausgabe. Die arithmetische Mittelwertlogik aus Web.2 bleibt erhalten.
+Keine PHP-/MariaDB-Ausführung und kein visueller Browsertest in dieser Umgebung;
+Produktivtest nach Upload erforderlich.
+
+Commits:
+- `0aaf7e81e565516bca3631f2207793cb91862c30`: Such-API und letzte Sondenwerte;
+- `110003c53f6e285570fcb76e84d1239ebbfc07fc`: Positionsgedächtnis und Vergleich.
+Beide Dateien von GitHub zurückgelesen, Inhalte stimmen mit geprüfter Fassung überein.
+
+Installation: Aktualisierer beziehungsweise git pull in `C:\Hasa`, danach
+`galaxy.php` und `galaxy-read.php` aus `3 server/hasa-api` nach dem
+vorhandenen `/hasa/` auf serkal.de hochladen. `prospection-read.php` aus Web.2
+muss dort ebenfalls vorhanden sein. Ziel: https://serkal.de/hasa/galaxy.php .
+Einmal ein System wählen, schließen und ohne URL-Parameter erneut öffnen;
+dann Suche über alle Galaxien, Blättern und Planetenwerte vergleichen.
+
+Restpunkte: CE passt den Datenbankknopf auf aktuelle/letzte Horizon-Koordinaten an;
+Serverupload und gemeinsamer Praxistest. Kurt muss keine Schnittstellenparameter
+zwischen Chats übertragen. Keine weitere fachliche Freigabe für diese beauftragte
+Webfassung nötig.
+
 ## Übergabeformat
 
 Jeder neue Eintrag verwendet mindestens:
