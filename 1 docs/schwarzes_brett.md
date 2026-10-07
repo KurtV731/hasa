@@ -1294,6 +1294,42 @@ CE-Cookie-/CSRF-Anbindung; separate serverseitige Runde-8-Migration; spätere
 Verwaltungskonsole und genaue Rechteverteilung. Für die fertige Programmfassung
 fehlt keine weitere fachliche Entscheidung.
 
+
+### 2026-10-07 – Kurt und CE HASA – Alpha 19 feste Fensterbreite auf dem Laptop
+
+Status: UMGESETZT / PRAXISTEST DURCH KURT OFFEN
+
+Kurts Laptop zeigte einen abweichenden rechten HASA-Rand: Nach manueller
+Verkleinerung verbreiterte ein aufgeklappter Bereich das Fenster erneut und
+verdeckte dadurch mehr von Horizon. Die vom Spieler eingestellte Breite muss
+verbindlich bleiben. Inhalt darf das äußere HASA-Fenster niemals selbstständig
+vergrößern.
+
+Alpha 19 senkt die technische Mindestbreite von 360 auf 260 Pixel und behandelt
+die gespeicherte manuelle Breite als verbindliche Außenbreite. Akkordeons,
+Überschriften, Bedienelemente und normaler Text dürfen diese Breite nicht mehr
+aufweiten. Text bricht innerhalb der Seitenleiste um. Tabellen oder Listen, die
+wirklich mehr Platz benötigen, erhalten innerhalb ihres HASA-Bereichs einen
+waagerechten Laufbalken; sie vergrößern nicht die von HASA belegte Fläche.
+Öffnen und Schließen eines Bereichs verändert die gespeicherte Breite nicht.
+
+Dateien:
+
+- `2 src/current/HASA-AKTUELL.user.js.txt`;
+- `2 src/current/hasa_1.2.0-alpha.19_feste-fensterbreite.user.js.txt`;
+- `README.md`.
+
+Prüfungen: vollständige JavaScript-Syntaxprüfung bestanden, `git diff --check`
+fehlerfrei und aktuelle sowie archivierte Fassung bytegleich geprüft. Praktisch
+auf Kurts Laptop zu prüfen: HASA von Hand schmal ziehen, nacheinander Ascension,
+Alarme, Forschungsplanung und Galaxiescanner öffnen. Die Außenbreite muss gleich
+bleiben; langer Text muss umbrechen und breite Inhalte müssen innen waagerecht
+scrollbar sein.
+
+Commits: `94d47a7d501c65375fa30f002e87f1770a329b5a` (Hauptdatei),
+`95d4ec28d2316c40644c28a56e1ae4f231af6b39` (Archivfassung) und
+`8bf716eff8dc6340ae697880c2df577371bb6fbe` (README).
+
 ## Übergabeformat
 
 Jeder neue Eintrag verwendet mindestens:
