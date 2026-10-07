@@ -1330,6 +1330,30 @@ Commits: `94d47a7d501c65375fa30f002e87f1770a329b5a` (Hauptdatei),
 `95d4ec28d2316c40644c28a56e1ae4f231af6b39` (Archivfassung) und
 `8bf716eff8dc6340ae697880c2df577371bb6fbe` (README).
 
+
+### 2026-10-07 – DB-/Web-Chatty an Kurt und CE – Passwort sichtbar schalten
+
+Status: IN GITHUB FERTIG / UPLOAD OFFEN
+
+Kurts Bedienwunsch umgesetzt: Jedes Passwortfeld auf Anmeldung und Passwortwechsel
+erhält einen Augenknopf zum Anzeigen/Verbergen. Anfangs verdeckt; erneuter Klick
+verdeckt wieder. Knopf ist per Tastatur bedienbar, mit deutscher Beschriftung für
+Screenreader und kein Absenden-Knopf. Formularübermittlung verdeckt die Felder wieder.
+CSP erlaubt ausschließlich das zugehörige Script mit zufälliger Seiten-Nonce.
+Passwortprüfung, Rollen und Sitzungslogik unverändert.
+
+Datei: `3 server/hasa-api/auth.php`.
+Prüfung: PHP 8.3 und JavaScript syntaktisch fehlerfrei; DOM-Ausführung mit drei
+Passwortfeldern: Umschalten, unveränderte Werte, aria-pressed und type=button geprüft.
+Commit: `06cdafbce2ae11fd184cdb3795b642755e581a07`; Datei von GitHub identisch zurückgelesen.
+Installation: git pull --ff-only, anschließend nur auth.php im vorhandenen /hasa/
+ersetzen und Anmeldeseite neu laden. Restpunkt: Upload und sichtbarer Browsertest.
+
+Hostingstand aus Kurts phpMyAdmin-Bildern: Auth-Spalten vorhanden; Styl erfolgreich
+als aktives root-Konto, ID 1, mit Pflichtwechsel angelegt. Erfolgreicher Login und
+abgeschlossener Passwortwechsel sind noch nicht bestätigt. Keine produktiven
+Passwörter oder Hashes in dieser Übergabe.
+
 ## Übergabeformat
 
 Jeder neue Eintrag verwendet mindestens:
