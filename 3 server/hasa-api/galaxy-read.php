@@ -1,7 +1,9 @@
 <?php
 declare(strict_types=1);
 // HASA Web 1.2.0-web.3 – gefilterte, seitenweise Planetensuche.
-require __DIR__ . '/bootstrap.php';
+require __DIR__ . '/auth.php';
+hasaRequireUser(true);
+hasaAuthLegacyRound(true);
 header('X-Content-Type-Options: nosniff');
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
     header('Allow: GET');

@@ -1,10 +1,14 @@
 <?php
 declare(strict_types=1);
-// HASA Webansicht 1.2.0-web.3 – Standort, Planetensuche und kompakter Vergleich.
+require __DIR__ . '/auth.php';
+$hasaUser = hasaRequireUser();
+hasaAuthLegacyRound();
+// HASA Webansicht 1.2.0-web.4 – Standort, Planetensuche und kompakter Vergleich.
+$hasaNonce = base64_encode(random_bytes(18));
 header('Content-Type: text/html; charset=utf-8');
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: no-referrer');
-header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-hasa-galaxy-v1'; connect-src 'self'; base-uri 'none'; form-action 'none'");
+header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-$hasaNonce'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'");
 ?>
 <!doctype html>
 <html lang="de">
@@ -21,7 +25,7 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
   .filters,.toolbar { display:flex; flex-wrap:wrap; gap:.6rem; align-items:end; }
   label { display:grid; gap:.2rem; } input,button { font:inherit; padding:.45rem; border:1px solid #64748b; border-radius:.35rem; }
   input { width:9rem; background:#172033; color:#f3f4f6; } input[name=q] { width:min(24rem,100%); }
-  button { background:#2563eb; color:white; cursor:pointer; } button:disabled { opacity:.5; cursor:default; }
+  button { background:#2563eb; color:white; cursor:pointer; } a { color:#bfdbfe; } button:disabled { opacity:.5; cursor:default; }
   button:focus-visible,input:focus-visible,summary:focus-visible,.scroll:focus-visible { outline:3px solid #facc15; outline-offset:2px; }
   details.filters-more { margin-top:.6rem; } summary { cursor:pointer; color:#bfdbfe; } .filters-more .filters { padding-top:.6rem; }
   #status { margin:.7rem 0; min-height:1.4rem; } article { background:#1f2937; padding:.8rem; border-radius:.6rem; margin:.8rem 0; }
@@ -44,7 +48,8 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
 </head>
 <body>
 <h1>HASA – Galaxiedatenbank</h1>
-<p class="muted">Galaxien 1 bis 6 · Planetenvergleich</p>
+<p class="muted"><?= hasaAuthEscape($hasaUser['player_name']) ?> · <a href="password-change.php">Passwort ändern</a> · <a href="logout.php">Abmelden</a></p>
+<p class="muted">Bisheriger Datenbestand · Galaxien 1 bis 6 · Runde 8 noch nicht freigeschaltet</p>
 <form id="search">
   <div class="filters">
     <label>Galaxie <input name="galaxy" type="number" min="1" max="6" step="1" inputmode="numeric"></label>
@@ -66,7 +71,7 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
 <div id="status" role="status" aria-live="polite"></div>
 <main id="results"></main>
 <nav id="pages" aria-label="Suchergebnisse" hidden><button id="previous" type="button">Zurück</button><span id="page-info"></span><button id="next" type="button">Weiter</button></nav>
-<script nonce="hasa-galaxy-v1">
+<script nonce="<?= hasaAuthEscape($hasaNonce) ?>">
 (() => {
   'use strict';
   const form = document.querySelector('#search');
@@ -129,6 +134,8 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
     try {
       const params = new URLSearchParams({ galaxy: item.galaxy, system: item.system, orbit: planet.orbit });
       const response = await fetch('prospection-read.php?' + params, { credentials: 'same-origin' });
+      if (response.status === 401) { location.assign('login.php'); return; }
+      if (response.status === 403) { location.assign('password-change.php'); return; }
       const payload = await response.json();
       if (!response.ok || !payload.ok || !Array.isArray(payload.data)) throw new Error('read_failed');
       container.replaceChildren();
@@ -266,6 +273,8 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
     const params = new URLSearchParams(activeParams); params.set('offset', String(offset));
     try {
       const response = await fetch('galaxy-read.php?' + params, { credentials:'same-origin', signal:controller.signal });
+      if (response.status === 401) { location.assign('login.php'); return; }
+      if (response.status === 403) { location.assign('password-change.php'); return; }
       const payload = await response.json();
       if (!response.ok || !payload.ok || !Array.isArray(payload.data)) throw new Error('read_failed');
       if (controller !== searchController) return;

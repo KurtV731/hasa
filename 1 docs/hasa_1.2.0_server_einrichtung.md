@@ -1,6 +1,8 @@
 # HASA 1.2.0 – Server-Grundlage einrichten
 
-Stand: 2. September 2026
+Aktualisierung 07.10.2026: Die Benutzeranmeldung ist jetzt verpflichtend. Für bestehende Installationen zuerst [Benutzeranmeldung und Grundrechte](hasa_1.2.0_benutzeranmeldung.md) lesen: Auth-Migration, vollständiger Upload und private Root-Einrichtung sind zusätzlich erforderlich. Runde-8-Übertragungen bleiben bis zur gesonderten Rundenmigration gesperrt.
+
+Stand der ursprünglichen Grundinstallation: 2. September 2026
 Status: Alpha-Grundlage, noch nicht für andere Spieler freigeben
 
 ## Bereits eingerichtet
@@ -104,3 +106,4 @@ Passwort oder Datenbankname noch nicht.
 - Sichtbarkeit kennt `private`, `alliance` und `public`.
 - Die Benutzer- und Allianzrechte werden in einer späteren 1.2.x-Stufe
   technisch durchgesetzt. Bis dahin bleibt die API privat.
+

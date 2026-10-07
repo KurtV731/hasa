@@ -1,8 +1,10 @@
 <?php
 declare(strict_types=1);
 
-require __DIR__ . '/bootstrap.php';
+require __DIR__ . '/auth.php';
+$hasaUser = hasaRequireUser(true);
 hasaRequireApiKey();
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') hasaAuthCheckCsrf(true);
 
 $method = strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET'));
 if ($method !== 'POST') {
@@ -10,6 +12,8 @@ if ($method !== 'POST') {
 }
 
 $input = hasaReadJson();
+// Bis zur Rundenmigration sind auch alte Clients ohne round gesperrt.
+hasaJson(['ok' => false, 'error' => 'round_migration_required', 'message' => 'Die Rundentrennung ist noch nicht eingerichtet.'], 409);
 
 function prdrCoordinate(mixed $value, string $field): int
 {

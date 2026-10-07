@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
-require __DIR__ . '/bootstrap.php';
+require __DIR__ . '/auth.php';
+hasaRequireUser(true);
+hasaAuthLegacyRound(true);
 header('X-Content-Type-Options: nosniff');
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
     header('Allow: GET');
