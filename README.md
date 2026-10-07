@@ -32,12 +32,20 @@ Tampermonkey als neues Userscript eingefügt und gespeichert.
 
 ## Aktuelle Entwicklungsreihe
 
-**HASA 1.2.0 Alpha 17**
+**HASA 1.2.0 Alpha 18 – Runde-8-Arbeitsfassung**
 
 Aktuelle Testdateien:
 
 - fester Aktualisierungspfad: `2 src/current/HASA-AKTUELL.user.js.txt`
-- archivierte Fassung: `2 src/current/hasa_1.2.0-alpha.17_automatischer-galaxiescan.user.js.txt`
+- archivierte Fassung: `2 src/current/hasa_1.2.0-alpha.18_runde8-arbeitsfassung.user.js.txt`
+
+Alpha 18 trennt den persönlichen Spielstand der neuen 8. Runde vom archivierten
+Stand der 7. Runde. Forschung, Gebäude, Bau- und Forschungsalarme sowie lokale
+Galaxie- und Sondendaten beginnen für Runde 8 neu. Technikbaum, Programmoptionen
+und API-Schlüssel bleiben erhalten. Bis MariaDB und API eine sichere Rundenkennung
+verarbeiten, bleibt die Serverübertragung gesperrt; die lokale Erfassung arbeitet
+weiter. Der Galaxiedatenbank-Knopf übergibt Runde und aktuelle beziehungsweise
+zuletzt sichtbare Koordinate.
 
 Alpha 17 entfernt die getrennten Schalter für Galaxieaufnahme und Sondenübertragung.
 Solange HASA aktiv ist und der einmalig gespeicherte API-Schlüssel vorliegt, werden

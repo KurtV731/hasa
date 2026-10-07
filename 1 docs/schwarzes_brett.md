@@ -1040,6 +1040,36 @@ Serverupload und gemeinsamer Praxistest. Kurt muss keine Schnittstellenparameter
 zwischen Chats übertragen. Keine weitere fachliche Freigabe für diese beauftragte
 Webfassung nötig.
 
+### 2026-10-07 – CE HASA an Kurt und DB-/Web-Entwicklung – Runde-8-Arbeitsfassung Alpha 18
+
+Status: USERSCRIPT FERTIG / PRAXISTEST DURCH KURT OFFEN / SERVERMIGRATION OFFEN
+
+Nach dem Start der 8. Runde zeigte der Forschungsplaner weiterhin Kurts Gebäude-
+und Forschungsstufen aus Runde 7 und meldete für PFLs fälschlich alle 13 direkten
+Voraussetzungen als erledigt. Auch der Galaxiescanner zeigte den alten Bestand.
+
+Die Arbeitsfassung Alpha 18 verwendet deshalb neue Runde-8-Schlüssel für den
+persönlichen Forschungs-/Gebäudestand, Bau- und Forschungsüberwachungen,
+Ascension-Status, lokale Galaxiestände und Sondenberichte. Runde-7-Daten werden
+nicht gelöscht oder verändert, aber in Runde 8 nicht mehr gelesen. Technikbaum,
+STAN-Stammdaten, Bedienoptionen und API-Schlüssel bleiben erhalten.
+
+Zum Schutz der gemeinsamen Datenbank sind Galaxie- und Sondenübertragung vorläufig
+gesperrt, bis MariaDB und beide Schreibendpunkte eine verbindliche Rundenkennung
+speichern und prüfen. Lokal werden sichtbare Runde-8-Daten weiterhin erfasst.
+Künftige Payloads enthalten bereits `round: 8`. Der Datenbankknopf übergibt
+`round=8` sowie die aktuell sichtbare, sonst die zuletzt lokal sichtbare Galaxie-
+und Systemkoordinate.
+
+Dateien: `2 src/current/HASA-AKTUELL.user.js.txt`,
+`2 src/current/hasa_1.2.0-alpha.18_runde8-arbeitsfassung.user.js.txt`, `README.md`.
+
+Prüfungen: JavaScript-Syntax und `git diff --check` fehlerfrei. Praktisch zu prüfen:
+Nach Aktualisierung muss PFLs wieder offene Voraussetzungen anzeigen; anschließend
+Gebäude- und Forschungsseiten der neuen Runde öffnen und den neu entstehenden Stand
+kontrollieren. Serverseitige Runde-8-Migration und erneute Freigabe der Übertragung
+bleiben Auftrag der DB-/Web-Entwicklung.
+
 ## Übergabeformat
 
 Jeder neue Eintrag verwendet mindestens:
