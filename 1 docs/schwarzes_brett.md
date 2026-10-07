@@ -1070,6 +1070,94 @@ Gebäude- und Forschungsseiten der neuen Runde öffnen und den neu entstehenden 
 kontrollieren. Serverseitige Runde-8-Migration und erneute Freigabe der Übertragung
 bleiben Auftrag der DB-/Web-Entwicklung.
 
+### 2026-10-07 – Kurt und CE HASA an Datenbank-/Web-Entwicklung – Benutzeranmeldung und Grundrechte
+
+Status: VERBINDLICHER AUFTRAG / UMSETZUNG OFFEN
+
+Kurt beauftragt die erste funktionsfähige HASA-Benutzerverwaltung. Eine freie
+Selbstregistrierung ist ausdrücklich nicht vorgesehen. Konten werden zunächst durch
+die HASA-Verwaltung angelegt. Der Benutzername entspricht grundsätzlich dem
+Ingame-Spielernamen in Horizon.
+
+Verbindliches erstes Kontenmodell:
+
+- Kurts Ingame- und Anmeldename ist `Styl`;
+- `Styl` erhält als einziges erstes Konto die Rolle `root` und ist Supervisor;
+- jedes später angelegte Konto erhält zunächst automatisch die Rolle `player`;
+- ein `root`-Konto darf nicht versehentlich gelöscht, gesperrt oder zu `player`
+  herabgestuft werden;
+- eine E-Mail-Adresse ist in dieser ersten Fassung nicht erforderlich;
+- Spielernamen müssen eindeutig sein, dürfen aber später durch `root` geändert
+  werden, ohne Benutzer-ID, Datenzuordnung oder Rechte zu verlieren.
+
+Startpasswort und erster Login:
+
+1. Jedes Konto erhält bei der Anlage ein von der Verwaltung vergebenes einmaliges
+   Startpasswort.
+2. Beim ersten erfolgreichen Login ist die Änderung dieses Startpassworts
+   verpflichtend.
+3. Bis zum erfolgreichen Passwortwechsel darf der Benutzer kein geschütztes
+   HASA-Modul aufrufen.
+4. Nach der Änderung ist das Startpasswort ungültig.
+5. Bei vergessenem Passwort kann `root` ein neues Startpasswort setzen; beim
+   folgenden Login gilt erneut die Änderungspflicht.
+6. Auch das initiale Konto `Styl` durchläuft einmal diesen Passwortwechsel.
+7. Passwörter werden niemals lesbar, reversibel oder im Repository gespeichert,
+   sondern ausschließlich mit PHP `password_hash()` gehasht und mit
+   `password_verify()` geprüft.
+
+Verbindliche erste technische Grundlage:
+
+- MariaDB-Benutzertabelle mit unveränderlicher technischer Benutzer-ID;
+- eindeutiger Spielername, Passwort-Hash, Rolle `root|player`, Kontostatus
+  `aktiv|gesperrt`, Kennzeichen `Passwortänderung erforderlich`, Erstellungszeit,
+  Änderungszeit und Zeitpunkt der letzten erfolgreichen Anmeldung;
+- Anmeldeseite, erzwungene Passwortänderungsseite und Abmeldung;
+- sichere serverseitige PHP-Sitzung mit neu erzeugter Session-ID nach erfolgreichem
+  Login sowie Schutz gegen unbefugte Modulaufrufe;
+- verständliche deutschsprachige Fehlermeldungen ohne technische Interna;
+- Vorbereitung einer späteren Verwaltungskonsole, ohne die noch nicht beschlossenen
+  Einzelrechte vorwegzunehmen.
+
+Modulschutz der ersten Ausbaustufe:
+
+- persönliche lokale Forschung, Bauplanung und Alarme bleiben zunächst ohne
+  Serveranmeldung verwendbar;
+- die gemeinsame Galaxiedatenbank einschließlich Lesen und Übertragen wird
+  anmeldepflichtig;
+- der nach dem Galaxiescanner zu bauende Berichtsscanner wird anmelde- und
+  rechtepflichtig;
+- die spätere Benutzerverwaltung ist ausschließlich für `root` zugänglich;
+- keine getrennten Modulpasswörter: ein Login erzeugt die Sitzung, danach prüft
+  jedes geschützte Modul Rolle, Kontostatus, Passwortwechsel und später seine
+  konkrete Berechtigung.
+
+Umfang dieses Auftrags: Zunächst Anmeldung, Startpasswortwechsel, Sitzung und die
+notwendige technische Grundlage bauen. Die Verwaltungskonsole und die genaue Matrix
+weiterer Rollen- und Modulrechte werden nach Kurts weiteren Entscheidungen in der
+kommenden Woche gesondert beauftragt. Deshalb jetzt keine zusätzlichen Rollen oder
+inhaltlichen Rechte erfinden.
+
+Sicherheits- und Übergaberegeln:
+
+- keine produktiven Passwörter, Hashes, Cookies, API-Schlüssel oder `config.php`
+  nach GitHub übertragen;
+- Datenbankmigration wiederholbar beziehungsweise für die bestehende Installation
+  sicher ausführbar gestalten;
+- bestehende Galaxie-, Sonden- und Rundenlogik nicht stillschweigend verändern;
+- die bereits offene serverseitige Trennung nach Spielrunde 8 mit berücksichtigen,
+  aber als getrennten Restpunkt ausweisen;
+- Schnittstellen zum Tampermonkey-Hauptskript vor dessen Änderung im Schwarzen Brett
+  dokumentieren; Hauptskript bleibt beim CE HASA;
+- PHP-Syntax, Login-Erfolg/-Fehler, erzwungenen Passwortwechsel, Logout,
+  gesperrtes Konto, `player`-Zugriff und `root`-Schutz prüfen;
+- anschließend betroffene Dateien, Migration, Aufrufadressen, Prüfergebnis,
+  Serverinstallationsschritte, Commit und offene Restpunkte hier zurückmelden.
+
+Für die Umsetzung fehlen keine weiteren fachlichen Entscheidungen. Das konkrete
+Startpasswort für `Styl` wird außerhalb von GitHub erst bei der Servereinrichtung
+festgelegt und darf nicht auf dem Schwarzen Brett stehen.
+
 ## Übergabeformat
 
 Jeder neue Eintrag verwendet mindestens:
