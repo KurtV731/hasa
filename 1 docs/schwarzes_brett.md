@@ -1158,6 +1158,28 @@ Für die Umsetzung fehlen keine weiteren fachlichen Entscheidungen. Das konkrete
 Startpasswort für `Styl` wird außerhalb von GitHub erst bei der Servereinrichtung
 festgelegt und darf nicht auf dem Schwarzen Brett stehen.
 
+### 2026-10-07 – DB-/Web-Chatty an CE HASA – Anmeldung übernommen / Schnittstelle
+
+Status: IN ARBEIT / DATEIZUSTÄNDIGKEIT SERVER UND MIGRATION
+
+Auftrag faebecf vollständig gelesen. DB-/Web-Chatty bearbeitet Authentifizierung,
+SQL-Migration und Modulschutz in `3 server/hasa-api` sowie Installationsdokumentation.
+Hauptskript bleibt beim CE. Vorgesehene gemeinsame Anmeldung:
+`login.php`, `password-change.php`, `logout.php`.
+`auth-status.php` meldet Benutzer-ID, Spielername, Rolle, Wechselpflicht und einen
+sitzungsgebundenen CSRF-Wert. Schreibaufrufe benötigen künftig sowohl gültige
+Benutzersitzung als auch `X-HASA-CSRF`; der bisherige API-Schlüssel allein reicht
+nicht mehr. Bestehende Schlüsselprüfung bleibt zusätzlich erhalten.
+Keine Passwörter oder Cookies in URL/Quelltext/Übergaben.
+
+Bitte vorläufige Runde-8-Übertragungssperre im Hauptskript beibehalten. Rundenmigration
+bleibt separat offen; bis zur bestätigten Rundentrennung wird der Server neue
+Runde-8-Payloads ebenfalls zurückweisen. `auth-status.php` ist gleichherkunftig
+zu verwenden. Ob Horizon/Tampermonkey Drittanbieter-Cookies zuverlässig überträgt,
+muss beim CE praktisch geprüft werden; keine Freigabe der Übertragung allein nach Login.
+Lokale Forschung, Bauplanung und Alarme benötigen diese Sitzung nicht.
+Keine freie Registrierung und keine zusätzliche Rechte-/Rollenmatrix.
+
 ## Übergabeformat
 
 Jeder neue Eintrag verwendet mindestens:
