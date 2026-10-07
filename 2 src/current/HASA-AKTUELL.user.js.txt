@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         HASA – Horizon Ascension Assistant
 // @namespace    horiversum.hasa
-// @version      1.2.0-alpha.18
+// @version      1.2.0-alpha.19
 // @charset      UTF-8
 // @description  Horizon-Assistent mit kompakter Galaxiescanner-Anzeige und aktiver lokaler IndexedDB
 // @match        https://horiversum.org/game/main/main.php*
@@ -17,9 +17,16 @@
 ==========================================================
  HASA – Horizon Ascension Assistant
 
- Version : 1.2.0 Alpha 18
- Status  : Arbeitsfassung für den Neustart der 8. Runde
+ Version : 1.2.0 Alpha 19
+ Status  : Arbeitsfassung mit fester, gespeicherter Fensterbreite
  Build   : 2026-10-07
+
+ Neu in Alpha 19:
+ - die von Hand eingestellte HASA-Breite bleibt beim Öffnen eines Bereichs erhalten
+ - Inhalte dürfen das HASA-Fenster nicht mehr selbstständig verbreitern
+ - normaler Text bricht in schmalen Ansichten um
+ - wirklich breite Tabellen und Listen erhalten innerhalb von HASA einen Laufbalken
+ - die Horizon-Spielfläche wird durch aufklappende HASA-Inhalte nicht weiter verdeckt
 
  Neu in Alpha 18:
  - Runde 8 verwendet einen vollständig neuen persönlichen Forschungs- und Gebäudestand
@@ -124,8 +131,8 @@
         'PHYSICS', 'PSYCHOLOGY', 'NUCLEARPHYSICS', 'SOLARENERGYTECH'
     ]);
 
-    const HASA_VERSION = '1.2.0 Alpha 18';
-    const HASA_BUILD_LABEL = '1.2.0-alpha18-runde8-arbeitsfassung-2026-10-07';
+    const HASA_VERSION = '1.2.0 Alpha 19';
+    const HASA_BUILD_LABEL = '1.2.0-alpha19-feste-fensterbreite-2026-10-07';
     const HASA_RUNDE = 8;
     const HASA_RUNDE_SCHLUESSEL = 'runde8';
     // Die gemeinsame MariaDB trennt Runde 7 und 8 noch nicht sicher. Lokal wird
@@ -1858,7 +1865,7 @@
         const dx = e.clientX - HAA_RESIZE_START_X;
         const dy = e.clientY - HAA_RESIZE_START_Y;
         const rand = 8;
-        const minBreite = 360;
+        const minBreite = 260;
         const minHoehe = 220;
         let links = HAA_RESIZE_START_RECT.left;
         let oben = HAA_RESIZE_START_RECT.top;
@@ -1952,6 +1959,23 @@
         const alt = document.getElementById('haa-box');
         if (alt) alt.remove();
 
+        let breitenStil = document.getElementById('haa-feste-breite-stil');
+        if (!breitenStil) {
+            breitenStil = document.createElement('style');
+            breitenStil.id = 'haa-feste-breite-stil';
+            breitenStil.textContent = ''
+                + '#haa-box,#haa-box *{box-sizing:border-box;}'
+                + '#haa-box{contain:inline-size;}'
+                + '#haa-box>*{min-width:0;max-width:100%;}'
+                + '#haa-box details.haa-accordion{min-width:0;max-width:100%;overflow:hidden;}'
+                + '#haa-box details.haa-accordion>summary{min-width:0;max-width:100%;white-space:normal;overflow-wrap:anywhere;}'
+                + '#haa-box .haa-bereich-inhalt{width:100%;min-width:0;max-width:100%;overflow-x:auto;overflow-wrap:anywhere;word-break:break-word;}'
+                + '#haa-box .haa-bereich-inhalt table{max-width:none;}'
+                + '#haa-box button,#haa-box input,#haa-box select,#haa-box textarea{max-width:100%;}'
+                + '#haa-box>div:first-child{min-width:0;max-width:100%;flex-wrap:wrap;}';
+            document.head.appendChild(breitenStil);
+        }
+
         const box = document.createElement('div');
         box.id = 'haa-box';
         box.style.position = 'fixed';
@@ -1964,7 +1988,7 @@
         box.style.fontSize = '13px';
 // HASA 1.1: kleine Displays behalten die normale Schriftgröße.
 // Bei Platzmangel wird innerhalb von HASA horizontal gescrollt.
-box.style.minWidth = '360px';
+box.style.minWidth = '260px';
 box.style.minHeight = '220px';
 box.style.width = '760px';
 box.style.maxWidth = 'calc(100vw - 24px)';
@@ -1972,11 +1996,13 @@ box.style.maxHeight = 'calc(100vh - 16px)';
 box.style.overflow = 'hidden';
 box.style.display = 'flex';
 box.style.flexDirection = 'column';
+box.style.boxSizing = 'border-box';
+box.style.contain = 'inline-size';
         box.style.boxShadow = '0 0 8px #000';
         box.style.borderRadius = '3px';
 document.body.appendChild(box);
 const basisLinks = ermittleBoxLinks(null);
-const verfuegbar = Math.max(220, window.innerWidth - basisLinks - HASA_POSITION.RAND_RECHTS_MIN);
+const verfuegbar = Math.max(260, window.innerWidth - basisLinks - HASA_POSITION.RAND_RECHTS_MIN);
 box.style.width = Math.min(760, verfuegbar) + 'px';
 box.style.maxWidth = verfuegbar + 'px';
 const gespeicherteGroesse = ladeGespeicherteFensterGroesse();
@@ -1988,7 +2014,7 @@ box.style.height = HAA_UI_BOX_ZU
         window.innerHeight - 16
     ) + 'px';
 if (gespeicherteGroesse) {
-    box.style.width = Math.min(Math.max(360, gespeicherteGroesse.width), verfuegbar) + 'px';
+    box.style.width = Math.min(Math.max(260, gespeicherteGroesse.width), verfuegbar) + 'px';
 }
 positioniereBox(box);
 aktiviereHasaDrag(box);
@@ -5350,7 +5376,15 @@ return box;
     setTimeout(starteSicher, 800);
 })();
 
-/* HASA 1.2.0 Alpha 18 – arbeitsfähiger Rundenstart
+/* HASA 1.2.0 Alpha 19 – feste gespeicherte Fensterbreite
+
+   Neu in Alpha 19:
+   - die manuell eingestellte Fensterbreite hat Vorrang vor allen Inhalten
+   - Akkordeons, Überschriften und normaler Text verbreitern HASA nicht mehr
+   - Text bricht um; breite Tabellen und Listen scrollen innerhalb ihres Bereichs
+   - Öffnen und Schließen eines Bereichs verändert die gespeicherte Breite nicht
+
+   Aus Alpha 18 übernommen:
    - persönlicher Forschungs-, Gebäude- und Alarmstand beginnt in Runde 8 neu
    - lokale Galaxie- und Sondendaten verwenden getrennte Runde-8-Schlüssel
    - Runde-7-Bestände bleiben unverändert erhalten und werden nicht angezeigt
