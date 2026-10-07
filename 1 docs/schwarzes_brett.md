@@ -1354,6 +1354,62 @@ als aktives root-Konto, ID 1, mit Pflichtwechsel angelegt. Erfolgreicher Login u
 abgeschlossener Passwortwechsel sind noch nicht bestätigt. Keine produktiven
 Passwörter oder Hashes in dieser Übergabe.
 
+
+### 2026-10-07 – CE HASA und DB-/Web-Entwicklung – MariaDB auf Runde 8 getrennt
+
+Status: CODE UND MIGRATION IN GITHUB FERTIG / PRODUKTIVIMPORT UND LIVETEST OFFEN
+
+Die seit dem Neustart blockierende serverseitige Rundentrennung ist umgesetzt.
+Die neue, wiederholbare Bestandsmigration
+`4 database/hasa_1_2_0_round8_migration.sql` ergänzt an den Galaxien die
+verbindliche Spielrunde. Sämtliche bereits vorhandenen Galaxien und dadurch alle
+abhängigen Systeme, Planeten, Beobachtungen und Sondenberichte werden Runde 7
+zugeordnet. Nichts wird gelöscht, neu berechnet oder mit Runde 8 vermischt.
+Runde 8 beginnt leer; dieselbe Galaxiennummer kann in beiden Runden unabhängig
+existieren.
+
+Leseendpunkte und Webansicht verwenden ohne abweichende ausdrückliche Angabe Runde 8.
+Eine Archivabfrage mit `round=7` bleibt technisch möglich. Schreibendpunkte
+verlangen zwingend `round: 8`; alte Clients ohne Rundenkennung erhalten
+`round_required`, andere Runden `round_not_writable`. Erfolgreiche Antworten
+nennen die verwendete Runde. Galaxieansicht und Sondenberichtabruf reichen die Runde
+durchgehend weiter.
+
+Betroffene Bereiche:
+
+- neue Migration `4 database/hasa_1_2_0_round8_migration.sql`;
+- frisches Gesamtschema auf `1.2.0-3` aktualisiert;
+- `bootstrap.php`, `systems.php`, `prospection-reports.php`,
+  `galaxy.php`, `galaxy-read.php`, `prospection-read.php`, `index.php`;
+- Installations- und Anmeldedokumentation, README und Integrationstest angepasst.
+
+Prüfungen in der verfügbaren Arbeitsumgebung: Python-Testdatei kompiliert,
+eingebettetes JavaScript syntaktisch geprüft, vollständiger Diff ohne
+Whitespacefehler. Eine PHP-/MariaDB-Laufzeit war in dieser Arbeitsumgebung nicht
+installiert; deshalb werden weder produktiver Import noch Live-Erfolg behauptet.
+Der vorhandene Integrationstest enthält nun zusätzlich leere Runde 8, getrennte
+Runde 7, erfolgreiches Runde-8-System, Runde-8-Sondenbericht sowie die Sperre
+alter Clients und muss in der PHP-/MariaDB-Testumgebung erneut vollständig laufen.
+
+Programmcommit:
+`2677fc60ef4cd5c5e1b16ce0128b177ccee0cd92`
+(HASA: MariaDB-Daten nach Spielrunde trennen).
+
+Produktive Reihenfolge:
+
+1. Datenbanksicherung erstellen.
+2. ausschließlich `hasa_1_2_0_round8_migration.sql` in phpMyAdmin importieren;
+3. alle geänderten PHP-Dateien aus `3 server/hasa-api` nach `/hasa/`
+   hochladen, die private `config.php` nicht ersetzen;
+4. angemeldet als Styl `https://serkal.de/hasa/galaxy.php?round=8` öffnen;
+5. prüfen, dass Runde 8 leer ist und `?round=7` den bisherigen Bestand getrennt
+   erreicht;
+6. erst nach erfolgreichem Live-/Cookie-/CSRF-Test die Übertragungssperre im
+   Tampermonkey-Hauptskript aufheben.
+
+Offen bleiben damit nur Produktivimport, Upload/Livetest und anschließend die
+CE-Anbindung der angemeldeten Sitzung samt CSRF an das Hauptskript.
+
 ## Übergabeformat
 
 Jeder neue Eintrag verwendet mindestens:
