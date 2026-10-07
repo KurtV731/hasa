@@ -32,12 +32,18 @@ Tampermonkey als neues Userscript eingefügt und gespeichert.
 
 ## Aktuelle Entwicklungsreihe
 
-**HASA 1.2.0 Alpha 18 – Runde-8-Arbeitsfassung**
+**HASA 1.2.0 Alpha 19 – feste Fensterbreite auf kleinen Bildschirmen**
 
 Aktuelle Testdateien:
 
 - fester Aktualisierungspfad: `2 src/current/HASA-AKTUELL.user.js.txt`
-- archivierte Fassung: `2 src/current/hasa_1.2.0-alpha.18_runde8-arbeitsfassung.user.js.txt`
+- archivierte Fassung: `2 src/current/hasa_1.2.0-alpha.19_feste-fensterbreite.user.js.txt`
+
+Alpha 19 verhindert, dass ein geöffneter HASA-Bereich das Fenster auf kleineren
+Bildschirmen selbstständig verbreitert. Die von Hand eingestellte Breite bleibt
+gespeichert und verbindlich. Normaler Text bricht innerhalb des Fensters um;
+wirklich breite Tabellen und Listen erhalten stattdessen einen waagerechten
+Laufbalken innerhalb von HASA.
 
 Alpha 18 trennt den persönlichen Spielstand der neuen 8. Runde vom archivierten
 Stand der 7. Runde. Forschung, Gebäude, Bau- und Forschungsalarme sowie lokale
