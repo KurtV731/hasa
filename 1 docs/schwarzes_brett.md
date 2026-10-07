@@ -1180,6 +1180,120 @@ muss beim CE praktisch geprüft werden; keine Freigabe der Übertragung allein n
 Lokale Forschung, Bauplanung und Alarme benötigen diese Sitzung nicht.
 Keine freie Registrierung und keine zusätzliche Rechte-/Rollenmatrix.
 
+
+### 2026-10-07 – DB-/Web-Chatty an Kurt und CE HASA – Benutzeranmeldung und Grundrechte umgesetzt
+
+Status: PROGRAMMFASSUNG IN GITHUB FERTIG / SERVERINSTALLATION UND PRAXISTEST OFFEN
+
+Verbindlichen Auftrag faebecf vollständig umgesetzt. Keine Selbstregistrierung:
+Styl wird als erstes root-Konto privat eingerichtet, weitere Konten erhalten player.
+Jedes Konto muss sein vergebenes Startpasswort beim ersten Login ändern. Bis dahin
+bleiben alle geschützten Datenzugriffe gesperrt. Player-Startpasswörter werden
+transaktional als PPW:4711, PPW:4712 usw. vergeben; ein Reset verwendet ebenfalls
+die nächste Nummer und erzwingt wieder den Wechsel. Root-Startpasswort und
+produktive Hashes/Konfigurationen sind nicht im Repository enthalten.
+
+Die bestehende hasa_users-Tabelle wird erweitert; Benutzer-IDs und Zuordnungen
+bleiben erhalten. Namen können durch root geändert werden. Root kann weder über
+Kontenaktionen noch versehentlich per SQL gelöscht, gesperrt oder herabgestuft
+werden. Technische Benutzer-IDs sind auch per SQL gegen Änderung geschützt.
+Alte Benutzer ohne Passwort-Hash besitzen durch die Migration noch keinen Login.
+
+Anmeldung, Pflichtwechsel und bestätigte Abmeldung sind deutsche Seiten.
+Passwortspeicherung ausschließlich password_hash/password_verify. Server-Sitzung:
+neue ID beim Login und Passwortwechsel, Secure/HttpOnly/SameSite=Lax, CSRF,
+Produktivbetrieb nur HTTPS, zwei Stunden Inaktivität bzw. zwölf Stunden Höchstlaufzeit.
+Sperren/Reset/Passwortwechsel entwerten bisherige Sitzungen; direkte API-Aufrufe
+umgehen weder Anmeldung noch Pflichtwechsel. Loginversuche sind begrenzt.
+Keine zusätzlichen Rollen oder Einzelrechte vorweggenommen.
+
+Betroffene Dateien:
+
+- neu in `3 server/hasa-api`: auth.php, login.php, password-change.php,
+  logout.php, auth-status.php, account-service.php, tools/user-admin.php;
+- geändert dort: galaxy.php, galaxy-read.php, prospection-read.php,
+  systems.php, prospection-reports.php;
+- neu: `4 database/hasa_1_2_0_auth_migration.sql`;
+- erweitert: `4 database/hasa_1_2_0_schema.sql` für Neuinstallation;
+- neu: `1 docs/hasa_1.2.0_benutzeranmeldung.md`,
+  `3 server/tests/auth_integration.py`;
+- ergänzt: `1 docs/hasa_1.2.0_server_einrichtung.md`.
+Hauptskript und lokale Forschung/Bauplanung/Alarme wurden nicht geändert.
+Dateizuständigkeit für diese Umsetzung ist wieder frei.
+
+Migration/Installation:
+
+1. In C:\Hasa vorhandenen Aktualisierer oder git pull --ff-only ausführen.
+2. HASA während der Umstellung in Wartung nehmen; private Datenbanksicherung.
+3. Im bisherigen phpMyAdmin die Auth-Migration importieren; beide Schutztrigger
+   und auth_schema_version prüfen. Migration ist wiederholbar und setzt weder
+   bestehende Hashes noch den Player-Zähler zurück. Triggerrechte werden benötigt.
+4. Die vollständigen PHP-Dateien einschließlich tools in das vorhandene /hasa/
+   hochladen, private config.php erhalten, environment=production und HTTPS.
+   PHP ab 8.1, PDO MySQL, mbstring, ctype, funktionsfähiger Sitzungsspeicher.
+   Keine globale Hosting-Konfiguration oder zweite Instanz angelegt.
+5. Mit Server-CLI: php tools/user-admin.php init-root; Startpasswort wird zweimal
+   verdeckt abgefragt. Ohne Webspace-Shell: auf eigenem PHP-CLI-Rechner
+   tools/user-admin.php prepare-root-sql ausführen und die ausschließlich private
+   SQL-Ausgabe in phpMyAdmin importieren. Dafür ist keine lokale config.php nötig.
+   Wiederholung überschreibt keinen vorhandenen Root-Zugang.
+6. https://serkal.de/hasa/login.php öffnen, Styl anmelden und Pflichtwechsel
+   durchführen. Ansicht: https://serkal.de/hasa/galaxy.php ;
+   Wechsel: https://serkal.de/hasa/password-change.php ;
+   Abmeldung: https://serkal.de/hasa/logout.php .
+
+Die Anleitung enthält konkrete CLI-Aufrufe für Anlage, Reset, Umbenennung,
+Sperren/Entsperren. Jede Kontenaktion verlangt das aktuelle, bereits geänderte
+root-Passwort. Diese Aktionen sind über HTTP nicht erreichbar. Ohne Shell-Zugang
+ist zunächst die private Root-Einrichtung vorbereitet; eine bequeme
+browserbasierte Benutzerverwaltung bleibt Teil des gesonderten Konsolenauftrags.
+
+CE-Schnittstelle bestätigt:
+
+GET auth-status.php liefert authenticated, user.id/player_name/role,
+password_change_required und sitzungsgebundenes csrf; keine Hashes.
+Geschützte APIs liefern 401 login_required bzw. 403 password_change_required.
+POST systems.php/prospection-reports.php verlangt zusätzlich X-HASA-Key und
+X-HASA-CSRF sowie die Sitzung. Schlüssel allein reicht nicht. Auth-Anfragen sind
+gleichherkunftig, keine CORS-Freigabe. Horizon/Tampermonkey-Cookies und CSRF müssen
+noch gemeinsam praktisch geprüft werden. Alpha-18-Übertragungssperre beibehalten.
+
+Runde 8 bleibt separat OFFEN: Noch keine Rundenspalten/Migration eingerichtet.
+Alle Schreibaufrufe werden vor Speicherung mit 409 round_migration_required
+gesperrt, ausdrücklich auch alte Clients ohne round. round=8 wird in Ansicht und
+Lese-APIs ebenfalls mit verständlicher Meldung zurückgewiesen, damit alte Daten
+nicht als Runde 8 erscheinen. Bisheriger Bestand bleibt nach Anmeldung ohne
+Rundenparameter lesbar und ist als solcher bezeichnet. Kein stilles Löschen,
+Nullsetzen, Neuberechnen oder Ändern von Galaxie-/Sondenwerten.
+
+Prüfungen:
+
+- echte PHP-8.3.6-Syntaxprüfung aller 14 vorhandenen Arbeitsdateien fehlerfrei;
+- eingebettetes JavaScript syntaktisch fehlerfrei;
+- 162 Integrationsprüfungen mit PHP 8.3.6, MariaDB 10.11.14 und echten HTTP-Aufrufen:
+  Erfolg/Fehler, CSRF, Pflichtwechsel root/player, neue Session-IDs, ungültiges
+  altes Startpasswort, Sequenz/Reset, Lesen, Player-Verwaltung verweigert,
+  Sperre und Reset laufender Sitzungen, Umbenennung/ID/Zuordnung, Root-SQL-Schutz,
+  Migration mehrfach, Offline-Root-SQL ohne config.php, erneuter Import,
+  HTTPS-Pflicht/Cookieparameter, Logout, Loginbegrenzung, Sitzungslaufzeiten,
+  Rundensperre und vollständiges Neuinstallationsschema;
+- bestehender DOM-Test für Positionsgedächtnis/System 0, Suchfilter, Pagination,
+  Planetenvergleich, Berichtsauswahl/Mittelwerte, Fehlererhalt und sichere
+  Textausgabe auch mit der neuen Webdatei bestanden.
+Testgeheimnisse nur zur Laufzeit erzeugt; nichts Produktives gespeichert.
+Kein Live-Test auf serkal.de und kein visueller Test auf Kurts Gerät behauptet.
+
+Programmcommit: `d271fa51c742adc2bea4d3e47053e02406376169`
+(HASA: Benutzeranmeldung, Pflichtwechsel und Grundrechte).
+17 Dateien gemeinsam committed und anschließend vom Commit zurückgelesen:
+alle Inhalte identisch mit der geprüften Fassung.
+
+Restpunkte: tatsächlicher Serverupload, produktive Migration/Triggerrechte,
+private Festlegung des Styl-Startpassworts bei Einrichtung, Hosting-/Browserprüfung;
+CE-Cookie-/CSRF-Anbindung; separate serverseitige Runde-8-Migration; spätere
+Verwaltungskonsole und genaue Rechteverteilung. Für die fertige Programmfassung
+fehlt keine weitere fachliche Entscheidung.
+
 ## Übergabeformat
 
 Jeder neue Eintrag verwendet mindestens:
