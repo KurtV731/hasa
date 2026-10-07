@@ -3,7 +3,6 @@ declare(strict_types=1);
 // HASA Web 1.2.0-web.3 – gefilterte, seitenweise Planetensuche.
 require __DIR__ . '/auth.php';
 hasaRequireUser(true);
-hasaAuthLegacyRound(true);
 header('X-Content-Type-Options: nosniff');
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
     header('Allow: GET');
@@ -30,6 +29,7 @@ function containsPattern(string $value): string
 {
     return '%' . strtr($value, ['!' => '!!', '%' => '!%', '_' => '!_']) . '%';
 }
+$round = hasaRound($_GET['round'] ?? null);
 $galaxy = readNumber($_GET['galaxy'] ?? null, 'galaxy', 6);
 if ($galaxy === 0) hasaJson(['ok' => false, 'error' => 'invalid_galaxy'], 400);
 $system = readNumber($_GET['system'] ?? null, 'system', 999999);
@@ -55,8 +55,8 @@ if ($q !== '') {
     for ($i = 0; $i < 5; $i++) $planetParams[] = containsPattern($q);
 }
 $planetCondition = $planetWhere ? implode(' AND ', $planetWhere) : '1 = 1';
-$where = 'g.game_id BETWEEN 1 AND 6';
-$params = [];
+$where = 'g.round_number = ? AND g.game_id BETWEEN 1 AND 6';
+$params = [$round];
 if ($galaxy !== null) { $where .= ' AND g.game_id = ?'; $params[] = $galaxy; }
 if ($system !== null) { $where .= ' AND s.system_number = ?'; $params[] = $system; }
 if ($planetWhere) {
@@ -104,4 +104,4 @@ foreach ($systems as &$row) {
     unset($row['id']);
 }
 unset($row);
-hasaJson(['ok' => true, 'data' => $systems, 'limit' => $limit, 'offset' => $offset, 'total' => $total, 'has_more' => $offset + count($systems) < $total]);
+hasaJson(['ok' => true, 'round' => $round, 'data' => $systems, 'limit' => $limit, 'offset' => $offset, 'total' => $total, 'has_more' => $offset + count($systems) < $total]);

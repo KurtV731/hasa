@@ -29,7 +29,7 @@ function coordinate(mixed $value, string $field): int
 
 function readSystem(): never
 {
-    hasaAuthLegacyRound(true);
+    $round = hasaRound($_GET['round'] ?? null);
     $galaxy = coordinate($_GET['galaxy'] ?? null, 'galaxy');
     $system = coordinate($_GET['system'] ?? null, 'system');
     $pdo = hasaPdo();
@@ -41,9 +41,9 @@ function readSystem(): never
                 s.last_observed_by, s.last_source
          FROM hasa_systems s
          JOIN hasa_galaxies g ON g.id = s.galaxy_id
-         WHERE g.game_id = ? AND s.system_number = ?'
+         WHERE g.round_number = ? AND g.game_id = ? AND s.system_number = ?'
     );
-    $query->execute([$galaxy, $system]);
+    $query->execute([$round, $galaxy, $system]);
     $row = $query->fetch();
     if (!$row) {
         hasaJson(['ok' => false, 'error' => 'system_not_found'], 404);
@@ -59,14 +59,13 @@ function readSystem(): never
     $planetQuery->execute([(int)$row['id']]);
     unset($row['id']);
     $row['planets'] = $planetQuery->fetchAll();
-    hasaJson(['ok' => true, 'data' => $row]);
+    hasaJson(['ok' => true, 'round' => $round, 'data' => $row]);
 }
 
 function storeSystem(): never
 {
     $input = hasaReadJson();
-    // Bis zur Rundenmigration sind auch alte Clients ohne round gesperrt.
-    hasaJson(['ok' => false, 'error' => 'round_migration_required', 'message' => 'Die Rundentrennung ist noch nicht eingerichtet.'], 409);
+    $round = hasaRound($input['round'] ?? null, true);
     $galaxyNumber = coordinate($input['galaxy'] ?? null, 'galaxy');
     $systemNumber = coordinate($input['system'] ?? null, 'system');
     $observedAt = hasaDateTime($input['observed_at'] ?? null);
@@ -95,8 +94,8 @@ function storeSystem(): never
     $pdo->beginTransaction();
     try {
         $galaxySql = $pdo->prepare(
-            'INSERT INTO hasa_galaxies (game_id, display_name, galaxy_type, max_system_number)
-             VALUES (?, ?, ?, ?)
+            'INSERT INTO hasa_galaxies (round_number, game_id, display_name, galaxy_type, max_system_number)
+             VALUES (?, ?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE
                 display_name = COALESCE(VALUES(display_name), display_name),
                 galaxy_type = IF(VALUES(galaxy_type) = "unknown", galaxy_type, VALUES(galaxy_type)),
@@ -104,6 +103,7 @@ function storeSystem(): never
                 id = LAST_INSERT_ID(id)'
         );
         $galaxySql->execute([
+            $round,
             $galaxyNumber,
             hasaText($input['galaxy_name'] ?? null, 160),
             $galaxyType,
@@ -208,6 +208,7 @@ function storeSystem(): never
     hasaJson([
         'ok' => true,
         'stored' => [
+            'round' => $round,
             'galaxy' => $galaxyNumber,
             'system' => $systemNumber,
             'planets' => count($planets),

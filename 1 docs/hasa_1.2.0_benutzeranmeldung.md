@@ -151,16 +151,20 @@ beim CE zu prüfen. SameSite=Lax wurde nicht für ungetestete Cross-Site-Aufrufe
 Ein gemeinsamer Login im eigenen Fenster ist bereits nutzbar; Übertragungsfreigabe
 für das Hauptskript folgt erst nach bestätigter Auth-Schnittstelle und Rundenmigration.
 
-## Runde 8 bleibt ein eigener Restpunkt
+## Runde 8 ist technisch getrennt
 
-Die vorhandenen Tabellen trennen Spielrunden noch nicht. Deshalb bleiben **alle**
-Schreibaufrufe nach Anmeldung/Schlüssel-/CSRF-Prüfung mit 409
-`round_migration_required` gesperrt, auch alte Clients ohne `round`.
-Ein Aufruf mit `round=8` zeigt keine Daten des bisherigen Bestands unter falscher
-Runde: Webansicht und Lese-APIs antworten ausdrücklich mit 409 und Erläuterung.
-Der bisherige Bestand bleibt nach Anmeldung ohne Rundenparameter lesbar und wird
-in der Ansicht entsprechend bezeichnet. Runde 8, neue Galaxiebereiche und deren
-Freigabe werden hier nicht stillschweigend eingerichtet. CE-Alpha-18-Sperre beibehalten.
+Die ergänzende Migration `4 database/hasa_1_2_0_round8_migration.sql` markiert den
+vollständigen bisherigen Galaxie-, Planeten- und Sondenbestand als Runde 7. Runde 8
+beginnt dadurch leer. Galaxien gleicher Nummer können in beiden Runden unabhängig
+vorkommen; Systeme, Planeten, Beobachtungen und Sondenberichte hängen jeweils an
+dem Galaxiedatensatz ihrer Runde.
+
+Leseaufrufe verwenden ohne Angabe die aktuelle Runde 8; `round=7` ist nur für eine
+ausdrückliche Archivansicht möglich. Schreibaufrufe müssen `round: 8` mitsenden.
+Fehlt die Angabe, folgt 400 `round_required`; andere Runden werden mit 409
+`round_not_writable` abgewiesen. Die CE-Übertragungssperre darf erst nach Import
+der Migration, Upload sämtlicher geänderter PHP-Dateien und praktischem Login-/
+CSRF-Test aufgehoben werden.
 
 ## Prüfungen und Grenzen
 

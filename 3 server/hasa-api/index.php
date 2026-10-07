@@ -9,8 +9,8 @@ hasaJson([
     'version' => HASA_API_VERSION,
     'endpoints' => [
         'health' => 'GET /health.php',
-        'read_system' => 'GET /systems.php?galaxy=4&system=566',
-        'store_system' => 'POST /systems.php',
-        'store_sonde_report' => 'POST /prospection-reports.php',
+        'read_system' => 'GET /systems.php?round=8&galaxy=1&system=0',
+        'store_system' => 'POST /systems.php (JSON round=8)',
+        'store_sonde_report' => 'POST /prospection-reports.php (JSON round=8)',
     ],
 ]);

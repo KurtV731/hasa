@@ -2,7 +2,7 @@
 declare(strict_types=1);
 require __DIR__ . '/auth.php';
 $hasaUser = hasaRequireUser();
-hasaAuthLegacyRound();
+$hasaRound = hasaRound($_GET['round'] ?? null);
 // HASA Webansicht 1.2.0-web.4 – Standort, Planetensuche und kompakter Vergleich.
 $hasaNonce = base64_encode(random_bytes(18));
 header('Content-Type: text/html; charset=utf-8');
@@ -49,8 +49,9 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
 <body>
 <h1>HASA – Galaxiedatenbank</h1>
 <p class="muted"><?= hasaAuthEscape($hasaUser['player_name']) ?> · <a href="password-change.php">Passwort ändern</a> · <a href="logout.php">Abmelden</a></p>
-<p class="muted">Bisheriger Datenbestand · Galaxien 1 bis 6 · Runde 8 noch nicht freigeschaltet</p>
+<p class="muted">Spielrunde <?= $hasaRound ?> · Galaxien 1 bis 6 · Daten anderer Runden werden nicht beigemischt</p>
 <form id="search">
+  <input name="round" type="hidden" value="<?= $hasaRound ?>">
   <div class="filters">
     <label>Galaxie <input name="galaxy" type="number" min="1" max="6" step="1" inputmode="numeric"></label>
     <label>System <input name="system" type="number" min="0" max="999999" step="1" inputmode="numeric"></label>
@@ -87,6 +88,7 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
   let position = null;
   const filterNames = ['galaxy','system','q','player','alliance','orbit','name','type','status'];
   const positionButton = document.querySelector('#position');
+  const activeRound = String(<?= $hasaRound ?>);
   const pages = document.querySelector('#pages');
   function validPosition(galaxy, system) {
     return /^\d+$/.test(String(galaxy)) && /^\d+$/.test(String(system)) && Number(galaxy) >= 1 && Number(galaxy) <= 6 && Number(system) <= 999999;
@@ -132,7 +134,7 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
   async function showReports(container, item, planet) {
     container.textContent = 'Lade Sondenberichte …';
     try {
-      const params = new URLSearchParams({ galaxy: item.galaxy, system: item.system, orbit: planet.orbit });
+      const params = new URLSearchParams({ round: activeRound, galaxy: item.galaxy, system: item.system, orbit: planet.orbit });
       const response = await fetch('prospection-read.php?' + params, { credentials: 'same-origin' });
       if (response.status === 401) { location.assign('login.php'); return; }
       if (response.status === 403) { location.assign('password-change.php'); return; }
@@ -260,7 +262,7 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
     if (!form.reportValidity()) return;
     const galaxy = form.elements.galaxy.value.trim(), system = form.elements.system.value.trim();
     if (system && !galaxy) { status.textContent = 'Bitte für eine Systemsuche auch die Galaxie angeben.'; return; }
-    activeParams = new URLSearchParams();
+    activeParams = new URLSearchParams({ round: activeRound });
     for (const name of filterNames) { const value = form.elements[name].value.trim(); if (value !== '') activeParams.set(name, value); }
     if (galaxy && system !== '') rememberPosition(galaxy, system);
     offset = 0; loadResults();

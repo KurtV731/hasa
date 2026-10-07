@@ -53,6 +53,12 @@ verarbeiten, bleibt die Serverübertragung gesperrt; die lokale Erfassung arbeit
 weiter. Der Galaxiedatenbank-Knopf übergibt Runde und aktuelle beziehungsweise
 zuletzt sichtbare Koordinate.
 
+Die zentrale MariaDB besitzt zusätzlich die Migration
+`4 database/hasa_1_2_0_round8_migration.sql`. Sie ordnet den vorhandenen Bestand
+Runde 7 zu und stellt für Runde 8 einen leeren, getrennten Datenraum bereit. Die
+Lese- und Schreibendpunkte führen die Runde verbindlich mit; alte Clients ohne
+Rundenkennung dürfen nicht mehr schreiben.
+
 Alpha 17 entfernt die getrennten Schalter für Galaxieaufnahme und Sondenübertragung.
 Solange HASA aktiv ist und der einmalig gespeicherte API-Schlüssel vorliegt, werden
 sichtbare Galaxiesysteme und neue Sondenberichte automatisch übertragen. Der

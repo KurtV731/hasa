@@ -1,7 +1,8 @@
 <?php
 declare(strict_types=1);
 
-const HASA_API_VERSION = '1.2.0-alpha.2';
+const HASA_API_VERSION = '1.2.0-round.1';
+const HASA_CURRENT_ROUND = 8;
 
 function hasaJson(array $data, int $status = 200): never
 {
@@ -144,6 +145,35 @@ function hasaDateTime(mixed $value): string
     } catch (Throwable) {
         hasaJson(['ok' => false, 'error' => 'invalid_observed_at'], 400);
     }
+}
+
+function hasaRound(mixed $value, bool $write = false): int
+{
+    if ($value === null || $value === '') {
+        if ($write) {
+            hasaJson([
+                'ok' => false,
+                'error' => 'round_required',
+                'message' => 'Die Spielrunde muss übertragen werden.',
+            ], 400);
+        }
+        return HASA_CURRENT_ROUND;
+    }
+    if (filter_var($value, FILTER_VALIDATE_INT) === false) {
+        hasaJson(['ok' => false, 'error' => 'invalid_round'], 400);
+    }
+    $round = (int)$value;
+    if ($round < 1 || $round > 65535) {
+        hasaJson(['ok' => false, 'error' => 'invalid_round'], 400);
+    }
+    if ($write && $round !== HASA_CURRENT_ROUND) {
+        hasaJson([
+            'ok' => false,
+            'error' => 'round_not_writable',
+            'message' => 'Geschrieben werden darf nur in die aktuelle Spielrunde.',
+        ], 409);
+    }
+    return $round;
 }
 
 set_exception_handler(static function (Throwable $error): never {

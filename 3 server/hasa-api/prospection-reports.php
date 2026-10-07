@@ -12,8 +12,7 @@ if ($method !== 'POST') {
 }
 
 $input = hasaReadJson();
-// Bis zur Rundenmigration sind auch alte Clients ohne round gesperrt.
-hasaJson(['ok' => false, 'error' => 'round_migration_required', 'message' => 'Die Rundentrennung ist noch nicht eingerichtet.'], 409);
+$round = hasaRound($input['round'] ?? null, true);
 
 function prdrCoordinate(mixed $value, string $field): int
 {
@@ -81,13 +80,13 @@ $pdo = hasaPdo();
 $pdo->beginTransaction();
 try {
     $galaxySql = $pdo->prepare(
-        'INSERT INTO hasa_galaxies (game_id, galaxy_type, max_system_number)
-         VALUES (?, "unknown", ?)
+        'INSERT INTO hasa_galaxies (round_number, game_id, galaxy_type, max_system_number)
+         VALUES (?, ?, "unknown", ?)
          ON DUPLICATE KEY UPDATE
             max_system_number = GREATEST(COALESCE(max_system_number, 0), VALUES(max_system_number)),
             id = LAST_INSERT_ID(id)'
     );
-    $galaxySql->execute([$galaxyNumber, $systemNumber]);
+    $galaxySql->execute([$round, $galaxyNumber, $systemNumber]);
     $galaxyId = (int)$pdo->lastInsertId();
 
     $systemSql = $pdo->prepare(
@@ -183,6 +182,7 @@ try {
 hasaJson([
     'ok' => true,
     'stored' => [
+        'round' => $round,
         'report_id' => $reportId,
         'report_key' => $reportKey,
         'target' => $galaxyNumber . ':' . $systemNumber . ':' . $orbit,

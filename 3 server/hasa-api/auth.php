@@ -110,10 +110,8 @@ function hasaAuthCurrent(bool $json = false): ?array
 }
 function hasaAuthLegacyRound(bool $json = false): void
 {
-    // Rundentrennung ist ein eigener Auftrag. Kein stilles Anzeigen alter Daten als Runde 8.
-    if (isset($_GET['round']) && $_GET['round'] !== '7') {
-        hasaAuthError('Die Datenbank enthält noch den bisherigen Bestand. Runde 8 wird nach der gesonderten Rundenmigration verfügbar.', 409, $json, 'round_migration_required');
-    }
+    // Kompatibilitätsfunktion für bereits installierte Aufrufer. Seit round.1
+    // übernehmen die Endpunkte die echte Rundenauswahl selbst.
 }
 function hasaAuthDestination(mixed $value): string
 {

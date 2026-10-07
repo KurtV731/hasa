@@ -2,7 +2,6 @@
 declare(strict_types=1);
 require __DIR__ . '/auth.php';
 hasaRequireUser(true);
-hasaAuthLegacyRound(true);
 header('X-Content-Type-Options: nosniff');
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
     header('Allow: GET');
@@ -20,6 +19,7 @@ function scanCoordinate(string $name, int $min, int $max): int
     }
     return $number;
 }
+$round = hasaRound($_GET['round'] ?? null);
 $galaxy = scanCoordinate('galaxy', 1, 6);
 $system = scanCoordinate('system', 0, 999999);
 $orbit = scanCoordinate('orbit', 1, 255);
@@ -31,10 +31,10 @@ $query = $pdo->prepare(
      JOIN hasa_planets p ON p.id = r.target_planet_id
      JOIN hasa_systems s ON s.id = p.system_id
      JOIN hasa_galaxies g ON g.id = s.galaxy_id
-     WHERE g.game_id = ? AND s.system_number = ? AND p.orbit_position = ?
+     WHERE g.round_number = ? AND g.game_id = ? AND s.system_number = ? AND p.orbit_position = ?
      ORDER BY r.observed_at DESC, r.id DESC LIMIT 200'
 );
-$query->execute([$galaxy, $system, $orbit]);
+$query->execute([$round, $galaxy, $system, $orbit]);
 $reports = $query->fetchAll();
 $metricQuery = $pdo->prepare(
     'SELECT metric_name, value_percent FROM hasa_prospection_measurements
@@ -46,4 +46,4 @@ foreach ($reports as &$report) {
     unset($report['id']);
 }
 unset($report);
-hasaJson(['ok' => true, 'data' => $reports, 'limit' => 200]);
+hasaJson(['ok' => true, 'round' => $round, 'data' => $reports, 'limit' => 200]);

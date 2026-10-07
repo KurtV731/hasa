@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS hasa_meta (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO hasa_meta (meta_key, meta_value)
-VALUES ('schema_version', '1.2.0-2')
+VALUES ('schema_version', '1.2.0-3')
 ON DUPLICATE KEY UPDATE meta_value = VALUES(meta_value);
 
 CREATE TABLE IF NOT EXISTS hasa_alliances (
@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS hasa_users (
 
 CREATE TABLE IF NOT EXISTS hasa_galaxies (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    round_number SMALLINT UNSIGNED NOT NULL,
     game_id INT UNSIGNED NOT NULL,
     display_name VARCHAR(160) NULL,
     galaxy_type ENUM('normal', 'private', 'swarm', 'unknown') NOT NULL DEFAULT 'unknown',
@@ -51,7 +52,8 @@ CREATE TABLE IF NOT EXISTS hasa_galaxies (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    UNIQUE KEY uq_hasa_galaxy_game_id (game_id),
+    UNIQUE KEY uq_hasa_galaxy_round_game (round_number, game_id),
+    KEY ix_hasa_galaxy_round (round_number),
     CONSTRAINT fk_hasa_galaxy_owner
         FOREIGN KEY (owner_user_id) REFERENCES hasa_users(id)
         ON UPDATE CASCADE ON DELETE SET NULL
@@ -190,7 +192,12 @@ CREATE TABLE IF NOT EXISTS hasa_login_limits (
     window_started BIGINT UNSIGNED NOT NULL
 ) ENGINE=InnoDB;
 INSERT INTO hasa_meta (meta_key, meta_value)
-VALUES ('auth_schema_version','1.2.0-auth.1'), ('player_start_password_next','4711')
+VALUES
+    ('auth_schema_version','1.2.0-auth.1'),
+    ('player_start_password_next','4711'),
+    ('round_schema_version','1.2.0-round.1'),
+    ('current_round','8'),
+    ('legacy_round','7')
 ON DUPLICATE KEY UPDATE meta_value = meta_value;
 -- Schutz gilt auch bei versehentlichen direkten SQL-Änderungen.
 DELIMITER $$

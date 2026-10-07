@@ -1,6 +1,10 @@
 # HASA 1.2.0 – Server-Grundlage einrichten
 
-Aktualisierung 07.10.2026: Die Benutzeranmeldung ist jetzt verpflichtend. Für bestehende Installationen zuerst [Benutzeranmeldung und Grundrechte](hasa_1.2.0_benutzeranmeldung.md) lesen: Auth-Migration, vollständiger Upload und private Root-Einrichtung sind zusätzlich erforderlich. Runde-8-Übertragungen bleiben bis zur gesonderten Rundenmigration gesperrt.
+Aktualisierung 07.10.2026: Benutzeranmeldung und Rundentrennung sind jetzt
+vorbereitet. Für eine bestehende Installation zuerst die Auth-Migration und danach
+`4 database/hasa_1_2_0_round8_migration.sql` importieren. Anschließend sämtliche
+PHP-Dateien aus `3 server/hasa-api/` hochladen und die vorhandene private
+`config.php` beibehalten. Der Altbestand wird Runde 7; Runde 8 beginnt leer.
 
 Stand der ursprünglichen Grundinstallation: 2. September 2026
 Status: Alpha-Grundlage, noch nicht für andere Spieler freigeben
@@ -30,6 +34,7 @@ Keines dieser Geheimnisse darf für einen anderen Zweck wiederverwendet werden.
 ## Dateien
 
 - Datenbankschema: `4 database/hasa_1_2_0_schema.sql`
+- Bestandsmigration Runde 8: `4 database/hasa_1_2_0_round8_migration.sql`
 - PHP-API: `3 server/hasa-api/`
 - Servervorlage: `3 server/hasa-api/config.example.php`
 
@@ -45,6 +50,17 @@ Keines dieser Geheimnisse darf für einen anderen Zweck wiederverwendet werden.
 
 Erwartetes Ergebnis: Die Tabellen mit dem Präfix `hasa_` werden angelegt.
 Der Import ist wiederholbar und löscht keine bestehenden Daten.
+
+Bei einer bereits bestehenden Installation nicht das vollständige Grundschema
+erneut als Umstellung verwenden, sondern die Rundendatei importieren:
+
+```text
+4 database/hasa_1_2_0_round8_migration.sql
+```
+
+Danach gilt: vorhandene Galaxien und ihre abhängigen Daten gehören zu Runde 7;
+Runde 8 besitzt zunächst keine Systeme oder Planeten. Die Migration löscht keine
+Beobachtungen oder Sondenberichte und verändert keine vorhandenen IDs.
 
 ### 2. Serverkonfiguration vorbereiten
 
@@ -106,4 +122,3 @@ Passwort oder Datenbankname noch nicht.
 - Sichtbarkeit kennt `private`, `alliance` und `public`.
 - Die Benutzer- und Allianzrechte werden in einer späteren 1.2.x-Stufe
   technisch durchgesetzt. Bis dahin bleibt die API privat.
-
