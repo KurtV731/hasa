@@ -1,7 +1,8 @@
 <?php
 declare(strict_types=1);
 require __DIR__ . '/auth.php';
-hasaRequireUser(true);
+require __DIR__ . '/galaxy-access.php';
+$hasaUser = hasaRequireUser(true);
 header('X-Content-Type-Options: nosniff');
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
     header('Allow: GET');
@@ -20,10 +21,11 @@ function scanCoordinate(string $name, int $min, int $max): int
     return $number;
 }
 $round = hasaRound($_GET['round'] ?? null);
-$galaxy = scanCoordinate('galaxy', 1, 6);
+$galaxy = scanCoordinate('galaxy', 1, 255);
 $system = scanCoordinate('system', 0, 999999);
 $orbit = scanCoordinate('orbit', 1, 255);
 $pdo = hasaPdo();
+hasaRequireGalaxyAccess($pdo, $hasaUser, $round, $galaxy);
 $query = $pdo->prepare(
     'SELECT r.id, r.observed_at, r.probe_count, r.probe_type_code,
             r.probe_type_name, r.planet_type_name
@@ -36,6 +38,11 @@ $query = $pdo->prepare(
 );
 $query->execute([$round, $galaxy, $system, $orbit]);
 $reports = $query->fetchAll();
+if ($reports) {
+    $discovery = $pdo->prepare('SELECT id FROM hasa_galaxies WHERE round_number = ? AND game_id = ?');
+    $discovery->execute([$round, $galaxy]);
+    hasaRememberGalaxy($pdo, $hasaUser, (int)$discovery->fetchColumn());
+}
 $metricQuery = $pdo->prepare(
     'SELECT metric_name, value_percent FROM hasa_prospection_measurements
      WHERE report_id = ? ORDER BY metric_name'

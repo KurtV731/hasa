@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require __DIR__ . '/auth.php';
+require __DIR__ . '/galaxy-access.php';
 $hasaUser = hasaRequireUser(true);
 hasaRequireApiKey();
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') hasaAuthCheckCsrf(true);
@@ -37,7 +38,7 @@ function prdrRequiredText(mixed $value, string $field, int $maxLength): string
 
 $reportKey = prdrRequiredText($input['report_key'] ?? null, 'report_key', 190);
 $fingerprint = prdrRequiredText($input['fingerprint'] ?? null, 'fingerprint', 80);
-$galaxyNumber = prdrCoordinate($input['target']['galaxy'] ?? null, 'galaxy');
+$galaxyNumber = hasaGalaxyNumber($input['target']['galaxy'] ?? null);
 $systemNumber = prdrCoordinate($input['target']['system'] ?? null, 'system');
 $orbit = prdrCoordinate($input['target']['orbit'] ?? null, 'orbit');
 if ($orbit < 1 || $orbit > 255) {
@@ -77,16 +78,19 @@ foreach ($measurements as $metricName => $value) {
 }
 
 $pdo = hasaPdo();
+hasaGalaxySchema();
 $pdo->beginTransaction();
 try {
     $galaxySql = $pdo->prepare(
-        'INSERT INTO hasa_galaxies (round_number, game_id, galaxy_type, max_system_number)
-         VALUES (?, ?, "unknown", ?)
+        'INSERT INTO hasa_galaxies (round_number, game_id, display_name, galaxy_type, max_system_number)
+         VALUES (?, ?, ?, ?, ?)
          ON DUPLICATE KEY UPDATE
+            display_name = COALESCE(VALUES(display_name), display_name),
+            galaxy_type = IF(VALUES(galaxy_type) = "unknown", galaxy_type, VALUES(galaxy_type)),
             max_system_number = GREATEST(COALESCE(max_system_number, 0), VALUES(max_system_number)),
             id = LAST_INSERT_ID(id)'
     );
-    $galaxySql->execute([$round, $galaxyNumber, $systemNumber]);
+    $galaxySql->execute([$round, $galaxyNumber, hasaText($input['galaxy_name'] ?? null, 160), hasaChoice($input['galaxy_type'] ?? 'unknown', ['normal','private','swarm','empty','unknown'], 'unknown'), $systemNumber]);
     $galaxyId = (int)$pdo->lastInsertId();
 
     $systemSql = $pdo->prepare(
@@ -106,7 +110,7 @@ try {
         $systemNumber,
         $visibility,
         $observedAt,
-        hasaText($input['observer'] ?? null, 120),
+        (string)$hasaUser['player_name'],
     ]);
     $systemId = (int)$pdo->lastInsertId();
 
@@ -150,7 +154,7 @@ try {
         $planetId,
         hasaText($input['source']['coordinate'] ?? null, 40),
         hasaText($input['source']['name'] ?? null, 160),
-        hasaText($input['observer'] ?? null, 120),
+        (string)$hasaUser['player_name'],
         $probeCount,
         hasaText($input['probe_type']['name'] ?? null, 160),
         hasaText($input['probe_type']['code'] ?? null, 40),
@@ -171,6 +175,7 @@ try {
         $measurementSql->execute([$reportId, $name, $value]);
     }
 
+    hasaRememberGalaxy($pdo, $hasaUser, $galaxyId);
     $pdo->commit();
 } catch (Throwable $error) {
     if ($pdo->inTransaction()) {

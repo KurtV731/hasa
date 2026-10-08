@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require __DIR__ . '/auth.php';
+require __DIR__ . '/galaxy-access.php';
 $hasaUser = hasaRequireUser(true);
 hasaRequireApiKey();
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') hasaAuthCheckCsrf(true);
@@ -29,10 +30,12 @@ function coordinate(mixed $value, string $field): int
 
 function readSystem(): never
 {
+    global $hasaUser;
     $round = hasaRound($_GET['round'] ?? null);
-    $galaxy = coordinate($_GET['galaxy'] ?? null, 'galaxy');
+    $galaxy = hasaGalaxyNumber($_GET['galaxy'] ?? null);
     $system = coordinate($_GET['system'] ?? null, 'system');
     $pdo = hasaPdo();
+    hasaRequireGalaxyAccess($pdo, $hasaUser, $round, $galaxy);
 
     $query = $pdo->prepare(
         'SELECT s.id, g.game_id AS galaxy, g.display_name AS galaxy_name,
@@ -59,17 +62,21 @@ function readSystem(): never
     $planetQuery->execute([(int)$row['id']]);
     unset($row['id']);
     $row['planets'] = $planetQuery->fetchAll();
+    $discovery = $pdo->prepare('SELECT id FROM hasa_galaxies WHERE round_number = ? AND game_id = ?');
+    $discovery->execute([$round, $galaxy]);
+    hasaRememberGalaxy($pdo, $hasaUser, (int)$discovery->fetchColumn());
     hasaJson(['ok' => true, 'round' => $round, 'data' => $row]);
 }
 
 function storeSystem(): never
 {
+    global $hasaUser;
     $input = hasaReadJson();
     $round = hasaRound($input['round'] ?? null, true);
-    $galaxyNumber = coordinate($input['galaxy'] ?? null, 'galaxy');
+    $galaxyNumber = hasaGalaxyNumber($input['galaxy'] ?? null);
     $systemNumber = coordinate($input['system'] ?? null, 'system');
     $observedAt = hasaDateTime($input['observed_at'] ?? null);
-    $observer = hasaText($input['observer'] ?? null, 120);
+    $observer = (string)$hasaUser['player_name'];
     $visibility = hasaChoice(
         $input['visibility'] ?? 'private',
         ['private', 'alliance', 'public'],
@@ -82,7 +89,7 @@ function storeSystem(): never
     );
     $galaxyType = hasaChoice(
         $input['galaxy_type'] ?? 'unknown',
-        ['normal', 'private', 'swarm', 'unknown'],
+        ['normal', 'private', 'swarm', 'empty', 'unknown'],
         'unknown'
     );
     $planets = $input['planets'] ?? [];
@@ -91,6 +98,7 @@ function storeSystem(): never
     }
 
     $pdo = hasaPdo();
+    hasaGalaxySchema();
     $pdo->beginTransaction();
     try {
         $galaxySql = $pdo->prepare(
@@ -197,6 +205,7 @@ function storeSystem(): never
             json_encode($input, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
         ]);
 
+        hasaRememberGalaxy($pdo, $hasaUser, $galaxyId);
         $pdo->commit();
     } catch (Throwable $error) {
         if ($pdo->inTransaction()) {

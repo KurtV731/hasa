@@ -1,9 +1,11 @@
 <?php
 declare(strict_types=1);
 require __DIR__ . '/auth.php';
+require __DIR__ . '/galaxy-access.php';
 $hasaUser = hasaRequireUser();
 $hasaRound = hasaRound($_GET['round'] ?? null);
-// HASA Webansicht 1.2.0-web.7 – verdichteter Planetenvergleich für bis zu 14 Spalten.
+$hasaGalaxies = hasaGalaxyCatalog(hasaPdo(), $hasaUser, $hasaRound);
+// HASA Webansicht 1.2.0-web.8 – verdichteter Planetenvergleich für bis zu 14 Spalten.
 $hasaNonce = base64_encode(random_bytes(18));
 header('Content-Type: text/html; charset=utf-8');
 header('X-Content-Type-Options: nosniff');
@@ -23,10 +25,10 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
   h1 { margin:0; font-size:1.5rem; } h2 { margin:0 0 .4rem; font-size:1.15rem; }
   p { margin:.4rem 0 .8rem; } form { padding:.8rem; background:#1f2937; border-radius:.6rem; }
   .filters,.toolbar { display:flex; flex-wrap:wrap; gap:.6rem; align-items:end; }
-  label { display:grid; gap:.2rem; } input,button { font:inherit; padding:.45rem; border:1px solid #64748b; border-radius:.35rem; }
-  input { width:9rem; background:#172033; color:#f3f4f6; } input[name=q] { width:min(24rem,100%); }
+  label { display:grid; gap:.2rem; } input,select,button { font:inherit; padding:.45rem; border:1px solid #64748b; border-radius:.35rem; }
+  input,select { width:9rem; background:#172033; color:#f3f4f6; } select[name=galaxy] { width:18rem; max-width:100%; } input[name=q] { width:min(24rem,100%); }
   button { background:#2563eb; color:white; cursor:pointer; } a { color:#bfdbfe; } button:disabled { opacity:.5; cursor:default; }
-  button:focus-visible,input:focus-visible,summary:focus-visible,.scroll:focus-visible { outline:3px solid #facc15; outline-offset:2px; }
+  button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible,.scroll:focus-visible { outline:3px solid #facc15; outline-offset:2px; }
   details.filters-more { margin-top:.6rem; } summary { cursor:pointer; color:#bfdbfe; } .filters-more .filters { padding-top:.6rem; }
   #status { margin:.7rem 0; min-height:1.4rem; } article { background:#1f2937; padding:.8rem; border-radius:.6rem; margin:.8rem 0; }
   .system-grid { display:grid; grid-template-columns:minmax(0,1fr); gap:.45rem; }
@@ -59,16 +61,20 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
 <body>
 <h1>HASA – Galaxiedatenbank</h1>
 <p class="muted"><?= hasaAuthEscape($hasaUser['player_name']) ?> · <a href="password-change.php">Passwort ändern</a> · <a href="logout.php">Abmelden</a></p>
-<p class="muted">Spielrunde <?= $hasaRound ?> · Galaxien 1 bis 6 · Daten anderer Runden werden nicht beigemischt</p>
+<p class="muted">Spielrunde <?= $hasaRound ?> · Galaxien nach persönlicher Sichtbarkeit · Daten anderer Runden werden nicht beigemischt</p>
 <form id="search">
   <input name="round" type="hidden" value="<?= $hasaRound ?>">
   <div class="filters">
-    <label>Galaxie <input name="galaxy" type="number" min="1" max="6" step="1" inputmode="numeric"></label>
+    <label>Galaxie <select name="galaxy"><option value="">Alle sichtbaren</option>
+      <?php foreach ($hasaGalaxies as $galaxy): ?>
+      <option value="<?= (int)$galaxy['galaxy'] ?>"><?= hasaAuthEscape((string)$galaxy['galaxy'] . ($galaxy['name'] ? ' · ' . $galaxy['name'] : '')) ?></option>
+      <?php endforeach; ?>
+    </select></label>
     <label>System <input name="system" type="number" min="0" max="999999" step="1" inputmode="numeric"></label>
     <label>Suchbegriff <input name="q" type="search" maxlength="160" placeholder="Name, Spieler, Allianz, Typ …"></label>
     <button type="submit">Suchen</button>
     <button id="position" type="button" disabled>Standort anzeigen</button>
-    <button id="all" type="button">Alle Galaxien durchsuchen</button>
+    <button id="all" type="button">Alle sichtbaren Galaxien durchsuchen</button>
   </div>
   <details class="filters-more"><summary>Weitere Suchfelder</summary><div class="filters">
     <label>Spieler <input name="player" maxlength="120"></label>
@@ -101,7 +107,7 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
   const activeRound = String(<?= $hasaRound ?>);
   const pages = document.querySelector('#pages');
   function validPosition(galaxy, system) {
-    return /^\d+$/.test(String(galaxy)) && /^\d+$/.test(String(system)) && Number(galaxy) >= 1 && Number(galaxy) <= 6 && Number(system) <= 999999;
+    return /^\d+$/.test(String(galaxy)) && /^\d+$/.test(String(system)) && Number(galaxy) >= 1 && Number(galaxy) <= 255 && Number(system) <= 999999;
   }
   function rememberPosition(galaxy, system) {
     if (!validPosition(galaxy, system)) return;
@@ -213,6 +219,7 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
     const summary = element('aside', undefined, 'system-summary');
     summary.append(element('h2', isCurrent ? 'Aktuelles / letztes System' : 'System'));
     summary.append(element('div', `${item.galaxy}:${item.system}`, 'coordinate'));
+    if (item.galaxy_name) summary.append(element('p', item.galaxy_name, 'muted'));
     if (item.system_name) summary.append(element('strong', item.system_name));
     summary.append(element('p', `${(item.planets || []).length} Planeten in dieser Auswahl`, 'muted'));
     if (item.last_observed_at) summary.append(element('p', `System beobachtet: ${item.last_observed_at} UTC`, 'muted'));
