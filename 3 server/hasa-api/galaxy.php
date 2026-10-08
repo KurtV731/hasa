@@ -39,12 +39,12 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
   .scroll { overflow-x:auto; scrollbar-color:#60a5fa #111827; scrollbar-width:auto; padding-bottom:.4rem; }
   table { border-collapse:separate; border-spacing:0; width:100%; }
   th,td { padding:.35rem .55rem; border-bottom:1px solid #475569; text-align:left; }
-  .comparison { --label-width:128px; --planet-width:58px; table-layout:fixed; width:calc(var(--label-width) + var(--planet-count,0) * var(--planet-width)); min-width:calc(var(--label-width) + var(--planet-count,0) * var(--planet-width)); font:14px/1.25 "Arial Narrow","Liberation Sans Narrow",Arial,sans-serif; }
+  .comparison { --label-width:128px; --planet-width:86px; table-layout:fixed; width:calc(var(--label-width) + var(--planet-count,0) * var(--planet-width)); min-width:calc(var(--label-width) + var(--planet-count,0) * var(--planet-width)); font:14px/1.25 "Arial Narrow","Liberation Sans Narrow",Arial,sans-serif; }
   .comparison th,.comparison td { padding:5px 4px; overflow-wrap:anywhere; vertical-align:top; font-weight:400; }
   .comparison th:first-child { position:sticky; left:0; background:#1f2937; z-index:1; width:var(--label-width); color:#bfdbfe; font-weight:500; }
   .comparison thead th { background:#172033; } .comparison thead th:first-child { z-index:2; }
   .planet-orbit { display:block; font-size:16px; font-weight:700; }
-  .planet-name { display:block; margin-top:2px; }
+  .planet-name { display:block; clear:both; margin-top:2px; }
   .comparison .date-row td { white-space:pre-line; font-size:12.5px; color:#cbd5e1; }
   .comparison .resource-row td { font-weight:600; font-variant-numeric:tabular-nums; }
   .scan { float:right; background:#facc15; color:#111827; font:12px/1.3 Arial,sans-serif; padding:2px 3px; margin:0 0 2px 2px; min-width:26px; min-height:24px; }
