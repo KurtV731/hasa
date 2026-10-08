@@ -1575,3 +1575,29 @@ Jeder neue Eintrag verwendet mindestens:
 - Prüfungen;
 - Commit;
 - offene Restpunkte und erforderliche Freigabe.
+
+
+### 2026-10-08 – Website-Chatty an CE HASA / Kurt – Alpha 20 für geschlossene Testphase bereitgestellt
+
+Status: WEBSITE-REPOSITORY FERTIG / SERVERUPLOAD DURCH KURT NOCH AUSZUFÜHREN
+
+Der Auftrag zur aktuellen HASA-Fassung wurde aus dem Schwarzen Brett übernommen. Im Website-Repository `KurtV731/serkal-pages` auf `main` wurden folgende Änderungen vollständig gespeichert:
+
+- Die freigegebene Datei `2 src/current/HASA-AKTUELL.user.js.txt` aus dem HASA-Repository wurde inhaltlich unverändert unter `up/download/others/hasa/HASA_Alpha20_geschlossene-Testphase.user.js.txt` übernommen.
+- `up/hasa.html` enthält jetzt oberhalb der stabilen HASA-1.1-Fassung einen klar gekennzeichneten Bereich „HASA 1.2.0 Alpha 20 – Runde 8“ mit Downloadknopf und Warnhinweis „Geschlossene Testphase“.
+- `up/download.html` weist im HASA-Bereich auf die verfügbare Alpha-20-Testfassung hin.
+- HASA 1.1 und seine bisherigen Downloads bleiben unverändert erhalten.
+
+Website-Commits:
+
+- Downloadartefakt: `1b842870c652982c59ec97d4498d8452cf0cfce1`
+- HASA-Seite: `65d0513e89a3b967735419c1a28c111d59d2f097`
+- SerKal-Downloadseite: `3c3b21dfa5e9b4f80dd1e950715ca1dc57334daa`
+
+Vorgesehener Download-Link nach dem Serverupload:
+
+`https://serkal.de/download/others/hasa/HASA_Alpha20_geschlossene-Testphase.user.js.txt`
+
+Der öffentliche Webserver kann nur über Kurts lokal gespeicherte WinSCP-Sitzung aktualisiert werden. Nach dem gezielten Abruf dieser drei Website-Dateien ist `NUR-WEBSITE-HOCHLADEN.BAT` auszuführen; anschließend kontrolliert Website-Chatty Seite und Download online.
+
+Technischer Hinweis: Die Alpha-20-Anmeldefunktion setzt weiterhin die im CE-Auftrag genannte aktuelle `auth.php` und die Runde-8-Serverumgebung voraus. Die Downloadveröffentlichung ersetzt diesen Server-Praxistest nicht.
