@@ -1354,62 +1354,6 @@ als aktives root-Konto, ID 1, mit Pflichtwechsel angelegt. Erfolgreicher Login u
 abgeschlossener Passwortwechsel sind noch nicht bestätigt. Keine produktiven
 Passwörter oder Hashes in dieser Übergabe.
 
-
-### 2026-10-07 – CE HASA und DB-/Web-Entwicklung – MariaDB auf Runde 8 getrennt
-
-Status: CODE UND MIGRATION IN GITHUB FERTIG / PRODUKTIVIMPORT UND LIVETEST OFFEN
-
-Die seit dem Neustart blockierende serverseitige Rundentrennung ist umgesetzt.
-Die neue, wiederholbare Bestandsmigration
-`4 database/hasa_1_2_0_round8_migration.sql` ergänzt an den Galaxien die
-verbindliche Spielrunde. Sämtliche bereits vorhandenen Galaxien und dadurch alle
-abhängigen Systeme, Planeten, Beobachtungen und Sondenberichte werden Runde 7
-zugeordnet. Nichts wird gelöscht, neu berechnet oder mit Runde 8 vermischt.
-Runde 8 beginnt leer; dieselbe Galaxiennummer kann in beiden Runden unabhängig
-existieren.
-
-Leseendpunkte und Webansicht verwenden ohne abweichende ausdrückliche Angabe Runde 8.
-Eine Archivabfrage mit `round=7` bleibt technisch möglich. Schreibendpunkte
-verlangen zwingend `round: 8`; alte Clients ohne Rundenkennung erhalten
-`round_required`, andere Runden `round_not_writable`. Erfolgreiche Antworten
-nennen die verwendete Runde. Galaxieansicht und Sondenberichtabruf reichen die Runde
-durchgehend weiter.
-
-Betroffene Bereiche:
-
-- neue Migration `4 database/hasa_1_2_0_round8_migration.sql`;
-- frisches Gesamtschema auf `1.2.0-3` aktualisiert;
-- `bootstrap.php`, `systems.php`, `prospection-reports.php`,
-  `galaxy.php`, `galaxy-read.php`, `prospection-read.php`, `index.php`;
-- Installations- und Anmeldedokumentation, README und Integrationstest angepasst.
-
-Prüfungen in der verfügbaren Arbeitsumgebung: Python-Testdatei kompiliert,
-eingebettetes JavaScript syntaktisch geprüft, vollständiger Diff ohne
-Whitespacefehler. Eine PHP-/MariaDB-Laufzeit war in dieser Arbeitsumgebung nicht
-installiert; deshalb werden weder produktiver Import noch Live-Erfolg behauptet.
-Der vorhandene Integrationstest enthält nun zusätzlich leere Runde 8, getrennte
-Runde 7, erfolgreiches Runde-8-System, Runde-8-Sondenbericht sowie die Sperre
-alter Clients und muss in der PHP-/MariaDB-Testumgebung erneut vollständig laufen.
-
-Programmcommit:
-`2677fc60ef4cd5c5e1b16ce0128b177ccee0cd92`
-(HASA: MariaDB-Daten nach Spielrunde trennen).
-
-Produktive Reihenfolge:
-
-1. Datenbanksicherung erstellen.
-2. ausschließlich `hasa_1_2_0_round8_migration.sql` in phpMyAdmin importieren;
-3. alle geänderten PHP-Dateien aus `3 server/hasa-api` nach `/hasa/`
-   hochladen, die private `config.php` nicht ersetzen;
-4. angemeldet als Styl `https://serkal.de/hasa/galaxy.php?round=8` öffnen;
-5. prüfen, dass Runde 8 leer ist und `?round=7` den bisherigen Bestand getrennt
-   erreicht;
-6. erst nach erfolgreichem Live-/Cookie-/CSRF-Test die Übertragungssperre im
-   Tampermonkey-Hauptskript aufheben.
-
-Offen bleiben damit nur Produktivimport, Upload/Livetest und anschließend die
-CE-Anbindung der angemeldeten Sitzung samt CSRF an das Hauptskript.
-
 ### 2026-10-08 – Kurt an CE HASA – Forschungs-Wunschliste für HASA 1.2
 
 Status: AUF WUNSCHLISTE / UMSETZUNG OFFEN
@@ -1432,6 +1376,41 @@ Die vollständige fachliche Beschreibung steht in
 
 Offen: Bedienoberfläche, genaue Erinnerungsdarstellung und spätere Kopplung mit dem
 Forschungsalarm. Noch keine Programmänderung in diesem Eintrag.
+
+
+### 2026-10-08 – CE HASA an Kurt und DB-/Web-Chatty – Alpha 20 Runde-8-Anmeldung
+
+Status: PROGRAMMIERT / TECHNISCHE PRÜFUNGEN BESTANDEN / PRAXISTEST OFFEN
+
+Alpha 20 verbindet das Tampermonkey-Skript mit der bestehenden HASA-Anmeldung und
+der gestern migrierten Runde-8-MariaDB. Der Anmeldestatus und der CSRF-Wert werden
+über `auth-status.php` gelesen. Systeme und Sondenberichte werden nur mit gültiger
+Sitzung, API-Schlüssel, CSRF-Header und `round: 8` geschrieben. Als Beobachter wird
+der tatsächlich angemeldete Spielername übertragen; `Styl` ist nicht mehr fest im
+Skript eingetragen.
+
+Ohne Anmeldung läuft die lokale Erfassung weiter. Sondenberichte bleiben dauerhaft
+lokal offen; Galaxiesysteme verbleiben in der laufenden Warteschlange. Ein sichtbarer
+Anmeldeknopf führt zur HASA-Anmeldung. Der Status wird alle 30 Sekunden erneut
+geprüft und wartende Übertragungen werden danach automatisch fortgesetzt.
+
+Serveränderung: Das Sitzungscookie in `auth.php` verwendet für die geschützte
+domainübergreifende Tampermonkey-Anfrage `SameSite=None`; Secure und HttpOnly bleiben
+gesetzt. Der CSRF-Schutz und der zusätzliche API-Schlüssel bleiben verpflichtend.
+
+Dateien:
+
+- `2 src/current/HASA-AKTUELL.user.js.txt`;
+- `2 src/current/hasa_1.2.0-alpha.20_runde8-anmeldung.user.js.txt`;
+- `3 server/hasa-api/auth.php`;
+- `1 docs/hasa_1.2.0-alpha.20_runde8-anmeldung.md`;
+- `README.md`.
+
+Erforderlicher Praxistest: `auth.php` auf `/hasa/` ersetzen, Alpha 20 installieren,
+bei HASA als Styl anmelden, Horizon öffnen und in der Galaxieansicht ein sichtbares
+System aufrufen. Danach muss der Übertragungsstatus grün werden und der Runde-8-
+Eintrag in der Galaxiedatenbank erscheinen. Ohne Anmeldung muss die lokale Erfassung
+weiterlaufen und der Anmeldeknopf sichtbar bleiben.
 
 
 ## Übergabeformat
