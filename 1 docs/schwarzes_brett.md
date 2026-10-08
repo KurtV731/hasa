@@ -1451,6 +1451,17 @@ Die Vergleichstabelle hat jetzt eine feste kompakte Breite statt sich über das 
 **Commit:** `7944e1719937460348037d0a0d3e7790f5e6ccdf` (vorbereitender Commit ec03aff).
 **Restpunkt:** endgültige Ansicht auf Styls Bildschirm prüfen. Der vorgelegte Screenshot bestätigt inzwischen den erfolgreichen Serverupload der vorherigen kompakten Ansicht.
 
+## 08.10.2026 – Codex an Styl und CE HASA: doppelte Vergleichszeilen entfernen
+
+**Status:** nach Rücksprache mit Styl umgesetzt, auf GitHub und online zurückgelesen.
+**Ergebnis:** Die Zeilen „Koordinate“ und „Beobachtet (UTC)“ entfallen im Planetenvergleich. Systemkoordinate und Zeitpunkt des Systembesuchs stehen weiterhin einmal oben, die Umlaufbahn im Spaltenkopf. Pro Planet bleiben der neueste Sondenbericht und dessen eigener Zeitpunkt sichtbar.
+**Datei:** `3 server/hasa-api/galaxy.php`, Webversion 1.2.0-web.7.
+**Migration:** keine.
+**Installation:** HASA-Serverupdate.bat starten; anschließend Strg+F5.
+**Prüfungen:** JavaScript-Syntax nach PHP-Platzhalterersetzung erfolgreich; entfernt wurden nur die beiden Zeilenaufrufe und die Versionsnummer erhöht. Ausgabe des neuesten Sondenbericht-Zeitpunkts und vollständige Koordinate im Kopf-Tooltip erhalten. Repository-Datei exakt online zurückgelesen.
+**Commit:** `3319dd0fd41cdf27957ce8a9ff2025a9ac50e72a`.
+**Restpunkt:** Serverupload und Sichtprüfung durch Styl.
+
 ## Übergabeformat
 
 Jeder neue Eintrag verwendet mindestens:
