@@ -80,6 +80,19 @@ try:
   check(get(bob,'prospection-read.php?galaxy=255&system=0&orbit=1')[0]==200,'authorized report access fails')
   payload['galaxy']=254;payload['galaxy_type']='empty';check(jsonreq(bob,'systems.php',payload,headers)[0]==201,'empty galaxy not accepted')
   check(sql('SELECT galaxy_type FROM hasa_galaxies WHERE round_number=8 AND game_id=254;')=='empty','empty type lost')
+  sql("UPDATE hasa_planets p JOIN hasa_systems s ON s.id=p.system_id JOIN hasa_galaxies g ON g.id=s.galaxy_id SET p.alliance_tag='HASA',p.planet_type='CRPL' WHERE g.game_id=1;")
+  sql("UPDATE hasa_planets p JOIN hasa_systems s ON s.id=p.system_id JOIN hasa_galaxies g ON g.id=s.galaxy_id SET p.alliance_tag='SECRET',p.planet_type='SECRET-MOTHERSHIP' WHERE g.round_number=7;")
+  sql("UPDATE hasa_planets p JOIN hasa_systems s ON s.id=p.system_id JOIN hasa_galaxies g ON g.id=s.galaxy_id SET p.alliance_tag='SWARM-ONLY',p.planet_type='MOTHERSHIP-CODE' WHERE g.round_number=8 AND g.game_id=7;")
+  html=jsonreq(bob,'galaxy.php')[1]
+  check('Kristallplanet (CRPL)' in html,'known type name missing')
+  check('HASA' in html and 'SECRET-MOTHERSHIP' not in html and 'SWARM-ONLY' not in html,'filter options leak inaccessible data')
+  check('MOTHERSHIP-CODE' in jsonreq(alice,'galaxy.php')[1],'extra observed type missing')
+  orbit_html=re.search(r'<select name="orbit">([\s\S]*?)</select>',html)[1]
+  check(re.findall(r'<option value="(\d+)"',orbit_html)==[str(i) for i in range(1,15)],'orbit choices not 1-14')
+  check(get(bob,'galaxy-read.php?orbit=15')[0]==400,'orbit 15 accepted by search')
+  check(get(bob,'galaxy-read.php?type=CRPL')[1]['total']==1,'exact type selection fails')
+  check(get(bob,'galaxy-read.php?type=CR')[1]['total']==0,'partial type selection matches')
+  check(get(bob,'galaxy-read.php?alliance=HAS')[1]['total']==0,'partial alliance selection matches')
   report={'round':8,'report_key':'test-access-report','fingerprint':'test-fingerprint','target':{'galaxy':253,'system':0,'orbit':1},'observer':'Alice','probe_count':100,'measurements':{'Erz':42.125}}
   check(jsonreq(bob,'prospection-reports.php',report,headers)[0]==201,'prospection discovery write failed')
   check(get(bob,'prospection-read.php?galaxy=253&system=0&orbit=1')[1]['data'][0]['probe_count']==100,'own report not visible')

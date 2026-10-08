@@ -2,10 +2,12 @@
 declare(strict_types=1);
 require __DIR__ . '/auth.php';
 require __DIR__ . '/galaxy-access.php';
+require __DIR__ . '/filter-options.php';
 $hasaUser = hasaRequireUser();
 $hasaRound = hasaRound($_GET['round'] ?? null);
 $hasaGalaxies = hasaGalaxyCatalog(hasaPdo(), $hasaUser, $hasaRound);
-// HASA Webansicht 1.2.0-web.8 – verdichteter Planetenvergleich für bis zu 14 Spalten.
+$hasaFilters = hasaFilterOptions(hasaPdo(), $hasaUser, $hasaRound);
+// HASA Webansicht 1.2.0-web.9 – verdichteter Planetenvergleich für bis zu 14 Spalten.
 $hasaNonce = base64_encode(random_bytes(18));
 header('Content-Type: text/html; charset=utf-8');
 header('X-Content-Type-Options: nosniff');
@@ -26,7 +28,7 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
   p { margin:.4rem 0 .8rem; } form { padding:.8rem; background:#1f2937; border-radius:.6rem; }
   .filters,.toolbar { display:flex; flex-wrap:wrap; gap:.6rem; align-items:end; }
   label { display:grid; gap:.2rem; } input,select,button { font:inherit; padding:.45rem; border:1px solid #64748b; border-radius:.35rem; }
-  input,select { width:9rem; background:#172033; color:#f3f4f6; } select[name=galaxy] { width:18rem; max-width:100%; } input[name=q] { width:min(24rem,100%); }
+  input,select { width:9rem; background:#172033; color:#f3f4f6; } select[name=type] { width:18rem; max-width:100%; } select[name=galaxy] { width:18rem; max-width:100%; } input[name=q] { width:min(24rem,100%); }
   button { background:#2563eb; color:white; cursor:pointer; } a { color:#bfdbfe; } button:disabled { opacity:.5; cursor:default; }
   button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible,.scroll:focus-visible { outline:3px solid #facc15; outline-offset:2px; }
   details.filters-more { margin-top:.6rem; } summary { cursor:pointer; color:#bfdbfe; } .filters-more .filters { padding-top:.6rem; }
@@ -78,10 +80,22 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
   </div>
   <details class="filters-more"><summary>Weitere Suchfelder</summary><div class="filters">
     <label>Spieler <input name="player" maxlength="120"></label>
-    <label>Allianz <input name="alliance" maxlength="80"></label>
-    <label>Umlaufbahn <input name="orbit" type="number" min="1" max="65535" step="1"></label>
+    <label>Allianz <select name="alliance"><option value="">Alle</option>
+      <?php foreach ($hasaFilters['alliances'] as $alliance): ?>
+      <option value="<?= hasaAuthEscape($alliance) ?>"><?= hasaAuthEscape($alliance) ?></option>
+      <?php endforeach; ?>
+    </select></label>
+    <label>Umlaufbahn <select name="orbit"><option value="">Alle</option>
+      <?php for ($orbit = 1; $orbit <= 14; $orbit++): ?>
+      <option value="<?= $orbit ?>"><?= $orbit ?></option>
+      <?php endfor; ?>
+    </select></label>
     <label>Planetenname <input name="name" maxlength="160"></label>
-    <label>Planetentyp <input name="type" maxlength="40"></label>
+    <label>Planetentyp <select name="type"><option value="">Alle</option>
+      <?php foreach ($hasaFilters['types'] as $code => $name): ?>
+      <option value="<?= hasaAuthEscape((string)$code) ?>"><?= hasaAuthEscape($name === (string)$code ? (string)$code : $name . ' (' . $code . ')') ?></option>
+      <?php endforeach; ?>
+    </select></label>
     <label>Status <input name="status" maxlength="80"></label>
   </div></details>
 </form>
@@ -299,6 +313,10 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
     if (!(item.planets || []).length) wrap.append(element('p','Keine erfassten Planeten.'));
     card.append(pane); return card;
   }
+  form.elements.galaxy.addEventListener('change', () => {
+    form.elements.system.value = '';
+    form.requestSubmit();
+  });
   form.addEventListener('submit', event => {
     event.preventDefault();
     if (!form.reportValidity()) return;
@@ -325,6 +343,15 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
       pageLimit = payload.limit;
       const total = Number(payload.total ?? payload.data.length);
       status.textContent = total ? `${total} System(e) gefunden · ${payload.data.reduce((sum,item) => sum + (item.planets || []).length,0)} Planeten auf dieser Seite` : 'Keine erfassten Einträge für diese Suche vorhanden.';
+      for (const item of payload.data) for (const planet of item.planets || []) {
+        for (const [name, value] of [['alliance', planet.alliance], ['type', planet.type]]) {
+          if (!value) continue;
+          const select = form.elements[name];
+          if (![...select.options].some(option => option.value === String(value))) {
+            select.append(new Option(String(value), String(value)));
+          }
+        }
+      }
       results.replaceChildren();
       const sorted = [...payload.data].sort((a,b) => {
         const current = x => position && String(x.galaxy) === position.galaxy && String(x.system) === position.system ? 1 : 0;

@@ -35,7 +35,7 @@ $galaxy = readNumber($_GET['galaxy'] ?? null, 'galaxy', 255);
 if ($galaxy === 0) hasaJson(['ok' => false, 'error' => 'invalid_galaxy'], 400);
 $system = readNumber($_GET['system'] ?? null, 'system', 999999);
 if ($system !== null && $galaxy === null) hasaJson(['ok' => false, 'error' => 'galaxy_required'], 400);
-$orbit = readNumber($_GET['orbit'] ?? null, 'orbit', 65535);
+$orbit = readNumber($_GET['orbit'] ?? null, 'orbit', 14);
 if ($orbit === 0) hasaJson(['ok' => false, 'error' => 'invalid_orbit'], 400);
 $offset = readNumber($_GET['offset'] ?? null, 'offset', 10000000) ?? 0;
 $limit = 20;
@@ -46,8 +46,13 @@ $planetParams = [];
 foreach ($filters as $name => $column) {
     $value = readText($name);
     if ($value !== '') {
-        $planetWhere[] = "p.$column LIKE ? ESCAPE '!'";
-        $planetParams[] = containsPattern($value);
+        if ($name === 'alliance' || $name === 'type') {
+            $planetWhere[] = "TRIM(p.$column) = ?";
+            $planetParams[] = $value;
+        } else {
+            $planetWhere[] = "p.$column LIKE ? ESCAPE '!'";
+            $planetParams[] = containsPattern($value);
+        }
     }
 }
 if ($orbit !== null) { $planetWhere[] = 'p.orbit_position = ?'; $planetParams[] = $orbit; }
