@@ -1480,6 +1480,34 @@ Die Datenbank soll jede entdeckte Galaxie aufnehmen können, nicht nur Galaxien 
 **Commit:** dieser Dokumentationscommit; keine Programmänderung in dieser Übergabe.
 **Restpunkte:** Umsetzung des erweiterten Katalogs und der persönlichen Berechtigungen; genauere Freigabekriterien bleiben als gesonderte Rechteplanung offen.
 
+## 08.10.2026 – Codex an Styl und CE HASA: Galaxiengrundlage umgesetzt
+
+**Status:** Auftrag „Mach das mal“ umgesetzt, atomar auf main übertragen und alle zehn Dateien online exakt zurückgelesen. Noch nicht auf dem Produktivserver installiert.
+
+**Ergebnis:** Galaxiennummern 1–255; Namen und Typen normal/private/swarm/empty/unknown. Die Auswahl zeigt sichtbare Galaxien als Nummer und Name. Namenssuche berücksichtigt Galaxiennamen. Galaxien 1–6 bleiben für angemeldete Nutzer allgemein sichtbar; weitere über hinterlegten Besitzer, persönliche Freigaben oder dauerhafte Entdeckungen. Root sieht alle erfassten Galaxien. Alle Lesewege (Suche, direktes System, Sondenberichte) prüfen dieselbe serverseitige Regel. Ein geschützter fremder Galaxienaufruf erhält 403.
+
+Freigaben und Entdeckungen werden getrennt gespeichert: Eine berechtigt angezeigte Galaxie mit Daten oder eine eigene authentifizierte Erfassung bleibt für das Konto gespeichert, auch nach späterem Entzug einer Freigabe. Nur die Anzeige ihres Namens im Auswahlmenü erzeugt keine Entdeckung. Ein gefälschter observer-Name öffnet keinem anderen Konto eine Galaxie; für die Ablage wird der angemeldete Spieler verwendet. Alle Zuordnungen bleiben rundenbezogen. Die neue Grundlage gewährt Zugriff auf die Daten innerhalb der zugänglichen Galaxie; feinere Bericht-/Allianz-/Freigaberegeln bleiben dem gesonderten Auftrag vorbehalten.
+
+**Dateien:**
+- 3 server/hasa-api/galaxy.php (Webversion 1.2.0-web.8)
+- 3 server/hasa-api/galaxy-read.php
+- 3 server/hasa-api/prospection-read.php
+- 3 server/hasa-api/systems.php
+- 3 server/hasa-api/prospection-reports.php
+- 3 server/hasa-api/galaxy-access.php (neu)
+- 3 server/hasa-api/galaxies.php (neu)
+- 4 database/hasa_1_2_0_galaxies_migration.sql (neu)
+- 3 server/tests/galaxies_integration.py (neu)
+- 1 docs/hasa_1.2.0-galaxies.1.md (neu)
+
+**Migration / Serverinstallation:** Zuerst normalen git pull ausführen. Vor dem Upload einmal die vollständige Datei hasa_1_2_0_galaxies_migration.sql über phpMyAdmin in die vorhandene HASA-Datenbank importieren. Sie erweitert die Typenum um empty und erstellt hasa_galaxy_discoveries; vorhandene Daten/Freigaben bleiben erhalten. Wiederholter Import geprüft. Erst danach HASA-Serverupdate.bat starten und Strg+F5. Die Batch führt keine SQL-Migration aus. Bei fehlender Entdeckungstabelle melden die neuen Endpunkte ausdrücklich galaxy_migration_required. Vollständige Anleitung im neuen Dokument.
+
+**Prüfungen:** 33 lokale MariaDB-/PHP-Integrationstests bestanden, auch mit dem mitgelieferten parametrisierten Testskript: drei Konten, sichtbarer Katalog/HTML-Auswahl, Namenssuche, direkte API-Sperren, Runde 7/8, Entdeckung, entzogene Freigabe, erneute Anmeldung, Observer-Zuordnung, Sondenberichtablage/-zugriff, Nummern 0/255/256, Typ empty, zweimalige Migration und fehlende Migration. PHP-Syntax sämtlicher Dateien erfolgreich. Chromium prüfte benannte Auswahl, 14 Vergleichsspalten, ausgeblendete Standardnamen, erhaltene individuelle Namen, UTC-Zeitwerte, Berichte und Mittelwert sowie Scrollen bei schmalerem Fenster. Onlinekontrolle aller zehn Commit-Dateien erfolgreich.
+
+**Commit:** 6a94d80db79a8e87298ac6463947d98d3422629d – Galaxien bis 255: Namen, persönliche Freigaben und dauerhafte Entdeckungen.
+
+**Restpunkte / CE:** Bitte Tampermonkey-Erfassung prüfen/ergänzen: galaxy_name und galaxy_type aus echten Spieldaten übermitteln; nicht aus der Reihenfolge der sechs Namen im Screenshot ableiten. API akzeptiert die Metadaten bereits. Schwarmplanetentypen bleiben im freien Planeten-Typfeld möglich. Die Verwaltungskonsole und zusätzliche Freigabekriterien sind noch nicht implementiert. Alte frei gespeicherte observer-Namen werden nicht automatisch als Kontoberechtigungen übernommen. Authentifizierte Spielmeldungen werden als Erfassungen akzeptiert; ohne verifizierbare Spielschnittstelle kann HASA den tatsächlichen Ingame-Besuch nicht beweisen. Installation auf dem Produktivserver und echte Scannerprüfung stehen aus; der Sonden-Praxistest wartet auf Styls Forschungsfortschritt. Keine weitere Freigabe für diesen vorbereitenden Auftrag erforderlich.
+
 ## Übergabeformat
 
 Jeder neue Eintrag verwendet mindestens:
