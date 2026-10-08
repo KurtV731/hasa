@@ -6,6 +6,7 @@ require __DIR__ . '/galaxy-access.php';
 $hasaUser = hasaRequireUser(true);
 hasaRequireApiKey();
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') hasaAuthCheckCsrf(true);
+hasaGalaxySchema();
 
 $method = strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET'));
 if ($method === 'GET') {
@@ -37,16 +38,16 @@ function readSystem(): never
     $pdo = hasaPdo();
     hasaRequireGalaxyAccess($pdo, $hasaUser, $round, $galaxy);
 
+    [$scope, $scopeParams] = hasaSystemAccess($hasaUser);
     $query = $pdo->prepare(
-        'SELECT s.id, g.game_id AS galaxy, g.display_name AS galaxy_name,
-                g.galaxy_type, s.system_number AS system, s.system_name,
+        'SELECT s.id, g.game_id AS galaxy, ' . hasaGalaxyMetadata($hasaUser) . ', s.system_number AS system, s.system_name,
                 s.discovered_by, s.visibility, s.last_observed_at,
                 s.last_observed_by, s.last_source
          FROM hasa_systems s
          JOIN hasa_galaxies g ON g.id = s.galaxy_id
-         WHERE g.round_number = ? AND g.game_id = ? AND s.system_number = ?'
+         WHERE g.round_number = ? AND g.game_id = ? AND s.system_number = ? AND ' . $scope . ' ORDER BY s.last_observed_at DESC, s.id DESC LIMIT 1'
     );
-    $query->execute([$round, $galaxy, $system]);
+    $query->execute(array_merge([$round, $galaxy, $system], $scopeParams));
     $row = $query->fetch();
     if (!$row) {
         hasaJson(['ok' => false, 'error' => 'system_not_found'], 404);
@@ -77,11 +78,7 @@ function storeSystem(): never
     $systemNumber = coordinate($input['system'] ?? null, 'system');
     $observedAt = hasaDateTime($input['observed_at'] ?? null);
     $observer = (string)$hasaUser['player_name'];
-    $visibility = hasaChoice(
-        $input['visibility'] ?? 'private',
-        ['private', 'alliance', 'public'],
-        'private'
-    );
+    $visibility = 'private';
     $source = hasaChoice(
         $input['source'] ?? 'unknown',
         ['galaxy_view', 'sun_report', 'manual', 'unknown'],
@@ -121,10 +118,12 @@ function storeSystem(): never
 
         $systemSql = $pdo->prepare(
             'INSERT INTO hasa_systems
-                (galaxy_id, system_number, system_name, discovered_by, visibility,
+                (galaxy_id, system_number, owner_user_id, observed_galaxy_name, observed_galaxy_type, system_name, discovered_by, visibility,
                  last_observed_at, last_observed_by, last_source)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE
+                observed_galaxy_name = COALESCE(VALUES(observed_galaxy_name), observed_galaxy_name),
+                observed_galaxy_type = IF(VALUES(observed_galaxy_type) = "unknown", observed_galaxy_type, VALUES(observed_galaxy_type)),
                 system_name = COALESCE(VALUES(system_name), system_name),
                 discovered_by = COALESCE(VALUES(discovered_by), discovered_by),
                 visibility = VALUES(visibility),
@@ -139,6 +138,9 @@ function storeSystem(): never
         $systemSql->execute([
             $galaxyId,
             $systemNumber,
+            (int)$hasaUser['id'],
+            hasaText($input['galaxy_name'] ?? null, 160),
+            $galaxyType,
             hasaText($input['system_name'] ?? null, 160),
             hasaText($input['discovered_by'] ?? null, 120),
             $visibility,
@@ -185,8 +187,7 @@ function storeSystem(): never
                 hasaText($planet['ruler'] ?? null, 120),
                 hasaText($planet['alliance'] ?? null, 80),
                 hasaText($planet['status'] ?? null, 80),
-                hasaChoice($planet['visibility'] ?? $visibility,
-                           ['private', 'alliance', 'public'], $visibility),
+                'private',
                 $observedAt,
             ]);
         }

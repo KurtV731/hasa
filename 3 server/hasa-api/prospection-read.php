@@ -26,6 +26,7 @@ $system = scanCoordinate('system', 0, 999999);
 $orbit = scanCoordinate('orbit', 1, 255);
 $pdo = hasaPdo();
 hasaRequireGalaxyAccess($pdo, $hasaUser, $round, $galaxy);
+[$scope, $scopeParams] = hasaSystemAccess($hasaUser);
 $query = $pdo->prepare(
     'SELECT r.id, r.observed_at, r.probe_count, r.probe_type_code,
             r.probe_type_name, r.planet_type_name
@@ -33,10 +34,10 @@ $query = $pdo->prepare(
      JOIN hasa_planets p ON p.id = r.target_planet_id
      JOIN hasa_systems s ON s.id = p.system_id
      JOIN hasa_galaxies g ON g.id = s.galaxy_id
-     WHERE g.round_number = ? AND g.game_id = ? AND s.system_number = ? AND p.orbit_position = ?
+     WHERE g.round_number = ? AND g.game_id = ? AND s.system_number = ? AND p.orbit_position = ? AND ' . $scope . '
      ORDER BY r.observed_at DESC, r.id DESC LIMIT 200'
 );
-$query->execute([$round, $galaxy, $system, $orbit]);
+$query->execute(array_merge([$round, $galaxy, $system, $orbit], $scopeParams));
 $reports = $query->fetchAll();
 if ($reports) {
     $discovery = $pdo->prepare('SELECT id FROM hasa_galaxies WHERE round_number = ? AND game_id = ?');

@@ -6,6 +6,7 @@ require __DIR__ . '/galaxy-access.php';
 $hasaUser = hasaRequireUser(true);
 hasaRequireApiKey();
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') hasaAuthCheckCsrf(true);
+hasaGalaxySchema();
 
 $method = strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET'));
 if ($method !== 'POST') {
@@ -45,11 +46,7 @@ if ($orbit < 1 || $orbit > 255) {
     hasaJson(['ok' => false, 'error' => 'invalid_orbit'], 400);
 }
 $observedAt = hasaDateTime($input['observed_at'] ?? null);
-$visibility = hasaChoice(
-    $input['visibility'] ?? 'private',
-    ['private', 'alliance', 'public'],
-    'private'
-);
+$visibility = 'private';
 $measurements = $input['measurements'] ?? null;
 if (!is_array($measurements) || count($measurements) === 0 || count($measurements) > 100) {
     hasaJson(['ok' => false, 'error' => 'invalid_measurements'], 400);
@@ -77,6 +74,7 @@ foreach ($measurements as $metricName => $value) {
     $cleanMeasurements[$name] = $number;
 }
 
+$reportKey = hash('sha256', 'hasa-account:' . (int)$hasaUser['id'] . ':' . $round . ':' . $galaxyNumber . ':' . $systemNumber . ':' . $orbit . ':' . $reportKey);
 $pdo = hasaPdo();
 hasaGalaxySchema();
 $pdo->beginTransaction();
@@ -95,9 +93,11 @@ try {
 
     $systemSql = $pdo->prepare(
         'INSERT INTO hasa_systems
-            (galaxy_id, system_number, visibility, last_observed_at, last_observed_by, last_source)
-         VALUES (?, ?, ?, ?, ?, "unknown")
+            (galaxy_id, system_number, owner_user_id, observed_galaxy_name, observed_galaxy_type, visibility, last_observed_at, last_observed_by, last_source)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, "unknown")
          ON DUPLICATE KEY UPDATE
+            observed_galaxy_name = COALESCE(VALUES(observed_galaxy_name), observed_galaxy_name),
+            observed_galaxy_type = IF(VALUES(observed_galaxy_type) = "unknown", observed_galaxy_type, VALUES(observed_galaxy_type)),
             visibility = IF(VALUES(last_observed_at) >= last_observed_at,
                             VALUES(visibility), visibility),
             last_observed_by = IF(VALUES(last_observed_at) >= last_observed_at,
@@ -108,6 +108,9 @@ try {
     $systemSql->execute([
         $galaxyId,
         $systemNumber,
+        (int)$hasaUser['id'],
+        hasaText($input['galaxy_name'] ?? null, 160),
+        hasaChoice($input['galaxy_type'] ?? 'unknown', ['normal','private','swarm','empty','unknown'], 'unknown'),
         $visibility,
         $observedAt,
         (string)$hasaUser['player_name'],

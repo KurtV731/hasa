@@ -5,9 +5,10 @@ function hasaGalaxySchema(): void
 {
     static $checked = false;
     if ($checked) return;
-    try { hasaPdo()->query('SELECT galaxy_id, user_id FROM hasa_galaxy_discoveries LIMIT 0'); }
+    try { hasaPdo()->query('SELECT galaxy_id, user_id FROM hasa_galaxy_discoveries LIMIT 0');
+        hasaPdo()->query('SELECT owner_user_id, observed_galaxy_name, observed_galaxy_type FROM hasa_systems LIMIT 0'); }
     catch (Throwable $error) {
-        hasaJson(['ok' => false, 'error' => 'galaxy_migration_required', 'message' => 'Bitte zuerst die Galaxien-Migration importieren.'], 503);
+        hasaJson(['ok' => false, 'error' => 'private_migration_required', 'message' => 'Bitte zuerst die private.1-Migration importieren.'], 503);
     }
     $checked = true;
 }
@@ -22,14 +23,13 @@ function hasaGalaxyAccess(array $user, string $alias = 'g'): array
 {
     hasaGalaxySchema();
     if ($alias !== 'g') throw new InvalidArgumentException('Unsupported galaxy alias');
-    if ($user['role'] === 'root') return ['g.game_id BETWEEN 1 AND 255', []];
-    return ['g.game_id BETWEEN 1 AND 255 AND (g.game_id BETWEEN 1 AND 6 OR g.owner_user_id = ? OR EXISTS (SELECT 1 FROM hasa_galaxy_permissions gp WHERE gp.galaxy_id = g.id AND gp.user_id = ?) OR EXISTS (SELECT 1 FROM hasa_galaxy_discoveries gd WHERE gd.galaxy_id = g.id AND gd.user_id = ?))', [(int)$user['id'], (int)$user['id'], (int)$user['id']]];
+    return ['g.game_id BETWEEN 1 AND 255 AND (g.game_id BETWEEN 1 AND 6 OR EXISTS (SELECT 1 FROM hasa_systems own WHERE own.galaxy_id = g.id AND own.owner_user_id = ?))', [(int)$user['id']]];
 }
 function hasaRequireGalaxyAccess(PDO $pdo, array $user, int $round, int $number): void
 {
     hasaGalaxySchema();
     // Die sechs allgemeinen Galaxien sind auch vor ihrer ersten Erfassung zugänglich.
-    if ($number <= 6 || $user['role'] === 'root') return;
+    if ($number <= 6) return;
     [$condition, $params] = hasaGalaxyAccess($user);
     $query = $pdo->prepare('SELECT g.id FROM hasa_galaxies g WHERE g.round_number = ? AND g.game_id = ? AND ' . $condition);
     $query->execute(array_merge([$round, $number], $params));
@@ -47,11 +47,22 @@ function hasaRememberGalaxy(PDO $pdo, array $user, int $galaxyId): void
 function hasaGalaxyCatalog(PDO $pdo, array $user, int $round): array
 {
     [$condition, $params] = hasaGalaxyAccess($user);
-    $query = $pdo->prepare('SELECT g.game_id AS galaxy, g.display_name AS name, g.galaxy_type AS type FROM hasa_galaxies g WHERE g.round_number = ? AND ' . $condition . ' ORDER BY g.game_id');
-    $query->execute(array_merge([$round], $params));
+    $metadata = '(SELECT own.observed_galaxy_name FROM hasa_systems own WHERE own.galaxy_id = g.id AND own.owner_user_id = ? ORDER BY own.last_observed_at DESC, own.id DESC LIMIT 1) AS name, (SELECT own.observed_galaxy_type FROM hasa_systems own WHERE own.galaxy_id = g.id AND own.owner_user_id = ? ORDER BY own.last_observed_at DESC, own.id DESC LIMIT 1) AS type';
+    $metadataParams = [(int)$user['id'], (int)$user['id']];
+    $query = $pdo->prepare('SELECT g.game_id AS galaxy, ' . $metadata . ' FROM hasa_galaxies g WHERE g.round_number = ? AND ' . $condition . ' ORDER BY g.game_id');
+    $query->execute(array_merge($metadataParams, [$round], $params));
     $rows = [];
     for ($i = 1; $i <= 6; $i++) $rows[$i] = ['galaxy' => $i, 'name' => null, 'type' => 'normal'];
     foreach ($query->fetchAll() as $row) $rows[(int)$row['galaxy']] = $row;
     ksort($rows);
     return array_values($rows);
+}
+
+function hasaSystemAccess(array $user): array
+{
+    return ['s.owner_user_id = ?', [(int)$user['id']]];
+}
+function hasaGalaxyMetadata(array $user): string
+{
+    return 's.observed_galaxy_name AS galaxy_name, s.observed_galaxy_type AS galaxy_type';
 }

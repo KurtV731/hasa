@@ -60,10 +60,15 @@ if ($q !== '') {
     $planetWhere[] = "(g.display_name LIKE ? ESCAPE '!' OR s.system_name LIKE ? ESCAPE '!' OR p.planet_name LIKE ? ESCAPE '!' OR p.ruler_name LIKE ? ESCAPE '!' OR p.alliance_tag LIKE ? ESCAPE '!' OR p.planet_type LIKE ? ESCAPE '!')";
     for ($i = 0; $i < 6; $i++) $planetParams[] = containsPattern($q);
 }
+{
+    foreach ($planetWhere as &$condition) $condition = str_replace('g.display_name', 's.observed_galaxy_name', $condition);
+    unset($condition);
+}
 $planetCondition = $planetWhere ? implode(' AND ', $planetWhere) : '1 = 1';
 [$access, $accessParams] = hasaGalaxyAccess($hasaUser);
-$where = 'g.round_number = ? AND ' . $access;
-$params = array_merge([$round], $accessParams);
+[$scope, $scopeParams] = hasaSystemAccess($hasaUser);
+$where = 'g.round_number = ? AND ' . $access . ' AND ' . $scope;
+$params = array_merge([$round], $accessParams, $scopeParams);
 if ($galaxy !== null) { $where .= ' AND g.game_id = ?'; $params[] = $galaxy; }
 if ($system !== null) { $where .= ' AND s.system_number = ?'; $params[] = $system; }
 if ($planetWhere) {
@@ -76,7 +81,7 @@ $from = ' FROM hasa_systems s JOIN hasa_galaxies g ON g.id = s.galaxy_id WHERE '
 $count = $pdo->prepare('SELECT COUNT(*)' . $from);
 $count->execute($params);
 $total = (int)$count->fetchColumn();
-$query = $pdo->prepare('SELECT s.id, g.id AS galaxy_id, g.game_id AS galaxy, g.display_name AS galaxy_name, g.galaxy_type, s.system_number AS system, s.system_name, s.last_observed_at' . $from . ' ORDER BY g.game_id, s.system_number LIMIT ' . $limit . ' OFFSET ' . $offset);
+$query = $pdo->prepare('SELECT s.id, g.id AS galaxy_id, g.game_id AS galaxy, ' . hasaGalaxyMetadata($hasaUser) . ', s.system_number AS system, s.system_name, s.last_observed_at' . $from . ' ORDER BY g.game_id, s.system_number LIMIT ' . $limit . ' OFFSET ' . $offset);
 $query->execute($params);
 $systems = $query->fetchAll();
 $planetQuery = $pdo->prepare(

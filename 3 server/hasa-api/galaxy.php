@@ -7,7 +7,7 @@ $hasaUser = hasaRequireUser();
 $hasaRound = hasaRound($_GET['round'] ?? null);
 $hasaGalaxies = hasaGalaxyCatalog(hasaPdo(), $hasaUser, $hasaRound);
 $hasaFilters = hasaFilterOptions(hasaPdo(), $hasaUser, $hasaRound);
-// HASA Webansicht 1.2.0-web.9 – verdichteter Planetenvergleich für bis zu 14 Spalten.
+// HASA Webansicht 1.2.0-web.10 – verdichteter Planetenvergleich für bis zu 14 Spalten.
 $hasaNonce = base64_encode(random_bytes(18));
 header('Content-Type: text/html; charset=utf-8');
 header('X-Content-Type-Options: nosniff');
@@ -167,8 +167,8 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
       const params = new URLSearchParams({ round: activeRound, galaxy: item.galaxy, system: item.system, orbit: planet.orbit });
       const response = await fetch('prospection-read.php?' + params, { credentials: 'same-origin' });
       if (response.status === 401) { location.assign('login.php'); return; }
-      if (response.status === 403) { location.assign('password-change.php'); return; }
       const payload = await response.json();
+      if (response.status === 403 && payload.error === 'password_change_required') { location.assign('password-change.php'); return; }
       if (!response.ok || !payload.ok || !Array.isArray(payload.data)) throw new Error('read_failed');
       container.replaceChildren();
       const reports = payload.data;
@@ -336,8 +336,8 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
     try {
       const response = await fetch('galaxy-read.php?' + params, { credentials:'same-origin', signal:controller.signal });
       if (response.status === 401) { location.assign('login.php'); return; }
-      if (response.status === 403) { location.assign('password-change.php'); return; }
       const payload = await response.json();
+      if (response.status === 403 && payload.error === 'password_change_required') { location.assign('password-change.php'); return; }
       if (!response.ok || !payload.ok || !Array.isArray(payload.data)) throw new Error('read_failed');
       if (controller !== searchController) return;
       pageLimit = payload.limit;
@@ -380,3 +380,4 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
 </script>
 </body>
 </html>
+
