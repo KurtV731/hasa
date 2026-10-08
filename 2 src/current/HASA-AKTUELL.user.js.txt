@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         HASA – Horizon Ascension Assistant
 // @namespace    horiversum.hasa
-// @version      1.2.0-alpha.19
+// @version      1.2.0-alpha.20
 // @charset      UTF-8
 // @description  Horizon-Assistent mit kompakter Galaxiescanner-Anzeige und aktiver lokaler IndexedDB
 // @match        https://horiversum.org/game/main/main.php*
@@ -17,9 +17,17 @@
 ==========================================================
  HASA – Horizon Ascension Assistant
 
- Version : 1.2.0 Alpha 19
- Status  : Arbeitsfassung mit fester, gespeicherter Fensterbreite
- Build   : 2026-10-07
+ Version : 1.2.0 Alpha 20
+ Status  : Runde-8-Fassung mit angemeldeter Serverübertragung
+ Build   : 2026-10-08
+
+ Neu in Alpha 20:
+ - Tampermonkey erkennt die bestehende HASA-Anmeldung auf serkal.de
+ - der angemeldete Spielername wird statt eines fest eingebauten Namens übertragen
+ - Galaxiesysteme und Sondenberichte werden ausschließlich in Runde 8 geschrieben
+ - der CSRF-Schutz der Anmeldung wird bei jeder Schreibanfrage mitgeführt
+ - ohne Anmeldung bleiben neue Daten lokal beziehungsweise in der Warteschlange
+ - ein Anmeldeknopf führt direkt zur HASA-Anmeldung; danach wird automatisch weitergesendet
 
  Neu in Alpha 19:
  - die von Hand eingestellte HASA-Breite bleibt beim Öffnen eines Bereichs erhalten
@@ -131,18 +139,20 @@
         'PHYSICS', 'PSYCHOLOGY', 'NUCLEARPHYSICS', 'SOLARENERGYTECH'
     ]);
 
-    const HASA_VERSION = '1.2.0 Alpha 19';
-    const HASA_BUILD_LABEL = '1.2.0-alpha19-feste-fensterbreite-2026-10-07';
+    const HASA_VERSION = '1.2.0 Alpha 20';
+    const HASA_BUILD_LABEL = '1.2.0-alpha20-runde8-anmeldung-2026-10-08';
     const HASA_RUNDE = 8;
     const HASA_RUNDE_SCHLUESSEL = 'runde8';
-    // Die gemeinsame MariaDB trennt Runde 7 und 8 noch nicht sicher. Lokal wird
-    // weiter erfasst; gesendet wird erst nach der passenden Servermigration.
-    const HASA_RUNDE_SERVERUEBERTRAGUNG_AKTIV = false;
+    // Die MariaDB und sämtliche Schreibendpunkte trennen Runde 7 und 8 jetzt
+    // verbindlich. Schreibzugriffe gelten ausschließlich für die aktuelle Runde.
+    const HASA_RUNDE_SERVERUEBERTRAGUNG_AKTIV = true;
     const STORAGE_GALASCAN_LETZTER_STAND = 'hasa_galascan_letzter_stand_v1_' + HASA_RUNDE_SCHLUESSEL;
     const STORAGE_GALASCAN_API_KEY = 'hasa_galascan_api_key_v1';
     const HASA_GALASCAN_API_URL = 'https://serkal.de/hasa/systems.php';
     const HASA_PRDR_API_URL = 'https://serkal.de/hasa/prospection-reports.php';
     const HASA_GALAXY_DB_URL = 'https://serkal.de/hasa/galaxy.php';
+    const HASA_AUTH_STATUS_URL = 'https://serkal.de/hasa/auth-status.php';
+    const HASA_LOGIN_URL = 'https://serkal.de/hasa/login.php?next=galaxy.php%3Fround%3D8';
     const STORAGE_PRDR_BERICHTE = 'hasa_prdr_berichte_v1_' + HASA_RUNDE_SCHLUESSEL;
     let galascannerServerStatus = null;
     let galascannerSendet = false;
@@ -156,6 +166,99 @@
     const HAA_PRDR_URL_ZULETZT = new Map();
     let HAA_PRDR_STATUS = null;
     let HAA_PRDR_SENDET = false;
+    let HAA_AUTH_TIMER = null;
+    let HAA_AUTH_ABFRAGE = null;
+    const HAA_SERVER_AUTH = {
+        checkedAt: 0,
+        authenticated: false,
+        passwordChangeRequired: false,
+        playerName: null,
+        csrf: null,
+        error: null
+    };
+
+    function hasaJsonRequest(options) {
+        return new Promise(function (resolve, reject) {
+            GM_xmlhttpRequest({
+                method: options.method || 'GET',
+                url: options.url,
+                timeout: options.timeout || 20000,
+                anonymous: false,
+                withCredentials: true,
+                headers: options.headers || { 'Accept': 'application/json' },
+                data: options.data,
+                onload: function (response) {
+                    let antwort = null;
+                    try {
+                        antwort = JSON.parse(response.responseText || '{}');
+                    } catch (_) {
+                        reject(new Error('Der HASA-Server lieferte keine gültige JSON-Antwort.'));
+                        return;
+                    }
+                    if (response.status >= 200 && response.status < 300 && antwort.ok) {
+                        resolve(antwort);
+                        return;
+                    }
+                    const fehler = new Error(antwort.message || antwort.error || ('HTTP ' + response.status));
+                    fehler.code = antwort.error || null;
+                    fehler.status = response.status;
+                    reject(fehler);
+                },
+                ontimeout: function () { reject(new Error('Zeitüberschreitung beim HASA-Server.')); },
+                onerror: function () { reject(new Error('Netzwerkfehler beim HASA-Server.')); }
+            });
+        });
+    }
+
+    function verwerfeHasaServerAnmeldung(fehler) {
+        HAA_SERVER_AUTH.checkedAt = Date.now();
+        HAA_SERVER_AUTH.authenticated = false;
+        HAA_SERVER_AUTH.passwordChangeRequired = false;
+        HAA_SERVER_AUTH.playerName = null;
+        HAA_SERVER_AUTH.csrf = null;
+        HAA_SERVER_AUTH.error = fehler || null;
+    }
+
+    function aktualisiereHasaServerAnmeldung(force) {
+        const frisch = Date.now() - HAA_SERVER_AUTH.checkedAt < 30000;
+        if (!force && frisch) return Promise.resolve(HAA_SERVER_AUTH);
+        if (HAA_AUTH_ABFRAGE) return HAA_AUTH_ABFRAGE;
+        HAA_AUTH_ABFRAGE = hasaJsonRequest({
+            method: 'GET',
+            url: HASA_AUTH_STATUS_URL + '?_=' + Date.now(),
+            headers: { 'Accept': 'application/json' }
+        }).then(function (antwort) {
+            HAA_SERVER_AUTH.checkedAt = Date.now();
+            HAA_SERVER_AUTH.authenticated = Boolean(antwort.authenticated);
+            HAA_SERVER_AUTH.passwordChangeRequired = Boolean(antwort.password_change_required);
+            HAA_SERVER_AUTH.playerName = antwort.user && antwort.user.player_name
+                ? String(antwort.user.player_name) : null;
+            HAA_SERVER_AUTH.csrf = antwort.csrf ? String(antwort.csrf) : null;
+            HAA_SERVER_AUTH.error = null;
+            return HAA_SERVER_AUTH;
+        }).catch(function (fehler) {
+            verwerfeHasaServerAnmeldung(fehler && fehler.message ? fehler.message : 'Anmeldestatus nicht erreichbar');
+            return HAA_SERVER_AUTH;
+        }).finally(function () {
+            HAA_AUTH_ABFRAGE = null;
+        });
+        return HAA_AUTH_ABFRAGE;
+    }
+
+    function hasaServerSchreibbereit() {
+        return HAA_SERVER_AUTH.authenticated
+            && !HAA_SERVER_AUTH.passwordChangeRequired
+            && Boolean(HAA_SERVER_AUTH.csrf)
+            && Boolean(galascannerApiSchluessel(false));
+    }
+
+    function behandleHasaServerAuthFehler(fehler) {
+        const code = fehler && fehler.code ? String(fehler.code) : '';
+        if (code === 'login_required' || code === 'csrf_invalid'
+                || code === 'password_change_required') {
+            verwerfeHasaServerAnmeldung(fehler.message || code);
+        }
+    }
 
     function prdrNormalisiereText(wert) {
         return String(wert || '').replace(/\s+/g, ' ').trim();
@@ -389,7 +492,7 @@
     function istPrdrUebertragungAktiv() {
         return HASA_RUNDE_SERVERUEBERTRAGUNG_AKTIV
             && istHasaFuerSitzungAktiv()
-            && Boolean(galascannerApiSchluessel(false));
+            && hasaServerSchreibbereit();
     }
 
     function prdrObservedAtIso(bericht) {
@@ -418,7 +521,7 @@
             message_id: bericht.messageId || null,
             fingerprint: bericht.fingerprint,
             observed_at: prdrObservedAtIso(bericht),
-            observer: 'Styl',
+            observer: HAA_SERVER_AUTH.playerName || null,
             visibility: bericht.visibility || 'private',
             source: bericht.sourcePlanet || { name: null, coordinate: null },
             target: {
@@ -434,40 +537,25 @@
         };
     }
 
-    function prdrServerRequest(payload, apiSchluessel) {
-        return new Promise(function (resolve, reject) {
-            GM_xmlhttpRequest({
-                method: 'POST',
-                url: HASA_PRDR_API_URL,
-                timeout: 20000,
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json; charset=UTF-8',
-                    'X-HASA-Key': apiSchluessel
-                },
-                data: JSON.stringify(payload),
-                onload: function (response) {
-                    let antwort = null;
-                    try {
-                        antwort = JSON.parse(response.responseText || '{}');
-                    } catch (_) {
-                        reject(new Error('Der Sondenserver lieferte keine gültige JSON-Antwort.'));
-                        return;
-                    }
-                    if (response.status >= 200 && response.status < 300 && antwort.ok) {
-                        resolve(antwort);
-                        return;
-                    }
-                    reject(new Error(antwort.error || ('HTTP ' + response.status)));
-                },
-                ontimeout: function () { reject(new Error('Zeitüberschreitung beim Sondenserver.')); },
-                onerror: function () { reject(new Error('Netzwerkfehler beim Sondenserver.')); }
-            });
+    function prdrServerRequest(payload, apiSchluessel, csrf) {
+        return hasaJsonRequest({
+            method: 'POST',
+            url: HASA_PRDR_API_URL,
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json; charset=UTF-8',
+                'X-HASA-Key': apiSchluessel,
+                'X-HASA-CSRF': csrf
+            },
+            data: JSON.stringify(payload)
         });
     }
 
     async function verarbeitePrdrUebertragung() {
-        if (HAA_PRDR_SENDET || !istPrdrUebertragungAktiv()) return;
+        if (HAA_PRDR_SENDET || !HASA_RUNDE_SERVERUEBERTRAGUNG_AKTIV
+                || !istHasaFuerSitzungAktiv()) return;
+        await aktualisiereHasaServerAnmeldung(false);
+        if (!istPrdrUebertragungAktiv()) return;
         const apiSchluessel = galascannerApiSchluessel(false);
         if (!apiSchluessel) {
             return;
@@ -483,7 +571,9 @@
         let uebertragen = 0;
         try {
             for (const bericht of offen) {
-                const antwort = await prdrServerRequest(prdrServerPayload(bericht), apiSchluessel);
+                const antwort = await prdrServerRequest(
+                    prdrServerPayload(bericht), apiSchluessel, HAA_SERVER_AUTH.csrf
+                );
                 const index = berichte.findIndex(function (eintrag) { return eintrag && eintrag.id === bericht.id; });
                 if (index >= 0) {
                     berichte[index] = Object.assign({}, berichte[index], {
@@ -501,6 +591,7 @@
                 at: Date.now()
             };
         } catch (fehler) {
+            behandleHasaServerAuthFehler(fehler);
             HAA_PRDR_STATUS = {
                 ok: false,
                 text: 'Sonden-Übertragung fehlgeschlagen: '
@@ -598,7 +689,7 @@
             system: scan.system,
             system_name: scan.systemName || null,
             discovered_by: scan.discoveredBy || null,
-            observer: 'Styl',
+            observer: HAA_SERVER_AUTH.playerName || null,
             observed_at: scan.observedAt || new Date().toISOString(),
             source: 'galaxy_view',
             visibility: scan.visibility || 'private',
@@ -626,42 +717,23 @@
         return schluessel;
     }
 
-    function galascannerRequest(payload, apiSchluessel) {
-        return new Promise(function (resolve, reject) {
-            GM_xmlhttpRequest({
-                method: 'POST',
-                url: HASA_GALASCAN_API_URL,
-                timeout: 20000,
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json; charset=UTF-8',
-                    'X-HASA-Key': apiSchluessel
-                },
-                data: JSON.stringify(payload),
-                onload: function (response) {
-                    let antwort = null;
-                    try {
-                        antwort = JSON.parse(response.responseText || '{}');
-                    } catch (_) {
-                        reject(new Error('Der Server lieferte keine gültige JSON-Antwort.'));
-                        return;
-                    }
-                    if (response.status >= 200 && response.status < 300 && antwort.ok) {
-                        resolve(antwort);
-                        return;
-                    }
-                    reject(new Error(antwort.error || ('HTTP ' + response.status)));
-                },
-                ontimeout: function () { reject(new Error('Zeitüberschreitung beim HASA-Server.')); },
-                onerror: function () { reject(new Error('Netzwerkfehler beim HASA-Server.')); }
-            });
+    function galascannerRequest(payload, apiSchluessel, csrf) {
+        return hasaJsonRequest({
+            method: 'POST',
+            url: HASA_GALASCAN_API_URL,
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json; charset=UTF-8',
+                'X-HASA-Key': apiSchluessel,
+                'X-HASA-CSRF': csrf
+            },
+            data: JSON.stringify(payload)
         });
     }
 
     function galascannerAufnahmeAktiv() {
         return HASA_RUNDE_SERVERUEBERTRAGUNG_AKTIV
-            && istHasaFuerSitzungAktiv()
-            && Boolean(galascannerApiSchluessel(false));
+            && istHasaFuerSitzungAktiv();
     }
 
     function galascannerFingerabdruck(scan) {
@@ -693,6 +765,9 @@
         if (galascannerSendet || !galascannerAufnahmeAktiv()
                 || galascannerWarteschlange.length === 0) return;
 
+        await aktualisiereHasaServerAnmeldung(false);
+        if (!hasaServerSchreibbereit()) return;
+
         const apiSchluessel = galascannerApiSchluessel(false);
         if (!apiSchluessel) {
             galascannerWarteschlange.length = 0;
@@ -703,18 +778,27 @@
         const scan = eintrag.scan;
         galascannerSendet = true;
         try {
-            await galascannerRequest(galascannerPayload(scan), apiSchluessel);
+            await galascannerRequest(
+                galascannerPayload(scan), apiSchluessel, HAA_SERVER_AUTH.csrf
+            );
             galascannerServerStatus = null;
         } catch (fehler) {
+            behandleHasaServerAuthFehler(fehler);
             const text = String(fehler && fehler.message ? fehler.message : fehler);
-            galascannerVorgemerkt.delete(eintrag.fingerabdruck);
-            if (text === 'unauthorized') {
+            const authFehler = ['login_required', 'csrf_invalid', 'password_change_required']
+                .includes(String(fehler && fehler.code || ''));
+            if (authFehler) {
+                galascannerWarteschlange.unshift(eintrag);
+            } else {
+                galascannerVorgemerkt.delete(eintrag.fingerabdruck);
+            }
+            if ((fehler && fehler.code) === 'unauthorized') {
                 speichern(STORAGE_GALASCAN_API_KEY, '');
                 galascannerWarteschlange.length = 0;
             }
             galascannerServerStatus = {
                 ok: false,
-                text: text === 'unauthorized'
+                text: (fehler && fehler.code) === 'unauthorized'
                     ? 'Automatische Übertragung: API-Schlüssel wurde abgelehnt.'
                     : 'System ' + scan.galaxy + ':' + scan.system
                         + ' konnte nicht gespeichert werden: ' + text
@@ -735,6 +819,19 @@
         if (HAA_GALASCAN_TIMER) return;
         pruefeSichtbaresGalaxiesystem();
         HAA_GALASCAN_TIMER = setInterval(pruefeSichtbaresGalaxiesystem, 35000);
+    }
+
+    function installiereHasaAnmeldungspruefung() {
+        if (HAA_AUTH_TIMER) return;
+        HAA_AUTH_TIMER = setInterval(async function () {
+            const vorher = HAA_SERVER_AUTH.authenticated;
+            await aktualisiereHasaServerAnmeldung(true);
+            if (HAA_SERVER_AUTH.authenticated) {
+                verarbeiteGalascannerWarteschlange();
+                verarbeitePrdrUebertragung();
+            }
+            if (vorher !== HAA_SERVER_AUTH.authenticated) baueBox();
+        }, 30000);
     }
 
     function galaxieDatenbankUrlMitStandort() {
@@ -760,6 +857,14 @@
             };
         }
 
+        const anmeldung = document.getElementById('haa-galascan-anmeldung');
+        if (anmeldung) {
+            anmeldung.onclick = function () {
+                const fenster = window.open(HASA_LOGIN_URL, '_blank');
+                if (fenster) fenster.opener = null;
+            };
+        }
+
         const schluessel = document.getElementById('haa-galascan-schluessel');
         if (schluessel && !galascannerApiSchluessel(false)) {
             schluessel.onclick = function () {
@@ -771,6 +876,7 @@
                 galascannerServerStatus = null;
                 baueBox();
                 pruefeSichtbaresGalaxiesystem();
+                verarbeiteGalascannerWarteschlange();
                 verarbeitePrdrUebertragung();
             };
         }
@@ -797,9 +903,20 @@
         const lokalTitel = 'Sondenerfassung aktiv: ' + sichereSondenBerichte.length
             + ' lokal gespeichert';
         let transferFarbe = '#888';
-        let transferTitel = HASA_RUNDE_SERVERUEBERTRAGUNG_AKTIV
-            ? 'Automatische Sonden-Übertragung wartet auf einen API-Schlüssel'
-            : 'Runde 8: Serverübertragung wartet auf die rundengetrennte Datenbank';
+        let transferTitel = 'Anmeldestatus wird geprüft';
+        if (HAA_SERVER_AUTH.checkedAt && !HAA_SERVER_AUTH.authenticated) {
+            transferTitel = HAA_SERVER_AUTH.error
+                ? 'HASA-Anmeldung konnte nicht geprüft werden: ' + HAA_SERVER_AUTH.error
+                : 'Nicht bei HASA angemeldet; lokale Erfassung läuft weiter';
+        } else if (HAA_SERVER_AUTH.passwordChangeRequired) {
+            transferTitel = 'Bitte zuerst das HASA-Startpasswort ändern';
+        } else if (HAA_SERVER_AUTH.authenticated && !galascannerApiSchluessel(false)) {
+            transferTitel = 'Angemeldet als ' + HAA_SERVER_AUTH.playerName
+                + '; API-Schlüssel fehlt';
+        } else if (HAA_SERVER_AUTH.authenticated) {
+            transferTitel = 'Angemeldet als ' + HAA_SERVER_AUTH.playerName
+                + '; automatische Runde-8-Übertragung bereit';
+        }
         if (istPrdrUebertragungAktiv()) {
             transferFarbe = HAA_PRDR_STATUS && !HAA_PRDR_STATUS.ok ? '#FF7777' : '#7CFF7C';
             transferTitel = HAA_PRDR_STATUS && !HAA_PRDR_STATUS.ok
@@ -809,9 +926,9 @@
         let scannerFarbe = '#888';
         let scannerTitel = 'Kein Galaxiesystem geöffnet';
         if (scan.state === 'visible') {
-            if (!HASA_RUNDE_SERVERUEBERTRAGUNG_AKTIV) {
+            if (!HAA_SERVER_AUTH.authenticated) {
                 scannerFarbe = '#FFD27C';
-                scannerTitel = 'Runde 8 lokal erkannt; Serverübertragung vorläufig gesperrt';
+                scannerTitel = 'Runde 8 lokal erkannt; bitte bei HASA anmelden';
             } else if (!galascannerApiSchluessel(false)) {
                 scannerTitel = 'Galaxiesystem erkannt; API-Schlüssel fehlt';
             } else {
@@ -826,6 +943,9 @@
             + '<span title="' + esc(lokalTitel) + '" style="color:#7CFF7C;cursor:help;">●</span>'
             + '<span title="' + esc(transferTitel) + '" style="color:' + transferFarbe + ';cursor:help;">●</span>'
             + '<span title="' + esc(scannerTitel) + '" style="color:' + scannerFarbe + ';cursor:help;">●</span>'
+            + (!HAA_SERVER_AUTH.authenticated
+                ? '<button id="haa-galascan-anmeldung" type="button" style="font-size:11px;cursor:pointer;">Anmelden</button>'
+                : '')
             + (HASA_RUNDE_SERVERUEBERTRAGUNG_AKTIV && !galascannerApiSchluessel(false)
                 ? '<button id="haa-galascan-schluessel" type="button" style="font-size:11px;cursor:pointer;">API-Schlüssel</button>'
                 : '')
@@ -5305,6 +5425,10 @@ return box;
             clearInterval(HAA_GALASCAN_TIMER);
             HAA_GALASCAN_TIMER = null;
         }
+        if (HAA_AUTH_TIMER) {
+            clearInterval(HAA_AUTH_TIMER);
+            HAA_AUTH_TIMER = null;
+        }
         [
             'HAA_BAUALARM_TIMER',
             'HAA_BAUALARM_ANZEIGE_TIMER',
@@ -5350,10 +5474,12 @@ return box;
         setzeHasaSitzungAktiv(true);
         HAA_START_GELAUFEN = true;
         await initialisiereHasaIndexedDb();
+        await aktualisiereHasaServerAnmeldung(true);
         migriereAlteForschungsUeberwachung();
         installiereAutomatischenSeitenscan();
         installierePrdrSofortwaechter();
         installiereAutomatischenGalaxiescan();
+        installiereHasaAnmeldungspruefung();
         installiereAudioFreigabe();
         HAA_PLANLISTEN_TIMER = setInterval(aktivierePlanlistenKlappung, 1400);
         HAA_PLANSTATUS_TIMER = setInterval(aktivierePlanStatusSticky, 1400);
@@ -5376,9 +5502,17 @@ return box;
     setTimeout(starteSicher, 800);
 })();
 
-/* HASA 1.2.0 Alpha 19 – feste gespeicherte Fensterbreite
+/* HASA 1.2.0 Alpha 20 – angemeldete Runde-8-Serverübertragung
 
-   Neu in Alpha 19:
+   Neu in Alpha 20:
+   - bestehende HASA-Anmeldung auf serkal.de wird automatisch erkannt
+   - Schreibanfragen führen Sitzung, CSRF-Schutz, API-Schlüssel und Runde 8 mit
+   - der angemeldete Spielername wird als Beobachter übertragen
+   - ohne gültige Anmeldung bleiben Sondenberichte lokal und Systeme in der Warteschlange
+   - nach einer Anmeldung wird die wartende Übertragung automatisch fortgesetzt
+   - ein eigener Anmeldeknopf erscheint nur, solange keine gültige Sitzung erkannt wurde
+
+   Aus Alpha 19 übernommen:
    - die manuell eingestellte Fensterbreite hat Vorrang vor allen Inhalten
    - Akkordeons, Überschriften und normaler Text verbreitern HASA nicht mehr
    - Text bricht um; breite Tabellen und Listen scrollen innerhalb ihres Bereichs
@@ -5388,7 +5522,7 @@ return box;
    - persönlicher Forschungs-, Gebäude- und Alarmstand beginnt in Runde 8 neu
    - lokale Galaxie- und Sondendaten verwenden getrennte Runde-8-Schlüssel
    - Runde-7-Bestände bleiben unverändert erhalten und werden nicht angezeigt
-   - Serverübertragung wartet auf die rundengetrennte MariaDB/API
+   - MariaDB und API trennen Runde 7 und Runde 8 verbindlich
    - Galaxiedatenbank erhält Runde und aktuelle beziehungsweise letzte Koordinate
 
    Aus Alpha 17 übernommen:
