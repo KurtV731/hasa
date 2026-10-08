@@ -1413,6 +1413,31 @@ Eintrag in der Galaxiedatenbank erscheinen. Ohne Anmeldung muss die lokale Erfas
 weiterlaufen und der Anmeldeknopf sichtbar bleiben.
 
 
+## 08.10.2026 – Codex an Styl und CE HASA: kompakter Planetenvergleich
+
+**Status:** umgesetzt, auf `main` übertragen und online zurückgelesen; Serverupload und Praxistest durch Styl stehen aus.
+
+Auftrag: Alle 14 Planeten eines Systems bei der Breite des vorgelegten Screenshots nebeneinander vergleichen können. Die Systeminformationen stehen jetzt in einer schmalen Leiste über dem Vergleich. Die Planeten haben schmale Spalten, kompaktere Schrift und sparsame Hervorhebung der Ressourcenwerte. Vollständige Namen bleiben erhalten; Zeitangaben stehen zweizeilig einschließlich Sekunden, mit vollständiger UTC-Angabe im Tooltip. Schmale Fenster behalten einen horizontalen Laufbalken.
+
+Betroffene Dateien:
+
+- `3 server/hasa-api/galaxy.php` (Webversion 1.2.0-web.5);
+- `HASA-Serverupdate.bat`;
+- `3 server/tools/server-update.ps1`;
+- `1 docs/hasa_serverupdate.md`.
+
+Die Batch bündelt den früher gewünschten Git-Pull und PHP-Upload über eine vorhandene gespeicherte WinSCP-Verbindung. Nach fehlgeschlagenem Pull findet kein Upload statt. Private Serverkonfigurationen werden ausgeschlossen. Verbindungsname und Zielordner werden ausschließlich lokal gespeichert. Keine Passwörter oder Zugangsdaten wurden ins Repository aufgenommen.
+
+**Migration:** keine. Anmeldung, Rundentrennung, Datenbank und Tampermonkey-Erfassung werden durch diese Änderung nicht verändert.
+
+**Serverinstallation:** einmal `git pull` ausführen, um die neue Batch zu erhalten. Danach im HASA-Hauptordner `HASA-Serverupdate.bat` starten und beim ersten Einsatz den gespeicherten WinSCP-Verbindungsnamen sowie den tatsächlichen Server-Zielordner angeben. Details stehen in `1 docs/hasa_serverupdate.md`. Alternativ nur die neue `galaxy.php` in den bestehenden HASA-Serverordner hochladen. Anschließend Strg+F5 in der Galaxieansicht. Die Batch führt keine Migrationen oder Tampermonkey-Installation aus.
+
+**Prüfungen:** PHP-8.3-Syntax und JavaScript-Syntax erfolgreich. DOM-Regressionsprüfung erfolgreich für Standortvorgaben, Speicherfehler, Vergleichswerte, Berichtsöffnung, Mittelwert, Suche, Pagination, Galaxiefilter und sichere Textausgabe. Chromium-Browsertest mit 14 Testplaneten: Bei 1638 CSS-Pixeln (etwa 2048 Bildschirm-Pixel bei 125 Prozent Skalierung) passen alle 14 ohne horizontalen Laufbalken. Bei 900 CSS-Pixeln funktioniert das horizontale Scrollen. UTC-Sekunden, zwei Berichte und Mittelwert aus insgesamt 200 Sonden geprüft; keine Browserfehler. Alle vier Repository-Dateien nach dem Commit exakt zurückgelesen.
+
+**Commit:** `48c814e7116c88bcfe4bcc9ca9a8970d9dcdc37c` – Galaxieansicht: 14 Planeten kompakt vergleichen; Pull und Upload bündeln.
+
+**Restpunkte:** Windows PowerShell und Produktiv-WinSCP stehen in der Entwicklungsumgebung nicht zur Verfügung. Die Batch wurde überprüft, aber noch nicht unter Windows ausgeführt; ihr erster Upload muss vor Ort geprüft werden. Die Ansicht ist im Testbrowser geprüft, noch nicht auf dem Produktivserver. Bei kleineren Fenstern oder stärkerem Browserzoom können weiterhin nicht alle 14 Spalten gleichzeitig sichtbar sein. Keine zusätzliche Freigabe nötig.
+
 ## Übergabeformat
 
 Jeder neue Eintrag verwendet mindestens:
