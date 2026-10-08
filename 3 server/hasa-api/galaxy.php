@@ -3,7 +3,7 @@ declare(strict_types=1);
 require __DIR__ . '/auth.php';
 $hasaUser = hasaRequireUser();
 $hasaRound = hasaRound($_GET['round'] ?? null);
-// HASA Webansicht 1.2.0-web.5 – verdichteter Planetenvergleich für bis zu 14 Spalten.
+// HASA Webansicht 1.2.0-web.6 – verdichteter Planetenvergleich für bis zu 14 Spalten.
 $hasaNonce = base64_encode(random_bytes(18));
 header('Content-Type: text/html; charset=utf-8');
 header('X-Content-Type-Options: nosniff');
@@ -39,7 +39,7 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
   .scroll { overflow-x:auto; scrollbar-color:#60a5fa #111827; scrollbar-width:auto; padding-bottom:.4rem; }
   table { border-collapse:separate; border-spacing:0; width:100%; }
   th,td { padding:.35rem .55rem; border-bottom:1px solid #475569; text-align:left; }
-  .comparison { --label-width:128px; --planet-width:86px; table-layout:fixed; min-width:calc(var(--label-width) + var(--planet-count,0) * var(--planet-width)); font:14px/1.25 "Arial Narrow","Liberation Sans Narrow",Arial,sans-serif; }
+  .comparison { --label-width:128px; --planet-width:58px; table-layout:fixed; width:calc(var(--label-width) + var(--planet-count,0) * var(--planet-width)); min-width:calc(var(--label-width) + var(--planet-count,0) * var(--planet-width)); font:14px/1.25 "Arial Narrow","Liberation Sans Narrow",Arial,sans-serif; }
   .comparison th,.comparison td { padding:5px 4px; overflow-wrap:anywhere; vertical-align:top; font-weight:400; }
   .comparison th:first-child { position:sticky; left:0; background:#1f2937; z-index:1; width:var(--label-width); color:#bfdbfe; font-weight:500; }
   .comparison thead th { background:#172033; } .comparison thead th:first-child { z-index:2; }
@@ -192,6 +192,19 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
     } catch (_) { container.textContent = 'Die Sondenberichte konnten nicht geladen werden. Bitte schließen und erneut öffnen.'; }
   }
 
+  function isStandardPlanetName(item, planet) {
+    const orbit = Number(planet.orbit);
+    if (!item.system_name || !Number.isInteger(orbit) || orbit < 1 || orbit > 65535) return false;
+    let remaining = orbit, roman = '';
+    for (const [value, numeral] of [[1000,'M'],[900,'CM'],[500,'D'],[400,'CD'],[100,'C'],[90,'XC'],[50,'L'],[40,'XL'],[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']]) {
+      while (remaining >= value) { roman += numeral; remaining -= value; }
+    }
+    // Horizon uses both "System XI" and "SystemXI". Preserve other names.
+    const name = String(planet.name || '').trim();
+    const system = String(item.system_name).trim();
+    return name === system + roman || name === system + ' ' + roman;
+  }
+
   function renderSystem(item) {
     const card = element('article');
     const isCurrent = position && String(item.galaxy) === position.galaxy && String(item.system) === position.system;
@@ -245,7 +258,9 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
         th.append(button);
       }
       th.title = `${item.galaxy}:${item.system}:${planet.orbit} · ${planet.name || 'Unbenannt'}`;
-      th.append(element('strong', String(planet.orbit), 'planet-orbit'), element('span', planet.name || 'Unbenannt', 'planet-name')); header.append(th);
+      th.append(element('strong', String(planet.orbit), 'planet-orbit'));
+      if (!isStandardPlanetName(item, planet)) th.append(element('span', planet.name || 'Unbenannt', 'planet-name'));
+      header.append(th);
     }
     const body = table.createTBody();
     function compactDate(value) {
