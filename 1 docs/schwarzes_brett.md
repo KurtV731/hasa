@@ -1462,6 +1462,24 @@ Die Vergleichstabelle hat jetzt eine feste kompakte Breite statt sich über das 
 **Commit:** `3319dd0fd41cdf27957ce8a9ff2025a9ac50e72a`.
 **Restpunkt:** Serverupload und Sichtprüfung durch Styl.
 
+## 08.10.2026 – Styl an Codex und CE HASA: Galaxienumfang und dauerhafte Sichtbarkeit
+
+**Status:** verbindliche Präzisierung von Styl aufgenommen; technische Erweiterung noch offen.
+
+Die Datenbank soll jede entdeckte Galaxie aufnehmen können, nicht nur Galaxien 1–6. Galaxien besitzen Nummern bis 255 und Namen. Auch Spezialgalaxien (Schwarm-, Privatgalaxien, Leere) sowie Schwarmplaneten müssen berücksichtigt werden. Die Bilder zeigen die Galaxiennamen Green heart, Blue heaven, Ghost island, Deep water, Fire starter und Pantheon!; die Zuordnung der Namen zu Nummern soll aus den Spieldaten stammen und nicht allein aus der Reihenfolge eines Screenshots abgeleitet werden.
+
+**Sichtbarkeit:** Galaxien 1–6 sieht jeder angemeldete Spieler. Weitere Galaxien sieht ein Spieler nach den dafür geltenden Kriterien. Eine rechtmäßig bereits gesehene Galaxie soll für diesen Spieler anschließend dauerhaft zugänglich bleiben (innerhalb der jeweiligen Spielrunde). Dies ist eine persönliche Entdeckungsberechtigung, keine globale Veröffentlichung für alle anderen Spieler. Bei späteren Besuchen entstehende Daten und deren Freigaben müssen bei der gesonderten Rechteplanung ausdrücklich geklärt werden.
+
+**Befund im aktuellen Code:** galaxy.php begrenzt Eingabe und gemerkten Standort auf 6; galaxy-read.php validiert maximal 6 und filtert per BETWEEN 1 AND 6. Das ist eine technische Einschränkung, keine endgültige fachliche Regel.
+
+**Umsetzungspunkte:** Galaxienkatalog mit Nummer, Namen und Art; Eingabe/Auswahl anhand sichtbarer Galaxien; Erfassung bis 255; persönliche Entdeckungsberechtigungen mit serverseitiger Prüfung in Suche, Vergleich und Sondenberichten. Galaxiennamen auch anzeigen und suchbar machen. Rechte für Spezialgalaxien gemeinsam mit CE konkretisieren, bevor deren Daten über allgemeine Leseabfragen freigegeben werden.
+
+**Betroffene Schnittstellen:** Webansicht, Galaxie-Lese-/Schreib-API, Sondenbericht-API, Datenbankschema und Tampermonkey-Erfassung.
+**Migration / Serverinstallation:** für diese Dokumentation keine; für die fachliche Erweiterung noch auszuarbeiten.
+**Prüfungen:** beide Nutzerbilder gelesen; aktuelle Eingabe-, Standort- und API-Grenzen im Repository geprüft.
+**Commit:** dieser Dokumentationscommit; keine Programmänderung in dieser Übergabe.
+**Restpunkte:** Umsetzung des erweiterten Katalogs und der persönlichen Berechtigungen; genauere Freigabekriterien bleiben als gesonderte Rechteplanung offen.
+
 ## Übergabeformat
 
 Jeder neue Eintrag verwendet mindestens:
