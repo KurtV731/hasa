@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__ . '/bootstrap.php';
-const HASA_AUTH_VERSION = '1.2.0-auth.1';
+const HASA_AUTH_VERSION = '1.2.0-auth.2';
 
 function hasaAuthEscape(string $value): string
 {
@@ -64,7 +64,10 @@ function hasaAuthSession(bool $json = false): void
     ini_set('session.gc_maxlifetime', '43200');
     session_name('HASA_SESSION');
     $path = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/hasa/')), '/') . '/';
-    session_set_cookie_params(['lifetime' => 0, 'path' => $path, 'secure' => $https, 'httponly' => true, 'samesite' => 'Lax']);
+    // Das Tampermonkey-Skript läuft auf horiversum.org und ruft die API auf
+    // serkal.de auf. SameSite=None erlaubt dabei die angemeldete Sitzung;
+    // Secure, HttpOnly und der zusätzliche CSRF-Header schützen den Schreibzugriff.
+    session_set_cookie_params(['lifetime' => 0, 'path' => $path, 'secure' => $https, 'httponly' => true, 'samesite' => 'None']);
     if (!session_start()) hasaAuthError('Die Anmeldung ist gerade nicht verfügbar.', 503, $json);
     header('Cache-Control: no-store');
     header('Referrer-Policy: no-referrer');
