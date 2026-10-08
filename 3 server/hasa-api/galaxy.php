@@ -3,7 +3,7 @@ declare(strict_types=1);
 require __DIR__ . '/auth.php';
 $hasaUser = hasaRequireUser();
 $hasaRound = hasaRound($_GET['round'] ?? null);
-// HASA Webansicht 1.2.0-web.6 – verdichteter Planetenvergleich für bis zu 14 Spalten.
+// HASA Webansicht 1.2.0-web.7 – verdichteter Planetenvergleich für bis zu 14 Spalten.
 $hasaNonce = base64_encode(random_bytes(18));
 header('Content-Type: text/html; charset=utf-8');
 header('X-Content-Type-Options: nosniff');
@@ -277,9 +277,7 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
         if (value !== null && value !== undefined) td.title = String(value)+(className === 'date-row' ? ' UTC' : '');
       }
     }
-    compareRow('Koordinate', p => `${item.galaxy}:${item.system}:${p.orbit}`);
     for (const [label, field] of [['Typ','type'],['Spieler','ruler'],['Allianz','alliance'],['Status','status']]) compareRow(label, p => p[field]);
-    compareRow('Beobachtet (UTC)', p => p.last_observed_at, 'date-row');
     compareRow('Sondenbericht (UTC)', p => p.latest_scan?.observed_at, 'date-row');
     compareRow('Sonden', p => p.latest_scan ? `${p.latest_scan.probe_count ?? '?'} · ${p.latest_scan.probe_type_name || p.latest_scan.probe_type_code || 'Typ unbekannt'}` : null);
     const metricNames = new Set((item.planets || []).flatMap(p => (p.latest_scan?.measurements || []).map(m => m.metric_name)));
