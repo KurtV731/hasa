@@ -1508,6 +1508,21 @@ Freigaben und Entdeckungen werden getrennt gespeichert: Eine berechtigt angezeig
 
 **Restpunkte / CE:** Bitte Tampermonkey-Erfassung prüfen/ergänzen: galaxy_name und galaxy_type aus echten Spieldaten übermitteln; nicht aus der Reihenfolge der sechs Namen im Screenshot ableiten. API akzeptiert die Metadaten bereits. Schwarmplanetentypen bleiben im freien Planeten-Typfeld möglich. Die Verwaltungskonsole und zusätzliche Freigabekriterien sind noch nicht implementiert. Alte frei gespeicherte observer-Namen werden nicht automatisch als Kontoberechtigungen übernommen. Authentifizierte Spielmeldungen werden als Erfassungen akzeptiert; ohne verifizierbare Spielschnittstelle kann HASA den tatsächlichen Ingame-Besuch nicht beweisen. Installation auf dem Produktivserver und echte Scannerprüfung stehen aus; der Sonden-Praxistest wartet auf Styls Forschungsfortschritt. Keine weitere Freigabe für diesen vorbereitenden Auftrag erforderlich.
 
+## 08.10.2026 – Codex an Styl und CE HASA: bequemere Websuche
+
+**Status:** nach dem Sammeln der Punkte umgesetzt, auf main übertragen und alle fünf Dateien online exakt verifiziert. Produktivupload steht aus.
+
+**Ergebnis:** Galaxiewechsel lädt sofort ohne zusätzlichen Suchklick, setzt Systemnummer und Ergebnisseite zurück und erhält andere Suchfilter. Allianz als Auswahl tatsächlich erfasster Kennungen aus sichtbaren Galaxien dieser Runde. Umlaufbahn als Auswahl 1–14 plus Alle. Typauswahl enthält die 17 von Styl vorgegebenen Klassen mit Namen und Kürzeln; weitere erfasste Typen (auch Mutterschiffe) kommen automatisch mit ihrem tatsächlichen Kürzel hinzu. Neue Werte aus Suchergebnissen ergänzen die Auswahl unmittelbar. Keine erfundenen Mutterschiffbezeichnungen. Allianz-/Typauswahl verwendet vollständige Kennungen; Teilbegriffe bleiben über die allgemeine Suche möglich. Zusätzliche Auswahlwerte aus nicht zugänglichen Galaxien bleiben verborgen.
+
+**Dateien:** 3 server/hasa-api/galaxy.php (web.9), galaxy-read.php, neue filter-options.php; 3 server/tests/galaxies_integration.py; 1 docs/hasa_1.2.0-web.9.md.
+**Migration:** keine zusätzliche, wenn galaxies.1 bereits installiert ist (Styl bestätigt „hat geklappt“).
+**Serverinstallation:** HASA-Serverupdate.bat starten; danach Strg+F5.
+**Prüfungen:** 41 lokale MariaDB-/PHP-Integrationstests bestanden, einschließlich tatsächlicher HTML-Auswahlwerte, verborgener Allianz-/Typdaten, zusätzlicher Typen, Umlaufbahnen 1–14 und vollständiger Filter. Chromium prüfte Wechsel ohne Suchklick, Rücksetzen von System und Seite, Erhalt von Filtern/Runde, Typ-Ergänzungen sowie 14 Vergleichsspalten, Berichte und Mittelwert. PHP-Syntax aller geänderten PHP-Dateien erfolgreich. Alle fünf Commit-Dateien exakt zurückgelesen.
+**Commit:** 5d1deed93a148adfda1f1846d52a78629e10684d.
+**Restpunkt:** Produktivupload und Sichtprüfung durch Styl.
+
+**Nachtrag von Styl (18:44):** Der spätere Planetenstatus soll Zustand und geplante Nutzung beschreiben: vollkommen unkolonisiert, Kolonisation geplant, Abriss geplant, für Bergbau reserviert; weitere Zustände folgen. „Online“ betrifft den Spieler und ist hierfür nicht der wesentliche Planetenstatus. Fachliche Zustände/Planung müssen künftig getrennt von der erfassten Spieler-Präsenz gespeichert, angezeigt und gesucht werden. Geplante Zustände sind nicht aus einem Online-Wert abzuleiten; Umfang, persönliche/geteilte Planung und Pflege dieser Angaben werden bei der späteren Erweiterung festgelegt. Diese Status-Erweiterung ist noch nicht implementiert; der bestehende Online-Wert wird durch diese Suchänderung nicht umgedeutet.
+
 ## Übergabeformat
 
 Jeder neue Eintrag verwendet mindestens:
