@@ -32,12 +32,18 @@ Tampermonkey als neues Userscript eingefügt und gespeichert.
 
 ## Aktuelle Entwicklungsreihe
 
-**HASA 1.2.0 Alpha 19 – feste Fensterbreite auf kleinen Bildschirmen**
+**HASA 1.2.0 Alpha 20 – angemeldete Runde-8-Serverübertragung**
 
 Aktuelle Testdateien:
 
 - fester Aktualisierungspfad: `2 src/current/HASA-AKTUELL.user.js.txt`
-- archivierte Fassung: `2 src/current/hasa_1.2.0-alpha.19_feste-fensterbreite.user.js.txt`
+- archivierte Fassung: `2 src/current/hasa_1.2.0-alpha.20_runde8-anmeldung.user.js.txt`
+
+Alpha 20 verbindet das Tampermonkey-Skript mit der Benutzeranmeldung auf
+`serkal.de`. Der angemeldete Spielername sowie der CSRF-Schutz werden bei
+Schreibanfragen mitgeführt; Galaxiesysteme und Sondenberichte werden ausschließlich
+Runde 8 zugeordnet. Ohne gültige Anmeldung bleiben neue Sondenberichte lokal und
+Systeme in der Warteschlange. Nach der Anmeldung setzt HASA die Übertragung fort.
 
 Alpha 19 verhindert, dass ein geöffneter HASA-Bereich das Fenster auf kleineren
 Bildschirmen selbstständig verbreitert. Die von Hand eingestellte Breite bleibt
