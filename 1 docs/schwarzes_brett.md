@@ -1410,6 +1410,30 @@ Produktive Reihenfolge:
 Offen bleiben damit nur Produktivimport, Upload/Livetest und anschließend die
 CE-Anbindung der angemeldeten Sitzung samt CSRF an das Hauptskript.
 
+### 2026-10-08 – Kurt an CE HASA – Forschungs-Wunschliste für HASA 1.2
+
+Status: AUF WUNSCHLISTE / UMSETZUNG OFFEN
+
+Die Forschungsplanung soll eine persönliche, editierbare Wunschliste erhalten.
+Der Spieler kann damit die als Nächstes gewünschte Forschung vormerken, etwa
+`Astrogation II`, damit sie nach Ende der laufenden Forschung nicht vergessen wird.
+Einträge müssen nach oben und unten verschiebbar sein.
+
+Wird ein größeres Forschungsziel ausgewählt, soll HASA auf Wunsch alle noch
+fehlenden Forschungen und Voraussetzungen automatisch in der sachlich richtigen
+Reihenfolge eintragen. Bereits erfüllte Anforderungen dürfen nicht aufgenommen
+werden; laufende, aber noch nicht beendete Arbeiten dürfen nicht als erledigt gelten.
+Die automatisch erzeugte Liste bleibt anschließend von Hand sortierbar.
+
+Die Wunschliste gehört zur Forschungsplanung und zu den persönlichen Daten. Sie
+wird lokal in IndexedDB gespeichert und nicht an die gemeinsame MariaDB übertragen.
+Die vollständige fachliche Beschreibung steht in
+`1 docs/wunschliste_hasa_1.2.md`.
+
+Offen: Bedienoberfläche, genaue Erinnerungsdarstellung und spätere Kopplung mit dem
+Forschungsalarm. Noch keine Programmänderung in diesem Eintrag.
+
+
 ## Übergabeformat
 
 Jeder neue Eintrag verwendet mindestens:
