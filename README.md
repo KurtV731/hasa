@@ -114,6 +114,8 @@ Die Entwicklungsreihe 1.2 umfasst außerdem:
 - automatische Erfassung sichtbarer Systeme;
 - dauerhaft erhaltenen Forschungsstand beim Seitenwechsel;
 - gemeinsame Gruppe für Bau- und Forschungsalarm;
+- eine editierbare persönliche Forschungs-Wunschliste mit automatischer
+  Reihenfolge der Voraussetzungen für ein gewähltes Forschungsziel;
 - lesende externe Galaxiedatenbank für die Galaxien 1 bis 6.
 
 ## Funktionen der Version 1.1
