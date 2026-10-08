@@ -4,10 +4,15 @@ require __DIR__ . '/auth.php';
 require __DIR__ . '/galaxy-access.php';
 require __DIR__ . '/filter-options.php';
 $hasaUser = hasaRequireUser();
+$hasaCanAdmin = false;
+try {
+    $adminQuery = hasaPdo()->prepare('SELECT is_user_admin FROM hasa_users WHERE id = ?');
+    $adminQuery->execute([(int)$hasaUser['id']]); $hasaCanAdmin = (bool)$adminQuery->fetchColumn();
+} catch (PDOException $e) { /* Seite bleibt vor useradmin-Migration lesbar. */ }
 $hasaRound = hasaRound($_GET['round'] ?? null);
 $hasaGalaxies = hasaGalaxyCatalog(hasaPdo(), $hasaUser, $hasaRound);
 $hasaFilters = hasaFilterOptions(hasaPdo(), $hasaUser, $hasaRound);
-// HASA Webansicht 1.2.0-web.10 – verdichteter Planetenvergleich für bis zu 14 Spalten.
+// HASA Webansicht 1.2.0-web.11 – verdichteter Planetenvergleich für bis zu 14 Spalten.
 $hasaNonce = base64_encode(random_bytes(18));
 header('Content-Type: text/html; charset=utf-8');
 header('X-Content-Type-Options: nosniff');
@@ -62,7 +67,7 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
 </head>
 <body>
 <h1>HASA – Galaxiedatenbank</h1>
-<p class="muted"><?= hasaAuthEscape($hasaUser['player_name']) ?> · <a href="password-change.php">Passwort ändern</a> · <a href="logout.php">Abmelden</a></p>
+<p class="muted"><?= hasaAuthEscape($hasaUser['player_name']) ?><?php if ($hasaCanAdmin): ?> · <a href="user-admin.php">Benutzerverwaltung</a><?php endif; ?> · <a href="password-change.php">Passwort ändern</a> · <a href="logout.php">Abmelden</a></p>
 <p class="muted">Spielrunde <?= $hasaRound ?> · Galaxien nach persönlicher Sichtbarkeit · Daten anderer Runden werden nicht beigemischt</p>
 <form id="search">
   <input name="round" type="hidden" value="<?= $hasaRound ?>">
@@ -380,4 +385,5 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
 </script>
 </body>
 </html>
+
 
