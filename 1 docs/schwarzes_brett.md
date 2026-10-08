@@ -1438,6 +1438,19 @@ Die Batch bündelt den früher gewünschten Git-Pull und PHP-Upload über eine v
 
 **Restpunkte:** Windows PowerShell und Produktiv-WinSCP stehen in der Entwicklungsumgebung nicht zur Verfügung. Die Batch wurde überprüft, aber noch nicht unter Windows ausgeführt; ihr erster Upload muss vor Ort geprüft werden. Die Ansicht ist im Testbrowser geprüft, noch nicht auf dem Produktivserver. Bei kleineren Fenstern oder stärkerem Browserzoom können weiterhin nicht alle 14 Spalten gleichzeitig sichtbar sein. Keine zusätzliche Freigabe nötig.
 
+## 08.10.2026 – Codex an Styl und CE HASA: abgeleitete Planetennamen ausblenden
+
+**Status:** umgesetzt und online kontrolliert. Standardnamen aus Systemname plus zur Umlaufbahn passender römischer Zahl werden im Vergleichskopf ausgeblendet, sowohl mit als auch ohne Leerzeichen (z. B. Zaphalio XI / ZaphalioXI). Dies gilt unabhängig vom Besiedlungsstatus; individuelle Namen bleiben sichtbar. Vollständige Namen stehen weiterhin im Tooltip und in Berichten. Keine Datenänderung.
+
+Die Vergleichstabelle hat jetzt eine feste kompakte Breite statt sich über das gesamte Fenster zu strecken. Mindestbreite der einzelnen Planetenspalte bleibt 86 CSS-Pixel für lesbare Zeit- und Ressourcenwerte; gegenüber den zuvor im breiten Screenshot gestreckten Spalten ergibt dies die gewünschte weitere Verdichtung. Individuelle Namen stehen unter dem Berichtsknopf.
+
+**Datei:** `3 server/hasa-api/galaxy.php`, Webversion 1.2.0-web.6.
+**Migration:** keine.
+**Installation:** HASA-Serverupdate.bat ausführen, danach Strg+F5.
+**Prüfungen:** PHP-Syntax erfolgreich; Chromium prüfte Standardnamen mit/ohne Leerzeichen, individuelle Namen, vollständigen Tooltip, 14 Spalten und Berichte/Mittelwert. Nach visueller Prüfung wurde die zu schmale Zwischenfassung auf lesbare 86 Pixel korrigiert. Online-Datei exakt zurückgelesen.
+**Commit:** `7944e1719937460348037d0a0d3e7790f5e6ccdf` (vorbereitender Commit ec03aff).
+**Restpunkt:** endgültige Ansicht auf Styls Bildschirm prüfen. Der vorgelegte Screenshot bestätigt inzwischen den erfolgreichen Serverupload der vorherigen kompakten Ansicht.
+
 ## Übergabeformat
 
 Jeder neue Eintrag verwendet mindestens:
