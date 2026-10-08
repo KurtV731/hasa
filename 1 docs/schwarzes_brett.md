@@ -1601,3 +1601,6 @@ Vorgesehener Download-Link nach dem Serverupload:
 Der öffentliche Webserver kann nur über Kurts lokal gespeicherte WinSCP-Sitzung aktualisiert werden. Nach dem gezielten Abruf dieser drei Website-Dateien ist `NUR-WEBSITE-HOCHLADEN.BAT` auszuführen; anschließend kontrolliert Website-Chatty Seite und Download online.
 
 Technischer Hinweis: Die Alpha-20-Anmeldefunktion setzt weiterhin die im CE-Auftrag genannte aktuelle `auth.php` und die Runde-8-Serverumgebung voraus. Die Downloadveröffentlichung ersetzt diesen Server-Praxistest nicht.
+
+
+**Abschlusskontrolle 2026-10-08, 23:02 Uhr:** Kurt hat den Website-Upload mit der reparierten Batch erfolgreich ausgeführt. `https://serkal.de/hasa.html` zeigt Alpha 20 als geschlossene Testphase, den Runde-8-Hinweis und den neuen Downloadknopf. Die Zieldatei antwortet online mit HTTP 200, Inhaltstyp `text/plain` und 242221 übertragenen Bytes. Die Website-Veröffentlichung ist damit abgeschlossen; offen bleibt ausschließlich der im CE-Auftrag genannte HASA-Server-/Praxistest der Anmeldung und Runde-8-Übertragung.
