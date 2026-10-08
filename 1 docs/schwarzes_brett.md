@@ -1523,6 +1523,26 @@ Freigaben und Entdeckungen werden getrennt gespeichert: Eine berechtigt angezeig
 
 **Nachtrag von Styl (18:44):** Der spätere Planetenstatus soll Zustand und geplante Nutzung beschreiben: vollkommen unkolonisiert, Kolonisation geplant, Abriss geplant, für Bergbau reserviert; weitere Zustände folgen. „Online“ betrifft den Spieler und ist hierfür nicht der wesentliche Planetenstatus. Fachliche Zustände/Planung müssen künftig getrennt von der erfassten Spieler-Präsenz gespeichert, angezeigt und gesucht werden. Geplante Zustände sind nicht aus einem Online-Wert abzuleiten; Umfang, persönliche/geteilte Planung und Pflege dieser Angaben werden bei der späteren Erweiterung festgelegt. Diese Status-Erweiterung ist noch nicht implementiert; der bestehende Online-Wert wird durch diese Suchänderung nicht umgedeutet.
 
+## 08.10.2026 – Codex an Kurt und CE HASA: private Kontodaten, Administration getrennt
+
+**Status:** umgesetzt, 81 Integrationstests bestanden, auf main übertragen; alle zehn Dateien im Commit online exakt zurückgelesen. Produktivinstallation noch ausstehend.
+
+**Verbindliche Regel:** Kurts heutige Präzisierung ersetzt die frühere pauschale Galaxiedatenfreigabe und das bisherige Root-Leserecht. Root besitzt Verwaltungsrechte, aber kein automatisches Leserecht auf private Daten anderer Konten. Jeder angemeldete Nutzer einschließlich root liest ausschließlich eigene kontozugeordnete Systeme, Planeten, Galaxiemetadaten und Sondenberichte. Normaler Betrieb und Funktionsprüfung mit einem gewöhnlichen Player-Konto. Benutzerverwaltung bleibt ausschließlich root zugänglich. Keine versteckte Root-Ausnahme, keine automatische Allianz- oder öffentliche Freigabe.
+
+**Ergebnis:** Galaxien 1–6 bleiben auswählbar, gewähren aber keine fremden Daten. Galaxien bis 255 samt Namen/Typen nur aus eigenen Erfassungen. Suche, Trefferzahlen, Filteroptionen, direkte System-/Sonden-APIs und Messwerte verwenden die gleiche Kontobegrenzung. Neue Erfassungen werden serverseitig private gespeichert, auch bei public/alliance-Payload. Systeme gleicher Koordinaten werden je Konto getrennt abgelegt; auch identische Berichtsschlüssel überschreiben keine fremden Berichte. Kontozuordnung stammt aus der authentifizierten Sitzung, nicht aus observer oder übermittelter Kontonummer. Galaxiefreigaben und Entdeckungsnachweise öffnen bis zur gesonderten Freigabeverwaltung keine fremden Datensätze.
+
+**Bestandsdaten:** bleiben erhalten. Ohne nachweisbare Kontozuordnung sind sie für sämtliche Webkonten einschließlich root unsichtbar. Keine unsichere automatische Zuordnung anhand früher frei übermittelter Spielernamen. Erneute Erfassung erzeugt den eigenen Systemstand; eine nachweisbare Bestandszuordnung bleibt gesonderter Auftrag. Keine automatische Übertragung zwischen Root- und Player-Konto.
+
+**Dateien:** 3 server/hasa-api/galaxy-access.php, galaxy-read.php, galaxy.php (web.10), filter-options.php, systems.php, prospection-read.php, prospection-reports.php; 4 database/hasa_1_2_0_private_migration.sql; 3 server/tests/galaxies_integration.py; 1 docs/hasa_1.2.0-web.10.md. Tampermonkey-Dateien und Server-Zugangsdaten nicht geändert.
+
+**Migration und Serverinstallation:** Während der Umstellung keine Erfassungen; Datenbanksicherung, git pull, anschließend die vollständige hasa_1_2_0_private_migration.sql in der HASA-Datenbank über phpMyAdmin importieren. Voraussetzung ist die bisherige galaxies.1-Migration. Neue owner_user_id/galaxiemetadata-Spalten und eindeutiger Index je Konto; bisheriger gemeinsamer Koordinatenindex entfällt. Wiederholbar, keine Löschung. Erst danach HASA-Serverupdate.bat (sämtliche PHP-Dateien zusammen) und Strg+F5. Batch importiert SQL nicht. Fehlende Migration sperrt Datenzugriffe mit 503/private_migration_required. Vor Veröffentlichung Installation und Test mit gewöhnlichem Player-Konto abschließen.
+
+**Prüfungen:** 81 echte PHP-8.3-/MariaDB-Prüfungen mit zwei Player-Konten und root: private Altbestände, gleiche Koordinaten/Berichtsschlüssel, fremde System-/Planeten-/Sondenwerte, Galaxiemetadata, Suche/Filter/HTML, direkte Aufrufe, Runden, 255/Grenzen, gefälschte Identität, erneute Anmeldung, private trotz public/alliance, zweimalige und fehlende Migration. PHP-Syntax aller sieben geänderten PHP-Dateien und JavaScript-Syntax erfolgreich. Testskript ersetzt die bisherigen Tests des nun überholten breiten Galaxie-Leserechts. Keine Tests gegen den Produktivserver durchgeführt.
+
+**Commit:** 15da40700bcfa018e32dc92480f2eab0a945896b – HASA private.1: Kontodaten isolieren, Root ohne fremdes Spieldaten-Leserecht.
+
+**Restpunkte:** SQL-Import/PHP-Upload und Serverprüfung durch Kurt; gewöhnliches Player-Konto für den Betreiber im vorhandenen Benutzerverwaltungsverfahren einrichten. Kein Produktionskonto in dieser Entwicklungsumgebung angelegt. Kurts Freigabeliste und nachweisbare Bestandszuordnung folgen separat. CE bitte die neue strikt private Kontozuordnung bei Bedienhinweisen berücksichtigen; Schnittstellen/Payloads bleiben kompatibel, fehlende Namen/Typen werden nicht aus fremden Daten ergänzt. Veröffentlichung noch nicht erfolgt.
+
 ## Übergabeformat
 
 Jeder neue Eintrag verwendet mindestens:
