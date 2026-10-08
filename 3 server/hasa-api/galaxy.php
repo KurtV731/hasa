@@ -3,7 +3,7 @@ declare(strict_types=1);
 require __DIR__ . '/auth.php';
 $hasaUser = hasaRequireUser();
 $hasaRound = hasaRound($_GET['round'] ?? null);
-// HASA Webansicht 1.2.0-web.4 – Standort, Planetensuche und kompakter Vergleich.
+// HASA Webansicht 1.2.0-web.5 – verdichteter Planetenvergleich für bis zu 14 Spalten.
 $hasaNonce = base64_encode(random_bytes(18));
 header('Content-Type: text/html; charset=utf-8');
 header('X-Content-Type-Options: nosniff');
@@ -19,7 +19,7 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
 <style>
   :root { color-scheme: dark; font: 18px/1.45 system-ui,sans-serif; background:#111827; color:#f3f4f6; }
   [hidden] { display:none !important; }
-  * { box-sizing:border-box; } body { margin:0 auto; max-width:1600px; padding:1rem; }
+  * { box-sizing:border-box; } body { margin:0 auto; max-width:1920px; padding:1rem; }
   h1 { margin:0; font-size:1.5rem; } h2 { margin:0 0 .4rem; font-size:1.15rem; }
   p { margin:.4rem 0 .8rem; } form { padding:.8rem; background:#1f2937; border-radius:.6rem; }
   .filters,.toolbar { display:flex; flex-wrap:wrap; gap:.6rem; align-items:end; }
@@ -29,21 +29,31 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
   button:focus-visible,input:focus-visible,summary:focus-visible,.scroll:focus-visible { outline:3px solid #facc15; outline-offset:2px; }
   details.filters-more { margin-top:.6rem; } summary { cursor:pointer; color:#bfdbfe; } .filters-more .filters { padding-top:.6rem; }
   #status { margin:.7rem 0; min-height:1.4rem; } article { background:#1f2937; padding:.8rem; border-radius:.6rem; margin:.8rem 0; }
-  .system-grid { display:grid; grid-template-columns:210px minmax(0,1fr); gap:.8rem; }
-  .system-summary { border-left:4px solid #64748b; padding:.6rem; align-self:start; position:sticky; top:.5rem; }
+  .system-grid { display:grid; grid-template-columns:minmax(0,1fr); gap:.45rem; }
+  .system-summary { display:flex; flex-wrap:wrap; align-items:center; gap:.2rem .8rem; border-left:4px solid #64748b; padding:.35rem .6rem; }
+  .system-summary h2 { margin:0; font-size:.8rem; font-weight:500; }
+  .system-summary strong { font-size:.95rem; font-weight:600; }
+  .system-summary p { margin:0; font-size:.75rem; }
   .current .system-summary { border-color:#facc15; background:#263249; }
-  .coordinate { font-size:1.5rem; font-weight:700; } .scroll { overflow-x:auto; scrollbar-color:#60a5fa #111827; scrollbar-width:auto; padding-bottom:.4rem; }
-  table { border-collapse:separate; border-spacing:0; width:100%; } th,td { padding:.35rem .55rem; border-bottom:1px solid #475569; text-align:left; }
-  .comparison th,.comparison td { min-width:185px; max-width:230px; overflow-wrap:anywhere; vertical-align:top; }
-  .comparison th:first-child { position:sticky; left:0; background:#1f2937; z-index:1; min-width:190px; width:190px; color:#bfdbfe; }
+  .coordinate { font-size:1.15rem; font-weight:700; }
+  .scroll { overflow-x:auto; scrollbar-color:#60a5fa #111827; scrollbar-width:auto; padding-bottom:.4rem; }
+  table { border-collapse:separate; border-spacing:0; width:100%; }
+  th,td { padding:.35rem .55rem; border-bottom:1px solid #475569; text-align:left; }
+  .comparison { --label-width:128px; --planet-width:86px; table-layout:fixed; min-width:calc(var(--label-width) + var(--planet-count,0) * var(--planet-width)); font:14px/1.25 "Arial Narrow","Liberation Sans Narrow",Arial,sans-serif; }
+  .comparison th,.comparison td { padding:5px 4px; overflow-wrap:anywhere; vertical-align:top; font-weight:400; }
+  .comparison th:first-child { position:sticky; left:0; background:#1f2937; z-index:1; width:var(--label-width); color:#bfdbfe; font-weight:500; }
   .comparison thead th { background:#172033; } .comparison thead th:first-child { z-index:2; }
-  .scan { background:#facc15; color:#111827; padding:.05rem .4rem; margin-right:.4rem; }
+  .planet-orbit { display:block; font-size:16px; font-weight:700; }
+  .planet-name { display:block; margin-top:2px; }
+  .comparison .date-row td { white-space:pre-line; font-size:12.5px; color:#cbd5e1; }
+  .comparison .resource-row td { font-weight:600; font-variant-numeric:tabular-nums; }
+  .scan { float:right; background:#facc15; color:#111827; font:12px/1.3 Arial,sans-serif; padding:2px 3px; margin:0 0 2px 2px; min-width:26px; min-height:24px; }
   .report { margin:.6rem 0; padding:.7rem; background:#111827; border-radius:.4rem; }
   .report label { display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; font-weight:600; }
   input[type=checkbox] { width:1.2rem; height:1.2rem; accent-color:#60a5fa; }
   .muted { color:#cbd5e1; font-size:.85rem; } .average { padding:.7rem; border:1px solid #60a5fa; border-radius:.4rem; margin:.6rem 0; }
   .report-pane { margin-top:.6rem; } #pages { display:flex; gap:.6rem; align-items:center; }
-  @media(max-width:700px) { .system-grid { grid-template-columns:minmax(0,1fr); } .system-summary { position:static; } .comparison th:first-child { min-width:145px; width:145px; } body { padding:.5rem; } }
+  @media(max-width:700px) { .comparison { --label-width:112px; } body { padding:.5rem; } }
 </style>
 </head>
 <body>
@@ -198,6 +208,7 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
     wrap.tabIndex = 0; wrap.setAttribute('role', 'region');
     wrap.setAttribute('aria-label', `Planetenvergleich im System ${item.galaxy}:${item.system}`);
     const table = element('table', undefined, 'comparison');
+    table.style.setProperty('--planet-count', String((item.planets || []).length));
     const header = table.createTHead().insertRow();
     header.append(element('th', 'Merkmal'));
     const pane = element('section', undefined, 'report-pane'); pane.hidden = true;
@@ -233,24 +244,35 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
         });
         th.append(button);
       }
-      th.append(element('span', `${planet.orbit} · ${planet.name || 'Unbenannt'}`)); header.append(th);
+      th.title = `${item.galaxy}:${item.system}:${planet.orbit} · ${planet.name || 'Unbenannt'}`;
+      th.append(element('strong', String(planet.orbit), 'planet-orbit'), element('span', planet.name || 'Unbenannt', 'planet-name')); header.append(th);
     }
     const body = table.createTBody();
-    function compareRow(label, getter) {
-      const row = body.insertRow(); const th = element('th', label); th.scope = 'row'; row.append(th);
-      for (const planet of item.planets || []) row.insertCell().textContent = getter(planet) ?? '–';
+    function compactDate(value) {
+      if (!value) return '–';
+      const match = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}:\d{2}:\d{2})(?:Z)?$/.exec(value);
+      return match ? match[3]+'.'+match[2]+'.'+match[1].slice(-2)+'\n'+match[4] : value;
+    }
+    function compareRow(label, getter, className = '') {
+      const row = body.insertRow(); if (className) row.className = className;
+      const th = element('th', label); th.scope = 'row'; row.append(th);
+      for (const planet of item.planets || []) {
+        const value = getter(planet); const td = row.insertCell();
+        td.textContent = className === 'date-row' ? compactDate(value) : value ?? '–';
+        if (value !== null && value !== undefined) td.title = String(value)+(className === 'date-row' ? ' UTC' : '');
+      }
     }
     compareRow('Koordinate', p => `${item.galaxy}:${item.system}:${p.orbit}`);
     for (const [label, field] of [['Typ','type'],['Spieler','ruler'],['Allianz','alliance'],['Status','status']]) compareRow(label, p => p[field]);
-    compareRow('Planet beobachtet (UTC)', p => p.last_observed_at);
-    compareRow('Letzter Sondenbericht (UTC)', p => p.latest_scan?.observed_at);
+    compareRow('Beobachtet (UTC)', p => p.last_observed_at, 'date-row');
+    compareRow('Sondenbericht (UTC)', p => p.latest_scan?.observed_at, 'date-row');
     compareRow('Sonden', p => p.latest_scan ? `${p.latest_scan.probe_count ?? '?'} · ${p.latest_scan.probe_type_name || p.latest_scan.probe_type_code || 'Typ unbekannt'}` : null);
     const metricNames = new Set((item.planets || []).flatMap(p => (p.latest_scan?.measurements || []).map(m => m.metric_name)));
     for (const name of [...metricNames].sort((a,b) => a.localeCompare(b,'de'))) {
       compareRow(name + ' (%)', p => {
         const metric = (p.latest_scan?.measurements || []).find(m => m.metric_name === name);
         return metric ? number.format(Number(metric.value_percent)) : '–';
-      });
+      }, 'resource-row');
     }
     wrap.append(table); grid.append(wrap); card.append(grid);
     if (metricNames.size) card.append(element('p', 'Schätzwerte aus dem jeweils letzten Sondenbericht. ★ öffnet Einzelberichte und Mittelwertauswahl.', 'muted'));
