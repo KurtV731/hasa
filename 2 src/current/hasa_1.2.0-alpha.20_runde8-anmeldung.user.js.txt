@@ -151,6 +151,7 @@
     const HASA_GALASCAN_API_URL = 'https://serkal.de/hasa/systems.php';
     const HASA_PRDR_API_URL = 'https://serkal.de/hasa/prospection-reports.php';
     const HASA_GALAXY_DB_URL = 'https://serkal.de/hasa/galaxy.php';
+    const HASA_USER_ADMIN_URL = 'https://serkal.de/hasa/user-admin.php';
     const HASA_AUTH_STATUS_URL = 'https://serkal.de/hasa/auth-status.php';
     const HASA_LOGIN_URL = 'https://serkal.de/hasa/login.php?next=galaxy.php%3Fround%3D8';
     const STORAGE_PRDR_BERICHTE = 'hasa_prdr_berichte_v1_' + HASA_RUNDE_SCHLUESSEL;
@@ -173,6 +174,7 @@
         authenticated: false,
         passwordChangeRequired: false,
         playerName: null,
+        isUserAdmin: false,
         csrf: null,
         error: null
     };
@@ -215,6 +217,7 @@
         HAA_SERVER_AUTH.authenticated = false;
         HAA_SERVER_AUTH.passwordChangeRequired = false;
         HAA_SERVER_AUTH.playerName = null;
+        HAA_SERVER_AUTH.isUserAdmin = false;
         HAA_SERVER_AUTH.csrf = null;
         HAA_SERVER_AUTH.error = fehler || null;
     }
@@ -233,6 +236,7 @@
             HAA_SERVER_AUTH.passwordChangeRequired = Boolean(antwort.password_change_required);
             HAA_SERVER_AUTH.playerName = antwort.user && antwort.user.player_name
                 ? String(antwort.user.player_name) : null;
+            HAA_SERVER_AUTH.isUserAdmin = Boolean(antwort.user && antwort.user.is_user_admin);
             HAA_SERVER_AUTH.csrf = antwort.csrf ? String(antwort.csrf) : null;
             HAA_SERVER_AUTH.error = null;
             return HAA_SERVER_AUTH;
@@ -825,12 +829,14 @@
         if (HAA_AUTH_TIMER) return;
         HAA_AUTH_TIMER = setInterval(async function () {
             const vorher = HAA_SERVER_AUTH.authenticated;
+            const vorherBenutzeradmin = HAA_SERVER_AUTH.isUserAdmin;
             await aktualisiereHasaServerAnmeldung(true);
             if (HAA_SERVER_AUTH.authenticated) {
                 verarbeiteGalascannerWarteschlange();
                 verarbeitePrdrUebertragung();
             }
-            if (vorher !== HAA_SERVER_AUTH.authenticated) baueBox();
+            if (vorher !== HAA_SERVER_AUTH.authenticated
+                    || vorherBenutzeradmin !== HAA_SERVER_AUTH.isUserAdmin) baueBox();
         }, 30000);
     }
 
@@ -861,6 +867,14 @@
         if (anmeldung) {
             anmeldung.onclick = function () {
                 const fenster = window.open(HASA_LOGIN_URL, '_blank');
+                if (fenster) fenster.opener = null;
+            };
+        }
+
+        const benutzerverwaltung = document.getElementById('haa-galascan-benutzerverwaltung');
+        if (benutzerverwaltung) {
+            benutzerverwaltung.onclick = function () {
+                const fenster = window.open(HASA_USER_ADMIN_URL, '_blank');
                 if (fenster) fenster.opener = null;
             };
         }
@@ -951,6 +965,10 @@
                 : '')
             + '<button id="haa-galascan-datenbank" type="button" '
             + 'style="font-size:11px;font-weight:bold;cursor:pointer;">Galaxiedatenbank</button>'
+            + (HAA_SERVER_AUTH.authenticated && HAA_SERVER_AUTH.isUserAdmin
+                ? '<button id="haa-galascan-benutzerverwaltung" type="button" '
+                    + 'style="font-size:11px;font-weight:bold;cursor:pointer;">Zur Benutzerverwaltung</button>'
+                : '')
             + '</div>';
 
         if (anzeigeScan.state === 'visible') {

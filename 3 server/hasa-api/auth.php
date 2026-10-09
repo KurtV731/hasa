@@ -102,7 +102,7 @@ function hasaAuthCurrent(bool $json = false): ?array
     if ($now - (int)($_SESSION['last_seen'] ?? 0) > 7200 || $now - (int)($_SESSION['logged_at'] ?? 0) > 43200) {
         hasaAuthForget(); return null;
     }
-    $query = hasaAuthDb($json)->prepare('SELECT id, player_name, role, active, must_change_password, auth_version FROM hasa_users WHERE id = ?');
+    $query = hasaAuthDb($json)->prepare('SELECT id, player_name, role, active, must_change_password, auth_version, is_user_admin, can_manage_user_admins FROM hasa_users WHERE id = ?');
     $query->execute([(int)$_SESSION['user_id']]);
     $user = $query->fetch();
     if (!$user || (int)$user['active'] !== 1 || (int)$user['auth_version'] !== (int)($_SESSION['auth_version'] ?? 0)) {

@@ -1604,3 +1604,15 @@ Technischer Hinweis: Die Alpha-20-Anmeldefunktion setzt weiterhin die im CE-Auft
 
 
 **Abschlusskontrolle 2026-10-08, 23:02 Uhr:** Kurt hat den Website-Upload mit der reparierten Batch erfolgreich ausgeführt. `https://serkal.de/hasa.html` zeigt Alpha 20 als geschlossene Testphase, den Runde-8-Hinweis und den neuen Downloadknopf. Die Zieldatei antwortet online mit HTTP 200, Inhaltstyp `text/plain` und 242221 übertragenen Bytes. Die Website-Veröffentlichung ist damit abgeschlossen; offen bleibt ausschließlich der im CE-Auftrag genannte HASA-Server-/Praxistest der Anmeldung und Runde-8-Übertragung.
+
+### 2026-10-09 – CE HASA an Kurt und DB-/Web-Entwicklung – Benutzerverwaltung im Spiel und bekannte Geräte
+
+**Status:** SPIELBUTTON UMGESETZT / DAUERHAFTE GERÄTEANMELDUNG OFFEN.
+
+Nach erfolgreicher HASA-Anmeldung meldet `auth-status.php` zusätzlich `is_user_admin` und `can_manage_user_admins`. Das Tampermonkey-Skript zeigt ausschließlich angemeldeten Benutzeradmins im Galaxiescanner neben „Galaxiedatenbank“ den Knopf **„Zur Benutzerverwaltung“**. Er öffnet `https://serkal.de/hasa/user-admin.php`. Normale Player erhalten diesen Knopf nicht. Änderungen von Anmeldung oder Benutzeradmin-Recht werden bei der regelmäßigen Statusprüfung erkannt und bauen die Anzeige neu auf.
+
+**Betroffene Dateien:** `3 server/hasa-api/auth.php`, `auth-status.php`; `2 src/current/HASA-AKTUELL.user.js.txt` und die inhaltlich gleiche Alpha-20-Archivfassung.
+
+**Offener Auftrag an DB-/Web-Entwicklung:** Kurts Bedienregel „Er war schon da – rein mit ihm“ als freiwillige, sichere Funktion „Auf diesem persönlichen Gerät angemeldet bleiben“ umsetzen. Kein Passwort und kein dauerhaft gültiger Rohschlüssel im Tampermonkey-Speicher. Vorgesehen sind widerrufbare, serverseitig nur gehasht gespeicherte Gerätekennungen mit Ablauf und Rotation. Passwortänderung, Kontosperre, Rechteentzug und ausdrückliches Abmelden müssen bestehende Geräteanmeldungen ungültig machen. Die normale Sitzung und CSRF-Prüfung bleiben erhalten. Vor Schema- und Sicherheitsentscheidung keine provisorische Verlängerung des PHP-Session-Cookies auf mehrere Wochen.
+
+**Prüfung/Installation:** PHP- und JavaScript-Syntax sowie Sichtbarkeitslogik vor Commit prüfen. Für den Spielbutton müssen die beiden PHP-Dateien auf den Server und das aktualisierte Tampermonkey-Skript installiert werden. Für die spätere Geräteanmeldung sind Migration, Serverdateien, Sicherheitsprüfung und ein eigener Praxistest erforderlich.
