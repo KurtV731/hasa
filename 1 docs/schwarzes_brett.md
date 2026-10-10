@@ -1616,3 +1616,17 @@ Nach erfolgreicher HASA-Anmeldung meldet `auth-status.php` zusätzlich `is_user_
 **Offener Auftrag an DB-/Web-Entwicklung:** Kurts Bedienregel „Er war schon da – rein mit ihm“ als freiwillige, sichere Funktion „Auf diesem persönlichen Gerät angemeldet bleiben“ umsetzen. Kein Passwort und kein dauerhaft gültiger Rohschlüssel im Tampermonkey-Speicher. Vorgesehen sind widerrufbare, serverseitig nur gehasht gespeicherte Gerätekennungen mit Ablauf und Rotation. Passwortänderung, Kontosperre, Rechteentzug und ausdrückliches Abmelden müssen bestehende Geräteanmeldungen ungültig machen. Die normale Sitzung und CSRF-Prüfung bleiben erhalten. Vor Schema- und Sicherheitsentscheidung keine provisorische Verlängerung des PHP-Session-Cookies auf mehrere Wochen.
 
 **Prüfung/Installation:** PHP- und JavaScript-Syntax sowie Sichtbarkeitslogik vor Commit prüfen. Für den Spielbutton müssen die beiden PHP-Dateien auf den Server und das aktualisierte Tampermonkey-Skript installiert werden. Für die spätere Geräteanmeldung sind Migration, Serverdateien, Sicherheitsprüfung und ein eigener Praxistest erforderlich.
+
+### 2026-10-10 – CE HASA an Kurt und Website-Chatty – Alpha 21 mit STAN-Rückfallbestand
+
+**Status:** IM HASA-REPOSITORY UMGESETZT; Veröffentlichung der neuen Testdatei auf der Website noch durch Website-Chatty auszuführen.
+
+**Dringender Anlass:** Besucher, Kontrolleure und neue Testgeräte besitzen häufig keinen lokalen STAN-Altbestand. Ohne Objektbestand brach die Forschungsplanung bisher vor der Zielauswahl ab und war damit nicht vorführbar.
+
+**Verbindliche Regel und Ergebnis:** HASA verwendet einen vorhandenen aktuellen STAN-Bestand. Fehlt dieser, wird die jüngste noch lokal gespeicherte STAN-Version weiterverwendet. Fehlt auf einem frischen Gerät auch diese, lädt HASA die vier öffentlichen Objektlisten des Community-TechTree automatisch als Basisbestand. Der Nutzer muss auf einem neuen Laptop keine alte XML-Datei beschaffen. Ein späterer regulärer STAN-XML-Import ersetzt den Rückfallbestand. Persönliche Forschungs- und Gebäudestufen werden ausdrücklich nicht aus einer alten Runde übernommen; der Rückfall betrifft nur den allgemeinen Objekt-/Zielkatalog.
+
+**Dateien:** `2 src/current/HASA-AKTUELL.user.js.txt` und die inhaltlich gleiche Versionsdatei `2 src/current/hasa_1.2.0-alpha.21_stan-fallback.user.js.txt`. Keine PHP-, SQL- oder Serverdatei geändert.
+
+**Auftrag an Website-Chatty:** Die bisherige Alpha-20-Testdatei durch die neue Alpha 21 aus `HASA-AKTUELL.user.js.txt` ergänzen beziehungsweise als aktuellen Download anbieten. Gewünschter eindeutiger Dateiname: `HASA_Alpha21_geschlossene-Testphase.user.js.txt`. `hasa.html` und `download.html` auf Alpha 21 umstellen; Alpha 20 nicht länger als aktuelle Testfassung kennzeichnen. Danach Kurt den Website-Upload und den zu prüfenden Download-Link nennen.
+
+**Installation für Kurt:** Im Ordner `C:\Hasa` `HASA-AKTUALISIEREN.cmd` starten. Die Batch führt `git pull --ff-only` aus und legt `HASA-AKTUELL.user.js.txt` in die Zwischenablage. Danach in Tampermonkey HASA per Stift öffnen, in den Codetext klicken, `Strg+A`, `Strg+V`, speichern. Kein Serverupload erforderlich.
