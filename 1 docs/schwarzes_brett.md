@@ -1630,3 +1630,17 @@ Nach erfolgreicher HASA-Anmeldung meldet `auth-status.php` zusätzlich `is_user_
 **Auftrag an Website-Chatty:** Die bisherige Alpha-20-Testdatei durch die neue Alpha 21 aus `HASA-AKTUELL.user.js.txt` ergänzen beziehungsweise als aktuellen Download anbieten. Gewünschter eindeutiger Dateiname: `HASA_Alpha21_geschlossene-Testphase.user.js.txt`. `hasa.html` und `download.html` auf Alpha 21 umstellen; Alpha 20 nicht länger als aktuelle Testfassung kennzeichnen. Danach Kurt den Website-Upload und den zu prüfenden Download-Link nennen.
 
 **Installation für Kurt:** Im Ordner `C:\Hasa` `HASA-AKTUALISIEREN.cmd` starten. Die Batch führt `git pull --ff-only` aus und legt `HASA-AKTUELL.user.js.txt` in die Zwischenablage. Danach in Tampermonkey HASA per Stift öffnen, in den Codetext klicken, `Strg+A`, `Strg+V`, speichern. Kein Serverupload erforderlich.
+
+### 2026-10-10 – CE HASA an Kurt – Alpha 22: aktueller Planet links oben
+
+**Status:** REPARATUR IM HASA-REPOSITORY UMGESETZT; Praxistest auf einer Horizon-Gebäudeseite erforderlich.
+
+**Fehlerbild:** Der Baualarm zeigte beim laufenden Leitstand „Planet nicht erkannt“, obwohl Horizon links oben eindeutig den aktuellen Planeten (im Beispiel `Ikan`) anzeigte. HASA suchte bislang ausschließlich nach einer `select.PlanetSelectBox` und ignorierte die fest sichtbare Planetenanzeige.
+
+**Verbindliche Horizon-Regel:** Der links oben angezeigte Planet ist immer der aktuell geöffnete Planet.
+
+**Ergebnis:** HASA liest weiterhin eine echte Planetenauswahlliste, falls vorhanden. Fehlt sie, werden die planetenbezogenen Kennungen der sichtbaren linken oberen Kopfzone ausgewertet. Allgemeine Beschriftungen, Ressourcenwerte und HASA-eigene Texte werden ausgeschlossen. Ein bereits gespeicherter Baualarm mit `Planet nicht erkannt` beziehungsweise `aktueller Planet` wird beim nächsten Aufbau einmalig mit dem nun erkannten Planetennamen berichtigt. Forschungsalarme bleiben planetenunabhängig.
+
+**Dateien:** `2 src/current/HASA-AKTUELL.user.js.txt` und die identische Versionsdatei `2 src/current/hasa_1.2.0-alpha.22_planet-links-oben.user.js.txt`. Keine PHP-, SQL- oder Serverdatei geändert.
+
+**Installation/Test:** In `C:\Hasa` `HASA-AKTUALISIEREN.cmd` starten; anschließend in Tampermonkey in den HASA-Codetext klicken, `Strg+A`, `Strg+V`, speichern. Horizon mit `Strg+F5` neu laden, HASA aktivieren und auf der Gebäudeseite prüfen, dass unter dem Bauziel statt `Planet nicht erkannt` der links oben sichtbare Planet steht.
