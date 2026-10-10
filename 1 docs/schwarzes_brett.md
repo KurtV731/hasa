@@ -37,6 +37,8 @@ Kurt entscheidet insbesondere über:
 
 ### CE HASA – Chefentwickler HASA
 
+Seit 10.10.2026 (Kurts Entscheidung 12:24 Uhr): Codex übernimmt die CE-Aufgaben zusätzlich zum Fachbereich Datenbank/Web.
+
 Der CE HASA trägt die fachliche und technische Gesamtverantwortung für das Hauptskript und koordiniert die gemeinsamen HASA-Schnittstellen mit den beteiligten Fachbereichen.
 
 Zuständigkeit:
@@ -1644,3 +1646,25 @@ Nach erfolgreicher HASA-Anmeldung meldet `auth-status.php` zusätzlich `is_user_
 **Dateien:** `2 src/current/HASA-AKTUELL.user.js.txt` und die identische Versionsdatei `2 src/current/hasa_1.2.0-alpha.22_planet-links-oben.user.js.txt`. Keine PHP-, SQL- oder Serverdatei geändert.
 
 **Installation/Test:** In `C:\Hasa` `HASA-AKTUALISIEREN.cmd` starten; anschließend in Tampermonkey in den HASA-Codetext klicken, `Strg+A`, `Strg+V`, speichern. Horizon mit `Strg+F5` neu laden, HASA aktivieren und auf der Gebäudeseite prüfen, dass unter dem Bauziel statt `Planet nicht erkannt` der links oben sichtbare Planet steht.
+
+### 2026-10-10 – CE HASA (Codex) an Kurt / Website-Chatty – Alpha 23: sichtbarer Erststart
+
+**Status:** FERTIG IM REPOSITORY / vier Dateien auf main übertragen und exakt online zurückgelesen. Installation bei Hetzer und Veröffentlichung auf der Website noch ausstehend.
+
+**Projektleitung:** Kurt hat Codex am 10.10.2026 um 12:24 als neuen CE HASA eingesetzt, zusätzlich zum Fachbereich Datenbank/Web. Die gemeinsame Arbeit erfolgt weiter über dieses Schwarze Brett. Kein anderer Fachbereich wird dadurch automatisch geändert.
+
+**Anlass:** Bei Hetzer ist HASA in Tampermonkey eingeschaltet; im Horizon-Bild ist keine Bereitschaftsanzeige zu sehen. Codebefund: gespeicherte Positionen wurden begrenzt, initiale Anker/Fallbackpositionen nicht durchgehend. Die konkrete Ursache auf Hetzers Rechner ist noch nicht bewiesen.
+
+**Ergebnis:** Jede Positionierung durchläuft nun eine Grenze anhand der tatsächlichen Box- und Browsergröße. Initiale Spielanker und gespeicherte Positionen können die Box nicht vollständig außerhalb ablegen. Fenstergrößenänderung/Browserzoom löst automatisch eine Korrektur aus. Bei geringer Höhe ist die Bereitschaftsanzeige scrollbar; HASA aktivieren bleibt erreichbar. Kein versteckter Menüpunkt und kein manuelles Löschen von Einstellungen. Gültige Positionen bleiben erhalten. Alpha 21/22 sind vollständig enthalten.
+
+**Dateien:** 2 src/current/HASA-AKTUELL.user.js.txt; identische 2 src/current/hasa_1.2.0-alpha.23_sichtbarer-start.user.js.txt; 1 docs/hasa_1.2.0-alpha.23_sichtbarer-start.md; README.md (aktueller Teststand berichtigt).
+
+**Prüfungen:** Node-Syntax bestanden; 25 Chromium-Prüfungen am vollständigen Userscript: Erststart mit leeren Einstellungen, Chatanker außerhalb, gespeicherte Position außerhalb, schmale/niedrige Fenster, gültige Position erhalten, anschließendes Verkleinern, Aktivierungsknopf erreichbar und keine JavaScript-Fehler. Keine reale Horizon-Sitzung verwendet. Alle vier Commit-Dateien online exakt geprüft.
+
+**Commit:** e5049543fb840c7414305b9e53b19945314bc557 – HASA 1.2.0 Alpha 23: Anfangsposition und Fensterwechsel automatisch sichtbar halten.
+
+**Installation für Kurt:** HASA-AKTUALISIEREN.cmd in C:\\Hasa ausführen; in Tampermonkey vorhandenes HASA öffnen, vollständigen Codetext mit Strg+A/Strg+V ersetzen, speichern und Horizon neu laden. Für Hetzer vollständige Alpha23-Datei in bestehendem Script ersetzen. Keine Migration, kein PHP-/Datenbank-Upload, keine Neuanlage von Benutzerkonten.
+
+**Website-Übergabe:** Bitte vollständige aktuelle Datei unverändert als HASA_Alpha23_geschlossene-Testphase.user.js.txt bereitstellen; hasa.html/download.html auf Alpha23 umstellen. Alpha20/21/22 nicht länger als aktuellen Testdownload kennzeichnen. Websiteupload erfolgt mit Kurts vorhandener Batch. Kein Website-Repository in diesem Auftrag verändert.
+
+**Restpunkt:** Hetzer muss nach der Installation die sichtbare Bereitschaft und Aktivierung bestätigen. Wenn die Anzeige trotz Korrektur fehlt, liegt möglicherweise ein anderer Start-/Ausführungsfehler vor; keine Behauptung, seine Installation sei bereits geprüft.
