@@ -32,12 +32,17 @@ Tampermonkey als neues Userscript eingefügt und gespeichert.
 
 ## Aktuelle Entwicklungsreihe
 
-**HASA 1.2.0 Alpha 20 – angemeldete Runde-8-Serverübertragung**
+**HASA 1.2.0 Alpha 23 – sichtbare Anfangsposition**
 
 Aktuelle Testdateien:
 
 - fester Aktualisierungspfad: `2 src/current/HASA-AKTUELL.user.js.txt`
-- archivierte Fassung: `2 src/current/hasa_1.2.0-alpha.20_runde8-anmeldung.user.js.txt`
+- archivierte Fassung: `2 src/current/hasa_1.2.0-alpha.23_sichtbarer-start.user.js.txt`
+
+Alpha 23 begrenzt auch die erste Fensterposition aus Horizon-Ankern auf den sichtbaren
+Browserbereich und korrigiert sie automatisch nach Fenstergrößenänderungen. Der
+Aktivierungsknopf bleibt erreichbar. Alpha 21 (STAN-Rückfallbestand) und Alpha 22
+(aktueller Planet links oben) sind enthalten.
 
 Alpha 20 verbindet das Tampermonkey-Skript mit der Benutzeranmeldung auf
 `serkal.de`. Der angemeldete Spielername sowie der CSRF-Schutz werden bei

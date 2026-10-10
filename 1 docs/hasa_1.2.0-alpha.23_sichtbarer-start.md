@@ -1,0 +1,9 @@
+# HASA 1.2.0 Alpha 23 – sichtbare Anfangsposition
+
+Reparaturauftrag von Kurt am 10.10.2026: Hetzers erstes HASA ist in Tampermonkey eingeschaltet, aber die Bereitschaftsanzeige ist im Screenshot nicht sichtbar. Im bisherigen Code wurden gespeicherte Positionen begrenzt, jedoch nicht alle erstmaligen Positionen aus Horizon-Ankern/Fallbacks.
+
+Alpha 23 führt jede Positionierung durch dieselbe Sichtbarkeitsgrenze. Die tatsächliche Boxgröße wird berücksichtigt und auf die aktuelle Browsergröße begrenzt. Ein resize-Ereignis (auch bei verändertem Desktop-Browserzoom) holt die Box automatisch in den sichtbaren Bereich. Keine Suche nach versteckten Menüpunkten, kein manuelles Löschen von Einstellungen. Bereitschaft bleibt bei niedrigen Fenstern scrollbar, sodass HASA aktivieren erreichbar ist. Gültige Positionen bleiben erhalten; gespeicherte Benutzereinstellungen werden nicht gelöscht. Die Reparaturen aus Alpha 21 und 22 bleiben enthalten.
+
+Installation für Kurt: HASA-AKTUALISIEREN.cmd in C:\Hasa ausführen, Tampermonkey-HASA öffnen, vollständigen Codetext mit Strg+A/Strg+V ersetzen, speichern, Horizon neu laden. Für Hetzer die vollständige Alpha-23-Datei in seinem vorhandenen Tampermonkey-HASA ersetzen. Kein PHP-Upload und keine SQL-Migration.
+
+Prüfung: Node-Syntaxprüfung; Chromium mit vollständigem Userscript und leeren GM-Einstellungen beziehungsweise gespeicherter Position. Erststart, außerhalb liegender Chatanker, gespeicherte Position außerhalb des Bildschirms, schmale/niedrige Fenster, unveränderte gültige Position und anschließendes Verkleinern. HASA aktivieren wird auf Erreichbarkeit geprüft. Kein Zugriff auf reale Spielkonten. Hetzers konkrete Installation und mögliche Browser-/Userscript-Ausführungsfehler sind damit noch nicht überprüft; die erkannte Positionsschwachstelle wird gezielt repariert.
