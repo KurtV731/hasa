@@ -67,7 +67,7 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
 </head>
 <body>
 <h1>HASA – Galaxiedatenbank</h1>
-<p class="muted"><?= hasaAuthEscape($hasaUser['player_name']) ?><?php if ($hasaCanAdmin): ?> · <a href="user-admin.php">Benutzerverwaltung</a><?php endif; ?> · <a href="password-change.php">Passwort ändern</a> · <a href="logout.php">Abmelden</a></p>
+<p class="muted"><?= hasaAuthEscape($hasaUser['player_name']) ?><?php if ($hasaCanAdmin): ?> · <a href="user-admin.php">Benutzerverwaltung</a><?php endif; ?> · <a href="settings.php?round=<?= $hasaRound ?>">Meine Datenfreigaben</a> · <a href="password-change.php">Passwort ändern</a> · <a href="logout.php">Abmelden</a></p>
 <p class="muted">Spielrunde <?= $hasaRound ?> · Galaxien nach persönlicher Sichtbarkeit · Daten anderer Runden werden nicht beigemischt</p>
 <form id="search">
   <input name="round" type="hidden" value="<?= $hasaRound ?>">
@@ -240,6 +240,7 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
     summary.append(element('div', `${item.galaxy}:${item.system}`, 'coordinate'));
     if (item.galaxy_name) summary.append(element('p', item.galaxy_name, 'muted'));
     if (item.system_name) summary.append(element('strong', item.system_name));
+    if (item.data_owner) summary.append(element('p', `Erfasst von: ${item.data_owner}`, 'muted'));
     summary.append(element('p', `${(item.planets || []).length} Planeten in dieser Auswahl`, 'muted'));
     if (item.last_observed_at) summary.append(element('p', `System beobachtet: ${item.last_observed_at} UTC`, 'muted'));
     grid.append(summary);
@@ -385,5 +386,6 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
 </script>
 </body>
 </html>
+
 
 

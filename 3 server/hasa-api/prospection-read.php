@@ -26,9 +26,9 @@ $system = scanCoordinate('system', 0, 999999);
 $orbit = scanCoordinate('orbit', 1, 255);
 $pdo = hasaPdo();
 hasaRequireGalaxyAccess($pdo, $hasaUser, $round, $galaxy);
-[$scope, $scopeParams] = hasaSystemAccess($hasaUser);
+[$scope, $scopeParams] = hasaSystemAccess($hasaUser, true);
 $query = $pdo->prepare(
-    'SELECT r.id, r.observed_at, r.probe_count, r.probe_type_code,
+    'SELECT r.id, (SELECT player_name FROM hasa_users WHERE id=s.owner_user_id) AS data_owner, r.observed_at, r.probe_count, r.probe_type_code,
             r.probe_type_name, r.planet_type_name
      FROM hasa_prospection_reports r
      JOIN hasa_planets p ON p.id = r.target_planet_id
@@ -55,3 +55,4 @@ foreach ($reports as &$report) {
 }
 unset($report);
 hasaJson(['ok' => true, 'round' => $round, 'data' => $reports, 'limit' => 200]);
+

@@ -121,7 +121,9 @@ function hasaAuthDestination(mixed $value): string
     // Nur feste lokale Ziele, keine frei wählbare Rückleitungsadresse.
     if (!is_string($value) || str_contains($value, "\r") || str_contains($value, "\n")) return 'galaxy.php';
     $parts = parse_url($value);
-    if ($parts === false || isset($parts['scheme']) || isset($parts['host']) || isset($parts['fragment']) || !in_array(($parts['path'] ?? ''), ['galaxy.php', 'user-admin.php'], true)) return 'galaxy.php';
+    if ($parts === false || isset($parts['scheme']) || isset($parts['host']) || isset($parts['fragment']) || !in_array(($parts['path'] ?? ''), ['galaxy.php', 'user-admin.php', 'settings.php', 'sharing-install.php'], true)) return 'galaxy.php';
+    if ($parts['path'] === 'sharing-install.php') return 'sharing-install.php';
+    if ($parts['path'] === 'settings.php') return 'settings.php';
     if ($parts['path'] === 'user-admin.php') return 'user-admin.php';
     $result = 'galaxy.php';
     if (isset($parts['query'])) {
@@ -228,4 +230,5 @@ set_exception_handler(static function (Throwable $error): never {
     $json = in_array($script, ['auth-status.php','galaxy-read.php','prospection-read.php','systems.php','prospection-reports.php'], true);
     hasaAuthError('Die Funktion ist gerade nicht verfügbar. Bitte später erneut versuchen.', 503, $json);
 });
+
 

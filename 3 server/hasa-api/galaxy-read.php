@@ -81,15 +81,16 @@ $from = ' FROM hasa_systems s JOIN hasa_galaxies g ON g.id = s.galaxy_id WHERE '
 $count = $pdo->prepare('SELECT COUNT(*)' . $from);
 $count->execute($params);
 $total = (int)$count->fetchColumn();
-$query = $pdo->prepare('SELECT s.id, g.id AS galaxy_id, g.game_id AS galaxy, ' . hasaGalaxyMetadata($hasaUser) . ', s.system_number AS system, s.system_name, s.last_observed_at' . $from . ' ORDER BY g.game_id, s.system_number LIMIT ' . $limit . ' OFFSET ' . $offset);
+$query = $pdo->prepare('SELECT s.id, (SELECT player_name FROM hasa_users WHERE id=s.owner_user_id) AS data_owner, g.id AS galaxy_id, g.game_id AS galaxy, ' . hasaGalaxyMetadata($hasaUser) . ', s.system_number AS system, s.system_name, s.last_observed_at' . $from . ' ORDER BY g.game_id, s.system_number LIMIT ' . $limit . ' OFFSET ' . $offset);
 $query->execute($params);
 $systems = $query->fetchAll();
+[$reportScope, $reportParams] = hasaSystemAccess($hasaUser, true);
 $planetQuery = $pdo->prepare(
     "SELECT p.orbit_position AS orbit, p.planet_name AS name, p.planet_type AS type,
             p.ruler_name AS ruler, p.alliance_tag AS alliance, p.game_status AS status,
             p.last_observed_at,
-            (SELECT COUNT(*) FROM hasa_prospection_reports r WHERE r.target_planet_id = p.id) AS report_count,
-            (SELECT r.id FROM hasa_prospection_reports r WHERE r.target_planet_id = p.id
+            (SELECT COUNT(*) FROM hasa_prospection_reports r WHERE r.target_planet_id = p.id AND " . $reportScope . ") AS report_count,
+            (SELECT r.id FROM hasa_prospection_reports r WHERE r.target_planet_id = p.id AND " . $reportScope . "
              ORDER BY r.observed_at DESC, r.id DESC LIMIT 1) AS latest_report_id
      FROM hasa_planets p JOIN hasa_systems s ON s.id = p.system_id JOIN hasa_galaxies g ON g.id = s.galaxy_id
      WHERE p.system_id = ? AND " . $planetCondition . ' ORDER BY p.orbit_position'
@@ -99,7 +100,7 @@ $metricQuery = $pdo->prepare('SELECT metric_name, value_percent FROM hasa_prospe
 foreach ($systems as &$row) {
     hasaRememberGalaxy($pdo, $hasaUser, (int)$row['galaxy_id']);
     unset($row['galaxy_id']);
-    $planetQuery->execute(array_merge([(int)$row['id']], $planetParams));
+    $planetQuery->execute(array_merge($reportParams, $reportParams, [(int)$row['id']], $planetParams));
     $row['planets'] = $planetQuery->fetchAll();
     foreach ($row['planets'] as &$planet) {
         $planet['latest_scan'] = null;
@@ -120,3 +121,4 @@ foreach ($systems as &$row) {
 }
 unset($row);
 hasaJson(['ok' => true, 'round' => $round, 'data' => $systems, 'limit' => $limit, 'offset' => $offset, 'total' => $total, 'has_more' => $offset + count($systems) < $total]);
+

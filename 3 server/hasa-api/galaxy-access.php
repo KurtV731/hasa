@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__ . '/sharing-service.php';
 // Gemeinsame, rundenbezogene Sichtbarkeit für sämtliche Galaxie-Lesezugriffe.
 function hasaGalaxySchema(): void
 {
@@ -23,7 +24,8 @@ function hasaGalaxyAccess(array $user, string $alias = 'g'): array
 {
     hasaGalaxySchema();
     if ($alias !== 'g') throw new InvalidArgumentException('Unsupported galaxy alias');
-    return ['g.game_id BETWEEN 1 AND 255 AND (g.game_id BETWEEN 1 AND 6 OR EXISTS (SELECT 1 FROM hasa_systems own WHERE own.galaxy_id = g.id AND own.owner_user_id = ?))', [(int)$user['id']]];
+    [$visible, $params] = hasaSharingScope($user, false, 'visible');
+    return ['g.game_id BETWEEN 1 AND 255 AND (g.game_id BETWEEN 1 AND 6 OR EXISTS (SELECT 1 FROM hasa_systems visible WHERE visible.galaxy_id=g.id AND ' . $visible . ') OR EXISTS (SELECT 1 FROM hasa_galaxy_discoveries d WHERE d.galaxy_id=g.id AND d.user_id=?))', array_merge($params,[(int)$user['id']])];
 }
 function hasaRequireGalaxyAccess(PDO $pdo, array $user, int $round, int $number): void
 {
@@ -47,8 +49,9 @@ function hasaRememberGalaxy(PDO $pdo, array $user, int $galaxyId): void
 function hasaGalaxyCatalog(PDO $pdo, array $user, int $round): array
 {
     [$condition, $params] = hasaGalaxyAccess($user);
-    $metadata = '(SELECT own.observed_galaxy_name FROM hasa_systems own WHERE own.galaxy_id = g.id AND own.owner_user_id = ? ORDER BY own.last_observed_at DESC, own.id DESC LIMIT 1) AS name, (SELECT own.observed_galaxy_type FROM hasa_systems own WHERE own.galaxy_id = g.id AND own.owner_user_id = ? ORDER BY own.last_observed_at DESC, own.id DESC LIMIT 1) AS type';
-    $metadataParams = [(int)$user['id'], (int)$user['id']];
+    [$visible, $visibleParams] = hasaSharingScope($user, false, 'visible');
+    $metadata = '(SELECT visible.observed_galaxy_name FROM hasa_systems visible WHERE visible.galaxy_id=g.id AND ' . $visible . ' ORDER BY (visible.owner_user_id=?) DESC,visible.last_observed_at DESC,visible.id DESC LIMIT 1) AS name, (SELECT visible.observed_galaxy_type FROM hasa_systems visible WHERE visible.galaxy_id=g.id AND ' . $visible . ' ORDER BY (visible.owner_user_id=?) DESC,visible.last_observed_at DESC,visible.id DESC LIMIT 1) AS type';
+    $metadataParams = array_merge($visibleParams,[(int)$user['id']],$visibleParams,[(int)$user['id']]);
     $query = $pdo->prepare('SELECT g.game_id AS galaxy, ' . $metadata . ' FROM hasa_galaxies g WHERE g.round_number = ? AND ' . $condition . ' ORDER BY g.game_id');
     $query->execute(array_merge($metadataParams, [$round], $params));
     $rows = [];
@@ -58,11 +61,12 @@ function hasaGalaxyCatalog(PDO $pdo, array $user, int $round): array
     return array_values($rows);
 }
 
-function hasaSystemAccess(array $user): array
+function hasaSystemAccess(array $user, bool $reports = false): array
 {
-    return ['s.owner_user_id = ?', [(int)$user['id']]];
+    return hasaSharingScope($user, $reports);
 }
 function hasaGalaxyMetadata(array $user): string
 {
     return 's.observed_galaxy_name AS galaxy_name, s.observed_galaxy_type AS galaxy_type';
 }
+
