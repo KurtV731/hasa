@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         HASA – Horizon Ascension Assistant
 // @namespace    horiversum.hasa
-// @version      1.2.0-alpha.24
+// @version      1.2.0-alpha.25
 // @charset      UTF-8
 // @description  Horizon-Assistent mit kompakter Galaxiescanner-Anzeige und aktiver lokaler IndexedDB
 // @match        https://horiversum.org/game/main/main.php*
@@ -17,9 +17,14 @@
 ==========================================================
  HASA – Horizon Ascension Assistant
 
- Version : 1.2.0 Alpha 24
- Status  : Reparatur des STAN-XML-Imports
+ Version : 1.2.0 Alpha 25
+ Status  : Rekursive Voraussetzungen und eindeutige Spielstände
  Build   : 2026-10-11
+
+ Neu in Alpha 25:
+ - fehlende Voraussetzungen rekursiv mit Herkunft anzeigen
+ - Forschungsstände global, Gebäudestände je erkanntem Planeten
+ - eindeutige IDs statt Teiltreffer; normale Zielwahl mit nächster Stufe
 
  Neu in Alpha 24:
  - gültige STAN-Daten trotz angehängter PHP-Serverwarnungen importieren
@@ -2715,7 +2720,9 @@ return box;
             : (bereich === 'shipyard' ? 'ship' : ''));
         if (!typ) return 0;
 
-        const stand = laden(STORAGE_TECHTREE_SPIELSTAND, {});
+        const speicherKey = typ === 'building' ? techTreeGebaeudeSpeicherKey() : STORAGE_TECHTREE_SPIELSTAND;
+        if (!speicherKey) return 0;
+        const stand = laden(speicherKey, {});
         const neu = stand && typeof stand === 'object' && !Array.isArray(stand) ? stand : {};
 
         // 1.2.0-alpha.3: Eine geöffnete Horizon-Unterseite zeigt nicht zwingend
@@ -2828,28 +2835,31 @@ return box;
             });
         }
 
-        if (gefunden) speichern(STORAGE_TECHTREE_SPIELSTAND, neu);
+        if (gefunden) speichern(speicherKey, neu);
         return gefunden;
     }
 
+    function techTreeGebaeudeSpeicherKey() {
+        const auswahl = document.querySelector('select.PlanetSelectBox');
+        const id = auswahl && String(auswahl.value || '').trim();
+        const name = findeAktuellenPlanetennamen();
+        const planet = id ? 'id:' + id : (name && name !== 'Planet nicht erkannt' ? 'name:' + name : '');
+        return planet ? STORAGE_TECHTREE_SPIELSTAND + '_planet_' + encodeURIComponent(planet) : null;
+    }
+
     function ermittleErfuellungsstand(req) {
-        const stand = laden(STORAGE_TECHTREE_SPIELSTAND, {});
         const reqId = String(req && req.id || '').trim().toUpperCase();
-        const zielName = normalisiereTechTreeName(req.name);
-        let eintrag = reqId && stand ? stand['id:' + reqId] : null;
-        if (!eintrag) eintrag = stand && stand[zielName];
-
-        if (!eintrag && stand && typeof stand === 'object') {
-            const zielKurz = zielName.replace(/^(grundlagen der|grundlagen von|erweiterte|allgemeine)\s+/, '')
-                .replace(/\s+(forschung|technik)$/, '');
-            const kandidaten = Object.keys(stand).filter(function (key) {
-                if (key.indexOf('id:') === 0 || !key || key.length < 4 || zielKurz.length < 4) return false;
-                return key === zielKurz || key.includes(zielKurz) || zielKurz.includes(key);
-            });
-            if (kandidaten.length === 1) eintrag = stand[kandidaten[0]];
-        }
-
-        const aktuell = eintrag && Number.isFinite(Number(eintrag.level)) ? Number(eintrag.level) : null;
+        const typ = req.type && req.type !== 'unknown' ? req.type : ermittleTechTreeTypAusIdUndName(reqId, req.name);
+        const key = typ === 'building' ? techTreeGebaeudeSpeicherKey() : STORAGE_TECHTREE_SPIELSTAND;
+        const stand = key ? laden(key, {}) : {};
+        const passt = e => e && (!e.id || !reqId || String(e.id).toUpperCase() === reqId)
+            && (!e.type || typ === 'unknown' || e.type === typ);
+        let eintrag = stand && stand['id:' + reqId];
+        if (!passt(eintrag)) eintrag = stand && stand[normalisiereTechTreeName(req.name)];
+        if (!passt(eintrag)) eintrag = null;
+        const level = eintrag && eintrag.level;
+        const aktuell = level !== null && level !== undefined && level !== '' && Number.isFinite(Number(level))
+            && Number(level) >= 0 ? Number(level) : null;
         return { aktuell: aktuell, erledigt: aktuell !== null && aktuell >= Number(req.level) };
     }
 
@@ -3138,63 +3148,34 @@ return box;
 
     function sammleTechTreeAnforderungen(graph, zielId, zielStufe) {
         const debug = [];
-        const objekt = graph && graph[zielId];
-        const grenze = Math.max(1, Number(zielStufe) || 1);
-
-        techTreeDebugZeile(debug, '=== DIREKTE MINDESTANFORDERUNGEN ===');
-        techTreeDebugZeile(debug, 'Ziel: ' + String(zielId || '?') + ' · Zielstufe: ' + grenze);
-
-        if (!objekt) {
-            techTreeDebugZeile(debug, '! Zielobjekt ist noch nicht geladen.');
-            speichern(STORAGE_TECHTREE_DEBUG, { at: Date.now(), zielId: zielId, zielStufe: grenze, lines: debug });
-            return [];
+        const result = new Map();
+        const besuchteStufen = new Map();
+        function besuche(id, level, pfad) {
+            if (pfad.includes(id)) { debug.push('Zyklus gestoppt: ' + pfad.concat(id).join(' → ')); return; }
+            if ((besuchteStufen.get(id) || 0) >= level) return;
+            besuchteStufen.set(id, level);
+            const objekt = graph && graph[id];
+            if (!objekt) { debug.push('Noch nicht geladen: ' + id + ' Stufe ' + level); return; }
+            waehleVoraussetzungenBisStufe(objekt, level, debug, pfad.length).forEach(function (roh) {
+                const rid = String(roh.id || '').toUpperCase();
+                const typ = ermittleTechTreeTypAusStan(rid, roh.name);
+                const req = Object.assign({}, roh, { id: rid, type: typ !== 'unknown' ? typ :
+                    (HASA_SICHERE_FORSCHUNGS_IDS.has(rid) ? 'research' : roh.type || ermittleTechTreeTypAusIdUndName(rid, roh.name)) });
+                const key = rid || normalisiereTechTreeName(req.name);
+                const alt = result.get(key);
+                const ursprung = id + ' ' + level;
+                if (!alt) result.set(key, Object.assign(req, { direkt: pfad.length === 0, fuer: [ursprung] }));
+                else {
+                    alt.level = Math.max(Number(alt.level), Number(req.level));
+                    alt.direkt = alt.direkt || pfad.length === 0;
+                    if (!alt.fuer.includes(ursprung)) alt.fuer.push(ursprung);
+                }
+                if (!ermittleErfuellungsstand(req).erledigt) besuche(rid, Number(req.level), pfad.concat(id));
+            });
         }
-
-        // Teststufe 1:
-        // KEINE Rekursion. KEINE Reverse-Auswertung. KEINE Unterzweige.
-        // Wir lesen ausschließlich die direkten Mindestanforderungen des Zielobjekts.
-        const direkt = waehleVoraussetzungenBisStufe(objekt, grenze, debug, 0);
-        direkt.forEach(function (req) {
-    const rid = String(req && req.id || '').toUpperCase();
-    const stanTyp = ermittleTechTreeTypAusStan(rid, req && req.name);
-    if (stanTyp !== 'unknown') {
-        req.type = stanTyp;
-        req.typ = stanTyp;
-    } else if (HASA_SICHERE_FORSCHUNGS_IDS.has(rid)) {
-        req.type = 'research';
-        req.typ = 'research';
-    } else if (!req.type || req.type === 'unknown') {
-        req.type = ermittleTechTreeTypAusIdUndName(rid, req && req.name);
-        req.typ = req.type;
-    }
-});
-
-        techTreeDebugZeile(debug, 'Direkte Anforderungen: ' + direkt.length);
-        direkt.forEach(function (req, index) {
-            const stand = ermittleErfuellungsstand(req);
-            techTreeDebugZeile(
-                debug,
-                String(index + 1).padStart(2, '0') + '. ' +
-                (req.name || req.id) + ' [' + (req.id || '?') + '] · benötigt ' +
-                Number(req.level || 0) + ' · vorhanden ' +
-                (stand.aktuell === null ? '?' : stand.aktuell) +
-                (stand.erledigt ? ' · ERLEDIGT → aus reduzierter Ansicht raus' : ' · OFFEN → Merkliste')
-            );
-        });
-
-        techTreeDebugZeile(debug, '=== ENDE DIREKTE MINDESTANFORDERUNGEN ===');
-        speichern(STORAGE_TECHTREE_DEBUG, {
-            at: Date.now(),
-            zielId: zielId,
-            zielStufe: grenze,
-            lines: debug
-        });
-
-        console.groupCollapsed('[HASA Planer-Neustart] ' + String(zielId) + ' Stufe ' + grenze);
-        debug.forEach(function (line) { console.log(line); });
-        console.groupEnd();
-
-        return direkt;
+        besuche(zielId, Math.max(1, Number(zielStufe) || 1), []);
+        speichern(STORAGE_TECHTREE_DEBUG, { at: Date.now(), zielId, zielStufe, lines: debug });
+        return Array.from(result.values());
     }
 
     async function importiereTechTreeZiel(zielId, zielStufe, erzwingen) {
@@ -3212,15 +3193,30 @@ return box;
         baueBox();
 
         try {
-            // Planer-Neustart Teststufe 1:
-            // Nur die ausgewählte Zielseite lesen. Keine Unterobjekte nachladen.
-            // Der Community-TechTree führt seine Objekt-IDs in den URLs klein geschrieben
-  // (z. B. /id/weaponfactory, /id/darkenergytransmitter). Intern arbeitet
-  // HASA weiterhin mit den stabilen Großbuchstaben-IDs.
-  const techTreeUrlId = id.toLowerCase();
-  const html = await techTreeRequest(TECHTREE_BASIS_URL + encodeURIComponent(techTreeUrlId));
-            const objekt = parseTechTreeObjekt(html, id);
-            graph[id] = objekt;
+            const geladen = new Set();
+            const verarbeitet = new Map();
+            const probleme = [];
+            async function ladeZweig(oid, level, pfad) {
+                if (pfad.includes(oid)) return;
+                if ((verarbeitet.get(oid) || 0) >= level) return;
+                verarbeitet.set(oid, level);
+                if (!geladen.has(oid)) {
+                    if (geladen.size >= 200) { probleme.push('Ladegrenze erreicht'); return; }
+                    geladen.add(oid);
+                    try {
+                        const html = await techTreeRequest(TECHTREE_BASIS_URL + encodeURIComponent(oid.toLowerCase()));
+                        graph[oid] = parseTechTreeObjekt(html, oid);
+                    } catch (e) { probleme.push(oid + ': ' + String(e.message || e)); return; }
+                }
+                if (!graph[oid]) return;
+                for (const req of waehleVoraussetzungenBisStufe(graph[oid], level)) {
+                    const rid = String(req.id || '').toUpperCase();
+                    if (rid && !ermittleErfuellungsstand(req).erledigt) await ladeZweig(rid, Number(req.level), pfad.concat(oid));
+                }
+            }
+            await ladeZweig(id, grenze, []);
+            if (!graph[id]) throw new Error(probleme.join(' · ') || 'Ziel nicht lesbar');
+            const objekt = graph[id];
             speichern(STORAGE_TECHTREE_GRAPH, graph);
 
             const anforderungen = sammleTechTreeAnforderungen(graph, id, grenze);
@@ -3228,14 +3224,15 @@ return box;
                 const roh = objekt && Array.isArray(objekt.requirements) ? objekt.requirements : [];
                 if (roh.length) {
                     speichern(STORAGE_TECHTREE_STATUS, {
-                        state: 'ok',
-                        message: 'Für Zielstufe ' + grenze + ' keine zusätzlichen Mindestanforderungen.',
+                        state: probleme.length ? 'error' : 'ok',
+                        message: 'Für Zielstufe ' + grenze + ' keine zusätzlichen Mindestanforderungen.' + (probleme.length ? ' Unvollständig: ' + probleme.join(' · ') : ''),
                         id: id,
                         at: Date.now()
                     });
                     return objekt;
                 }
-                throw new Error('Keine Mindestanforderungen aus dem TechTree gelesen – TechTree-Seite prüfen.');
+                speichern(STORAGE_TECHTREE_STATUS, { state: 'ok', message: 'Keine Voraussetzungen gemeldet; Zielstufe ' + grenze + '.', id, at: Date.now() });
+                return objekt;
             }
 
             const offen = anforderungen.filter(function (req) {
@@ -3243,9 +3240,9 @@ return box;
             });
 
             speichern(STORAGE_TECHTREE_STATUS, {
-                state: 'ok',
-                message: anforderungen.length + ' direkte Mindestanforderungen · ' +
-                         offen.length + ' davon offen · ',
+                state: probleme.length ? 'error' : 'ok',
+                message: anforderungen.length + ' direkte und sekundäre Voraussetzungen · ' +
+                         offen.length + ' davon offen.' + (probleme.length ? ' Unvollständig: ' + probleme.join(' · ') : ''),
                 id: id,
                 at: Date.now()
             });
@@ -3400,6 +3397,7 @@ return box;
         let html = baueStanNavigationHtml();
         if (!zielId) return html + '<div style="margin-top:8px;color:#aaa;">Nach dem STAN-Import ein Ziel auswählen.</div>';
         html += '<div style="margin-top:9px;border-top:1px solid #555;padding-top:7px;">';
+        html += '<div style="font-size:12px;margin-bottom:5px;">Zielstufe: <input id="haa-techtree-zielstufe" type="number" min="1" max="999" value="' + esc(zielStufe) + '" style="width:65px;"> · Gebäude: aktueller Planet · Forschung: planetenübergreifend</div>';
         html += '<div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;"><button id="haa-techtree-import" style="font-size:11px;">Mindestliste lesen</button></div>';
         if (status) html += '<div style="margin-top:4px;color:' + (status.state === 'error' ? '#FF8080' : status.state === 'ok' ? '#7CFF7C' : '#FFD27C') + ';font-size:12px;">' + esc(status.message || '') + '</div>';
         if (objekt) {
@@ -3410,7 +3408,7 @@ return box;
                 if (!gruppe.length) return;
                 html += '<div style="margin-top:7px;color:#FFD27C;font-weight:bold;">' + techTreeTypSymbol(typ) + ' ' + esc(techTreeTypLabel(typ)) + '</div>';
                 gruppe.sort(function (a,b) { return String(a.name).localeCompare(String(b.name),'de'); }).forEach(function (req) {
-                    html += '<div style="display:grid;grid-template-columns:18px minmax(180px,1fr) auto;gap:4px;padding:2px 0;color:' + (req.erledigt ? '#888' : '#fff') + ';"><span>' + (req.erledigt ? '✓' : '➜') + '</span><button type="button" class="haa-req-ziel" data-id="' + esc(req.id) + '" data-name="' + esc(req.name) + '" data-type="' + esc(req.type || 'unknown') + '" data-level="' + esc(req.level) + '" title="Als Zwischenziel übernehmen" style="text-align:left;background:transparent;border:0;padding:0;color:inherit;cursor:pointer;text-decoration:underline;text-decoration-style:dotted;">' + esc(req.name) + ' <span style="color:#777;font-size:10px;">[' + esc(req.id) + ']</span></button><b style="text-align:right;white-space:nowrap;">benötigt ' + esc(req.level) + (req.aktuell !== null ? '<br><span style="font-weight:normal;color:#aaa;">vorhanden ' + esc(req.aktuell) + '</span>' : '') + '</b></div>';
+                    html += '<div style="display:grid;grid-template-columns:18px minmax(180px,1fr) auto;gap:4px;padding:2px 0;color:' + (req.erledigt ? '#888' : '#fff') + ';"><span>' + (req.erledigt ? '✓' : '➜') + '</span><button type="button" class="haa-req-ziel" data-id="' + esc(req.id) + '" data-name="' + esc(req.name) + '" data-type="' + esc(req.type || 'unknown') + '" data-level="' + esc(req.level) + '" title="Als Zwischenziel übernehmen" style="text-align:left;background:transparent;border:0;padding:0;color:inherit;cursor:pointer;text-decoration:underline;text-decoration-style:dotted;">' + esc(req.name) + ' <small style="display:block;color:#aaa;">' + esc((req.direkt ? 'Direkt' : 'Sekundär') + ' · für ' + (req.fuer || []).join(', ')) + '</small> <span style="color:#777;font-size:10px;">[' + esc(req.id) + ']</span></button><b style="text-align:right;white-space:nowrap;">benötigt ' + esc(req.level) + (req.aktuell !== null ? '<br><span style="font-weight:normal;color:#aaa;">vorhanden ' + esc(req.aktuell) + '</span>' : '') + '</b></div>';
                 });
             });
         }
@@ -3442,13 +3440,22 @@ return box;
         };
         Array.from(document.querySelectorAll('.haa-stan-ziel')).forEach(function (btn) {
             btn.onclick = function () {
-                const auswahl = { id: btn.dataset.id, name: btn.dataset.name, type: btn.dataset.type, level: 1, selectedAt: Date.now() };
+                const stand = ermittleErfuellungsstand({ id: btn.dataset.id, name: btn.dataset.name, type: btn.dataset.type, level: 1 });
+                const auswahl = { id: btn.dataset.id, name: btn.dataset.name, type: btn.dataset.type, level: (stand.aktuell === null ? 1 : stand.aktuell + 1), selectedAt: Date.now() };
                 speichern(STORAGE_STAN_AUSWAHL, auswahl);
                 speichern(STORAGE_STAN_NAVIGATION, { category: auswahl.type, targetId: auswahl.id, at: Date.now() });
                 speichern(STORAGE_STAN_AUSWAHL_OFFEN, '0');
                 baueBox();
             };
         });
+        const stufe = document.getElementById('haa-techtree-zielstufe');
+        if (stufe) stufe.onchange = function () {
+            const a = ladeStanAuswahl();
+            if (!a) return;
+            a.level = Math.max(1, Math.min(999, Number(stufe.value) || 1));
+            speichern(STORAGE_STAN_AUSWAHL, a);
+            importiereTechTreeZiel(a.id, a.level, true).catch(function () {});
+        };
         const btn = document.getElementById('haa-techtree-import');
         if (btn) btn.onclick = function () {
             const auswahl = ladeStanAuswahl();
@@ -5889,5 +5896,6 @@ return box;
    - Forschungs- und Gebäudestände bleiben beim Seitenwechsel erhalten
    - keine Horizon-Seiten werden im Hintergrund abgerufen
 */
+
 
 
