@@ -1726,3 +1726,23 @@ Nach erfolgreicher HASA-Anmeldung meldet `auth-status.php` zusätzlich `is_user_
 **Ergebnis:** Doppelten historischen Alpha20-Kommentar hinter dem Programmende aus aktuellem Script und identischer Alpha25-Archivdatei entfernt. Vorhandene Versionshistorie im Kopf bleibt; Alpha25-Beschriftungskorrektur und diese Bereinigung dort ergänzt. Künftige Änderungshinweise ausschließlich im Kopf pflegen. Laufender Programmcode exakt unverändert, keine Migration/Serverinstallation. Beide Dateien online identisch geprüft.
 
 **Commit:** 28e2f2a286885d1d4564be39f7fb5e95880114ff. Installation zusammen mit Alpha25 über HASA-AKTUALISIEREN.cmd und vollständiges Strg+A/Strg+V in Tampermonkey. Website bitte diese aktuelle vollständige Alpha25-Fassung verwenden.
+
+### 2026-10-11 – CE HASA an Kurt / Website-Chatty – Alpha26 und Reparaturlink für bestehende Kundschaft
+
+**Status:** FERTIG IM REPOSITORY. Commit e8f3ccf32fb9e5f62860fd0bdbcd4b52c1240661; vier Dateien online exakt geprüft.
+
+**Fehler/Ursache:** Aktuelle XML enthält 174 Objekte, darunter keine Schiffe/Verteidigungen. Die älteren 165 Objekte blieben nur in der Historie und fehlten in der Zielauswahl; Hinweis „nicht gelöscht“ war missverständlich.
+
+**Ergebnis:** Dauerhafter separater lokaler Zielkatalog vereinigt aktuelle Objekte und bekannte historische Ziele, aktuelle Angaben bevorzugt. Historische Ziele mit Datum gekennzeichnet; keine persönlichen Stufen aus Statistiken abgeleitet. Mit beiden Originaldateien 339 Ziele einschließlich 122 Schiffen und 43 Verteidigungen. Aktuelle XML bleibt mit 174 Objekten unverändert. Bestehende Fremdrassenfilter bleiben erhalten. Ohne lokal bekannten alten Bestand sind zusätzliche Objekte nicht erfunden; Neuinstallationsfallback unverändert.
+
+**Dateien:** 2 src/current/HASA-AKTUELL.user.js.txt; identische 2 src/current/hasa_1.2.0-alpha.26_zielkatalog.user.js.txt; 1 docs/hasa_1.2.0-alpha.26_zielkatalog.md; README.md. Versions-/Buildanzeige Alpha26, Änderungshinweise nur im Kopf.
+
+**Prüfungen:** Node-Syntax, 28 Planerprüfungen, 30 Chromium-Prüfungen mit echten XML-Dateien einschließlich Katalogvereinigung, historische Provenienz, aktuelle Angaben bevorzugt, unveränderte Originaldaten und Erhalt bei gekürzter Historie. Echter Horizon-Praxistest offen. Keine SQL-/PHP-Migration oder produktive Serverinstallation.
+
+**Kundenauftrag von Kurt:** Ein fester Link zur vollständigen kumulativen Reparaturdatei für bestehende Kundschaft. Direkter Link: https://raw.githubusercontent.com/KurtV731/hasa/main/2%20src/current/HASA-AKTUELL.user.js.txt
+
+**Kundeninstallation ohne Git:** Link öffnen, vollständigen Text kopieren; vorhandenes HASA in Tampermonkey bearbeiten, Strg+A/Strg+V, speichern, Horizon neu laden. Bestehendes Script ersetzen, kein zweites anlegen. Kundendaten nicht zurücksetzen. Kurt weiterhin HASA-AKTUALISIEREN.cmd mit automatischer Zwischenablage.
+
+**Websiteauftrag:** Als „HASA Reparaturdatei – Alpha26 (enthält alle Reparaturen bis Alpha25)“ auf hasa.html/download.html für bestehende Nutzer verlinken und die vorgenannte Kurzinstallation daneben erklären. Kein Website-Repository hier verändert. Reparaturdownload auf GitHub bereits vorhanden.
+
+**Restpunkte:** Kurts Schiff-/Sonden-Zielauswahl und Websiteaktualisierung.
