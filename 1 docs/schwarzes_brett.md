@@ -1668,3 +1668,23 @@ Nach erfolgreicher HASA-Anmeldung meldet `auth-status.php` zusätzlich `is_user_
 **Website-Übergabe:** Bitte vollständige aktuelle Datei unverändert als HASA_Alpha23_geschlossene-Testphase.user.js.txt bereitstellen; hasa.html/download.html auf Alpha23 umstellen. Alpha20/21/22 nicht länger als aktuellen Testdownload kennzeichnen. Websiteupload erfolgt mit Kurts vorhandener Batch. Kein Website-Repository in diesem Auftrag verändert.
 
 **Restpunkt:** Hetzer muss nach der Installation die sichtbare Bereitschaft und Aktivierung bestätigen. Wenn die Anzeige trotz Korrektur fehlt, liegt möglicherweise ein anderer Start-/Ausführungsfehler vor; keine Behauptung, seine Installation sei bereits geprüft.
+
+### 2026-10-11 – CE HASA an Kurt / Website-Chatty – Alpha24 STAN-Import repariert
+
+**Status:** FERTIG IM REPOSITORY, vier Dateien auf main übertragen und online exakt zurückgelesen. Produktivinstallation durch Kurt offen.
+
+**Ursache:** Kurts echte statistic-20261011.xml besitzt einen gültigen abgeschlossenen statistic-Abschnitt, danach aber HTML-formatierte PHP-Notice/Warning-Ausgaben des STAN-Servers. Dadurch lehnt der bisherige DOMParser die gesamte Datei ab. Vergleichsdatei statistic-20260927.xml ist gültig. Keine Anmeldung-/Berechtigungsursache.
+
+**Ergebnis:** Alpha24 erkennt ausschließlich bekannte angehängte PHP-Diagnoseblöcke hinter dem XML-Ende, trennt sie ab und prüft den XML-Abschnitt erneut strikt. Unbekannte Zusätze, zweite Dokumente, beschädigte XML-Inhalte und unvollständige Dateien bleiben gesperrt. Die Erfolgsmeldung nennt ignorierte STAN-Serverwarnungen. Keine manuelle Bearbeitung der Originaldateien nötig. Alter Import bleibt in der Versionshistorie; persönliche Forschungs-/Gebäudestufen bleiben unabhängig von Statistikzählwerten. Der neue Stand enthält 174 Planungsobjekte (105 Gebäude, 69 Forschungen), alte Datei 339. Schiffe und Verteidigungen sind in der neuen Quelldatei leer; Geräte werden wie bisher nicht als Forschungsplanungsziele übernommen. Keine Objekte erfunden.
+
+**Dateien:** 2 src/current/HASA-AKTUELL.user.js.txt; identische 2 src/current/hasa_1.2.0-alpha.24_stan-import.user.js.txt; 1 docs/hasa_1.2.0-alpha.24_stan-import.md; README.md. Vorherige Alpha21/22/23-Reparaturen erhalten.
+
+**Prüfungen:** Node-Syntax bestanden; 22 Chromium-Prüfungen mit beiden echten Dateien, DOMParser und File.text: Fehler im alten Parser reproduziert, alte/neue Objektzahlen/-typen und Datum, Warnhinweis, Import/Speicherung/Versionen, unveränderte persönliche Stufen sowie Ablehnung von defekter XML und unerwartetem Nachspann. Fehlgeschlagener Import erhält aktuellen Bestand und Historie. Alle vier Commit-Dateien online identisch geprüft. Kein reales Spielkonto verwendet.
+
+**Commit:** e06e16b499647b834068067be6e301f879e255b4 – HASA 1.2.0 Alpha24: STAN-XML mit angehängten PHP-Warnmeldungen importieren.
+
+**Installation:** HASA-AKTUALISIEREN.cmd in C:\\Hasa starten; vollständiges HASA in Tampermonkey ersetzen, speichern, Horizon neu laden und statistic-20261011.xml unverändert erneut einlesen. Kein PHP-Upload, keine SQL-Migration. Alternativ vollständige Alpha24-Datei direkt einsetzen.
+
+**Websiteauftrag:** Aktuelle vollständige Datei als HASA_Alpha24_geschlossene-Testphase.user.js.txt bereitstellen und hasa.html/download.html entsprechend aktualisieren. Der Website-Download wurde in diesem HASA-Commit nicht geändert; Serverupload über Kurts bestehende Batch. Kein Website-Repository geändert.
+
+**Restpunkt:** Kurts echter Importtest; Websiteaktualisierung. Der vorgelagerte STAN-Serverfehler selbst wurde nicht verändert.
