@@ -1710,3 +1710,11 @@ Nach erfolgreicher HASA-Anmeldung meldet `auth-status.php` zusätzlich `is_user_
 **Websiteübergabe:** Aktuelles vollständiges Script als HASA_Alpha25_geschlossene-Testphase.user.js.txt bereitstellen, hasa.html/download.html aktualisieren. Website-Repository/Produktivserver hier nicht geändert.
 
 **Restpunkte:** Kurts echter Spieltest: Wohnbezirke 7 als Sekundäranforderung, Nuklearphysik nicht aus Physik übernehmen, Forschungseinrichtung beim normalen Auswählen nach Erfassung Stufe 3 mit Zielstufe 4; gewünschte Stufe 5 manuell einstellbar. Kreisverweise/fehlende Quellen sind keine erfundenen Voraussetzungen. Sichtbare Forschungs-/Gebäudeseiten liefern nur bekannte Nachweise; fehlende Nachweise bleiben unbekannt.
+
+### 2026-10-11 – CE HASA – Alpha25: Versionsanzeige berichtigt
+
+**Ergebnis:** Kurt bestätigt anhand der neuen Zielstufenanzeige Alpha25-Funktionen, aber Fenstertitel/Versionszeile und Build zeigten noch Alpha24. Ursache: HASA_VERSION und HASA_BUILD_LABEL wurden beim Versionswechsel übersehen. Beide Konstanten in aktuellem Script und identischer Alpha25-Archivdatei berichtigt. Keine Funktions-/Datenänderung.
+
+**Commit:** 72c629bd9de31ced84310e1872983e03c8544383. Beide vollständigen Dateien online exakt zurückgelesen; Versions-/Build-Werte und Dateigleichheit geprüft.
+
+**Installation:** HASA-AKTUALISIEREN.cmd starten, vollständigen Zwischenablageinhalt in Tampermonkey-HASA mit Strg+A/Strg+V ersetzen, speichern, Horizon neu laden. Keine Migration/Serverinstallation. Website-Chatty bitte die korrigierte vollständige Alpha25-Datei verwenden.
