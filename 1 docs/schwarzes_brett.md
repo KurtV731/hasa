@@ -1762,3 +1762,23 @@ Kurt: SERKAL_pull_v2.bat im vorhandenen Website-Ordner ausführen. Diese führt 
 **Commit:** 582228dbb0bac23187cd8f4293b448b3f17ca546. Batchstruktur/Ein-Datei-Upload und exakte Online-Datei geprueft; CRLF und ASCII fuer Windows. Windows/WinSCP-Lauf auf Kurts PC noch offen; kein produktiver Upload aus dieser Sitzung.
 
 **Anwendung:** Neue Batch herunterladen und doppelklicken. Nach Erfolg direkten Kundenlink verwenden: https://serkal.de/download/others/hasa/HASA-Reparatur-aktuell.user.js.txt . Die HTML-Seiten werden damit bewusst nicht veroeffentlicht; lokale Website-Gitaenderungen bleiben ein gesonderter Restpunkt. Keine Datenbankmigration.
+
+### 2026-10-11 – CE HASA an Kurt – sharing.1: Meine Datenfreigaben
+
+**Status:** FERTIG IM REPOSITORY. Zehn Dateien auf main, online exakt zurückgelesen. Produktivupload/Einrichtung noch durch Kurt.
+
+**Ergebnis:** Einstellungsseite settings.php für angemeldete Player mit Nur ich / ausgewählte Mitspieler / bestätigte Allianz / alle angemeldeten Player. Je Runde und Galaxie, Sondenberichte separat. Vorgabe privat, Spezialgalaxien nur mit eigenen Daten. Hauptseite verlinkt Meine Datenfreigaben. Die gespeicherte Eigentümerfreigabe ist eine bewusste Freigabe aller eigenen bestehenden und neuen Systeme/Planeten dieser Galaxie; keine automatische Freigabe durch alte visibility-Werte. Privates Zurückstellen widerruft weitere Serverabrufe. Bereits kopierte Daten nicht rückholbar. Einzelne Systeme/Planeten innerhalb der Galaxie separat auszunehmen folgt gesondert.
+
+**Verbindliche Datensicht:** Zentrale SQL-Prüfung, auch Katalog/Metadaten, Suchfilter und Sondenberichte. Beiderseitige Freigabe plus eigener Beitrag in der Galaxie; für Sonden zusätzlich beide Sondenoptionen. Ohne Freigabe keine fremden Berichtszähler/Scans. Root kein Sonderlesen, Benutzeradminrechte verleihen keine Datensicht. Fremde Serverdatensätze bleiben am Eigentümerkonto. Sichtbare Erfassungen nennen den Eigentümer. Neue Freigaben rundengetrennt; Sondergalaxien nicht durch Galaxie-1–6-Regel geöffnet.
+
+**Allianz:** Funktional nur über bestätigte hasa_users.alliance_id; niemals Scanner-Tags oder Selbsteingabe. Ohne Zuordnung Option deaktiviert, vorerst konkrete Mitspieler auswählen. Mitgliedschaftsverwaltung ist Restauftrag. Allianzwechsel/Austritt entzieht Leserecht beim nächsten Abruf.
+
+**Dateien:** 3 server/hasa-api/settings.php; sharing-install.php; sharing-service.php; auth.php; galaxy-access.php; galaxy-read.php; prospection-read.php; galaxy.php. 4 database/hasa_1_2_0_sharing_migration.sql. 1 docs/hasa_1.2.0-sharing.1.md.
+
+**Migration/Installation für Kurt:** HASA-Serverupdate.bat in C:\\Hasa starten (Git-Pull und PHP-Upload). Danach https://serkal.de/hasa/settings.php als Styl öffnen. Falls Schema fehlt, Weiterleitung zur geschützten Einrichtung; einmal Freigaben einrichten klicken. Zwei neue Tabellen, keine Änderung/Löschung bestehender Daten, keine automatische Freigabe. Nur Benutzerleitung kann einrichten; CSRF und Anmeldung erforderlich. Wenn CREATE-Rechte beim DB-Konto fehlen, SQL-Datei als wiederholbare Alternative in phpMyAdmin importieren. Kein neues Userscript nötig. Reparaturdatei-Upload-Batch lädt diese PHP-Erweiterung nicht hoch.
+
+**Prüfungen:** Acht PHP-Syntaxprüfungen; 141 echte PHP/MariaDB-Integrationsprüfungen (inkl. vorhandener Benutzerverwaltung) zu Grundeinstellung, fehlendem Schema, Einrichtung, Kontoscope, Gegenseitigkeit/Beitrag, gezielten/allgemeinen/Allianzfreigaben, Root, Sonden, Widerruf, CSRF, Stale-Revision, Spezialgalaxien und Runden; 5 Chromium-Checks (Login, Speichern/Reload, Link, 390px); 81 bestehende Privatheitsregressionen. 227 Funktionsprüfungen insgesamt. Keine echte Spiel-/Produktivsitzung verwendet. Erst HTTP-Testcookie im Browserproxy angepasst, Produktionscookie unverändert. Alle zehn Dateien exakt zurückgelesen.
+
+**Commit:** 2fdc80ce778fe3a46b077e2791e465575786f201 – HASA sharing.1: persönliche Freigaben, gegenseitige Datensicht und geschützte Einrichtung.
+
+**Restpunkte:** Kurts Produktivinstallation/Praxistest; separate Allianz-Mitgliedschaftsverwaltung und feinere Ausnahmen je System/Planet. Produktionsdatenbank nicht von dieser Sitzung verändert. Kein Website-Download/Userscript geändert.
