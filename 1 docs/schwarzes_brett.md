@@ -1688,3 +1688,25 @@ Nach erfolgreicher HASA-Anmeldung meldet `auth-status.php` zusätzlich `is_user_
 **Websiteauftrag:** Aktuelle vollständige Datei als HASA_Alpha24_geschlossene-Testphase.user.js.txt bereitstellen und hasa.html/download.html entsprechend aktualisieren. Der Website-Download wurde in diesem HASA-Commit nicht geändert; Serverupload über Kurts bestehende Batch. Kein Website-Repository geändert.
 
 **Restpunkt:** Kurts echter Importtest; Websiteaktualisierung. Der vorgelagerte STAN-Serverfehler selbst wurde nicht verändert.
+
+### 2026-10-11 – CE HASA an Kurt / Website-Chatty – Alpha25: sekundäre Voraussetzungen
+
+**Status:** FERTIG IM REPOSITORY; vier Commit-Dateien online identisch zurückgelesen. Praxistest in Horizon offen.
+
+**Anlass/Befund:** Werft 1 zeigte bislang nur direkte Anforderungen. Fehlende Psychologie 1 braucht ihrerseits Wohnbezirke 7; diese Kette fehlte. Die Namen-Teiltreffersuche verwechselte Physik und Nuklearphysik. Bei einer normalen Zielauswahl wurde immer Stufe 1 gesetzt; Bild 4 betraf tatsächlich Forschungseinrichtung 1, nicht den nächsten Ausbau ihrer vorhandenen Stufe 3.
+
+**Ergebnis:** Fehlende Voraussetzungen werden rekursiv nachgeladen und als direkt/sekundär mit auslösendem Objekt samt Stufe angezeigt. Hauptziel bleibt erhalten; doppelte Objekte bekommen die höchste geforderte Stufe, erfüllte Zweige werden nicht unnötig weiterverfolgt. Zyklen werden beendet; 200 Objektseiten als Ladegrenze, Teilausfälle ausdrücklich unvollständig. Stufenabhängige Voraussetzungen weiterhin nur bis zur Zielstufe. Eindeutige ID beziehungsweise exakter Name ohne widersprechende Kennung/Typ; keine Teiltreffer. Fehlende, leere/null-Stufen bleiben unbekannt. Forschungsstände bleiben global innerhalb der laufenden Runde; Gebäude werden je erkanntem Planeten gespeichert. Alte planetenlose Gebäudestände werden nicht blind übernommen. Gebäudeseite neu besuchen. Planetenauswahl-ID bevorzugt, sonst erkannter Name; Namens-/Layoutwechsel kann erneute Erfassung erfordern. Normale Zielwahl verwendet nächste nachgewiesene Stufe, Zwischenziel die nötige Stufe. Zielstufe sichtbar und änderbar.
+
+**Dateien:** 2 src/current/HASA-AKTUELL.user.js.txt; identische 2 src/current/hasa_1.2.0-alpha.25_voraussetzungen.user.js.txt; 1 docs/hasa_1.2.0-alpha.25_voraussetzungen.md; README.md. Alpha24-XML-Reparatur und frühere Reparaturen enthalten.
+
+**Prüfungen:** Node-Syntax; 28 Prüfungen mit tatsächlichen Funktionen: Physik/Nuklearphysik, unbekannte/0-Stufen, widersprüchliche Kennungen, getrennte Planeten und globale Forschung, Werft→Psychologie→Wohnbezirke, Stufengrenzen, höchste Forderung, erfüllte Zweige, asynchrones Laden und Fehlermeldung bei Teilausfall. Zusätzlich 22 Chromium-XML-Regressionen mit beiden Originaldateien. Kein echter Horizon-Kontotest und keine behauptete produktive Serverinstallation.
+
+**Commit:** d4d674f7b2bc5b08a18e700cf1d4523b5363b307 – HASA 1.2.0 Alpha25: sekundäre Voraussetzungen und eindeutige persönliche Spielstände.
+
+**Migration/Serverinstallation:** Keine SQL-/PHP-Migration, kein Serverupload. Lokale Gebäudestände neu aus sichtbarer Gebäudeseite erfassen, da alte Daten keine Planetenzuordnung besitzen. Persönliche Forschung bleibt erhalten; STAN bleibt Objektstatistik und liefert keine persönlichen Stufen.
+
+**Installation:** HASA-AKTUALISIEREN.cmd in C:\\Hasa starten (Pull und vollständiges Script automatisch in Zwischenablage). Tampermonkey-HASA-Codetext anklicken, Strg+A, Strg+V, speichern; Horizon neu laden. Gebäude-/Forschungsseite besuchen, Werft 1 wählen und Mindestliste lesen.
+
+**Websiteübergabe:** Aktuelles vollständiges Script als HASA_Alpha25_geschlossene-Testphase.user.js.txt bereitstellen, hasa.html/download.html aktualisieren. Website-Repository/Produktivserver hier nicht geändert.
+
+**Restpunkte:** Kurts echter Spieltest: Wohnbezirke 7 als Sekundäranforderung, Nuklearphysik nicht aus Physik übernehmen, Forschungseinrichtung beim normalen Auswählen nach Erfassung Stufe 3 mit Zielstufe 4; gewünschte Stufe 5 manuell einstellbar. Kreisverweise/fehlende Quellen sind keine erfundenen Voraussetzungen. Sichtbare Forschungs-/Gebäudeseiten liefern nur bekannte Nachweise; fehlende Nachweise bleiben unbekannt.
