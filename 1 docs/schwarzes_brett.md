@@ -1718,3 +1718,11 @@ Nach erfolgreicher HASA-Anmeldung meldet `auth-status.php` zusätzlich `is_user_
 **Commit:** 72c629bd9de31ced84310e1872983e03c8544383. Beide vollständigen Dateien online exakt zurückgelesen; Versions-/Build-Werte und Dateigleichheit geprüft.
 
 **Installation:** HASA-AKTUALISIEREN.cmd starten, vollständigen Zwischenablageinhalt in Tampermonkey-HASA mit Strg+A/Strg+V ersetzen, speichern, Horizon neu laden. Keine Migration/Serverinstallation. Website-Chatty bitte die korrigierte vollständige Alpha25-Datei verwenden.
+
+### 2026-10-11 – CE HASA – Änderungshinweise ausschließlich im Dateikopf
+
+**Auftrag von Kurt:** Versionsänderungen gesammelt am Anfang des Userscripts; Ende ohne veralteten Kommentaranhang.
+
+**Ergebnis:** Doppelten historischen Alpha20-Kommentar hinter dem Programmende aus aktuellem Script und identischer Alpha25-Archivdatei entfernt. Vorhandene Versionshistorie im Kopf bleibt; Alpha25-Beschriftungskorrektur und diese Bereinigung dort ergänzt. Künftige Änderungshinweise ausschließlich im Kopf pflegen. Laufender Programmcode exakt unverändert, keine Migration/Serverinstallation. Beide Dateien online identisch geprüft.
+
+**Commit:** 28e2f2a286885d1d4564be39f7fb5e95880114ff. Installation zusammen mit Alpha25 über HASA-AKTUALISIEREN.cmd und vollständiges Strg+A/Strg+V in Tampermonkey. Website bitte diese aktuelle vollständige Alpha25-Fassung verwenden.
