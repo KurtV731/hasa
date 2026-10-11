@@ -32,12 +32,16 @@ Tampermonkey als neues Userscript eingefügt und gespeichert.
 
 ## Aktuelle Entwicklungsreihe
 
-**HASA 1.2.0 Alpha 23 – sichtbare Anfangsposition**
+**HASA 1.2.0 Alpha 24 – STAN-XML-Import**
 
 Aktuelle Testdateien:
 
 - fester Aktualisierungspfad: `2 src/current/HASA-AKTUELL.user.js.txt`
-- archivierte Fassung: `2 src/current/hasa_1.2.0-alpha.23_sichtbarer-start.user.js.txt`
+- archivierte Fassung: `2 src/current/hasa_1.2.0-alpha.24_stan-import.user.js.txt`
+
+Alpha 24 importiert gültige STAN-XML-Daten auch dann, wenn der Server hinter dem
+XML-Ende PHP-Warnmeldungen angehängt hat. Unbekannte Zusätze und beschädigte XML
+bleiben gesperrt; die Erfolgsmeldung weist auf ignorierte Serverwarnungen hin.
 
 Alpha 23 begrenzt auch die erste Fensterposition aus Horizon-Ankern auf den sichtbaren
 Browserbereich und korrigiert sie automatisch nach Fenstergrößenänderungen. Der

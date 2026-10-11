@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         HASA – Horizon Ascension Assistant
 // @namespace    horiversum.hasa
-// @version      1.2.0-alpha.23
+// @version      1.2.0-alpha.24
 // @charset      UTF-8
 // @description  Horizon-Assistent mit kompakter Galaxiescanner-Anzeige und aktiver lokaler IndexedDB
 // @match        https://horiversum.org/game/main/main.php*
@@ -17,9 +17,14 @@
 ==========================================================
  HASA – Horizon Ascension Assistant
 
- Version : 1.2.0 Alpha 23
- Status  : Reparatur der sichtbaren Anfangsposition
- Build   : 2026-10-10
+ Version : 1.2.0 Alpha 24
+ Status  : Reparatur des STAN-XML-Imports
+ Build   : 2026-10-11
+
+ Neu in Alpha 24:
+ - gültige STAN-Daten trotz angehängter PHP-Serverwarnungen importieren
+ - ausschließlich erkannte Warnmeldungen hinter dem XML-Ende ignorieren
+ - beschädigte XML-Inhalte und unbekannte Zusätze weiterhin zurückweisen
 
  Neu in Alpha 23:
  - Anfangsposition und gespeicherte Fensterposition bleiben im sichtbaren Browserbereich
@@ -157,8 +162,8 @@
         'PHYSICS', 'PSYCHOLOGY', 'NUCLEARPHYSICS', 'SOLARENERGYTECH'
     ]);
 
-    const HASA_VERSION = '1.2.0 Alpha 23';
-    const HASA_BUILD_LABEL = '1.2.0-alpha23-sichtbarer-start-2026-10-10';
+    const HASA_VERSION = '1.2.0 Alpha 24';
+    const HASA_BUILD_LABEL = '1.2.0-alpha24-stan-import-2026-10-11';
     const HASA_RUNDE = 8;
     const HASA_RUNDE_SCHLUESSEL = 'runde8';
     // Die MariaDB und sämtliche Schreibendpunkte trennen Runde 7 und 8 jetzt
@@ -2863,7 +2868,22 @@ return box;
     }
 
     function parseStanXml(xmlText, dateiname) {
-        const doc = new DOMParser().parseFromString(String(xmlText || ''), 'application/xml');
+        const inhalt = String(xmlText || '');
+        let doc = new DOMParser().parseFromString(inhalt, 'application/xml');
+        let importWarning = '';
+        if (doc.querySelector('parsererror')) {
+            // STAN hängt gelegentlich HTML-formatierte PHP-Diagnosen an das fertige
+            // XML an. Nur diesen bekannten Nachspann abtrennen, nie XML reparieren.
+            const ende = inhalt.lastIndexOf('</statistic>');
+            if (ende >= 0) {
+                const nachspann = inhalt.slice(ende + '</statistic>'.length);
+                const serverDiagnosen = /^(?:\s*<br\s*\/?>\s*<b>(?:Notice|Warning|Deprecated|Strict Standards)<\/b>:\s*[^<]*(?:<b>[^<]*<\/b>[^<]*)*<br\s*\/?>\s*)+$/i;
+                if (serverDiagnosen.test(nachspann)) {
+                    doc = new DOMParser().parseFromString(inhalt.slice(0, ende + '</statistic>'.length), 'application/xml');
+                    importWarning = 'Angehängte STAN-Serverwarnungen wurden ignoriert.';
+                }
+            }
+        }
         const parserFehler = doc.querySelector('parsererror');
         if (parserFehler || !doc.documentElement || doc.documentElement.nodeName.toLowerCase() !== 'statistic') {
             throw new Error('Die Datei ist keine lesbare STAN-Statistik-XML.');
@@ -2890,7 +2910,7 @@ return box;
             });
         });
         if (!objects.length) throw new Error('Keine Gebäude, Forschungen, Schiffe oder Verteidigungen gefunden.');
-        return { objects: objects, dataDate: ermittleStanDatenstandAusDateiname(dateiname), fileName: String(dateiname || ''), importedAt: Date.now(), source: 'file' };
+        return { objects: objects, dataDate: ermittleStanDatenstandAusDateiname(dateiname), fileName: String(dateiname || ''), importedAt: Date.now(), source: 'file', importWarning: importWarning };
     }
 
     function istNutzbarerStanBestand(daten) {
@@ -3035,7 +3055,7 @@ return box;
             speichern(STORAGE_STAN_STAMMDATEN, daten);
             speichern(STORAGE_STAN_STATUS, {
                 state: 'ok',
-                message: daten.objects.length + ' Objekte gespeichert · +' + delta.added.length + ' neu · ' + delta.changed.length + ' geändert · ' + delta.missing.length + ' fehlen im neuen Stand (nicht gelöscht).',
+                message: daten.objects.length + ' Objekte gespeichert · +' + delta.added.length + ' neu · ' + delta.changed.length + ' geändert · ' + delta.missing.length + ' fehlen im neuen Stand (nicht gelöscht).' + (daten.importWarning ? ' ' + daten.importWarning : ''),
                 at: Date.now(), dataDate: daten.dataDate, fileName: daten.fileName
             });
             return daten;
@@ -5869,4 +5889,5 @@ return box;
    - Forschungs- und Gebäudestände bleiben beim Seitenwechsel erhalten
    - keine Horizon-Seiten werden im Hintergrund abgerufen
 */
+
 
