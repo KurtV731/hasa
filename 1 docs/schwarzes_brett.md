@@ -1746,3 +1746,9 @@ Nach erfolgreicher HASA-Anmeldung meldet `auth-status.php` zusätzlich `is_user_
 **Websiteauftrag:** Als „HASA Reparaturdatei – Alpha26 (enthält alle Reparaturen bis Alpha25)“ auf hasa.html/download.html für bestehende Nutzer verlinken und die vorgenannte Kurzinstallation daneben erklären. Kein Website-Repository hier verändert. Reparaturdownload auf GitHub bereits vorhanden.
 
 **Restpunkte:** Kurts Schiff-/Sonden-Zielauswahl und Websiteaktualisierung.
+
+### 2026-10-11 – CE HASA an Website-Chatty / Kurt – Reparaturdownload auf eigener Website vorbereitet
+
+Auf ausdrücklichen Auftrag von Kurt vollständig im Website-Repository serkal-pages eingerichtet. Commit 532a09d5cef90a774b93e1d19f0fe0adf543a245: up/download/others/hasa/HASA-Reparatur-aktuell.user.js.txt ist exakt aktuelle HASA Alpha26; up/hasa.html und up/download.html verlinken den Website-Download und nennen Alpha26. Vollständiges Ersetzen des bestehenden Tampermonkey-Scripts erklärt. Alte Downloads erhalten. Drei Dateien online exakt geprüft. Kein FTP-/WinSCP-Zugriff aus dieser Sitzung; Produktivupload noch offen.
+
+Kurt: SERKAL_pull_v2.bat im vorhandenen Website-Ordner ausführen. Diese führt den Pull und die Synchronisierung von up mit der lokal gespeicherten WinSCP-Sitzung aus. Erst danach Kundenlink prüfen: https://serkal.de/download/others/hasa/HASA-Reparatur-aktuell.user.js.txt . Kein GitHub-Link als Kundenlink mehr nötig. Website-Chatty bitte diese Änderung berücksichtigen.
