@@ -32,14 +32,14 @@ Tampermonkey als neues Userscript eingefügt und gespeichert.
 
 ## Aktuelle Entwicklungsreihe
 
-**HASA 1.2.0 Alpha 25 – Voraussetzungenketten**
+**HASA 1.2.0 Alpha 26 – vollständiger Zielkatalog**
 
 Aktuelle Testdateien:
 
 - fester Aktualisierungspfad: `2 src/current/HASA-AKTUELL.user.js.txt`
-- archivierte Fassung: `2 src/current/hasa_1.2.0-alpha.25_voraussetzungen.user.js.txt`
+- archivierte Fassung: `2 src/current/hasa_1.2.0-alpha.26_zielkatalog.user.js.txt`
 
-Alpha 25 zeigt fehlende sekundäre Voraussetzungen mit Herkunft, trennt Physik von\nNuklearphysik und speichert Gebäudestände je Planet; Forschungsstände gelten\nplanetenübergreifend. Normale Zielwahl nutzt die nächste vorhandene Stufe,\ndie Zielstufe bleibt veränderbar.\n\nAlpha 24 importiert gültige STAN-XML-Daten auch dann, wenn der Server hinter dem
+Alpha 26 erhält bekannte Schiffe und Verteidigungen aus älteren STAN-Ständen\nals auswählbare Ziele. Historische Ziele sind gekennzeichnet; die aktuelle XML\nbleibt unverändert.\n\nAlpha 25 zeigt fehlende sekundäre Voraussetzungen mit Herkunft, trennt Physik von\nNuklearphysik und speichert Gebäudestände je Planet; Forschungsstände gelten\nplanetenübergreifend. Normale Zielwahl nutzt die nächste vorhandene Stufe,\ndie Zielstufe bleibt veränderbar.\n\nAlpha 24 importiert gültige STAN-XML-Daten auch dann, wenn der Server hinter dem
 XML-Ende PHP-Warnmeldungen angehängt hat. Unbekannte Zusätze und beschädigte XML
 bleiben gesperrt; die Erfolgsmeldung weist auf ignorierte Serverwarnungen hin.
 

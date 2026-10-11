@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         HASA – Horizon Ascension Assistant
 // @namespace    horiversum.hasa
-// @version      1.2.0-alpha.25
+// @version      1.2.0-alpha.26
 // @charset      UTF-8
 // @description  Horizon-Assistent mit kompakter Galaxiescanner-Anzeige und aktiver lokaler IndexedDB
 // @match        https://horiversum.org/game/main/main.php*
@@ -17,9 +17,14 @@
 ==========================================================
  HASA – Horizon Ascension Assistant
 
- Version : 1.2.0 Alpha 25
- Status  : Rekursive Voraussetzungen und eindeutige Spielstände
+ Version : 1.2.0 Alpha 26
+ Status  : Bekannte Schiffe und Verteidigungen weiterhin auswählbar
  Build   : 2026-10-11
+
+ Neu in Alpha 26:
+ - ältere bekannte Planungsobjekte bleiben im Zielkatalog auswählbar
+ - Schiffe und Verteidigungen aus früheren STAN-Ständen wieder sichtbar
+ - ältere Ziele ausdrücklich kennzeichnen; aktuelle XML unverändert behalten
 
  Neu in Alpha 25:
  - Versions- und Buildanzeige auf Alpha 25 berichtigt
@@ -169,8 +174,8 @@
         'PHYSICS', 'PSYCHOLOGY', 'NUCLEARPHYSICS', 'SOLARENERGYTECH'
     ]);
 
-    const HASA_VERSION = '1.2.0 Alpha 25';
-    const HASA_BUILD_LABEL = '1.2.0-alpha25-voraussetzungen-2026-10-11';
+    const HASA_VERSION = '1.2.0 Alpha 26';
+    const HASA_BUILD_LABEL = '1.2.0-alpha26-zielkatalog-2026-10-11';
     const HASA_RUNDE = 8;
     const HASA_RUNDE_SCHLUESSEL = 'runde8';
     // Die MariaDB und sämtliche Schreibendpunkte trennen Runde 7 und 8 jetzt
@@ -1103,6 +1108,7 @@
     const STORAGE_STAN_STAMMDATEN = 'haa_stan_stammdaten_v103';
     const STORAGE_STAN_VERSIONEN = 'haa_stan_versionen_v103a';
     const STORAGE_STAN_STATUS = 'haa_stan_status_v103';
+    const STORAGE_STAN_ZIELKATALOG = 'haa_stan_zielkatalog_v1';
     const STORAGE_STAN_AUSWAHL = 'haa_stan_auswahl_v103';
     const STORAGE_STAN_NAVIGATION = 'haa_stan_navigation_v103';
     const STORAGE_STAN_AUSWAHL_OFFEN = 'haa_stan_auswahl_offen_v103b';
@@ -1476,7 +1482,7 @@
         return new Set([
             STORAGE_GALASCAN_LETZTER_STAND, STORAGE_PRDR_BERICHTE, STORAGE_TECHTREE_GRAPH,
             STORAGE_TECHTREE_STATUS, STORAGE_TECHTREE_DEBUG,
-            STORAGE_TECHTREE_SPIELSTAND, STORAGE_STAN_STAMMDATEN,
+            STORAGE_TECHTREE_SPIELSTAND, STORAGE_STAN_STAMMDATEN, STORAGE_STAN_ZIELKATALOG,
             STORAGE_STAN_VERSIONEN, STORAGE_STAN_STATUS, STORAGE_SEITENSCAN_STATUS
         ]);
     }
@@ -3030,11 +3036,42 @@ return box;
         return HAA_STAN_FALLBACK_LAEUFT;
     }
 
+    function baueStanZielkatalog(aktuell, versionen, bisher) {
+        const katalog = new Map();
+        function fuegeHinzu(daten) {
+            if (!daten || !Array.isArray(daten.objects)) return;
+            daten.objects.forEach(function (o) {
+                if (!o || !o.id || !o.type) return;
+                katalog.set(o.type + ':' + String(o.id).toUpperCase(), Object.assign({}, o, {
+                    knownDataDate: String(o.knownDataDate || daten.dataDate || '')
+                }));
+            });
+        }
+        fuegeHinzu(bisher);
+        (Array.isArray(versionen) ? versionen : []).forEach(fuegeHinzu);
+        // Aktuelle Angaben haben immer Vorrang vor jedem historischen Wert.
+        fuegeHinzu(aktuell);
+        const aktuellKeys = new Set((aktuell && aktuell.objects || []).map(o => o.type + ':' + String(o.id).toUpperCase()));
+        const objects = Array.from(katalog.entries()).map(function ([key, o]) {
+            return Object.assign({}, o, { historical: !aktuellKeys.has(key) });
+        });
+        return Object.assign({}, aktuell, { objects, historicalCount: objects.filter(o => o.historical).length });
+    }
+
+    function ergaenzeStanZielkatalog(aktuell) {
+        const bisher = laden(STORAGE_STAN_ZIELKATALOG, null);
+        const katalog = baueStanZielkatalog(aktuell, laden(STORAGE_STAN_VERSIONEN, []), bisher);
+        // Eigener Katalog: aktuelle XML und Versionshistorie werden nicht umgeschrieben.
+        const dauerhaft = { objects: katalog.objects };
+        if (JSON.stringify(bisher) !== JSON.stringify(dauerhaft)) speichern(STORAGE_STAN_ZIELKATALOG, dauerhaft);
+        return katalog;
+    }
+
     function ladeStanBestandMitFallback() {
         const aktuell = laden(STORAGE_STAN_STAMMDATEN, null);
-        if (istNutzbarerStanBestand(aktuell)) return aktuell;
+        if (istNutzbarerStanBestand(aktuell)) return ergaenzeStanZielkatalog(aktuell);
         const gespeichert = stelleGespeichertenStanFallbackWiederHer();
-        if (gespeichert) return gespeichert;
+        if (gespeichert) return ergaenzeStanZielkatalog(gespeichert);
         ladeTechTreeBasisstand();
         return null;
     }
@@ -3327,6 +3364,7 @@ return box;
         html += '<div style="margin-top:4px;color:' + aktuellFarbe + ';font-size:11px;">● ' + esc(aktuell.text) + (daten && daten.dataDate ? ' · Stand ' + esc(daten.dataDate) : '') + '</div>';
         if (status) html += '<div style="margin-top:3px;color:' + (status.state === 'error' ? '#FF8080' : status.state === 'ok' ? '#aaa' : '#FFD27C') + ';font-size:11px;">' + esc(status.message || '') + '</div>';
         if (!daten || !Array.isArray(daten.objects)) return html + '</div>';
+        if (daten.historicalCount) html += '<div style="margin-top:4px;color:#FFD27C;font-size:11px;">Zielauswahl: ' + daten.objects.length + ' bekannte Objekte · davon ' + daten.historicalCount + ' nur aus älteren Datenständen. Voraussetzungen beim Planen neu lesen.</div>';
 
         html += '<div style="margin-top:8px;border-top:1px solid #555;padding-top:7px;">';
         if (auswahl) {
@@ -3369,7 +3407,7 @@ return box;
                     html += '<div style="padding:2px 0 4px 5px;">';
                     objekte.forEach(function (o) {
                         const aktiv = auswahl && auswahl.id === o.id && auswahl.type === o.type;
-                        html += '<button class="haa-stan-ziel" data-id="' + esc(o.id) + '" data-name="' + esc(o.name) + '" data-type="' + esc(o.type) + '" style="display:block;width:100%;text-align:left;margin:2px 0;padding:4px 6px;background:' + (aktiv ? '#4a402a' : '#2a251f') + ';color:' + (aktiv ? '#FFD27C' : '#fff') + ';border:1px solid #555;border-radius:2px;cursor:pointer;">' + esc(o.name) + ' (' + esc(o.id) + ')</button>';
+                        html += '<button class="haa-stan-ziel" data-id="' + esc(o.id) + '" data-name="' + esc(o.name) + '" data-type="' + esc(o.type) + '" style="display:block;width:100%;text-align:left;margin:2px 0;padding:4px 6px;background:' + (aktiv ? '#4a402a' : '#2a251f') + ';color:' + (aktiv ? '#FFD27C' : '#fff') + ';border:1px solid #555;border-radius:2px;cursor:pointer;">' + esc(o.name) + ' (' + esc(o.id) + ')' + (o.historical ? ' <small style="color:#FFD27C;">[älterer Stand' + (o.knownDataDate ? ': ' + esc(o.knownDataDate) : '') + ']</small>' : '') + '</button>';
                     });
                     html += '</div></details>';
                 });
@@ -5795,3 +5833,4 @@ return box;
     window.addEventListener('load', starteSicher);
     setTimeout(starteSicher, 800);
 })();
+
