@@ -167,8 +167,8 @@
         'PHYSICS', 'PSYCHOLOGY', 'NUCLEARPHYSICS', 'SOLARENERGYTECH'
     ]);
 
-    const HASA_VERSION = '1.2.0 Alpha 24';
-    const HASA_BUILD_LABEL = '1.2.0-alpha24-stan-import-2026-10-11';
+    const HASA_VERSION = '1.2.0 Alpha 25';
+    const HASA_BUILD_LABEL = '1.2.0-alpha25-voraussetzungen-2026-10-11';
     const HASA_RUNDE = 8;
     const HASA_RUNDE_SCHLUESSEL = 'runde8';
     // Die MariaDB und sämtliche Schreibendpunkte trennen Runde 7 und 8 jetzt
