@@ -1822,3 +1822,28 @@ Kurt: SERKAL_pull_v2.bat im vorhandenen Website-Ordner ausführen. Diese führt 
 **Restpunkte:** Echter Horizon-Test der Übersichts-/Berichts-/Popup-Strukturen; Mehrtab-/Langzeitbetrieb noch nicht validiert. Allgemeines automatisches Hintergrundlesen, differenzierte Auswertung, Ablaufwarnungen und Freigaben folgen gesondert. Bestehende offene Aufträge (Geräteanmeldung, Forschungs-Wunschliste, Allianzverwaltung etc.) bleiben erhalten.
 
 **Commit:** Dieser gemeinsame Programm-/Dokumentationscommit; die konkrete Kennung wird nach Onlineprüfung im Abschluss genannt.
+
+
+### 2026-10-12 – Kurt an CE HASA – Ereignisfolgen und ASFI-Liste
+
+**Status:** VERBINDLICHER FEATUREAUFTRAG / QUELLTEXTANALYSE DER DURCHBRUCHMELDUNG ERFOLGT / UMSETZUNG OFFEN.
+
+**Technologischer Durchbruch – ausdrücklich vorerst Überlegung:** Kurt erwägt diese Meldungen als zusätzlichen Nachweis des Forschungsfortschritts. Der vorgelegte echte Quelltext enthält die Überschrift „Technologischer Durchbruch“ und filter_type=TECHNOLOGY_BREAKTHROUGH. Im Beispiel wird INFRASTRUCTURE Stufe 6 / Provisorisches Straßennetz unter Gebäude als neu ermöglicht aufgeführt. Das ist zunächst ein Freischaltungsnachweis, kein ausreichender Beleg für eine bestimmte abgeschlossene Forschungs- oder gebaute Gebäudestufe. Keine automatische Erhöhung persönlicher Iststände aus dieser Meldung beauftragt. Titel und tatsächliche Tabellenangaben künftig strukturiert registrieren; ursprünglichen Bericht erhalten.
+
+**Parserbefund:** Echte Berichtsklassen sind MessageContainer, MessageTable, MessageReportResearch und MessageReportLink. Geöffneter Bericht besitzt eine eigene headerseitige Nachrichtenkennung. Navigation (erste/vorherige/nächste/letzte Nachricht), Spielekopf und aktueller Kopfplanet sind keine Berichtsinhalte. Der ausdrücklich beschriftete Berichtsort nennt Orbit 6, während sein Navigationslink planet=5 enthält. Sichtbare Koordinate verwenden; interne Indexbasis nicht raten. Der hochgeladene Originalquelltext enthält laufzeitbezogene Spielparameter und wird nicht unverändert ins öffentliche Repository kopiert.
+
+**Verbindliche Ereignisfolge Planet zerbrochen:** Bericht muss Galaxie, System und Orbit des tatsächlich betroffenen Planeten liefern. Dort entsteht ein Asteroidenfeld (ASFI). Dieser ereignisbelegte neue Zustand ersetzt den davor gespeicherten Planetentyp; dafür ist kein vorheriger Scan dieser Position erforderlich. Frühere Planeteneigenschaften und Messungen bleiben als Historie, dürfen aber nicht als aktuelle Eigenschaften des ASFI ausgegeben werden. Ereigniskennung, Meldungszeit, Quelle und Positionsnachweis erhalten. Ohne sicher zugeordnete Position Meldung registrieren und fehlende Zuordnung kenntlich machen; niemals den oben im Spielekopf aktiven Planeten einsetzen. Ältere Meldungen dürfen keinen nachweislich neueren Zustand zurückdrehen.
+
+**ASFI-Liste – Kurts neuer Featurewunsch:** Eine dauerhaft geführte Liste der bekannten Asteroidenfelder, damit der Spieler geeignete ASFI für Ressourcenabbau, Mutterschiffbau und weitere Zwecke wiederfindet. Koordinate, Herkunft/Ereigniszeit, letzter bestätigter Stand und Alter müssen nachvollziehbar sein. Diese Zwecke sind Gründe für die Liste, noch keine automatische Eignungs- oder Ertragsberechnung.
+
+**Lebenszyklus laut Kurt:** ASFI werden oft rasch besiedelt und können weggeschafft werden, sodass sie anschließend woanders stehen. Für unbetreute Felder nennt Kurt ungefähr 14 Tage bis drei Wochen bis zur selbstständigen Auflösung. Das ist eine Spannweite, keine exakte garantierte Ablaufzeit. Besiedlung und ein tatsächlich nachgewiesener Ortswechsel sind eigene Zustandsänderungen. Besiedelt bedeutet nicht automatisch aufgelöst. Einen Zielort oder die Identität eines verlagerten Feldes nicht allein aus einem leeren alten Standort erfinden.
+
+**Ausgestaltung innerhalb der bisherigen Erhaltregel:** Liste unterscheidet aktuelle bestätigte Position, besiedelt, verlagert (mit bekanntem neuen Ort nur bei Nachweis), ältere/erneut zu prüfende Beobachtung und bestätigtes Verschwinden. Ab ungefähr 14 Tagen ohne neue Bestätigung als prüfbedürftig kennzeichnen; auch nach 21 Tagen nicht allein wegen Alters löschen oder sicher aufgelöst nennen. Neue echte Beobachtungen aktualisieren den aktuellen Stand; Historie erhalten. Fehlende Sicht ist weiterhin blind/unbestätigt. Runden, Kontozuordnung und vereinbarte Freigaben auch für ASFI beachten; kein automatisches Root-Leserecht.
+
+**Betroffene Bereiche/Schnittstellen:** Ereignisregistrierung und Positionsänderungsnachweise im Userscript/lokale IndexedDB; Galaxieansicht/API/MariaDB bei späterer zentraler Darstellung. Neue Schnittstellen vor gemeinsamer Änderung abstimmen und im Brett dokumentieren.
+
+**Prüfung:** Hochgeladenen vollständigen Quelltext der Durchbruchmeldung gelesen; tatsächlichen Titel, Berichtsklassen, Objektkennung/Stufe und sichtbare Koordinate gegenüber Linkindex geprüft. Aktuellen GitHub-Stand und neuesten Übergabeeintrag gelesen. Noch keine ASFI-Programmänderung, keine Forschungsverifikation, kein Produktivupload und keine Servermigration durch diesen Eintrag.
+
+**Restpunkte:** Echter Quelltext von Planet zerbrochen mit Koordinaten erforderlich, um die Positionszuordnung am realen Meldungstyp zu prüfen. Anschließend Ereignisfolge und erste ASFI-Liste implementieren; Nachweise für Besiedlung, Verlagerung und Auflösung anhand realer Meldungen/Sichtungen ergänzen. Die vorstehende Lebensdauer wird als Kurts Praxisangabe geführt. Alpha28 bleibt bis zur fertigen nächsten Gesamtfassung unverändert.
+
+**Commit:** Dieser Dokumentationscommit; nach Übertragung online kontrollieren.
