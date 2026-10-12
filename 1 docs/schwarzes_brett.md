@@ -1782,3 +1782,22 @@ Kurt: SERKAL_pull_v2.bat im vorhandenen Website-Ordner ausführen. Diese führt 
 **Commit:** 2fdc80ce778fe3a46b077e2791e465575786f201 – HASA sharing.1: persönliche Freigaben, gegenseitige Datensicht und geschützte Einrichtung.
 
 **Restpunkte:** Kurts Produktivinstallation/Praxistest; separate Allianz-Mitgliedschaftsverwaltung und feinere Ausnahmen je System/Planet. Produktionsdatenbank nicht von dieser Sitzung verändert. Kein Website-Download/Userscript geändert.
+
+
+### 2026-10-12 – CE HASA an Kurt – Alpha27: gültiger STAN bleibt aktiv, vier Zielgruppen
+
+**Status:** FERTIG IM REPOSITORY; vier HASA- und drei Website-Dateien exakt online geprüft. Produktivupload/Spieltest offen.
+
+**Befund:** Benutzerbild zeigt 339 gespeicherte Objekte vom 27.09.2026 und rote überfällig-Warnung; tatsächlicher Verlust auf dem Gerät ist damit nicht belegt. Code: IndexedDB hat bislang bedingungslosen Vorrang vor Rückfallspeicher; erfolgreiche DB-Schreibvorgänge hinterlassen keine aktuelle synchrone STAN-Sicherung. Alpha26-Zielkatalog benötigt lokal vorhandene Altobjekte.
+
+**Ergebnis:** Nutzhafter alter Stand bleibt aktiv statt roter Ablaufwarnung. STAN-Bestand/Versionen/Katalog synchron im Tampermonkey-Rückfallspeicher sichern, dann IndexedDB; neuester gültiger Bestand aus beiden Quellen/Historien, nach Quelldatum und Importzeit. Katalog berücksichtigt Sicherung. Verspäteter Community-Fallback überschreibt inzwischen importierte XML nicht. 122 Schiffs- und 43 Verteidigungskennungen aus echter Original-STAN 27.09.2026 als historischer allgemeiner Basiskatalog eingebettet. Aktuelle/lokale Angaben haben Vorrang, Fremdrassenfilter unverändert. Keine persönlichen Forschungs-/Gebäudestufen, keine Statistikzählwerte übernommen; Original-XML unverändert. Bereits vollständig verlorene Daten nicht rekonstruierbar.
+
+**Dateien:** 2 src/current/HASA-AKTUELL.user.js.txt; identische hasa_1.2.0-alpha.27_bestand.user.js.txt; 1 docs/hasa_1.2.0-alpha.27_bestand.md; README.md. Website serkal-pages: up/download/others/hasa/HASA-Reparatur-aktuell.user.js.txt identisch, up/hasa.html und up/download.html Versionsangaben Alpha27.
+
+**Prüfungen:** Node-Syntax; 28 Planerregressionen; 32 Chromium-Prüfungen an beiden Original-XMLs; 17 tatsächliche Speicher-/Reload-/Bestandswahl-/Zielgruppenprüfungen. Insgesamt 77. Kein echtes Horizon-Konto getestet.
+
+**Commit:** HASA fbedab633e130d16b048e0a2d3f6678f4d294a68; Website 2d5f137cf4b9515abd59b55578ff27b03ab0e523.
+
+**Migration/Installation:** Keine SQL-/PHP-Migration. Kurt: HASA-AKTUALISIEREN.cmd in C:\Hasa starten; vollständige Zwischenablage in bestehendes Tampermonkey-HASA mit Strg+A/Strg+V, speichern, Horizon neu laden. Version oben Alpha27. Kein erneuter XML-Import erforderlich. Für Kundenlink HASA-Reparatur-Hochladen.bat ausführen; überträgt nur Reparaturdatei, nicht HTML. https://serkal.de/download/others/hasa/HASA-Reparatur-aktuell.user.js.txt . Kein produktiver FTP-Upload aus dieser Sitzung.
+
+**Restpunkte:** Kurts Praxistest/Produktivupload; HTML-Websiteupload separat über vorhandenen Websiteprozess. Gerätespezifischer Standverlust nicht als erwiesene Ursache behauptet.
