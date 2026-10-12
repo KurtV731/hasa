@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         HASA – Horizon Ascension Assistant
 // @namespace    horiversum.hasa
-// @version      1.2.0-alpha.27
+// @version      1.2.0-alpha.28
 // @charset      UTF-8
 // @description  Horizon-Assistent mit kompakter Galaxiescanner-Anzeige und aktiver lokaler IndexedDB
 // @match        https://horiversum.org/game/main/main.php*
@@ -15,15 +15,19 @@
 
 /*
 
+ Alpha28 (12.10.2026): Lokales Ereignisregister mit Wiki-Katalog,
+ Nachrichtenkennung, Originaltext, Übersicht und geöffneten Berichten.
+ Keine automatische Fachauswertung; nur bei gültiger HASA-Anmeldung.
+
  Alpha27 (12.10.2026): STAN-Rückfallsicherung, neuester gültiger lokaler
  Bestand, keine rote Ablaufwarnung für nutzbare Daten. Bekannte Schiffs-
  und Verteidigungsziele vom 27.09.2026 als historische Basis enthalten.
 ==========================================================
  HASA – Horizon Ascension Assistant
 
- Version : 1.2.0 Alpha 27
- Status  : Letzter gültiger STAN bleibt aktiv; vollständige Zielgruppen
- Build   : 2026-10-11
+ Version : 1.2.0 Alpha 28
+ Status  : Erste Ereignisregistrierung; Alpha27-Bestandssicherung enthalten
+ Build   : 2026-10-12
 
  Neu in Alpha 26:
  - ältere bekannte Planungsobjekte bleiben im Zielkatalog auswählbar
@@ -178,8 +182,8 @@
         'PHYSICS', 'PSYCHOLOGY', 'NUCLEARPHYSICS', 'SOLARENERGYTECH'
     ]);
 
-    const HASA_VERSION = '1.2.0 Alpha 27';
-    const HASA_BUILD_LABEL = '1.2.0-alpha27-bestand-2026-10-12';
+    const HASA_VERSION = '1.2.0 Alpha 28';
+    const HASA_BUILD_LABEL = '1.2.0-alpha28-ereignisregister-2026-10-12';
     const HASA_RUNDE = 8;
     const HASA_RUNDE_SCHLUESSEL = 'runde8';
     // Die MariaDB und sämtliche Schreibendpunkte trennen Runde 7 und 8 jetzt
@@ -213,6 +217,7 @@
         authenticated: false,
         passwordChangeRequired: false,
         playerName: null,
+        userId: null,
         isUserAdmin: false,
         csrf: null,
         error: null
@@ -256,6 +261,7 @@
         HAA_SERVER_AUTH.authenticated = false;
         HAA_SERVER_AUTH.passwordChangeRequired = false;
         HAA_SERVER_AUTH.playerName = null;
+        HAA_SERVER_AUTH.userId = null;
         HAA_SERVER_AUTH.isUserAdmin = false;
         HAA_SERVER_AUTH.csrf = null;
         HAA_SERVER_AUTH.error = fehler || null;
@@ -275,6 +281,8 @@
             HAA_SERVER_AUTH.passwordChangeRequired = Boolean(antwort.password_change_required);
             HAA_SERVER_AUTH.playerName = antwort.user && antwort.user.player_name
                 ? String(antwort.user.player_name) : null;
+            HAA_SERVER_AUTH.userId = antwort.user && Number.isSafeInteger(antwort.user.id) && antwort.user.id > 0
+                ? antwort.user.id : null;
             HAA_SERVER_AUTH.isUserAdmin = Boolean(antwort.user && antwort.user.is_user_admin);
             HAA_SERVER_AUTH.csrf = antwort.csrf ? String(antwort.csrf) : null;
             HAA_SERVER_AUTH.error = null;
@@ -330,6 +338,321 @@
         }
         return (hash >>> 0).toString(16).padStart(8, '0');
     }
+
+    // Alpha28: Rohmeldungen zuerst erhalten; Fachauswertung folgt je Ereignistyp.
+    const HASA_EREIGNIS_KATALOG = [
+        'Reiche Mineralvorkommen entdeckt', 'Reiche Metallvorkommen entdeckt',
+        'Unterirdischer Treibstoffsee entdeckt', 'Abschirmungsverbesserung',
+        'Meteorit abgefangen', 'Hohe Geburtenrate nach Stromausfall',
+        'Laserkristalle', 'Hirnsteigerungsdroge', 'Motivationsvideo verfügbar',
+        'Planet durchläuft Zeitanomalie', 'Soldatenaustauschprogramm',
+        'Quantenfluktuation im Subraumlager', 'Treibstoffnebel entdeckt', 'Planet zerbrochen',
+        'Fliegender Händler', 'Schiffsangebot auf dem Schwarzmarkt',
+        'Waffenangebot auf dem Schwarzmarkt', 'Schwarzmarktangebot von Weltraumschrott',
+        'Mietanfrage der Handelsgilde', 'Sektenführer erschienen', 'Sektenführer verschwunden',
+        'Galaktische Generalamnestie', 'Insider Handel', 'Bruchlandung eines Raketenschlittens',
+        'Erhöhte Energieausbeute durch Sonnenfleckenaktivität',
+        'Wassereinbruch in Mineralmine', 'Radioaktivitätsleck', 'Reaktorkernschmelze',
+        'Meteoriteneinschlag', 'Schwächung der Verteidigungsbereitschaft',
+        'Zwischenfall auf Testgelände', 'Polsprung', 'Ausbruch einer Seuche',
+        'Seuche erfolgreich bekämpft', 'Quarantäne zur Seuchenbekämpfung', 'Seuche verbreitet sich',
+        'Kollision mit Weltraummüll', 'Globale Subraumanomalie',
+        'Laserkristalle vom Hund gefressen', 'Laserkristalle zerfallen',
+        'Geisterflotte nähert sich', 'Angriff von Geisterflotte', 'Mietvertrag gekündigt',
+        'Motivationsvideo verschlampt', 'Vorbeiziehender Komet', 'Komet in Sonne gestürzt',
+        'Komet dank Beschuss in Sonne gestürzt', 'Gravitationswelle wirft Planet aus Umlaufbahn',
+        'Gravitationswelle zwingt Planet in andere Umlaufbahn',
+        'Gravitationswelle wirft Planet aus Umlaufbahn - Science-Ologen als Betrüger entlarvt',
+        'Roboterfehlfunktion', 'Roboteraufstand weitet sich aus', 'Heimweh auf Kolonie',
+        'Rebellion der Kolonisten', 'Düstere Vorahnungen', 'Science-Ologen verhört',
+        'Science-Ologen mit kleiner Spende bedacht', 'Ungenügende Rohstoffreserven für Science-Ologen',
+        'Science-Ologen retten Planeten', 'Die Gildenversammlung',
+        'Effizienzverbesserung des Reaktors möglich'
+    ];
+    const STORAGE_EREIGNIS_REGISTER = 'hasa_ereignisregister_v1_' + HASA_RUNDE_SCHLUESSEL;
+    const HAA_EREIGNIS_DOKUMENTE = new Map();
+    const HAA_EREIGNIS_FRAMES = new Map();
+    let HAA_EREIGNIS_TIMER = null;
+    let HAA_EREIGNIS_ANZEIGE_TIMER = null;
+    let HAA_EREIGNIS_FEHLER = null;
+
+    function ereignisVergleichstext(text) {
+        return prdrNormalisiereText(text).normalize('NFKC').toLocaleLowerCase('de-DE')
+            .replace(/[!.,:;?"„“”']/g, '').replace(/\s+/g, ' ').trim();
+    }
+
+    function erkenneHasaEreignis(text) {
+        const normal = ereignisVergleichstext(text);
+        // Spezifische Folgemeldungen haben Vorrang vor allgemeinen Titeln.
+        const passend = HASA_EREIGNIS_KATALOG.filter(function (titel) {
+            const muster = ereignisVergleichstext(titel);
+            return (' ' + normal + ' ').includes(' ' + muster + ' ');
+        }).sort(function (a, b) { return b.length - a.length; });
+        if (passend.length) return passend[0];
+        if (/neue laserkristalle entdeckt/.test(normal)) return 'Laserkristalle';
+        if (/hirnsteigerungsdrogen gefunden/.test(normal)) return 'Hirnsteigerungsdroge';
+        return null;
+    }
+
+    function ereignisScannerBenutzer() {
+        return istHasaFuerSitzungAktiv() && HAA_SERVER_AUTH.authenticated
+            && !HAA_SERVER_AUTH.passwordChangeRequired && HAA_SERVER_AUTH.userId
+            ? String(HAA_SERVER_AUTH.userId) : null;
+    }
+
+    function ereignisNachrichtenUrl(href, basis) {
+        try {
+            const url = new URL(href, basis || window.location.href);
+            if (url.origin !== window.location.origin || url.searchParams.get('cmd') !== 'message'
+                || url.searchParams.get('action') !== 'view'
+                || !url.searchParams.get('message_id')) return null;
+            return { messageId: url.searchParams.get('message_id'), url: url.href };
+        } catch (_) { return null; }
+    }
+
+    function ereignisIstSpieltext(element, auchEntfernt) {
+        if (!element || element.nodeType !== 1 || element.closest('#haa-box')) return false;
+        if (element.closest('script,style,noscript,template,[hidden],[aria-hidden="true"]')) return false;
+        if (auchEntfernt && !element.isConnected) return true;
+        const win = element.ownerDocument.defaultView;
+        if (!win) return false;
+        for (let node = element; node && node.nodeType === 1; node = node.parentElement) {
+            const stil = win.getComputedStyle(node);
+            if (stil.display === 'none' || stil.visibility === 'hidden') return false;
+        }
+        return true;
+    }
+
+    function ereignisOriginaltext(element) {
+        const kopie = element.cloneNode(true);
+        const originalKinder = Array.from(element.querySelectorAll('*'));
+        const kopieKinder = Array.from(kopie.querySelectorAll('*'));
+        originalKinder.forEach(function (node, index) {
+            if (!ereignisIstSpieltext(node, true)) kopieKinder[index].remove();
+        });
+        kopie.querySelectorAll('script,style,noscript,template,#haa-box,input,select,textarea,[hidden],[aria-hidden="true"]').forEach(function (node) { node.remove(); });
+        kopie.querySelectorAll('br,p,div,li,tr,td,th,h1,h2,h3,h4,section,article').forEach(function (node) {
+            node.prepend(element.ownerDocument.createTextNode('\n'));
+            node.append(element.ownerDocument.createTextNode('\n'));
+        });
+        // Textinhalt erhalten, nur Layout-Leerraum normalisieren; niemals als HTML anzeigen.
+        return String(kopie.textContent || '').replace(/\r\n?/g, '\n').trim();
+    }
+
+    function vereinigeHasaEreignisRegister(a, b) {
+        const result = new Map();
+        [a, b].forEach(function (liste) {
+            (Array.isArray(liste) ? liste : []).forEach(function (eintrag) {
+                if (!eintrag || !eintrag.id || !Array.isArray(eintrag.observations)) return;
+                const alt = result.get(eintrag.id);
+                if (!alt) { result.set(eintrag.id, Object.assign({}, eintrag, { observations: eintrag.observations.slice() })); return; }
+                eintrag.observations.forEach(function (sichtung) {
+                    if (!alt.observations.some(function (s) { return s.kind === sichtung.kind && s.rawText === sichtung.rawText; })) alt.observations.push(sichtung);
+                });
+                if (!alt.eventType && eintrag.eventType) alt.eventType = eintrag.eventType;
+            });
+        });
+        return Array.from(result.values());
+    }
+
+    function registriereHasaEreignis(text, meta) {
+        const ownerId = ereignisScannerBenutzer();
+        if (!ownerId || !prdrNormalisiereText(text)) return false;
+        const typ = erkenneHasaEreignis(text);
+        if (!meta.messageId && !typ) return false;
+        const identitaet = meta.messageId ? 'message:' + meta.messageId
+            : 'text:' + prdrHash(prdrNormalisiereText(text));
+        const id = HASA_RUNDE + ':' + ownerId + ':' + identitaet;
+        const bisher = laden(STORAGE_EREIGNIS_REGISTER, []);
+        const register = vereinigeHasaEreignisRegister(bisher, []);
+        // Ohne Nachrichtenkennung Text zusätzlich vergleichen: Hash allein genügt nicht.
+        let eintrag = register.find(function (e) {
+            return (e.id === id || (!meta.messageId && e.id.startsWith(id + ':collision:'))) && (meta.messageId || e.observations.some(function (s) {
+                return prdrNormalisiereText(s.rawText) === prdrNormalisiereText(text);
+            }));
+        });
+        if (eintrag && eintrag.observations.some(function (s) {
+            return s.kind === meta.kind && s.rawText === text;
+        })) return false;
+        const jetzt = new Date().toISOString();
+        const zeit = text.match(/\b\d{2}\.\d{2}\.\d{4}\s+\d{2}:\d{2}(?::\d{2})?\b/);
+        const planet = text.match(/(?:Kolonie|Planeten?)\s+["„“]([^"„“”]+)["“”]/i);
+        const sichtung = {
+            kind: meta.kind, rawText: text, capturedAt: jetzt,
+            reportedTimeText: zeit ? zeit[0] : null, // Keine unbewiesene Zeitzone annehmen.
+            sourceUrl: meta.sourceUrl || null
+        };
+        if (!eintrag) {
+            const gleich = register.filter(function (e) { return e.id === id || e.id.startsWith(id + ':collision:'); }).length;
+            eintrag = {
+                id: gleich ? id + ':collision:' + gleich : id, round: HASA_RUNDE, ownerId: ownerId,
+                messageId: meta.messageId || null, eventType: typ,
+                planetName: planet ? planet[1] : null, firstCapturedAt: jetzt,
+                identityCertain: Boolean(meta.messageId), visibility: 'private', observations: []
+            };
+            register.push(eintrag);
+        }
+        eintrag.observations.push(sichtung);
+        if (typ) eintrag.eventType = typ;
+        if (planet) eintrag.planetName = planet[1];
+        try {
+            speichern(STORAGE_EREIGNIS_REGISTER, register);
+            HAA_EREIGNIS_FEHLER = null;
+        } catch (fehler) {
+            HAA_EREIGNIS_FEHLER = 'Meldung konnte lokal nicht gespeichert werden.';
+            console.warn('HASA Ereignisregister:', fehler);
+            return false;
+        }
+        clearTimeout(HAA_EREIGNIS_ANZEIGE_TIMER);
+        HAA_EREIGNIS_ANZEIGE_TIMER = setTimeout(aktualisiereHasaEreignisAnzeige, 150);
+        return true;
+    }
+
+    function scanneHasaEreignisKnoten(root, basis, auchEntfernt) {
+        if (!ereignisScannerBenutzer() || !root || root.nodeType !== 1) return;
+        const links = Array.from(root.querySelectorAll('a[href]'));
+        if (root.matches('a[href]')) links.unshift(root);
+        links.forEach(function (link) {
+            if (!ereignisIstSpieltext(link, auchEntfernt)) return;
+            const adresse = ereignisNachrichtenUrl(link.getAttribute('href'), basis);
+            if (!adresse) return;
+            let zeile = link.closest('tr,li');
+            // Eine äußere Layouttabelle mit mehreren Nachrichten ist kein Einzelbericht.
+            if (zeile && new Set(Array.from(zeile.querySelectorAll('a[href]')).map(function (a) {
+                const u = ereignisNachrichtenUrl(a.getAttribute('href'), basis); return u && u.messageId;
+            }).filter(Boolean)).size > 1) zeile = null;
+            if (!zeile) zeile = link;
+            registriereHasaEreignis(ereignisOriginaltext(zeile), {
+                messageId: adresse.messageId, kind: 'overview', sourceUrl: adresse.url
+            });
+        });
+        // Kurze Einblendungen ohne Nachrichtenkennung bleiben als unsichere Sichtung erhalten.
+        const kandidaten = [root].concat(Array.from(root.querySelectorAll('p,td,li,div')));
+        kandidaten.forEach(function (node) {
+            if (!ereignisIstSpieltext(node, auchEntfernt) || node.querySelector('a[href]')) return;
+            if (node.children.length && !node.matches('p,td,li')) return;
+            const text = ereignisOriginaltext(node);
+            if (text.length > 2000 || !erkenneHasaEreignis(text)) return;
+            // In einer verlinkten Nachrichtenzeile keine zweite, kennungslose Kopie anlegen.
+            const umgebung = node.closest('tr,li');
+            if (umgebung && Array.from(umgebung.querySelectorAll('a[href]')).some(function (a) {
+                return ereignisNachrichtenUrl(a.getAttribute('href'), basis);
+            })) return;
+            registriereHasaEreignis(text, { kind: 'notice', sourceUrl: basis });
+        });
+    }
+
+    function scanneHasaEreignisDokument(doc, besucht) {
+        if (!doc || !doc.body || besucht.has(doc)) return;
+        besucht.add(doc);
+        const adresse = ereignisNachrichtenUrl(doc.location.href, window.location.href);
+        if (adresse && ereignisScannerBenutzer()) {
+            registriereHasaEreignis(ereignisOriginaltext(doc.body), {
+                messageId: adresse.messageId, kind: 'report', sourceUrl: adresse.url
+            });
+        } else scanneHasaEreignisKnoten(doc.body, doc.location.href, false);
+        if (!HAA_EREIGNIS_DOKUMENTE.has(doc)) {
+            const observer = new MutationObserver(function (records) {
+                if (!ereignisScannerBenutzer()) return;
+                let relevant = false;
+                records.forEach(function (record) {
+                    const ziel = record.target.nodeType === 1 ? record.target : record.target.parentElement;
+                    if (ziel && ziel.closest('#haa-box')) return;
+                    relevant = true;
+                    if (!ereignisNachrichtenUrl(doc.location.href, window.location.href)) {
+                        record.addedNodes.forEach(function (node) {
+                            scanneHasaEreignisKnoten(node, doc.location.href, true);
+                        });
+                    }
+                });
+                // Textänderungen und bereits geöffnete Berichte ebenfalls übernehmen.
+                if (relevant) scanneHasaEreignisDokument(doc, new Set());
+            });
+            observer.observe(doc.body, { subtree: true, childList: true, characterData: true });
+            HAA_EREIGNIS_DOKUMENTE.set(doc, observer);
+        }
+        Array.from(doc.querySelectorAll('iframe,frame')).forEach(function (frame) {
+            if (!ereignisIstSpieltext(frame, false)) return;
+            if (!HAA_EREIGNIS_FRAMES.has(frame)) {
+                const beimLaden = function () {
+                    if (!istHasaFuerSitzungAktiv()) return;
+                    try { scanneHasaEreignisDokument(frame.contentDocument, new Set()); } catch (_) {}
+                };
+                frame.addEventListener('load', beimLaden);
+                HAA_EREIGNIS_FRAMES.set(frame, beimLaden);
+            }
+            try { scanneHasaEreignisDokument(frame.contentDocument, besucht); } catch (_) { /* fremde Herkunft bleibt unberührt */ }
+        });
+    }
+
+    function pruefeHasaEreignisse() {
+        if (!istHasaFuerSitzungAktiv()) return;
+        for (const [doc, observer] of HAA_EREIGNIS_DOKUMENTE) {
+            try {
+                if (doc !== document && (!doc.defaultView || !doc.defaultView.frameElement || !doc.defaultView.frameElement.isConnected
+                    || doc.defaultView.frameElement.contentDocument !== doc)) {
+                    observer.disconnect(); HAA_EREIGNIS_DOKUMENTE.delete(doc);
+                }
+            } catch (_) { observer.disconnect(); HAA_EREIGNIS_DOKUMENTE.delete(doc); }
+        }
+        for (const [frame, handler] of HAA_EREIGNIS_FRAMES) {
+            if (!frame.isConnected) { frame.removeEventListener('load', handler); HAA_EREIGNIS_FRAMES.delete(frame); }
+        }
+        scanneHasaEreignisDokument(document, new Set());
+        aktualisiereHasaEreignisAnzeige();
+    }
+
+    function installiereHasaEreignisScanner() {
+        if (HAA_EREIGNIS_TIMER) return;
+        pruefeHasaEreignisse();
+        HAA_EREIGNIS_TIMER = setInterval(pruefeHasaEreignisse, 30000);
+    }
+
+    function stoppeHasaEreignisScanner() {
+        HAA_EREIGNIS_DOKUMENTE.forEach(function (observer) { observer.disconnect(); });
+        HAA_EREIGNIS_DOKUMENTE.clear();
+        HAA_EREIGNIS_FRAMES.forEach(function (handler, frame) { frame.removeEventListener('load', handler); });
+        HAA_EREIGNIS_FRAMES.clear();
+        clearInterval(HAA_EREIGNIS_TIMER); HAA_EREIGNIS_TIMER = null;
+        clearTimeout(HAA_EREIGNIS_ANZEIGE_TIMER); HAA_EREIGNIS_ANZEIGE_TIMER = null;
+    }
+
+    function baueHasaEreignisRegisterHtml() {
+        const ownerId = ereignisScannerBenutzer();
+        if (!ownerId) return '<div>Bitte bei HASA anmelden und den Startpasswortwechsel abschließen.</div>';
+        const liste = laden(STORAGE_EREIGNIS_REGISTER, []);
+        const eigene = (Array.isArray(liste) ? liste : []).filter(function (e) {
+            return e.ownerId === ownerId && e.round === HASA_RUNDE;
+        });
+        let html = '<div>' + eigene.length + ' Meldungen · Runde ' + esc(HASA_RUNDE) + '</div>';
+        if (HAA_EREIGNIS_FEHLER) html += '<div style="color:#FF7777;">' + esc(HAA_EREIGNIS_FEHLER) + '</div>';
+        if (!eigene.length) html += '<div style="margin-top:6px;">Noch keine Meldungen erfasst. Nachrichtenübersicht oder Bericht in Horizon öffnen.</div>';
+        // Anzeige begrenzen, gespeicherten Bestand niemals abschneiden.
+        eigene.slice(-100).reverse().forEach(function (e) {
+            const voll = e.observations.filter(function (s) { return s.kind === 'report'; });
+            const s = voll.length ? voll[voll.length - 1] : e.observations[e.observations.length - 1];
+            html += '<details style="margin-top:6px;border-top:1px solid #444;padding-top:5px;">'
+                + '<summary style="cursor:pointer;overflow-wrap:anywhere;">' + esc(e.eventType || 'Noch nicht zugeordnet')
+                + (e.planetName ? ' · ' + esc(e.planetName) : '') + '</summary>'
+                + '<div style="color:#aaa;">' + esc(s.reportedTimeText || 'Spielzeit nicht erkannt')
+                + ' · ' + (voll.length ? 'Bericht sichtbar erfasst' : 'Meldung erfasst')
+                + (!e.identityCertain ? ' · ohne Nachrichtenkennung' : '') + '</div>'
+                + '<div style="white-space:pre-wrap;overflow-wrap:anywhere;margin-top:4px;">' + esc(s.rawText) + '</div>'
+                + '</details>';
+        });
+        if (eigene.length > 100) html += '<div>Letzte 100 Meldungen angezeigt; der vollständige Bestand bleibt gespeichert.</div>';
+        return html;
+    }
+
+    function aktualisiereHasaEreignisAnzeige() {
+        const element = document.getElementById('haa-ereignis-register');
+        if (!element) return;
+        const html = baueHasaEreignisRegisterHtml();
+        if (element.dataset.inhalt === html) return;
+        element.dataset.inhalt = html;
+        element.innerHTML = html;
+    }
+
 
     function parsePrdrBericht(doc, berichtUrl) {
         if (!doc || !doc.body) return null;
@@ -1484,7 +1807,7 @@
 
     function hasaIndexedDbSchluessel() {
         return new Set([
-            STORAGE_GALASCAN_LETZTER_STAND, STORAGE_PRDR_BERICHTE, STORAGE_TECHTREE_GRAPH,
+            STORAGE_EREIGNIS_REGISTER, STORAGE_GALASCAN_LETZTER_STAND, STORAGE_PRDR_BERICHTE, STORAGE_TECHTREE_GRAPH,
             STORAGE_TECHTREE_STATUS, STORAGE_TECHTREE_DEBUG,
             STORAGE_TECHTREE_SPIELSTAND, STORAGE_STAN_STAMMDATEN, STORAGE_STAN_ZIELKATALOG,
             STORAGE_STAN_VERSIONEN, STORAGE_STAN_STATUS, STORAGE_SEITENSCAN_STATUS
@@ -1568,7 +1891,7 @@
             return;
         }
 
-        if ([STORAGE_STAN_STAMMDATEN, STORAGE_STAN_VERSIONEN, STORAGE_STAN_ZIELKATALOG].includes(key)) {
+        if ([STORAGE_EREIGNIS_REGISTER, STORAGE_STAN_STAMMDATEN, STORAGE_STAN_VERSIONEN, STORAGE_STAN_ZIELKATALOG].includes(key)) {
             speichernKlassisch(key, wert);
         }
 
@@ -1616,6 +1939,14 @@
 
             for (const key of hasaIndexedDbSchluessel()) {
                 const vorhanden = await leseHasaIndexedDbWert(db, key);
+                if (key === STORAGE_EREIGNIS_REGISTER) {
+                    const register = vereinigeHasaEreignisRegister(vorhanden && vorhanden.wert,
+                        ladenKlassisch(key, []));
+                    await schreibeHasaIndexedDbWert(db, key, register);
+                    HAA_INDEXEDDB_CACHE.set(key, register);
+                    geladen += 1;
+                    continue;
+                }
 
                 if (vorhanden !== null
                     && Object.prototype.hasOwnProperty.call(vorhanden, 'wert')) {
@@ -3811,6 +4142,8 @@ return box;
             html += baueAccordionBereichHtml('alarme', '⏰ Alarme', alarmHtml);
             html += baueAccordionBereichHtml('techtree', '🧭 Forschungsplanung', baueTechTreeTestHtml());
             html += baueAccordionBereichHtml('galascanner', '🌌 Galaxiescanner', baueGalascannerImportHtml());
+            html += baueAccordionBereichHtml('berichte', '📋 Berichte und Ereignisse',
+                '<div id="haa-ereignis-register">' + baueHasaEreignisRegisterHtml() + '</div>');
         }
 
         box.innerHTML = html;
@@ -5766,6 +6099,7 @@ return box;
     }
 
     function stoppeHasaLaufendeArbeit() {
+        stoppeHasaEreignisScanner();
         if (HAA_SEITENSCAN_TIMER) {
             clearTimeout(HAA_SEITENSCAN_TIMER);
             HAA_SEITENSCAN_TIMER = null;
@@ -5839,6 +6173,7 @@ return box;
         migriereAlteForschungsUeberwachung();
         installiereAutomatischenSeitenscan();
         installierePrdrSofortwaechter();
+        installiereHasaEreignisScanner();
         installiereAutomatischenGalaxiescan();
         installiereHasaAnmeldungspruefung();
         installiereAudioFreigabe();
@@ -5863,5 +6198,6 @@ return box;
     window.addEventListener('load', starteSicher);
     setTimeout(starteSicher, 800);
 })();
+
 
 

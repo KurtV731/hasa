@@ -32,12 +32,20 @@ Tampermonkey als neues Userscript eingefügt und gespeichert.
 
 ## Aktuelle Entwicklungsreihe
 
-**HASA 1.2.0 Alpha 27 – vollständiger Zielkatalog**
+**HASA 1.2.0 Alpha 28 – erste Ereignisregistrierung**
 
 Aktuelle Testdateien:
 
 - fester Aktualisierungspfad: `2 src/current/HASA-AKTUELL.user.js.txt`
-- archivierte Fassung: `2 src/current/hasa_1.2.0-alpha.27_bestand.user.js.txt`
+- archivierte Fassung: `2 src/current/hasa_1.2.0-alpha.28_ereignisregister.user.js.txt`
+
+Alpha 28 ergänzt ein lokales Register für sichtbare Ereignismeldungen und bereits
+geöffnete Berichte. Nachrichtenkennung, Originaltext und Zeitangaben bleiben
+nachvollziehbar erhalten; unbekannte Nachrichten werden zunächst nur registriert.
+Der Wiki-Katalog enthält 61 Ereignis-/Folgemeldungstitel. Das neue Modul benötigt
+eine gültige HASA-Anmeldung und speichert getrennt nach Konto und Runde.
+Die Fachauswertung folgt später. Bedienung und Grenzen:
+`1 docs/hasa_1.2.0-alpha.28_ereignisregister.md`.
 
 Alpha 27 erhält bekannte Schiffe und Verteidigungen aus älteren STAN-Ständen\nals auswählbare Ziele. Historische Ziele sind gekennzeichnet; die aktuelle XML\nbleibt unverändert.\n\nAlpha 25 zeigt fehlende sekundäre Voraussetzungen mit Herkunft, trennt Physik von\nNuklearphysik und speichert Gebäudestände je Planet; Forschungsstände gelten\nplanetenübergreifend. Normale Zielwahl nutzt die nächste vorhandene Stufe,\ndie Zielstufe bleibt veränderbar.\n\nAlpha 24 importiert gültige STAN-XML-Daten auch dann, wenn der Server hinter dem
 XML-Ende PHP-Warnmeldungen angehängt hat. Unbekannte Zusätze und beschädigte XML

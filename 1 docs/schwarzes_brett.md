@@ -1801,3 +1801,24 @@ Kurt: SERKAL_pull_v2.bat im vorhandenen Website-Ordner ausführen. Diese führt 
 **Migration/Installation:** Keine SQL-/PHP-Migration. Kurt: HASA-AKTUALISIEREN.cmd in C:\Hasa starten; vollständige Zwischenablage in bestehendes Tampermonkey-HASA mit Strg+A/Strg+V, speichern, Horizon neu laden. Version oben Alpha27. Kein erneuter XML-Import erforderlich. Für Kundenlink HASA-Reparatur-Hochladen.bat ausführen; überträgt nur Reparaturdatei, nicht HTML. https://serkal.de/download/others/hasa/HASA-Reparatur-aktuell.user.js.txt . Kein produktiver FTP-Upload aus dieser Sitzung.
 
 **Restpunkte:** Kurts Praxistest/Produktivupload; HTML-Websiteupload separat über vorhandenen Websiteprozess. Gerätespezifischer Standverlust nicht als erwiesene Ursache behauptet.
+
+
+### 2026-10-12 – neuer CE HASA an Kurt – Übernahme und Alpha28: erste Ereignisregistrierung
+
+**Status:** Gesamtfassung erstellt und technisch geprüft; echte Horizon-Prüfung offen. Diese Sitzung übernimmt auf Kurts Auftrag die CE-Arbeit aus dem nicht mehr zuverlässig antwortenden CE-HASA-Chat. Vollständiges Schwarzes Brett, aktueller GitHub-Stand und Alpha27 gelesen; vorherige Regeln und Fachbereichsgrenzen bleiben verbindlich.
+
+**Auftrag:** In das Projekt einarbeiten und erste Stufe des Nachrichten-/Berichtescanners liefern. Sämtliche sichtbaren Meldungen zunächst registrieren; Fachauswertung je Ereignis später festlegen.
+
+**Ergebnis:** Neues kompaktes Akkordeon Berichte und Ereignisse. 61 Titel/Folgemeldungen/Varianten aus Kurts abgelegter Ereignis-Wiki-PDF. Sichtbare verlinkte Nachrichtenübersicht aufnehmen; bereits geöffnete Berichte derselben message_id ergänzen; Rohtextänderungen erhalten. Unbekannte Nachrichten nicht verwerfen. Bekannte kurze Einblendungen ohne Kennung als unsicher erfassen. Ohne Kennung sind identische Wiederholungen nicht zuverlässig unterscheidbar; keine sichere Ereigniszählung behauptet. Keine eigenständige Nachrichtennavigation, kein Beantworten von Dialogen, keine automatische Fachauswertung. Bestehender PRDR-Wächter unverändert.
+
+**Daten/Schnittstelle:** Lokales IndexedDB-Register und synchrone Rückfallsicherung; beim Start Bestände vereinigen. Runde8 und angemeldete technische Kontokennung, keine fremde Kontosicht im Register. Bestehendes auth-status.php liefert die benötigte ID bereits; keine PHP-Änderung. Neues Modul pausiert ohne Anmeldung/Pflichtwechsel. Original-Spielzeit als Text, Erfassungszeit separat; keine erfundene Zeitzone, Dauer, Wirkung oder Forschungsvorteile. Keine allgemeine Berichtsdatenübertragung an MariaDB.
+
+**Dateien:** 2 src/current/HASA-AKTUELL.user.js.txt; identische hasa_1.2.0-alpha.28_ereignisregister.user.js.txt; 1 docs/hasa_1.2.0-alpha.28_ereignisregister.md; README.md; 5 tools/test_hasa_ereignisregister.cjs; dieses Schwarze Brett. Sichtbare Version, Metadaten und Build Alpha28; Änderungshinweise nur im Kopf. Alpha27-Bestandssicherung enthalten.
+
+**Prüfungen:** JavaScript-Syntax; 23 bestandene Chromium-Testgruppen mit allen 61 Katalogtiteln, tatsächlichen Scannerfunktionen und vollständigem Userscript. Übersicht/Einzelbericht, Änderungen, Doppelungen, unterschiedliche Kennungen, unsichere Einblendungen, entfernte Kurzmeldungen, Textänderungen, versteckte Inhalte, HASA-Ausschluss, gleich-/fremdherkunftige Frames, Kontotrennung, Anmeldung/Pflichtwechsel, HTML-Escaping, Abschalten, 100er-Anzeige ohne Bestandskürzung, native IndexedDB/Rückfallsicherung/Reload/Bestandsvereinigung, vollständiger Start sowie 390px-Ansicht und Neustart. Testseiten synthetisch, Screenshot visuell geprüft. Initialer Browserdownload fehlgeschlagen; danach verfügbares Chromium über Node-Paket lokal bereitgestellt und tatsächliche Browsertests durchgeführt. Keine reale Horizon-Sitzung verwendet.
+
+**Installation:** HASA-AKTUALISIEREN.cmd in C:\Hasa starten; vorhandenes Tampermonkey-HASA vollständig mit Strg+A/Strg+V ersetzen, speichern, Horizon neu laden. Bei HASA anmelden; Nachrichtenübersicht und einen echten Ereignisbericht öffnen; Berichte und Ereignisse kontrollieren. Keine SQL-/PHP-Migration, kein XML-Neuimport. In dieser Sitzung kein Website-/FTP-Upload. Website-Reparaturdownload weiterhin separater Veröffentlichungsstand; nicht als bereits Alpha28 ausgegeben.
+
+**Restpunkte:** Echter Horizon-Test der Übersichts-/Berichts-/Popup-Strukturen; Mehrtab-/Langzeitbetrieb noch nicht validiert. Allgemeines automatisches Hintergrundlesen, differenzierte Auswertung, Ablaufwarnungen und Freigaben folgen gesondert. Bestehende offene Aufträge (Geräteanmeldung, Forschungs-Wunschliste, Allianzverwaltung etc.) bleiben erhalten.
+
+**Commit:** Dieser gemeinsame Programm-/Dokumentationscommit; die konkrete Kennung wird nach Onlineprüfung im Abschluss genannt.
