@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         HASA – Horizon Ascension Assistant
 // @namespace    horiversum.hasa
-// @version      1.2.0-alpha.26
+// @version      1.2.0-alpha.27
 // @charset      UTF-8
 // @description  Horizon-Assistent mit kompakter Galaxiescanner-Anzeige und aktiver lokaler IndexedDB
 // @match        https://horiversum.org/game/main/main.php*
@@ -14,11 +14,15 @@
 // ==/UserScript==
 
 /*
+
+ Alpha27 (12.10.2026): STAN-Rückfallsicherung, neuester gültiger lokaler
+ Bestand, keine rote Ablaufwarnung für nutzbare Daten. Bekannte Schiffs-
+ und Verteidigungsziele vom 27.09.2026 als historische Basis enthalten.
 ==========================================================
  HASA – Horizon Ascension Assistant
 
- Version : 1.2.0 Alpha 26
- Status  : Bekannte Schiffe und Verteidigungen weiterhin auswählbar
+ Version : 1.2.0 Alpha 27
+ Status  : Letzter gültiger STAN bleibt aktiv; vollständige Zielgruppen
  Build   : 2026-10-11
 
  Neu in Alpha 26:
@@ -174,8 +178,8 @@
         'PHYSICS', 'PSYCHOLOGY', 'NUCLEARPHYSICS', 'SOLARENERGYTECH'
     ]);
 
-    const HASA_VERSION = '1.2.0 Alpha 26';
-    const HASA_BUILD_LABEL = '1.2.0-alpha26-zielkatalog-2026-10-11';
+    const HASA_VERSION = '1.2.0 Alpha 27';
+    const HASA_BUILD_LABEL = '1.2.0-alpha27-bestand-2026-10-12';
     const HASA_RUNDE = 8;
     const HASA_RUNDE_SCHLUESSEL = 'runde8';
     // Die MariaDB und sämtliche Schreibendpunkte trennen Runde 7 und 8 jetzt
@@ -1562,6 +1566,10 @@
         if (!istHasaIndexedDbSchluessel(key)) {
             speichernKlassisch(key, wert);
             return;
+        }
+
+        if ([STORAGE_STAN_STAMMDATEN, STORAGE_STAN_VERSIONEN, STORAGE_STAN_ZIELKATALOG].includes(key)) {
+            speichernKlassisch(key, wert);
         }
 
         if (HAA_INDEXEDDB_DB && HAA_INDEXEDDB_STATUS.zustand === 'bereit') {
@@ -3003,6 +3011,9 @@ return box;
                 return { type: quelle.type, html: htmlText };
             });
         })).then(function (antworten) {
+            // Ein inzwischen erfolgter XML-Import hat Vorrang vor der Netzwerkantwort.
+            const inzwischen = laden(STORAGE_STAN_STAMMDATEN, null);
+            if (istNutzbarerStanBestand(inzwischen)) return inzwischen;
             let objects = [];
             antworten.forEach(function (antwort) {
                 objects = objects.concat(parseTechTreeListe(antwort.html, antwort.type, objects.length));
@@ -3036,6 +3047,9 @@ return box;
         return HAA_STAN_FALLBACK_LAEUFT;
     }
 
+    // Öffentliche Objektkennungen aus der Original-STAN, keine Spielerstände.
+    const HASA_STAN_BASISZIELE = [{"id":"SEDR","name":"SEDR","type":"ship","category":"Sonden","order":1,"knownDataDate":"20260927"},{"id":"SSCD","name":"SSCD","type":"ship","category":"Sonden","order":2,"knownDataDate":"20260927"},{"id":"SSDR","name":"SSDR","type":"ship","category":"Sonden","order":3,"knownDataDate":"20260927"},{"id":"EXDR","name":"EXDR","type":"ship","category":"Sonden","order":4,"knownDataDate":"20260927"},{"id":"SPDR","name":"SPDR","type":"ship","category":"Sonden","order":5,"knownDataDate":"20260927"},{"id":"SCDR","name":"SCDR","type":"ship","category":"Sonden","order":6,"knownDataDate":"20260927"},{"id":"SUDR","name":"SUDR","type":"ship","category":"Sonden","order":7,"knownDataDate":"20260927"},{"id":"SPND","name":"SPND","type":"ship","category":"Sonden","order":8,"knownDataDate":"20260927"},{"id":"PRDR","name":"PRDR","type":"ship","category":"Sonden","order":9,"knownDataDate":"20260927"},{"id":"LPRD","name":"LPRD","type":"ship","category":"Sonden","order":10,"knownDataDate":"20260927"},{"id":"SPST","name":"SPST","type":"ship","category":"Sonden","order":11,"knownDataDate":"20260927"},{"id":"RSCD","name":"RSCD","type":"ship","category":"Sonden","order":12,"knownDataDate":"20260927"},{"id":"ASPD","name":"ASPD","type":"ship","category":"Sonden","order":13,"knownDataDate":"20260927"},{"id":"ASCD","name":"ASCD","type":"ship","category":"Sonden","order":14,"knownDataDate":"20260927"},{"id":"ASED","name":"ASED","type":"ship","category":"Sonden","order":15,"knownDataDate":"20260927"},{"id":"ASUD","name":"ASUD","type":"ship","category":"Sonden","order":16,"knownDataDate":"20260927"},{"id":"SCOL","name":"SCOL","type":"ship","category":"Kolonisationsschiffe","order":17,"knownDataDate":"20260927"},{"id":"GRCO","name":"GRCO","type":"ship","category":"Kolonisationsschiffe","order":18,"knownDataDate":"20260927"},{"id":"CCOL","name":"CCOL","type":"ship","category":"Kolonisationsschiffe","order":19,"knownDataDate":"20260927"},{"id":"FCOL","name":"FCOL","type":"ship","category":"Kolonisationsschiffe","order":20,"knownDataDate":"20260927"},{"id":"LRCO","name":"LRCO","type":"ship","category":"Kolonisationsschiffe","order":21,"knownDataDate":"20260927"},{"id":"ICOL","name":"ICOL","type":"ship","category":"Kolonisationsschiffe","order":22,"knownDataDate":"20260927"},{"id":"GCOL","name":"GCOL","type":"ship","category":"Kolonisationsschiffe","order":23,"knownDataDate":"20260927"},{"id":"ASCS","name":"ASCS","type":"ship","category":"Kolonisationsschiffe","order":24,"knownDataDate":"20260927"},{"id":"LACS","name":"LACS","type":"ship","category":"Kolonisationsschiffe","order":25,"knownDataDate":"20260927"},{"id":"IACS","name":"IACS","type":"ship","category":"Kolonisationsschiffe","order":26,"knownDataDate":"20260927"},{"id":"WADR","name":"WADR","type":"ship","category":"Jagdschiffe","order":27,"knownDataDate":"20260927"},{"id":"LFGT","name":"LFGT","type":"ship","category":"Jagdschiffe","order":28,"knownDataDate":"20260927"},{"id":"SFGT","name":"SFGT","type":"ship","category":"Jagdschiffe","order":29,"knownDataDate":"20260927"},{"id":"HFGT","name":"HFGT","type":"ship","category":"Jagdschiffe","order":30,"knownDataDate":"20260927"},{"id":"PFGT","name":"PFGT","type":"ship","category":"Jagdschiffe","order":31,"knownDataDate":"20260927"},{"id":"PLFG","name":"PLFG","type":"ship","category":"Jagdschiffe","order":32,"knownDataDate":"20260927"},{"id":"RKDR","name":"RKDR","type":"ship","category":"Jagdschiffe","order":33,"knownDataDate":"20260927"},{"id":"AFGT","name":"AFGT","type":"ship","category":"Jagdschiffe","order":34,"knownDataDate":"20260927"},{"id":"AIDC","name":"AIDC","type":"ship","category":"Jagdschiffe","order":35,"knownDataDate":"20260927"},{"id":"CORV","name":"CORV","type":"ship","category":"Kampfschiffe","order":36,"knownDataDate":"20260927"},{"id":"MSFR","name":"MSFR","type":"ship","category":"Kampfschiffe","order":37,"knownDataDate":"20260927"},{"id":"DSTR","name":"DSTR","type":"ship","category":"Kampfschiffe","order":38,"knownDataDate":"20260927"},{"id":"ACRS","name":"ACRS","type":"ship","category":"Kampfschiffe","order":39,"knownDataDate":"20260927"},{"id":"DNGT","name":"DNGT","type":"ship","category":"Kampfschiffe","order":40,"knownDataDate":"20260927"},{"id":"FBCR","name":"FBCR","type":"ship","category":"Kampfschiffe","order":41,"knownDataDate":"20260927"},{"id":"BTST","name":"BTST","type":"ship","category":"Kampfschiffe","order":42,"knownDataDate":"20260927"},{"id":"DTST","name":"DTST","type":"ship","category":"Kampfschiffe","order":43,"knownDataDate":"20260927"},{"id":"PCOR","name":"PCOR","type":"ship","category":"Kampfschiffe","order":44,"knownDataDate":"20260927"},{"id":"RBCR","name":"RBCR","type":"ship","category":"Kampfschiffe","order":45,"knownDataDate":"20260927"},{"id":"ABAT","name":"ABAT","type":"ship","category":"Kampfschiffe","order":46,"knownDataDate":"20260927"},{"id":"LBOM","name":"LBOM","type":"ship","category":"Bomber","order":47,"knownDataDate":"20260927"},{"id":"SBOM","name":"SBOM","type":"ship","category":"Bomber","order":48,"knownDataDate":"20260927"},{"id":"HBOM","name":"HBOM","type":"ship","category":"Bomber","order":49,"knownDataDate":"20260927"},{"id":"ABOM","name":"ABOM","type":"ship","category":"Bomber","order":50,"knownDataDate":"20260927"},{"id":"PBOM","name":"PBOM","type":"ship","category":"Bomber","order":51,"knownDataDate":"20260927"},{"id":"RLBO","name":"RLBO","type":"ship","category":"Bomber","order":52,"knownDataDate":"20260927"},{"id":"ALBO","name":"ALBO","type":"ship","category":"Bomber","order":53,"knownDataDate":"20260927"},{"id":"ACRM","name":"ACRM","type":"ship","category":"Bomber","order":54,"knownDataDate":"20260927"},{"id":"PFLS","name":"PFLS","type":"ship","category":"Flaggschiffe","order":55,"knownDataDate":"20260927"},{"id":"SFLS","name":"SFLS","type":"ship","category":"Flaggschiffe","order":56,"knownDataDate":"20260927"},{"id":"QFLS","name":"QFLS","type":"ship","category":"Flaggschiffe","order":57,"knownDataDate":"20260927"},{"id":"HFLS","name":"HFLS","type":"ship","category":"Flaggschiffe","order":58,"knownDataDate":"20260927"},{"id":"WFLS","name":"WFLS","type":"ship","category":"Flaggschiffe","order":59,"knownDataDate":"20260927"},{"id":"BFLS","name":"BFLS","type":"ship","category":"Flaggschiffe","order":60,"knownDataDate":"20260927"},{"id":"IFLS","name":"IFLS","type":"ship","category":"Flaggschiffe","order":61,"knownDataDate":"20260927"},{"id":"PLFL","name":"PLFL","type":"ship","category":"Flaggschiffe","order":62,"knownDataDate":"20260927"},{"id":"RFLS","name":"RFLS","type":"ship","category":"Flaggschiffe","order":63,"knownDataDate":"20260927"},{"id":"AFLS","name":"AFLS","type":"ship","category":"Flaggschiffe","order":64,"knownDataDate":"20260927"},{"id":"PRCY","name":"PRCY","type":"ship","category":"Fabrikschiffe","order":65,"knownDataDate":"20260927"},{"id":"PMIV","name":"PMIV","type":"ship","category":"Fabrikschiffe","order":66,"knownDataDate":"20260927"},{"id":"RCYC","name":"RCYC","type":"ship","category":"Fabrikschiffe","order":67,"knownDataDate":"20260927"},{"id":"MIVE","name":"MIVE","type":"ship","category":"Fabrikschiffe","order":68,"knownDataDate":"20260927"},{"id":"RFVE","name":"RFVE","type":"ship","category":"Fabrikschiffe","order":69,"knownDataDate":"20260927"},{"id":"LEVE","name":"LEVE","type":"ship","category":"Fabrikschiffe","order":70,"knownDataDate":"20260927"},{"id":"CNSV","name":"CNSV","type":"ship","category":"Fabrikschiffe","order":71,"knownDataDate":"20260927"},{"id":"ICSV","name":"ICSV","type":"ship","category":"Fabrikschiffe","order":72,"knownDataDate":"20260927"},{"id":"RRFV","name":"RRFV","type":"ship","category":"Fabrikschiffe","order":73,"knownDataDate":"20260927"},{"id":"ARCY","name":"ARCY","type":"ship","category":"Fabrikschiffe","order":74,"knownDataDate":"20260927"},{"id":"AMIV","name":"AMIV","type":"ship","category":"Fabrikschiffe","order":75,"knownDataDate":"20260927"},{"id":"HGBC","name":"HGBC","type":"ship","category":"Spezialschiffe","order":76,"knownDataDate":"20260927"},{"id":"SMSW","name":"SMSW","type":"ship","category":"Spezialschiffe","order":77,"knownDataDate":"20260927"},{"id":"LMSW","name":"LMSW","type":"ship","category":"Spezialschiffe","order":78,"knownDataDate":"20260927"},{"id":"EXCW","name":"EXCW","type":"ship","category":"Spezialschiffe","order":79,"knownDataDate":"20260927"},{"id":"IXCW","name":"IXCW","type":"ship","category":"Spezialschiffe","order":80,"knownDataDate":"20260927"},{"id":"FLDP","name":"FLDP","type":"ship","category":"Spezialschiffe","order":81,"knownDataDate":"20260927"},{"id":"SBTR","name":"SBTR","type":"ship","category":"Spezialschiffe","order":82,"knownDataDate":"20260927"},{"id":"LBTR","name":"LBTR","type":"ship","category":"Spezialschiffe","order":83,"knownDataDate":"20260927"},{"id":"IBTR","name":"IBTR","type":"ship","category":"Spezialschiffe","order":84,"knownDataDate":"20260927"},{"id":"ALTM","name":"ALTM","type":"ship","category":"Spezialschiffe","order":85,"knownDataDate":"20260927"},{"id":"ACIP","name":"ACIP","type":"ship","category":"Spezialschiffe","order":86,"knownDataDate":"20260927"},{"id":"AACI","name":"AACI","type":"ship","category":"Spezialschiffe","order":87,"knownDataDate":"20260927"},{"id":"ASPM","name":"ASPM","type":"ship","category":"Spezialschiffe","order":88,"knownDataDate":"20260927"},{"id":"PTRN","name":"PTRN","type":"ship","category":"Transportschiffe","order":89,"knownDataDate":"20260927"},{"id":"STRN","name":"STRN","type":"ship","category":"Transportschiffe","order":90,"knownDataDate":"20260927"},{"id":"LTRN","name":"LTRN","type":"ship","category":"Transportschiffe","order":91,"knownDataDate":"20260927"},{"id":"HTRN","name":"HTRN","type":"ship","category":"Transportschiffe","order":92,"knownDataDate":"20260927"},{"id":"GTRN","name":"GTRN","type":"ship","category":"Transportschiffe","order":93,"knownDataDate":"20260927"},{"id":"ITRN","name":"ITRN","type":"ship","category":"Transportschiffe","order":94,"knownDataDate":"20260927"},{"id":"FROR","name":"FROR","type":"ship","category":"Transportschiffe","order":95,"knownDataDate":"20260927"},{"id":"RTRN","name":"RTRN","type":"ship","category":"Transportschiffe","order":96,"knownDataDate":"20260927"},{"id":"ATRN","name":"ATRN","type":"ship","category":"Transportschiffe","order":97,"knownDataDate":"20260927"},{"id":"PTNK","name":"PTNK","type":"ship","category":"Tankschiffe","order":98,"knownDataDate":"20260927"},{"id":"STNK","name":"STNK","type":"ship","category":"Tankschiffe","order":99,"knownDataDate":"20260927"},{"id":"LTNK","name":"LTNK","type":"ship","category":"Tankschiffe","order":100,"knownDataDate":"20260927"},{"id":"HTNK","name":"HTNK","type":"ship","category":"Tankschiffe","order":101,"knownDataDate":"20260927"},{"id":"ITNK","name":"ITNK","type":"ship","category":"Tankschiffe","order":102,"knownDataDate":"20260927"},{"id":"ATNK","name":"ATNK","type":"ship","category":"Tankschiffe","order":103,"knownDataDate":"20260927"},{"id":"SCAR","name":"SCAR","type":"ship","category":"TrÃ¤gerschiffe","order":104,"knownDataDate":"20260927"},{"id":"FCAR","name":"FCAR","type":"ship","category":"TrÃ¤gerschiffe","order":105,"knownDataDate":"20260927"},{"id":"ACAR","name":"ACAR","type":"ship","category":"TrÃ¤gerschiffe","order":106,"knownDataDate":"20260927"},{"id":"ICAR","name":"ICAR","type":"ship","category":"TrÃ¤gerschiffe","order":107,"knownDataDate":"20260927"},{"id":"ALCR","name":"ALCR","type":"ship","category":"TrÃ¤gerschiffe","order":108,"knownDataDate":"20260927"},{"id":"PLDC","name":"PLDC","type":"ship","category":"Truppentransporter","order":109,"knownDataDate":"20260927"},{"id":"STRT","name":"STRT","type":"ship","category":"Truppentransporter","order":110,"knownDataDate":"20260927"},{"id":"LTRT","name":"LTRT","type":"ship","category":"Truppentransporter","order":111,"knownDataDate":"20260927"},{"id":"HTRT","name":"HTRT","type":"ship","category":"Truppentransporter","order":112,"knownDataDate":"20260927"},{"id":"ITRT","name":"ITRT","type":"ship","category":"Truppentransporter","order":113,"knownDataDate":"20260927"},{"id":"ATRT","name":"ATRT","type":"ship","category":"Truppentransporter","order":114,"knownDataDate":"20260927"},{"id":"SWSD","name":"SWSD","type":"ship","category":"Schwarm","order":115,"knownDataDate":"20260927"},{"id":"SWFS","name":"SWFS","type":"ship","category":"Schwarm","order":116,"knownDataDate":"20260927"},{"id":"SWAD","name":"SWAD","type":"ship","category":"Schwarm","order":117,"knownDataDate":"20260927"},{"id":"SWFG","name":"SWFG","type":"ship","category":"Schwarm","order":118,"knownDataDate":"20260927"},{"id":"SWBO","name":"SWBO","type":"ship","category":"Schwarm","order":119,"knownDataDate":"20260927"},{"id":"SWBS","name":"SWBS","type":"ship","category":"Schwarm","order":120,"knownDataDate":"20260927"},{"id":"SWIS","name":"SWIS","type":"ship","category":"Schwarm","order":121,"knownDataDate":"20260927"},{"id":"SWCO","name":"SWCO","type":"ship","category":"Schwarm","order":122,"knownDataDate":"20260927"},{"id":"MSTU","name":"MSTU","type":"defense","category":"Planetarverteidigung","order":123,"knownDataDate":"20260927"},{"id":"LLTU","name":"LLTU","type":"defense","category":"Planetarverteidigung","order":124,"knownDataDate":"20260927"},{"id":"HLTU","name":"HLTU","type":"defense","category":"Planetarverteidigung","order":125,"knownDataDate":"20260927"},{"id":"IOTU","name":"IOTU","type":"defense","category":"Planetarverteidigung","order":126,"knownDataDate":"20260927"},{"id":"SITU","name":"SITU","type":"defense","category":"Planetarverteidigung","order":127,"knownDataDate":"20260927"},{"id":"PLTU","name":"PLTU","type":"defense","category":"Planetarverteidigung","order":128,"knownDataDate":"20260927"},{"id":"APTU","name":"APTU","type":"defense","category":"Planetarverteidigung","order":129,"knownDataDate":"20260927"},{"id":"PTTU","name":"PTTU","type":"defense","category":"Planetarverteidigung","order":130,"knownDataDate":"20260927"},{"id":"FLTU","name":"FLTU","type":"defense","category":"Festungsverteidigung","order":131,"knownDataDate":"20260927"},{"id":"FHML","name":"FHML","type":"defense","category":"Festungsverteidigung","order":132,"knownDataDate":"20260927"},{"id":"FIOT","name":"FIOT","type":"defense","category":"Festungsverteidigung","order":133,"knownDataDate":"20260927"},{"id":"FPTT","name":"FPTT","type":"defense","category":"Festungsverteidigung","order":134,"knownDataDate":"20260927"},{"id":"LMDU","name":"LMDU","type":"defense","category":"Mutterschiffverteidigung","order":135,"knownDataDate":"20260927"},{"id":"MMDU","name":"MMDU","type":"defense","category":"Mutterschiffverteidigung","order":136,"knownDataDate":"20260927"},{"id":"HMDU","name":"HMDU","type":"defense","category":"Mutterschiffverteidigung","order":137,"knownDataDate":"20260927"},{"id":"SMDU","name":"SMDU","type":"defense","category":"Mutterschiffverteidigung","order":138,"knownDataDate":"20260927"},{"id":"SHDU","name":"SHDU","type":"defense","category":"Mutterschiffverteidigung","order":139,"knownDataDate":"20260927"},{"id":"MSSA","name":"MSSA","type":"defense","category":"Orbitalverteidigung","order":140,"knownDataDate":"20260927"},{"id":"LLSA","name":"LLSA","type":"defense","category":"Orbitalverteidigung","order":141,"knownDataDate":"20260927"},{"id":"HLSA","name":"HLSA","type":"defense","category":"Orbitalverteidigung","order":142,"knownDataDate":"20260927"},{"id":"IOSA","name":"IOSA","type":"defense","category":"Orbitalverteidigung","order":143,"knownDataDate":"20260927"},{"id":"SISA","name":"SISA","type":"defense","category":"Orbitalverteidigung","order":144,"knownDataDate":"20260927"},{"id":"PLSA","name":"PLSA","type":"defense","category":"Orbitalverteidigung","order":145,"knownDataDate":"20260927"},{"id":"APSA","name":"APSA","type":"defense","category":"Orbitalverteidigung","order":146,"knownDataDate":"20260927"},{"id":"PTSA","name":"PTSA","type":"defense","category":"Orbitalverteidigung","order":147,"knownDataDate":"20260927"},{"id":"AMSA","name":"AMSA","type":"defense","category":"Orbitalverteidigung","order":148,"knownDataDate":"20260927"},{"id":"DISA","name":"DISA","type":"defense","category":"Orbitalverteidigung","order":149,"knownDataDate":"20260927"},{"id":"GLRD","name":"GLRD","type":"defense","category":"Orbitalverteidigung","order":150,"knownDataDate":"20260927"},{"id":"GDFM","name":"GDFM","type":"defense","category":"Orbitalverteidigung","order":151,"knownDataDate":"20260927"},{"id":"GCTS","name":"GCTS","type":"defense","category":"Orbitalverteidigung","order":152,"knownDataDate":"20260927"},{"id":"LNMN","name":"LNMN","type":"defense","category":"Raumminen","order":153,"knownDataDate":"20260927"},{"id":"SCMN","name":"SCMN","type":"defense","category":"Raumminen","order":154,"knownDataDate":"20260927"},{"id":"MCMN","name":"MCMN","type":"defense","category":"Raumminen","order":155,"knownDataDate":"20260927"},{"id":"LCMN","name":"LCMN","type":"defense","category":"Raumminen","order":156,"knownDataDate":"20260927"},{"id":"SFMN","name":"SFMN","type":"defense","category":"Raumminen","order":157,"knownDataDate":"20260927"},{"id":"MFMN","name":"MFMN","type":"defense","category":"Raumminen","order":158,"knownDataDate":"20260927"},{"id":"LFMN","name":"LFMN","type":"defense","category":"Raumminen","order":159,"knownDataDate":"20260927"},{"id":"SAMN","name":"SAMN","type":"defense","category":"Raumminen","order":160,"knownDataDate":"20260927"},{"id":"MAMN","name":"MAMN","type":"defense","category":"Raumminen","order":161,"knownDataDate":"20260927"},{"id":"LAMN","name":"LAMN","type":"defense","category":"Raumminen","order":162,"knownDataDate":"20260927"},{"id":"SWMD","name":"SWMD","type":"defense","category":"Schwarm","order":163,"knownDataDate":"20260927"},{"id":"SWBD","name":"SWBD","type":"defense","category":"Schwarm","order":164,"knownDataDate":"20260927"},{"id":"SWPD","name":"SWPD","type":"defense","category":"Schwarm","order":165,"knownDataDate":"20260927"}];
+
     function baueStanZielkatalog(aktuell, versionen, bisher) {
         const katalog = new Map();
         function fuegeHinzu(daten) {
@@ -3047,6 +3061,7 @@ return box;
                 }));
             });
         }
+        fuegeHinzu({ objects: HASA_STAN_BASISZIELE, dataDate: "20260927" });
         fuegeHinzu(bisher);
         (Array.isArray(versionen) ? versionen : []).forEach(fuegeHinzu);
         // Aktuelle Angaben haben immer Vorrang vor jedem historischen Wert.
@@ -3060,18 +3075,33 @@ return box;
 
     function ergaenzeStanZielkatalog(aktuell) {
         const bisher = laden(STORAGE_STAN_ZIELKATALOG, null);
-        const katalog = baueStanZielkatalog(aktuell, laden(STORAGE_STAN_VERSIONEN, []), bisher);
+        const katalog = baueStanZielkatalog(aktuell, laden(STORAGE_STAN_VERSIONEN, []), {objects: [].concat(
+            (ladenKlassisch(STORAGE_STAN_ZIELKATALOG, null) || {}).objects || [], (bisher || {}).objects || [])});
         // Eigener Katalog: aktuelle XML und Versionshistorie werden nicht umgeschrieben.
         const dauerhaft = { objects: katalog.objects };
         if (JSON.stringify(bisher) !== JSON.stringify(dauerhaft)) speichern(STORAGE_STAN_ZIELKATALOG, dauerhaft);
         return katalog;
     }
 
+    function waehleNeuestenStanBestand(kandidaten) {
+        return kandidaten.filter(istNutzbarerStanBestand).sort(function(a,b) {
+            const datumA = /^20\d{6}$/.test(a.dataDate || '') ? a.dataDate : '';
+            const datumB = /^20\d{6}$/.test(b.dataDate || '') ? b.dataDate : '';
+            return datumB.localeCompare(datumA) || (Number(b.importedAt)||0)-(Number(a.importedAt)||0);
+        })[0] || null;
+    }
+
     function ladeStanBestandMitFallback() {
         const aktuell = laden(STORAGE_STAN_STAMMDATEN, null);
-        if (istNutzbarerStanBestand(aktuell)) return ergaenzeStanZielkatalog(aktuell);
-        const gespeichert = stelleGespeichertenStanFallbackWiederHer();
-        if (gespeichert) return ergaenzeStanZielkatalog(gespeichert);
+        const historie = laden(STORAGE_STAN_VERSIONEN, []);
+        const klassisch = ladenKlassisch(STORAGE_STAN_STAMMDATEN, null);
+        const alteHistorie = ladenKlassisch(STORAGE_STAN_VERSIONEN, []);
+        const bester = waehleNeuestenStanBestand([aktuell, klassisch].concat(
+            Array.isArray(historie) ? historie : [], Array.isArray(alteHistorie) ? alteHistorie : []));
+        if (bester) {
+            if (JSON.stringify(aktuell) !== JSON.stringify(bester)) speichern(STORAGE_STAN_STAMMDATEN, bester);
+            return ergaenzeStanZielkatalog(bester);
+        }
         ladeTechTreeBasisstand();
         return null;
     }
@@ -3128,10 +3158,10 @@ return box;
         const stand = new Date(y,m,d,12,0,0,0);
         const naechster = new Date(stand.getTime() + STAN_RHYTHMUS_TAGE * 86400000);
         const jetzt = new Date();
-        if (jetzt < naechster) return { state: 'green', text: 'aktuell bis ' + naechster.toLocaleDateString('de-DE') };
+        if (jetzt < naechster) return { state: 'green', text: 'Gespeicherter STAN-Bestand aktiv' };
         const tage = Math.floor((jetzt - naechster) / 86400000);
-        if (tage <= 1) return { state: 'yellow', text: 'neuer Wochenstand könnte verfügbar sein' };
-        return { state: 'red', text: 'Aktualisierung seit ' + naechster.toLocaleDateString('de-DE') + ' überfällig' };
+        if (tage <= 1) return { state: 'yellow', text: 'Letzter gültiger Stand bleibt aktiv' };
+        return { state: 'yellow', text: 'Letzter gültiger Stand bleibt aktiv · neuere XML kann bei Bedarf eingelesen werden' };
     }
 
     function ladeStanAuswahl() {
@@ -5833,4 +5863,5 @@ return box;
     window.addEventListener('load', starteSicher);
     setTimeout(starteSicher, 800);
 })();
+
 
