@@ -40,4 +40,6 @@ Neue Dateien: events-service.php, event-record.php, production-samples.php, even
 
 Lokal bestanden: PHP-Syntax der sieben Serverdateien; vollständige Userscript-Syntax; 36 Browsergruppen einschließlich drei privater Originalberichte; 20 zusätzliche Browsergruppen für Übersicht, Bestätigungen, Spielaktionen, Kontowechsel, Stundenwerte, 15-Minuten-Abstand, Prozentrahmen und Abschalten. Synthetische Ansichten visuell geprüft. Original-HTML mit Laufzeitparametern nicht veröffentlicht. Die reproduzierbaren Tests stehen unter 5 tools; zusätzliche MariaDB-Integration und Browserregression laufen über .github/workflows/hasa-events-tests.yml.
 
+GitHub-CI auf Commit 70e92296507dfaea8514bd1b549019394ebce9eb bestanden: alle PHP-Syntaxprüfungen, 33 reproduzierbare Browsergruppen plus 20 Live-Gruppen und 22 Integrationprüfungen mit MariaDB 10.11. Die drei zusätzlichen Originalbericht-Prüfungen liefen nur lokal, da private Spielquellen nicht veröffentlicht werden. Lauf: https://github.com/KurtV731/hasa/actions/runs/38466403337.
+
 Ein echter Horizon-/Windows-Installationstest, der Produktivupload auf serkal.de sowie Mehrtab- und Langzeitbetrieb sind hier nicht durchgeführt. Private Konfiguration und bestehende Daten werden nicht ersetzt.

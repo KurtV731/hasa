@@ -1880,7 +1880,7 @@ Kurt: SERKAL_pull_v2.bat im vorhandenen Website-Ordner ausführen. Diese führt 
 
 ### 2026-10-13 – CE HASA an Kurt – Alpha30: einfache Spielmarkierungen und MariaDB-Listen
 
-**Status:** GESAMTFASSUNG FERTIG / LOKALE BROWSER- UND SYNTAXPRÜFUNGEN BESTANDEN / MARIADB-CI UND PRODUKTIVINSTALLATION NOCH ZU PRÜFEN.
+**Status:** GESAMTFASSUNG FERTIG / LOKALE UND GITHUB-CI-PRÜFUNGEN BESTANDEN / PRODUKTIVINSTALLATION OFFEN.
 
 **Autorisierung:** Kurt hob den Baustopp ausdrücklich auf („Jetzt darfst du mal anfangen zu montieren“). Vorgaben: Übersichtszeilen statt Standardberichte öffnen, erster leerer Aktionsplatz für gespeichertes Häkchen, zentrale ASFI-Liste, Gildentermine, 15-Minuten-Produktion und Grün/Rot direkt im Spiel. Keine automatische Durchbruch-Verifikation.
 
@@ -1890,10 +1890,10 @@ Kurt: SERKAL_pull_v2.bat im vorhandenen Website-Ordner ausführen. Diese führt 
 
 **Fachstand:** PZ legt ASFI ohne vorherigen Scan an, sichere andere Typen nehmen Position aus aktiver Liste; fehlende/blinde/unknown-Sicht bewirkt nichts. Historie erhalten, wiederholte Ereignisse reaktivieren nicht. Neuer Standort/Identität wird nicht erfunden. Besiedlung bleibt ASFI, ab ungefähr 14 Tagen Prüfhinweis statt Alterslöschung. Sichtbare ASFI-Ansicht auf 1000 Positionsnachweise begrenzt mit Hinweis. Gildensitzungen nur Zeitliste. Produktion nur offener sichtbarer Planet alle 15 Minuten; kein Hintergrundbesuch anderer Planeten. Bekannte Beginnmeldungen; Endmuster vorläufig, echter Endtitel fehlt. Unbekannte Spielzeitzone begrenzt enge historische Reihenfolge, Prozentvergleich beweist keine Ursache.
 
-**Dateien/Prüfung:** Sieben PHP-Dateien mit echter PHP-Syntax geprüft; 36 bestehende Browsergruppen inklusive pz.txt/met+.txt/gv+.txt und vollständigem Start/Persistenz/Reload; 20 neue Live-Browsergruppen mit Fehler-/Fremdkonto-/nicht-dauerhafter Bestätigung, freien/belegten Aktionsslots, Stundenwerten, 15 Minuten, +40%/-20%, unbekannter Referenz und sauberem Abschalten. Zwei Testansichten visuell geprüft. Neue reproduzierbare MariaDB-Integration in isolierter CI-Testdatenbank, keine Produktivkonfiguration; Workflow-Ergebnis wird nach Onlineprüfung ergänzt. Private Originalquellen nicht in GitHub.
+**Dateien/Prüfung:** Sieben PHP-Dateien mit echter PHP-Syntax geprüft; 36 bestehende Browsergruppen inklusive pz.txt/met+.txt/gv+.txt und vollständigem Start/Persistenz/Reload; 20 neue Live-Browsergruppen mit Fehler-/Fremdkonto-/nicht-dauerhafter Bestätigung, freien/belegten Aktionsslots, Stundenwerten, 15 Minuten, +40%/-20%, unbekannter Referenz und sauberem Abschalten. Zwei Testansichten visuell geprüft. Neue reproduzierbare MariaDB-Integration in isolierter CI-Testdatenbank, keine Produktivkonfiguration; GitHub-CI auf 70e92296507dfaea8514bd1b549019394ebce9eb bestanden: 33 reproduzierbare Browsergruppen, 20 Live-Gruppen und 22 echte MariaDB-10.11-Prüfungen; alle PHP-Dateien syntaktisch geprüft. Lauf https://github.com/KurtV731/hasa/actions/runs/38466403337. Private Originalquellen nicht in GitHub.
 
 **Installation:** HASA-Serverupdate.bat; als Styl https://serkal.de/hasa/events-install.php einmal ausführen; anschließend HASA-AKTUALISIEREN.cmd, komplette Datei im vorhandenen Tampermonkey ersetzen und Horizon neu laden. Kein XML-Neuimport. Kein Produktiv-/FTP-Upload oder echter Spieltest aus dieser Sitzung; Windows-/WinSCP-Verbindung nur auf Kurts PC verfügbar. Website-Reparaturdownload bleibt separater Stand.
 
 **Restpunkte:** Echter Installationstest, Originaltitel der Vorkommens-Endmeldung, Mehrtab-/Langzeitbetrieb, sichere Spielzeitbasis und Verlagerungsnachweise. Forschungs-Wunschliste, Geräteanmeldung und frühere offene Aufträge behalten.
 
-**Commit:** Gemeinsamer Programm-/Dokumentationscommit; Kennung und CI-Ergebnis nach Onlinevergleich im Abschluss.
+**Commit:** Programmcommit 1710b769737e64df82ccdcfd2e19729a5c2328bd, Testhärtung 70e92296507dfaea8514bd1b549019394ebce9eb; alle 17 Dateien online vollständig verglichen. Dieser abschließende Dokumentationscommit hält das bestandene CI-Ergebnis fest.
