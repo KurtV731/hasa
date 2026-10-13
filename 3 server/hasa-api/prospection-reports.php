@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/auth.php';
 require __DIR__ . '/galaxy-access.php';
+require __DIR__ . '/events-service.php';
 $hasaUser = hasaRequireUser(true);
 hasaRequireApiKey();
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') hasaAuthCheckCsrf(true);
@@ -178,6 +179,7 @@ try {
         $measurementSql->execute([$reportId, $name, $value]);
     }
 
+    hasaAsfiRecord($pdo, $planetId, (string)($input['planet_type']['code'] ?? 'unknown'), hasaText($input['target']['name'] ?? null,160), null, $observedAt, 'prospection');
     hasaRememberGalaxy($pdo, $hasaUser, $galaxyId);
     $pdo->commit();
 } catch (Throwable $error) {
@@ -199,3 +201,4 @@ hasaJson([
         'observed_at' => $observedAt . ' UTC',
     ],
 ], 201);
+

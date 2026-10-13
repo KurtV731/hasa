@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/auth.php';
 require __DIR__ . '/galaxy-access.php';
+require __DIR__ . '/events-service.php';
 $hasaUser = hasaRequireUser(true);
 hasaRequireApiKey();
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') hasaAuthCheckCsrf(true);
@@ -156,6 +157,7 @@ function storeSystem(): never
                  alliance_tag, game_status, visibility, last_observed_at)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE
+                id = LAST_INSERT_ID(id),
                 planet_name = IF(VALUES(last_observed_at) >= last_observed_at,
                                  VALUES(planet_name), planet_name),
                 planet_type = IF(VALUES(last_observed_at) >= last_observed_at,
@@ -190,6 +192,7 @@ function storeSystem(): never
                 'private',
                 $observedAt,
             ]);
+            hasaAsfiRecord($pdo, (int)$pdo->lastInsertId(), (string)($planet['type'] ?? 'unknown'), hasaText($planet['name'] ?? null,160), hasaText($planet['ruler'] ?? null,120), $observedAt, 'galaxy_view');
         }
 
         $observation = $pdo->prepare(
@@ -226,3 +229,4 @@ function storeSystem(): never
         ],
     ], 201);
 }
+

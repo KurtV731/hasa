@@ -1,0 +1,54 @@
+name: HASA events and production
+on:
+  push:
+    paths:
+      - '2 src/current/HASA-AKTUELL.user.js.txt'
+      - '3 server/hasa-api/**'
+      - '3 server/tests/events_integration.php'
+      - '5 tools/test_hasa_*.cjs'
+      - '.github/workflows/hasa-events-tests.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  events:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      mariadb:
+        image: mariadb:10.11
+        env:
+          MARIADB_ROOT_PASSWORD: disposable-ci-only
+          MARIADB_DATABASE: hasa_test_events
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s --health-timeout=5s --health-retries=12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install test dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y php-cli php-mysql php-mbstring mariadb-client
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Syntax and browser regression
+        run: |
+          find '3 server/hasa-api' -name '*.php' -print0 | xargs -0 -n1 php -l
+          node '5 tools/test_hasa_ereignisregister.cjs'
+          node '5 tools/test_hasa_live_events.cjs'
+      - name: Disposable MariaDB integration
+        env:
+          MYSQL_PWD: disposable-ci-only
+        run: |
+          for file in hasa_1_2_0_schema.sql hasa_1_2_0_galaxies_migration.sql hasa_1_2_0_private_migration.sql hasa_1_2_0_useradmin_migration.sql hasa_1_2_0_sharing_migration.sql; do
+            mariadb --no-defaults --host=127.0.0.1 --protocol=TCP -uroot hasa_test_events < "4 database/$file"
+          done
+          test_api=$(mktemp -d)
+          cp '3 server/hasa-api/'*.php "$test_api/"
+          export HASA_TEST_API="$test_api"
+          php -r 'file_put_contents(getenv("HASA_TEST_API")."/config.php", "<?php return ".var_export(["database"=>["host"=>"127.0.0.1","name"=>"hasa_test_events","user"=>"root","password"=>getenv("MYSQL_PWD")]],true).";");'
+          php '3 server/tests/events_integration.php'

@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         HASA – Horizon Ascension Assistant
 // @namespace    horiversum.hasa
-// @version      1.2.0-alpha.29
+// @version      1.2.0-alpha.30
 // @charset      UTF-8
 // @description  Horizon-Assistent mit kompakter Galaxiescanner-Anzeige und aktiver lokaler IndexedDB
 // @match        https://horiversum.org/game/main/main.php*
@@ -14,6 +14,10 @@
 // ==/UserScript==
 
 /*
+
+ Alpha30 (13.10.2026): Übersicht direkt erfassen und in MariaDB sichern.
+ Grünes Häkchen erst nach Serverbestätigung; zentrale ASFI-/Gildenlisten.
+ Produktionsmessung alle 15 Minuten und Vergleichsrahmen im Spielekopf.
 
  Alpha29 (13.10.2026): Echte Berichtsräume und Absenderposition erfassen;
  lokale ASFI-Liste aus Planetzerbruch und sichtbaren Galaxiedaten.
@@ -29,8 +33,8 @@
 ==========================================================
  HASA – Horizon Ascension Assistant
 
- Version : 1.2.0 Alpha 29
- Status  : Erste Ereignisregistrierung; Alpha27-Bestandssicherung enthalten
+ Version : 1.2.0 Alpha 30
+ Status  : Serverlisten, bestätigte Häkchen und Produktion im Spiel
  Build   : 2026-10-13
 
  Neu in Alpha 26:
@@ -186,8 +190,8 @@
         'PHYSICS', 'PSYCHOLOGY', 'NUCLEARPHYSICS', 'SOLARENERGYTECH'
     ]);
 
-    const HASA_VERSION = '1.2.0 Alpha 29';
-    const HASA_BUILD_LABEL = '1.2.0-alpha29-asfi-2026-10-13';
+    const HASA_VERSION = '1.2.0 Alpha 30';
+    const HASA_BUILD_LABEL = '1.2.0-alpha30-serverlisten-2026-10-13';
     const HASA_RUNDE = 8;
     const HASA_RUNDE_SCHLUESSEL = 'runde8';
     // Die MariaDB und sämtliche Schreibendpunkte trennen Runde 7 und 8 jetzt
@@ -392,13 +396,14 @@
     function ereignisZeilenMeta(link) {
         const zeile = link.closest('tr');
         const cells = zeile ? Array.from(zeile.cells || []) : [];
+        const zeitText = cells[0] ? prdrNormalisiereText(ereignisOriginaltext(cells[0])) : '';
         if (cells.length < 4 || !cells[0].matches('.MessageTableCellLeft')
-            || !/\d{2}\.\d{2}\.\d{4}\s+\d{2}:\d{2}:\d{2}/.test(cells[0].textContent)) return {};
+            || !/\d{2}\.\d{2}\.\d{4}\s+\d{2}:\d{2}:\d{2}/.test(zeitText)) return {};
         const ort = cells[1].querySelector('div');
         const ortText = ort ? prdrNormalisiereText(ort.textContent) : '';
         const name = ortText.replace(/\s*\(\s*\d+\s*:\s*\d+\s*:\s*\d+\s*\)\s*$/, '').trim();
         return { subject: prdrNormalisiereText(link.textContent), position: ereignisPosition(ortText),
-            positionName: name || null, reportedTimeText: prdrNormalisiereText(cells[0].textContent),
+            positionName: name || null, reportedTimeText: zeitText,
             systemEvent: link.classList.contains('MessageReportEvent') };
     }
 
@@ -477,7 +482,7 @@
         originalKinder.forEach(function (node, index) {
             if (!ereignisIstSpieltext(node, true)) kopieKinder[index].remove();
         });
-        kopie.querySelectorAll('script,style,noscript,template,#haa-box,input,select,textarea,[hidden],[aria-hidden="true"]').forEach(function (node) { node.remove(); });
+        kopie.querySelectorAll('script,style,noscript,template,#haa-box,.haa-stored-mark,input,select,textarea,[hidden],[aria-hidden="true"]').forEach(function (node) { node.remove(); });
         kopie.querySelectorAll('br,p,div,li,tr,td,th,h1,h2,h3,h4,section,article').forEach(function (node) {
             node.prepend(element.ownerDocument.createTextNode('\n'));
             node.append(element.ownerDocument.createTextNode('\n'));
@@ -560,6 +565,8 @@
         try {
             speichern(STORAGE_EREIGNIS_REGISTER, register);
             uebernehmeHasaAsfiEreignis(eintrag);
+            hasaProductionEvent(eintrag);
+            planeHasaEventSync();
             HAA_EREIGNIS_FEHLER = null;
         } catch (fehler) {
             HAA_EREIGNIS_FEHLER = 'Meldung konnte lokal nicht gespeichert werden.';
@@ -634,9 +641,9 @@
                     }
                 });
                 // Textänderungen und bereits geöffnete Berichte ebenfalls übernehmen.
-                if (relevant) scanneHasaEreignisDokument(doc, new Set());
+                if (relevant) { scanneHasaEreignisDokument(doc, new Set()); maleHasaProduktion(); markiereHasaGespeicherteBerichte(); }
             });
-            observer.observe(doc.body, { subtree: true, childList: true, characterData: true });
+            observer.observe(doc.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['src'] });
             HAA_EREIGNIS_DOKUMENTE.set(doc, observer);
         }
         Array.from(doc.querySelectorAll('iframe,frame')).forEach(function (frame) {
@@ -668,6 +675,8 @@
         }
         scanneHasaEreignisDokument(document, new Set());
         aktualisiereHasaEreignisAnzeige();
+        markiereHasaGespeicherteBerichte();
+        maleHasaProduktion();
     }
 
     function installiereHasaEreignisScanner() {
@@ -874,6 +883,265 @@
             html += '</details>';
         }
         return html + '</div>';
+    }
+
+
+    const HASA_EVENT_API = 'https://serkal.de/hasa/event-record.php';
+    const HASA_PRODUCTION_API = 'https://serkal.de/hasa/production-samples.php';
+    const HASA_EVENT_LIST = 'https://serkal.de/hasa/events.php';
+    const STORAGE_PRODUCTION_TRACKER = 'hasa_production_tracker_v1_' + HASA_RUNDE_SCHLUESSEL;
+    const STORAGE_PRODUCTION_SAMPLES = 'hasa_production_samples_v1_' + HASA_RUNDE_SCHLUESSEL;
+    let HAA_EVENT_SYNC_BUSY = false;
+    let HAA_EVENT_SYNC_TIMER = null;
+    let HAA_EVENT_SYNC_RETRY = null;
+    let HAA_PRODUCTION_TIMER = null;
+    let HAA_EVENT_SYNC_ERROR = null;
+    const HAA_GAME_MARKS = new Map();
+    const HAA_GAME_SLOT_TITLES = new Map();
+    const HAA_RATE_MARKS = new Set();
+
+    function hasaEventPayload(e) {
+        const reports = (e.observations || []).filter(function (s) { return s.kind === 'report'; });
+        const first = (e.observations || [])[0];
+        return { round: e.round, expected_user_id: Number(e.ownerId), message_id: e.messageId,
+            subject: e.subject || e.eventType || 'Unbekannte Meldung', event_type: e.eventType || null,
+            system_event: Boolean(e.systemEvent), position: e.position || null, planet_name: e.planetName || null,
+            reported_time_text: e.reportedTimeText || (first && first.reportedTimeText) || null,
+            captured_at: e.firstCapturedAt, details: reports.length ? reports[reports.length - 1].rawText : null };
+    }
+
+    function hasaEventRevision(e) { return prdrHash(JSON.stringify(hasaEventPayload(e))); }
+
+    function hasaEventServerBestaetigt(e) {
+        if (!e || !e.serverStoredAt || e.serverRevision !== hasaEventRevision(e)) return false;
+        if (/Planet Prospektiert/i.test(e.subject || e.eventType || '')) {
+            return (laden(STORAGE_PRDR_BERICHTE, []) || []).some(function (p) { return p.messageId === e.messageId && p.serverUploadedAt; });
+        }
+        return true;
+    }
+
+    function planeHasaEventSync() {
+        if (!istHasaFuerSitzungAktiv()) return;
+        clearTimeout(HAA_EVENT_SYNC_TIMER);
+        HAA_EVENT_SYNC_TIMER = setTimeout(verarbeiteHasaEventSync, 350);
+    }
+
+    async function verarbeiteHasaEventSync() {
+        if (HAA_EVENT_SYNC_BUSY || !istHasaFuerSitzungAktiv() || !hasaServerSchreibbereit()) return;
+        const owner = ereignisScannerBenutzer();
+        if (!owner) return;
+        HAA_EVENT_SYNC_BUSY = true;
+        try {
+            let budget = 25;
+            const events = (laden(STORAGE_EREIGNIS_REGISTER, []) || []).filter(function (e) {
+                return e.ownerId === owner && e.round === HASA_RUNDE && e.messageId && e.subject && e.reportedTimeText
+                    && (e.subject !== 'Planet zerbrochen' || e.position)
+                    && (!e.serverStoredAt || e.serverRevision !== hasaEventRevision(e));
+            });
+            for (const e of events) {
+                if (--budget < 0 || ereignisScannerBenutzer() !== owner || !hasaServerSchreibbereit()) break;
+                const revision = hasaEventRevision(e);
+                const response = await hasaJsonRequest({ method: 'POST', url: HASA_EVENT_API,
+                    headers: { 'Accept': 'application/json', 'Content-Type': 'application/json',
+                        'X-HASA-Key': galascannerApiSchluessel(false), 'X-HASA-CSRF': HAA_SERVER_AUTH.csrf },
+                    data: JSON.stringify(hasaEventPayload(e)) });
+                const stored = response.stored;
+                if (!stored || stored.durable !== true || stored.message_id !== e.messageId
+                    || Number(stored.owner_user_id) !== Number(owner) || stored.round !== HASA_RUNDE) throw new Error('Unvollständige Speicherbestätigung');
+                if (ereignisScannerBenutzer() !== owner) break;
+                const now = laden(STORAGE_EREIGNIS_REGISTER, []) || [];
+                const current = now.find(function (r) { return r.id === e.id; });
+                if (current && hasaEventRevision(current) === revision) {
+                    current.serverStoredAt = new Date().toISOString(); current.serverRevision = revision;
+                    speichern(STORAGE_EREIGNIS_REGISTER, now);
+                    markiereHasaGespeicherteBerichte();
+                }
+            }
+            for (const sample of (laden(STORAGE_PRODUCTION_SAMPLES, []) || []).filter(function (s) { return s.ownerId === owner && !s.serverStoredAt; })) {
+                if (--budget < 0 || ereignisScannerBenutzer() !== owner || !hasaServerSchreibbereit()) break;
+                const response = await hasaJsonRequest({ method: 'POST', url: HASA_PRODUCTION_API,
+                    headers: { 'Accept': 'application/json', 'Content-Type': 'application/json',
+                        'X-HASA-Key': galascannerApiSchluessel(false), 'X-HASA-CSRF': HAA_SERVER_AUTH.csrf },
+                    data: JSON.stringify(sample.payload) });
+                const stored = response.stored;
+                if (!stored || stored.durable !== true || stored.sample_id !== sample.id
+                    || Number(stored.owner_user_id) !== Number(owner) || stored.round !== HASA_RUNDE) throw new Error('Unvollständige Produktionsbestätigung');
+                if (ereignisScannerBenutzer() !== owner) break;
+                const samples = laden(STORAGE_PRODUCTION_SAMPLES, []) || [];
+                const current = samples.find(function (s) { return s.id === sample.id; });
+                if (current) { current.serverStoredAt = new Date().toISOString(); speichern(STORAGE_PRODUCTION_SAMPLES, samples); }
+            }
+            HAA_EVENT_SYNC_ERROR = null;
+        } catch (error) {
+            HAA_EVENT_SYNC_ERROR = error.message || 'Übertragung noch nicht bestätigt';
+            behandleHasaServerAuthFehler(error);
+            console.warn('HASA Ereignisübertragung:', HAA_EVENT_SYNC_ERROR);
+        } finally {
+            HAA_EVENT_SYNC_BUSY = false;
+            markiereHasaGespeicherteBerichte();
+        }
+    }
+
+    function markiereHasaGespeicherteBerichte() {
+        const owner = ereignisScannerBenutzer();
+        for (const [img, mark] of HAA_GAME_MARKS) {
+            if (!owner || !img.isConnected || !/messages_empty/i.test(img.getAttribute('src') || '')) {
+                mark.span.remove();img.style.display=mark.display;img.title=mark.title;HAA_GAME_MARKS.delete(img);
+            }
+        }
+        const byMessage = new Map((laden(STORAGE_EREIGNIS_REGISTER, []) || []).filter(function (e) {
+            return e.ownerId === owner && e.round === HASA_RUNDE && e.messageId;
+        }).map(function (e) { return [e.messageId, e]; }));
+        const docs = new Set([document, ...HAA_EREIGNIS_DOKUMENTE.keys()]);
+        docs.forEach(function (doc) {
+            if (!doc.body) return;
+            doc.querySelectorAll('td.MessageTableCell a[href]').forEach(function (link) {
+                const address = ereignisNachrichtenUrl(link.getAttribute('href'), doc.location.href);
+                if (!address || !ereignisZeilenMeta(link).subject || !ereignisIstSpieltext(link, false)) return;
+                const cells = link.closest('tr').cells;
+                const img = cells[3] && cells[3].querySelector('img.MessageButtons');
+                if (!img || !/messages_empty/i.test(img.getAttribute('src') || '')) return; // Nur den leeren ersten Platz nutzen.
+                if (!HAA_GAME_SLOT_TITLES.has(img)) HAA_GAME_SLOT_TITLES.set(img,img.title);
+                const e = byMessage.get(address.messageId);
+                const confirmed = owner && hasaEventServerBestaetigt(e);
+                let mark = HAA_GAME_MARKS.get(img);
+                if (confirmed && !mark) {
+                    const span = doc.createElement('span'); span.textContent = '✓'; span.className = 'haa-stored-mark';
+                    span.setAttribute('role','img'); span.setAttribute('aria-label','In MariaDB gespeichert');
+                    span.title = 'Titel, Zeit und Berichtsort in MariaDB gespeichert' + (hasaEventPayload(e).details ? ' · Berichttext ebenfalls gespeichert' : '');
+                    span.style.cssText = 'display:inline-block;width:19px;height:21px;line-height:21px;text-align:center;color:#35df69;font-weight:bold;font-size:18px;vertical-align:middle;';
+                    mark = { span: span, display: img.style.display, title: HAA_GAME_SLOT_TITLES.get(img) };
+                    HAA_GAME_MARKS.set(img,mark); img.before(span); img.style.display='none';
+                } else if (!confirmed && mark) {
+                    mark.span.remove(); img.style.display=mark.display; img.title=mark.title; HAA_GAME_MARKS.delete(img);
+                }
+                if (!confirmed && owner) img.title = 'Noch nicht vom Server bestätigt' + (HAA_EVENT_SYNC_ERROR ? ' · Anmeldung/Serververbindung prüfen' : '');
+                else if (!owner) img.title=HAA_GAME_SLOT_TITLES.get(img);
+            });
+        });
+        for (const [img, mark] of HAA_GAME_MARKS) if (!img.isConnected) { mark.span.remove(); HAA_GAME_MARKS.delete(img); }
+        for (const img of HAA_GAME_SLOT_TITLES.keys()) if(!img.isConnected)HAA_GAME_SLOT_TITLES.delete(img);
+    }
+
+    function hasaParseRate(text) {
+        const normalized = String(text || '').trim().replace(/['’\s]/g,'').replace(',','.');
+        const m = normalized.match(/^([+-]?\d+(?:\.\d+)?)([kKmM])?$/);
+        if (!m) return null;
+        const number = Number(m[1]) * (m[2] && /k/i.test(m[2]) ? 1000 : m[2] ? 1000000 : 1);
+        return Number.isFinite(number) && Math.abs(number)<=1e12 ? number : null;
+    }
+
+    function leseHasaProduktion() {
+        const nameNode = document.querySelector('.ResPlanetName');
+        const name = nameNode ? prdrNormalisiereText(nameNode.textContent) : '';
+        if (!name) return null;
+        const positions=[];
+        document.querySelectorAll('.TickPlanetEntry[onmouseover]').forEach(function (node) {
+            const m = (node.getAttribute('onmouseover') || '').match(/CAPTION\s*,\s*['"](\d+\s*:\s*\d+\s*:\s*\d+)\s*-\s*([^'"]+)['"]/i);
+            if (m && prdrNormalisiereText(m[2]) === name) positions.push(ereignisPosition(m[1]));
+        });
+        const distinct = new Map(positions.filter(Boolean).map(function (p) {return [p.galaxy+':'+p.system+':'+p.orbit,p];}));
+        if (distinct.size !== 1) return null;
+        const rates={},nodes={},display={};
+        const labels={metal:'Eisenerz',mineral:'Minerale',fuel:'Treibstoff',population:'Population',energy:'Energie'};
+        for (const key of Object.keys(labels)) {
+            const label=Array.from(document.querySelectorAll('.ResName')).find(function (node) {return prdrNormalisiereText(node.textContent)===labels[key];});
+            const cell=label && label.closest('td'), table=cell && cell.closest('table');
+            const row=cell && cell.parentElement.nextElementSibling;
+            const data=row && row.cells && row.cells[cell.cellIndex];
+            const mount=data && data.querySelector('.ResMountWarn,.ResMountNorm,.ResMountCritical');
+            if (!table || !mount) {if(['metal','mineral','fuel'].includes(key))return null;continue;}
+            display[key]=prdrNormalisiereText(mount.textContent);
+            if (['metal','mineral','fuel'].includes(key)) {
+                const m=mount.textContent.match(/\(([^()]+)\/h\)/i);rates[key]=m?hasaParseRate(m[1]):null;
+                if (rates[key]===null)return null;nodes[key]=mount;
+            }
+        }
+        return {name:name,position:Array.from(distinct.values())[0],rates:rates,nodes:nodes,display:display};
+    }
+
+    function hasaProductionKey(owner,position) { return HASA_RUNDE+':'+owner+':'+position.galaxy+':'+position.system+':'+position.orbit; }
+
+    function hasaProductionEvent(e) {
+        if (!e.position || !e.systemEvent || !e.subject || !e.messageId) return;
+        const subject=e.subject;
+        let resource=null,start=false,end=false;
+        if(subject==='Reiche Metallvorkommen entdeckt'){resource='metal';start=true;}
+        if(subject==='Reiche Mineralvorkommen entdeckt'){resource='mineral';start=true;}
+        if(subject==='Unterirdischer Treibstoffsee entdeckt'){resource='fuel';start=true;}
+        if (/(?:Metallvorkommen|Mineralvorkommen|Treibstoffsee).*(?:erschöpft|versiegt|beendet|vorbei|normalisiert)/i.test(subject)) {
+            resource=/Metall/i.test(subject)?'metal':/Mineral/i.test(subject)?'mineral':'fuel';end=true;
+        }
+        if(!resource)return;
+        const key=hasaProductionKey(e.ownerId,e.position),all=laden(STORAGE_PRODUCTION_TRACKER,{})||{};
+        const state=all[key]||{baseline:{},active:{},eventOrder:{},eventIds:{},lastSampleAt:null};
+        if(state.eventIds[e.id])return;
+        const order=hasaAsfiZeitKey(e.reportedTimeText);
+        state.eventIds[e.id]=true;
+        if(!order || !state.eventOrder[resource] || order>=state.eventOrder[resource]) {
+            state.active[resource]=start;
+            if(end){state.resetBaseline=state.resetBaseline||{};state.resetBaseline[resource]=true;}
+            if(order)state.eventOrder[resource]=order;
+        }
+        state.updatedAt=new Date().toISOString();all[key]=state;speichern(STORAGE_PRODUCTION_TRACKER,all);
+        maleHasaProduktion();
+    }
+
+    function erfasseHasaProduktion(force) {
+        const owner=ereignisScannerBenutzer(),snapshot=owner && leseHasaProduktion();
+        if(!snapshot)return;
+        const key=hasaProductionKey(owner,snapshot.position),all=laden(STORAGE_PRODUCTION_TRACKER,{})||{};
+        const state=all[key]||{baseline:{},active:{},eventOrder:{},eventIds:{},lastSampleAt:null};
+        if(!force && state.lastSampleAt && Date.now()-Date.parse(state.lastSampleAt)<15*60*1000){maleHasaProduktion();return;}
+        for(const resource of ['metal','mineral','fuel']) {
+            if(state.resetBaseline && state.resetBaseline[resource]){state.baseline[resource]=snapshot.rates[resource];delete state.resetBaseline[resource];}
+            else if(state.baseline[resource]===undefined && !state.active[resource])state.baseline[resource]=snapshot.rates[resource];
+        }
+        const at=new Date().toISOString(),id=key+':'+at;
+        const baseline={metal:state.baseline.metal??null,mineral:state.baseline.mineral??null,fuel:state.baseline.fuel??null};
+        const payload={round:HASA_RUNDE,expected_user_id:Number(owner),sample_id:id,position:snapshot.position,planet_name:snapshot.name,sampled_at:at,rates:snapshot.rates,baseline:baseline,display:snapshot.display};
+        const samples=laden(STORAGE_PRODUCTION_SAMPLES,[])||[];samples.push({id:id,ownerId:owner,payload:payload});speichern(STORAGE_PRODUCTION_SAMPLES,samples);
+        state.lastSampleAt=at;state.updatedAt=at;all[key]=state;speichern(STORAGE_PRODUCTION_TRACKER,all);
+        maleHasaProduktion();planeHasaEventSync();
+    }
+
+    function maleHasaProduktion() {
+        const owner=ereignisScannerBenutzer(),snapshot=owner && leseHasaProduktion();
+        if(!snapshot){HAA_RATE_MARKS.forEach(function(span){span.style.outline='';span.style.outlineOffset='';span.title='';});return;}
+        const state=(laden(STORAGE_PRODUCTION_TRACKER,{})||{})[hasaProductionKey(owner,snapshot.position)]||{baseline:{},active:{}};
+        for(const key of ['metal','mineral','fuel']) {
+            const node=snapshot.nodes[key];let span=node.querySelector('[data-haa-rate]');
+            if(!span){const text=Array.from(node.childNodes).find(function(n){return n.nodeType===3 && /\/h\)/.test(n.textContent);});
+                if(!text)continue;span=node.ownerDocument.createElement('span');span.dataset.haaRate=key;span.textContent=text.textContent;text.replaceWith(span);HAA_RATE_MARKS.add(span);}
+            const current=snapshot.rates[key],base=state.baseline[key];
+            const known=typeof base==='number' && Number.isFinite(base),difference=known?current-base:null;
+            const pct=known && base!==0 ? difference/Math.abs(base)*100 : null;
+            const positive=known?difference>0:state.active[key],negative=known && difference<0;
+            span.style.outline=negative?'2px solid #a50000':positive?'2px solid #29cc66':'';
+            span.style.outlineOffset=positive||negative?'2px':'';
+            span.title='Aktuell: '+current.toLocaleString('de-DE')+'/h · '
+                +(known?'Grundwert: '+base.toLocaleString('de-DE')+'/h':'Grundwert noch unbekannt')
+                +(pct!==null?' · '+(pct>0?'+':'')+pct.toLocaleString('de-DE',{maximumFractionDigits:1})+' %':'')
+                +(state.active[key]?' · Erhöhungsmeldung registriert':'')
+                +' · Vergleich zum gespeicherten Wert; weitere Spieländerungen können mitwirken';
+        }
+        for(const node of HAA_RATE_MARKS)if(!node.isConnected)HAA_RATE_MARKS.delete(node);
+    }
+
+    function installiereHasaLiveDaten() {
+        if(HAA_EVENT_SYNC_RETRY)return;
+        erfasseHasaProduktion(false);planeHasaEventSync();markiereHasaGespeicherteBerichte();
+        HAA_EVENT_SYNC_RETRY=setInterval(function(){planeHasaEventSync();markiereHasaGespeicherteBerichte();maleHasaProduktion();},30000);
+        HAA_PRODUCTION_TIMER=setInterval(function(){erfasseHasaProduktion(false);},15*60*1000);
+    }
+
+    function stoppeHasaLiveDaten() {
+        clearTimeout(HAA_EVENT_SYNC_TIMER);HAA_EVENT_SYNC_TIMER=null;
+        clearInterval(HAA_EVENT_SYNC_RETRY);HAA_EVENT_SYNC_RETRY=null;
+        clearInterval(HAA_PRODUCTION_TIMER);HAA_PRODUCTION_TIMER=null;
+        HAA_GAME_MARKS.forEach(function(mark,img){mark.span.remove();img.style.display=mark.display;img.title=mark.title;});HAA_GAME_MARKS.clear();
+        HAA_GAME_SLOT_TITLES.forEach(function(title,img){img.title=title;});HAA_GAME_SLOT_TITLES.clear();
+        HAA_RATE_MARKS.forEach(function(span){if(span.parentNode)span.replaceWith(span.ownerDocument.createTextNode(span.textContent));});HAA_RATE_MARKS.clear();
     }
 
 
@@ -1442,6 +1710,9 @@
     }
 
     function verbindeGalascannerButtons() {
+        const asfi=document.getElementById('haa-asfi-liste'),guild=document.getElementById('haa-gildensitzungen');
+        if(asfi)asfi.onclick=function(){window.open(HASA_EVENT_LIST+'?view=asfi&round='+HASA_RUNDE,'_blank','noopener');};
+        if(guild)guild.onclick=function(){window.open(HASA_EVENT_LIST+'?view=guild&round='+HASA_RUNDE,'_blank','noopener');};
         const datenbank = document.getElementById('haa-galascan-datenbank');
         if (datenbank) {
             datenbank.onclick = function () {
@@ -1554,6 +1825,8 @@
                 : '')
             + '<button id="haa-galascan-datenbank" type="button" '
             + 'style="font-size:11px;font-weight:bold;cursor:pointer;">Galaxiedatenbank</button>'
+            + '<button id="haa-asfi-liste" type="button" style="font-size:11px;cursor:pointer;">ASFI-Liste</button>'
+            + '<button id="haa-gildensitzungen" type="button" style="font-size:11px;cursor:pointer;">Gildensitzungen</button>'
             + (HAA_SERVER_AUTH.authenticated && HAA_SERVER_AUTH.isUserAdmin
                 ? '<button id="haa-galascan-benutzerverwaltung" type="button" '
                     + 'style="font-size:11px;font-weight:bold;cursor:pointer;">Zur Benutzerverwaltung</button>'
@@ -2034,7 +2307,7 @@
 
     function hasaIndexedDbSchluessel() {
         return new Set([
-            STORAGE_ASFI_LISTE, STORAGE_EREIGNIS_REGISTER, STORAGE_GALASCAN_LETZTER_STAND, STORAGE_PRDR_BERICHTE, STORAGE_TECHTREE_GRAPH,
+            STORAGE_PRODUCTION_SAMPLES, STORAGE_PRODUCTION_TRACKER, STORAGE_ASFI_LISTE, STORAGE_EREIGNIS_REGISTER, STORAGE_GALASCAN_LETZTER_STAND, STORAGE_PRDR_BERICHTE, STORAGE_TECHTREE_GRAPH,
             STORAGE_TECHTREE_STATUS, STORAGE_TECHTREE_DEBUG,
             STORAGE_TECHTREE_SPIELSTAND, STORAGE_STAN_STAMMDATEN, STORAGE_STAN_ZIELKATALOG,
             STORAGE_STAN_VERSIONEN, STORAGE_STAN_STATUS, STORAGE_SEITENSCAN_STATUS
@@ -2118,7 +2391,7 @@
             return;
         }
 
-        if ([STORAGE_ASFI_LISTE, STORAGE_EREIGNIS_REGISTER, STORAGE_STAN_STAMMDATEN, STORAGE_STAN_VERSIONEN, STORAGE_STAN_ZIELKATALOG].includes(key)) {
+        if ([STORAGE_PRODUCTION_SAMPLES, STORAGE_PRODUCTION_TRACKER, STORAGE_ASFI_LISTE, STORAGE_EREIGNIS_REGISTER, STORAGE_STAN_STAMMDATEN, STORAGE_STAN_VERSIONEN, STORAGE_STAN_ZIELKATALOG].includes(key)) {
             speichernKlassisch(key, wert);
         }
 
@@ -2166,6 +2439,19 @@
 
             for (const key of hasaIndexedDbSchluessel()) {
                 const vorhanden = await leseHasaIndexedDbWert(db, key);
+                if (key === STORAGE_PRODUCTION_SAMPLES || key === STORAGE_PRODUCTION_TRACKER) {
+                    const a=vorhanden && vorhanden.wert, b=ladenKlassisch(key,key===STORAGE_PRODUCTION_SAMPLES?[]:{});
+                    let value;
+                    if(key===STORAGE_PRODUCTION_SAMPLES){
+                        const map=new Map();[a,b].forEach(function(list){(Array.isArray(list)?list:[]).forEach(function(row){
+                            if(!row || !row.id)return;const old=map.get(row.id);if(!old || row.serverStoredAt)map.set(row.id,row);
+                        });});value=Array.from(map.values());
+                    }else{
+                        value={};[a,b].forEach(function(obj){if(!obj || typeof obj!=='object' || Array.isArray(obj))return;
+                            Object.keys(obj).forEach(function(k){if(!value[k] || String(obj[k].updatedAt||'')>String(value[k].updatedAt||''))value[k]=obj[k];});});
+                    }
+                    await schreibeHasaIndexedDbWert(db,key,value);HAA_INDEXEDDB_CACHE.set(key,value);geladen+=1;continue;
+                }
                 if (key === STORAGE_ASFI_LISTE) {
                     const rows = vereinigeHasaAsfiListen(vorhanden && vorhanden.wert, ladenKlassisch(key, []));
                     await schreibeHasaIndexedDbWert(db, key, rows);
@@ -4374,8 +4660,7 @@ return box;
             html += baueAccordionBereichHtml('alarme', '⏰ Alarme', alarmHtml);
             html += baueAccordionBereichHtml('techtree', '🧭 Forschungsplanung', baueTechTreeTestHtml());
             html += baueAccordionBereichHtml('galascanner', '🌌 Galaxiescanner', baueGalascannerImportHtml());
-            html += baueAccordionBereichHtml('berichte', '📋 Berichte und Ereignisse',
-                '<div id="haa-ereignis-register">' + baueHasaEreignisRegisterHtml() + '</div>');
+            // Das lokale Meldungsarchiv bleibt erhalten; die normale Spielansicht nutzt Serverlisten und Häkchen.
         }
 
         box.innerHTML = html;
@@ -6331,6 +6616,7 @@ return box;
     }
 
     function stoppeHasaLaufendeArbeit() {
+        stoppeHasaLiveDaten();
         stoppeHasaEreignisScanner();
         if (HAA_SEITENSCAN_TIMER) {
             clearTimeout(HAA_SEITENSCAN_TIMER);
@@ -6406,6 +6692,7 @@ return box;
         installiereAutomatischenSeitenscan();
         installierePrdrSofortwaechter();
         installiereHasaEreignisScanner();
+        installiereHasaLiveDaten();
         installiereAutomatischenGalaxiescan();
         installiereHasaAnmeldungspruefung();
         installiereAudioFreigabe();

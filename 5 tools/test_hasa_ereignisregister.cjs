@@ -25,7 +25,7 @@ const helpers = source.slice(source.indexOf('    function prdrNormalisiereText')
         function laden(key, fallback) {return store.has(key) ? structuredClone(store.get(key)) : fallback;}
         function speichern(key, value) {store.set(key, structuredClone(value)); writes.push(key);}
         function esc(s) {return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-        const exports = new Function('HAA_SERVER_AUTH','HASA_RUNDE','HASA_RUNDE_SCHLUESSEL','istHasaFuerSitzungAktiv','laden','speichern','esc', helpers + moduleSource + `
+        const exports = new Function('HAA_SERVER_AUTH','HASA_RUNDE','HASA_RUNDE_SCHLUESSEL','istHasaFuerSitzungAktiv','laden','speichern','esc', 'function hasaServerSchreibbereit(){return false;} function behandleHasaServerAuthFehler(){} function galascannerApiSchluessel(){return \"\";} '+helpers + moduleSource + `
             return {catalog:HASA_EREIGNIS_KATALOG, classify:erkenneHasaEreignis, record:registriereHasaEreignis,
                 scan:pruefeHasaEreignisse, stop:stoppeHasaEreignisScanner, install:installiereHasaEreignisScanner,
                 scanNode:scanneHasaEreignisKnoten, url:ereignisNachrichtenUrl, html:baueHasaEreignisRegisterHtml,
@@ -224,10 +224,10 @@ const helpers = source.slice(source.indexOf('    function prdrNormalisiereText')
         await full.goto('https://horiversum.org/game/main/main.php');
         await full.evaluate(instrumented);
         await full.locator('#haa-hauptschalter-an').click();
-        await full.waitForSelector('#haa-ereignis-register',{state:'attached'});
-        assert.equal(await full.locator('#haa-box').locator('details.haa-accordion').count(),5);
+        await full.waitForSelector('#haa-asfi-liste',{state:'attached'});
+        assert.equal(await full.locator('#haa-box').locator('details.haa-accordion').count(),4);
         assert.equal(await full.evaluate(()=>__hasaTest.list().length),1);
-        assert.match(await full.locator('#haa-box').innerText(),/Alpha 29/);
+        assert.match(await full.locator('#haa-box').innerText(),/Alpha 30/);
     });
     await test('full Userscript writes native IndexedDB and synchronous fallback', async () => {
         await full.waitForFunction(async ()=>{
@@ -237,12 +237,12 @@ const helpers = source.slice(source.indexOf('    function prdrNormalisiereText')
         assert.equal(await full.evaluate(()=>JSON.parse(localStorage.getItem('gm:'+__hasaTest.key)).length),1);
     });
     await test('browser reload preserves register, same message never double-counts', async () => {
-        await full.reload();await full.evaluate(instrumented);await full.waitForSelector('#haa-ereignis-register',{state:'attached'});
+        await full.reload();await full.evaluate(instrumented);await full.waitForSelector('#haa-asfi-liste',{state:'attached'});
         assert.equal(await full.evaluate(()=>__hasaTest.list().length),1);
     });
     await test('recovery merges newer fallback with older IndexedDB', async () => {
         await full.evaluate(()=>{const v=JSON.parse(localStorage.getItem('gm:'+__hasaTest.key));v.push({...v[0],id:'8:7:message:902',messageId:'902',eventType:'Polsprung',observations:[{kind:'overview',rawText:'Polsprung',capturedAt:new Date().toISOString()}]});localStorage.setItem('gm:'+__hasaTest.key,JSON.stringify(v));});
-        await full.reload();await full.evaluate(instrumented);await full.waitForSelector('#haa-ereignis-register',{state:'attached'});
+        await full.reload();await full.evaluate(instrumented);await full.waitForSelector('#haa-asfi-liste',{state:'attached'});
         assert.equal(await full.evaluate(()=>__hasaTest.list().length),2);
     });
     await test('full ASFI native database persistence and reload', async()=>{
@@ -251,17 +251,17 @@ const helpers = source.slice(source.indexOf('    function prdrNormalisiereText')
         await full.waitForFunction(()=>__hasaTest.asfi().length===1);
         await full.waitForFunction(async()=>{const db=await new Promise(resolve=>{const a=indexedDB.open('hasa_lokale_daten_v1',1);a.onsuccess=()=>resolve(a.result);});const row=await new Promise(resolve=>{const a=db.transaction('werte').objectStore('werte').get(__hasaTest.asfiKey);a.onsuccess=()=>resolve(a.result);});db.close();return row&&row.wert.length===1;});
         assert.equal(await full.evaluate(()=>JSON.parse(localStorage.getItem('gm:'+__hasaTest.asfiKey))[0].current.type),'ASFI');
-        await full.reload();await full.evaluate(instrumented);await full.waitForSelector('#haa-ereignis-register',{state:'attached'});
+        await full.reload();await full.evaluate(instrumented);await full.waitForSelector('#haa-asfi-liste',{state:'attached'});
         assert.equal(await full.evaluate(()=>__hasaTest.asfi()[0].current.type),'ASFI');
     });
     await test('compact real UI at 390px, original text readable, stop/restart', async () => {
         await full.setViewportSize({width:390,height:850});
-        await full.locator('details[data-haa-bereich="berichte"] > summary').click();
-        await full.locator('#haa-ereignis-register details').first().locator('summary').click();
+        await full.locator('details[data-haa-bereich="galascanner"] > summary').click();
+        assert.equal(await full.locator('details[data-haa-bereich="berichte"]').count(),0);
         const bounds=await full.locator('#haa-box').boundingBox();assert.ok(bounds.x>=0 && bounds.x+bounds.width<=391);
         await full.screenshot({path:process.env.HASA_TEST_SCREENSHOT || require('os').tmpdir()+'/hasa-ereignisregister-test.png'});
         await full.locator('#haa-hauptschalter-aus').click();await full.waitForSelector('#haa-hauptschalter-an');
-        await full.locator('#haa-hauptschalter-an').click();await full.waitForSelector('#haa-ereignis-register',{state:'attached'});
+        await full.locator('#haa-hauptschalter-an').click();await full.waitForSelector('#haa-asfi-liste',{state:'attached'});
         assert.equal(await full.evaluate(()=>__hasaTest.list().length),3);
     });
     assert.deepEqual(errors,[]);

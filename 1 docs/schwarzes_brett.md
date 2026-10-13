@@ -1876,3 +1876,24 @@ Kurt: SERKAL_pull_v2.bat im vorhandenen Website-Ordner ausführen. Diese führt 
 **Restpunkte:** Echter Installationstest; zentrale ASFI-Webliste/Synchronisierung mit bestehenden Freigaben, Verlagerungs-/Auflösungsnachweise, genaue Zeitbasis, Mehrtab-/Langzeittest. Durchbruch-Verifikation, Forschungs-Wunschliste und Geräteanmeldung weiterhin eigene Aufträge.
 
 **Commit:** Gemeinsamer Programm-/Dokumentationscommit; nach Übertragung alle sechs Dateien online vergleichen.
+
+
+### 2026-10-13 – CE HASA an Kurt – Alpha30: einfache Spielmarkierungen und MariaDB-Listen
+
+**Status:** GESAMTFASSUNG FERTIG / LOKALE BROWSER- UND SYNTAXPRÜFUNGEN BESTANDEN / MARIADB-CI UND PRODUKTIVINSTALLATION NOCH ZU PRÜFEN.
+
+**Autorisierung:** Kurt hob den Baustopp ausdrücklich auf („Jetzt darfst du mal anfangen zu montieren“). Vorgaben: Übersichtszeilen statt Standardberichte öffnen, erster leerer Aktionsplatz für gespeichertes Häkchen, zentrale ASFI-Liste, Gildentermine, 15-Minuten-Produktion und Grün/Rot direkt im Spiel. Keine automatische Durchbruch-Verifikation.
+
+**Umsetzung:** Alpha30 im festen Aktualisierungspfad und identischer archivierter Gesamtdatei. Lange lokale Registeranzeige entfernt, alte Daten/Module behalten. Grüne ✓ nur nach dauerhaft bestätigter, zum Konto/Runde/ID passender Speicherung; belegte Spielaktionen bleiben frei. Sondenmarker zusätzlich an bestehende Messdatenbestätigung gekoppelt. Kopfwerte Eisenerz/Minerale/Treibstoff pro Stunde lesen, nicht Lagerbestände; eindeutige aktuelle Koordinate erforderlich. Kontogebundene Referenz/Messungen, Prozenttooltip und grüner/dunkelroter Ratenrahmen; normal ohne Rahmen. Ohne Vorwert keine erfundene Prozentwirkung.
+
+**Server/Schnittstellen abgestimmt im Rahmen des neuen Auftrags:** event-record.php, production-samples.php, events.php, events-install.php, events-service.php. Neue Tabellen hasa_event_reports, hasa_asfi_positions, hasa_production_samples. Geschützte einmalige Webeinrichtung durch Benutzerleitung mit CSRF; SQL als Ausweichweg. Idempotente Konto-/Rundenidentität, Konflikte abweisen, Bestätigung erst nach Commit und Konto-Sperrprüfung. Auth/API/CSRF beibehalten. systems.php und prospection-reports.php ergänzen ASFI-Nachweis innerhalb bestehender Transaktion. Bestehende Daten/Freigaben unverändert; kein automatisches Root-Leserecht. Weblisten übernehmen gegenseitige galaxiebezogene Berichtsfreigaben.
+
+**Fachstand:** PZ legt ASFI ohne vorherigen Scan an, sichere andere Typen nehmen Position aus aktiver Liste; fehlende/blinde/unknown-Sicht bewirkt nichts. Historie erhalten, wiederholte Ereignisse reaktivieren nicht. Neuer Standort/Identität wird nicht erfunden. Besiedlung bleibt ASFI, ab ungefähr 14 Tagen Prüfhinweis statt Alterslöschung. Sichtbare ASFI-Ansicht auf 1000 Positionsnachweise begrenzt mit Hinweis. Gildensitzungen nur Zeitliste. Produktion nur offener sichtbarer Planet alle 15 Minuten; kein Hintergrundbesuch anderer Planeten. Bekannte Beginnmeldungen; Endmuster vorläufig, echter Endtitel fehlt. Unbekannte Spielzeitzone begrenzt enge historische Reihenfolge, Prozentvergleich beweist keine Ursache.
+
+**Dateien/Prüfung:** Sieben PHP-Dateien mit echter PHP-Syntax geprüft; 36 bestehende Browsergruppen inklusive pz.txt/met+.txt/gv+.txt und vollständigem Start/Persistenz/Reload; 20 neue Live-Browsergruppen mit Fehler-/Fremdkonto-/nicht-dauerhafter Bestätigung, freien/belegten Aktionsslots, Stundenwerten, 15 Minuten, +40%/-20%, unbekannter Referenz und sauberem Abschalten. Zwei Testansichten visuell geprüft. Neue reproduzierbare MariaDB-Integration in isolierter CI-Testdatenbank, keine Produktivkonfiguration; Workflow-Ergebnis wird nach Onlineprüfung ergänzt. Private Originalquellen nicht in GitHub.
+
+**Installation:** HASA-Serverupdate.bat; als Styl https://serkal.de/hasa/events-install.php einmal ausführen; anschließend HASA-AKTUALISIEREN.cmd, komplette Datei im vorhandenen Tampermonkey ersetzen und Horizon neu laden. Kein XML-Neuimport. Kein Produktiv-/FTP-Upload oder echter Spieltest aus dieser Sitzung; Windows-/WinSCP-Verbindung nur auf Kurts PC verfügbar. Website-Reparaturdownload bleibt separater Stand.
+
+**Restpunkte:** Echter Installationstest, Originaltitel der Vorkommens-Endmeldung, Mehrtab-/Langzeitbetrieb, sichere Spielzeitbasis und Verlagerungsnachweise. Forschungs-Wunschliste, Geräteanmeldung und frühere offene Aufträge behalten.
+
+**Commit:** Gemeinsamer Programm-/Dokumentationscommit; Kennung und CI-Ergebnis nach Onlinevergleich im Abschluss.

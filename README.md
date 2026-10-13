@@ -32,21 +32,28 @@ Tampermonkey als neues Userscript eingefügt und gespeichert.
 
 ## Aktuelle Entwicklungsreihe
 
-**HASA 1.2.0 Alpha 29 – echte Berichte und lokale ASFI-Liste**
+**HASA 1.2.0 Alpha 30 – zentrale ASFI-Liste und Spielmarkierungen**
 
 Aktuelle Testdateien:
 
 - fester Aktualisierungspfad: `2 src/current/HASA-AKTUELL.user.js.txt`
-- archivierte Fassung: `2 src/current/hasa_1.2.0-alpha.29_asfi.user.js.txt`
+- archivierte Fassung: `2 src/current/hasa_1.2.0-alpha.30_serverlisten.user.js.txt`
 
-Alpha 29 liest tatsächliche Ereignisberichte mit Nachrichtenkennung, Zeit und
-Absenderposition. „Planet zerbrochen“ erzeugt dort ein lokales ASFI, auch ohne
-früheren Scan. Die lokale ASFI-Liste nennt Fundorte und Beobachtungsalter;
-spätere sichtbare Galaxiedaten bestätigen oder ändern den Stand. Historie bleibt
-erhalten, ältere Felder erhalten einen Prüfhinweis statt automatischer Löschung.
-„Technologischer Durchbruch“ und „Treffen des Gildenvorstandes“ sind aufgenommen.
-Bedienung und Grenzen: `1 docs/hasa_1.2.0-alpha.29_asfi.md`.
-Keine automatische Forschungs-Verifikation und keine neue Serverübertragung.
+Sichtbare Meldungen werden bereits in der Übersicht erfasst. Ein grünes Häkchen
+im ersten freien Aktionsplatz bestätigt die Speicherung auf dem HASA-Server.
+Planetzerbruch und echte Scans führen eine MariaDB-ASFI-Liste; bestätigte andere
+Planetentypen entfernen die Position aus der aktuellen Liste. Gildensitzungen
+werden als einfache Zeitliste gespeichert. Die Stundenproduktion des sichtbaren
+Planeten wird alle 15 Minuten gelesen; Grün/Rot und ein Tooltip zeigen den
+Vergleich mit einem bekannten Referenzwert. Die bisherige lange Berichtsanzeige
+ist ausgeblendet, ihre Daten bleiben erhalten.
+
+**Einrichtung:** zuerst `HASA-Serverupdate.bat`, anschließend als Benutzerleitung
+`https://serkal.de/hasa/events-install.php` öffnen und einmal „Ereignislisten
+einrichten“ anklicken. Danach `HASA-AKTUALISIEREN.cmd`, vollständigen Inhalt in
+Tampermonkey ersetzen und Horizon neu laden. Neue Serverdateien müssen vor dem
+Userscript produktiv hochgeladen sein. Vollständige Anleitung und Grenzen:
+`1 docs/hasa_1.2.0-alpha.30_serverlisten.md`.
 
 Alpha 28 ergänzt ein lokales Register für sichtbare Ereignismeldungen und bereits
 geöffnete Berichte. Nachrichtenkennung, Originaltext und Zeitangaben bleiben

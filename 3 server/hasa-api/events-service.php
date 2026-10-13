@@ -1,0 +1,180 @@
+<?php
+declare(strict_types=1);
+
+function hasaEventSchemaSql(): array
+{
+    return [
+        "CREATE TABLE IF NOT EXISTS hasa_event_reports (
+            id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, owner_user_id BIGINT UNSIGNED NOT NULL,
+            round_number SMALLINT UNSIGNED NOT NULL, message_id VARCHAR(80) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+            subject VARCHAR(240) NOT NULL, event_type VARCHAR(160) NULL, system_event TINYINT NOT NULL DEFAULT 0,
+            galaxy_number SMALLINT UNSIGNED NULL, system_number INT UNSIGNED NULL, orbit_position SMALLINT UNSIGNED NULL,
+            planet_name VARCHAR(160) NULL, reported_game_time VARCHAR(40) NULL, reported_order CHAR(14) NULL,
+            captured_at DATETIME NOT NULL, details_text MEDIUMTEXT NULL, identity_hash CHAR(64) NOT NULL,
+            UNIQUE KEY uq_hasa_event_identity(owner_user_id,round_number,message_id),
+            KEY ix_hasa_event_timeline(owner_user_id,round_number,reported_order),
+            FOREIGN KEY(owner_user_id) REFERENCES hasa_users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+        "CREATE TABLE IF NOT EXISTS hasa_asfi_positions (
+            planet_id BIGINT UNSIGNED PRIMARY KEY, active TINYINT NOT NULL DEFAULT 1,
+            former_name VARCHAR(160) NULL, ruler_name VARCHAR(120) NULL, evidence_source VARCHAR(40) NOT NULL,
+            reported_game_time VARCHAR(40) NULL, reported_order CHAR(14) NULL,
+            observed_at DATETIME NOT NULL, born_at DATETIME NULL,
+            FOREIGN KEY(planet_id) REFERENCES hasa_planets(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+        "CREATE TABLE IF NOT EXISTS hasa_production_samples (
+            id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, owner_user_id BIGINT UNSIGNED NOT NULL,
+            round_number SMALLINT UNSIGNED NOT NULL, sample_key CHAR(64) NOT NULL,
+            galaxy_number SMALLINT UNSIGNED NOT NULL, system_number INT UNSIGNED NOT NULL,
+            orbit_position SMALLINT UNSIGNED NOT NULL, planet_name VARCHAR(160) NULL, sampled_at DATETIME NOT NULL,
+            metal_per_hour DOUBLE NOT NULL, mineral_per_hour DOUBLE NOT NULL, fuel_per_hour DOUBLE NOT NULL,
+            baseline_json TEXT NULL, display_json TEXT NULL, identity_hash CHAR(64) NOT NULL,
+            UNIQUE KEY uq_hasa_production_identity(owner_user_id,round_number,sample_key),
+            KEY ix_hasa_production_planet(owner_user_id,round_number,galaxy_number,system_number,orbit_position,sampled_at),
+            FOREIGN KEY(owner_user_id) REFERENCES hasa_users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+    ];
+}
+
+function hasaEventsAvailable(PDO $pdo): bool
+{
+    try {
+        $pdo->query('SELECT identity_hash, reported_order FROM hasa_event_reports LIMIT 0');
+        $pdo->query('SELECT born_at, active FROM hasa_asfi_positions LIMIT 0');
+        $pdo->query('SELECT sample_key FROM hasa_production_samples LIMIT 0');
+        return true;
+    } catch (PDOException) { return false; }
+}
+
+function hasaEventPosition(mixed $value): ?array
+{
+    if ($value === null) return null;
+    if (!is_array($value)) throw new InvalidArgumentException('invalid_position');
+    $out=[];
+    foreach (['galaxy'=>[1,255], 'system'=>[0,999999], 'orbit'=>[1,255]] as $field=>$range) {
+        $v=$value[$field] ?? null;
+        if (!is_scalar($v) || filter_var($v,FILTER_VALIDATE_INT)===false || (int)$v<$range[0] || (int)$v>$range[1]) throw new InvalidArgumentException('invalid_position');
+        $out[$field]=(int)$v;
+    }
+    return $out;
+}
+
+function hasaEventText(mixed $v, int $max): ?string
+{
+    if ($v===null || $v==='') return null;
+    if (!is_string($v) || mb_strlen($v,'UTF-8')>$max) throw new InvalidArgumentException('invalid_text');
+    return trim($v)==='' ? null : trim($v);
+}
+
+function hasaEventTimeOrder(?string $v): ?string
+{
+    if ($v===null) return null;
+    if (!preg_match('/^(\d{2})\.(\d{2})\.(\d{4})\s+(\d{2}):(\d{2}):(\d{2})$/D',$v,$m)
+        || !checkdate((int)$m[2],(int)$m[1],(int)$m[3]) || (int)$m[4]>23 || (int)$m[5]>59 || (int)$m[6]>59) throw new InvalidArgumentException('invalid_reported_time');
+    return $m[3].$m[2].$m[1].$m[4].$m[5].$m[6];
+}
+
+function hasaEventLockUser(PDO $pdo, array $user): void
+{
+    $q=$pdo->prepare('SELECT active,must_change_password,auth_version FROM hasa_users WHERE id=? FOR UPDATE');
+    $q->execute([(int)$user['id']]); $current=$q->fetch();
+    if (!$current || !(int)$current['active'] || (int)$current['must_change_password'] || (int)$current['auth_version']!==(int)$user['auth_version']) throw new DomainException('account_changed');
+}
+
+function hasaEventPlanet(PDO $pdo, array $user, int $round, array $position, ?string $name, string $captured): int
+{
+    $q=$pdo->prepare('INSERT INTO hasa_galaxies(round_number,game_id,galaxy_type,max_system_number) VALUES (?,?,"unknown",?) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)');
+    $q->execute([$round,$position['galaxy'],$position['system']]); $galaxyId=(int)$pdo->lastInsertId();
+    $q=$pdo->prepare('INSERT INTO hasa_systems(galaxy_id,system_number,owner_user_id,observed_galaxy_type,visibility,last_observed_at,last_observed_by,last_source) VALUES (?,?,?,"unknown","private",?,?,"unknown") ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)');
+    $q->execute([$galaxyId,$position['system'],(int)$user['id'],$captured,$user['player_name']]); $systemId=(int)$pdo->lastInsertId();
+    $q=$pdo->prepare('INSERT INTO hasa_planets(system_id,orbit_position,planet_name,visibility,last_observed_at) VALUES (?,?,?,"private",?) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)');
+    $q->execute([$systemId,$position['orbit'],$name,$captured]); $planetId=(int)$pdo->lastInsertId();
+    hasaRememberGalaxy($pdo,$user,$galaxyId);
+    return $planetId;
+}
+
+function hasaAsfiRecord(PDO $pdo, int $planetId, string $type, ?string $name, ?string $ruler, string $at, string $source, ?string $gameTime=null): void
+{
+    if (!hasaEventsAvailable($pdo)) return; // Alte Installation bleibt für normale Scans nutzbar.
+    $type=strtoupper(trim($type));
+    if ($type==='' || $type==='UNKNOWN') return;
+    if ($ruler!==null && preg_match('/^(?:[-–—]+|unbesiedelt|unbewohnt|niemand|keiner|unknown)$/iu',$ruler)) $ruler=null;
+    $order=hasaEventTimeOrder($gameTime);
+    if ($source==='breakup') {
+        $native=$pdo->prepare('SELECT planet_type,last_observed_at FROM hasa_planets WHERE id=? FOR UPDATE');$native->execute([$planetId]);$state=$native->fetch();
+        if ($state && $state['planet_type'] && strtoupper($state['planet_type'])!=='UNKNOWN') {
+            if ($state['last_observed_at']>$at) return;
+            if ($order && strtotime(substr($order,0,4).'-'.substr($order,4,2).'-'.substr($order,6,2).' UTC')+172800<strtotime($state['last_observed_at'].' UTC')) return;
+        }
+    }
+    $q=$pdo->prepare('SELECT * FROM hasa_asfi_positions WHERE planet_id=? FOR UPDATE'); $q->execute([$planetId]);$old=$q->fetch();
+    if (!$old && $type!=='ASFI') return;
+    if ($old && $source==='breakup' && $order && $old['reported_order'] && $order<$old['reported_order']) return;
+    if ($old && $source==='breakup' && $old['evidence_source']!=='breakup') {
+        // Spielzeitzone unbekannt: nur klaren Kalenderabstand als sicheren Altersbeleg benutzen.
+        if ($order && strtotime(substr($order,0,4).'-'.substr($order,4,2).'-'.substr($order,6,2).' UTC')+172800<strtotime($old['observed_at'].' UTC')) return;
+    } elseif ($old && $source!=='breakup' && $at<$old['observed_at']) return;
+    $q=$pdo->prepare('INSERT INTO hasa_asfi_positions(planet_id,active,former_name,ruler_name,evidence_source,reported_game_time,reported_order,observed_at,born_at) VALUES (?,?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE active=VALUES(active),former_name=COALESCE(VALUES(former_name),former_name),ruler_name=IF(VALUES(evidence_source)="prospection",COALESCE(VALUES(ruler_name),ruler_name),VALUES(ruler_name)),evidence_source=VALUES(evidence_source),reported_game_time=COALESCE(VALUES(reported_game_time),reported_game_time),reported_order=COALESCE(VALUES(reported_order),reported_order),observed_at=VALUES(observed_at),born_at=IF(VALUES(evidence_source)="breakup",VALUES(born_at),born_at)');
+    $q->execute([$planetId,$type==='ASFI'?1:0,$name,$ruler,$source,$gameTime,$order,$at,$source==='breakup'?$at:null]);
+    if ($source==='breakup') {
+        $q=$pdo->prepare('UPDATE hasa_planets SET planet_type="ASFI",ruler_name=NULL,alliance_tag=NULL,game_status=NULL,last_observed_at=? WHERE id=?');$q->execute([$at,$planetId]);
+    }
+}
+
+function hasaStoreEvent(PDO $pdo, array $user, array $input): array
+{
+    $round=hasaRound($input['round'] ?? null,true);
+    if ((int)($input['expected_user_id'] ?? 0)!==(int)$user['id']) throw new DomainException('account_changed');
+    $message=hasaEventText($input['message_id'] ?? null,80);
+    if (!$message || !preg_match('/^[A-Za-z0-9_.:-]+$/D',$message)) throw new InvalidArgumentException('invalid_message_id');
+    $subject=hasaEventText($input['subject'] ?? null,240);
+    if (!$subject) throw new InvalidArgumentException('subject_required');
+    $type=hasaEventText($input['event_type'] ?? null,160); $position=hasaEventPosition($input['position'] ?? null);
+    $time=hasaEventText($input['reported_time_text'] ?? null,40);$order=hasaEventTimeOrder($time);
+    $name=hasaEventText($input['planet_name'] ?? null,160);$details=hasaEventText($input['details'] ?? null,60000);
+    $captured=hasaDateTime($input['captured_at'] ?? null);$systemEvent=($input['system_event'] ?? false)===true;
+    $identity=hash('sha256',json_encode([$round,$message,$subject,$position,$time],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES));
+    $pdo->beginTransaction();
+    try {
+        hasaEventLockUser($pdo,$user);
+        $q=$pdo->prepare('SELECT id,identity_hash FROM hasa_event_reports WHERE owner_user_id=? AND round_number=? AND message_id=? FOR UPDATE');$q->execute([(int)$user['id'],$round,$message]);$old=$q->fetch();
+        if ($old && !hash_equals($old['identity_hash'],$identity)) throw new DomainException('message_identity_conflict');
+        if ($old) {
+            $id=(int)$old['id'];
+            if ($details!==null) {$q=$pdo->prepare('UPDATE hasa_event_reports SET details_text=? WHERE id=?');$q->execute([$details,$id]);}
+        } else {
+            $q=$pdo->prepare('INSERT INTO hasa_event_reports(owner_user_id,round_number,message_id,subject,event_type,system_event,galaxy_number,system_number,orbit_position,planet_name,reported_game_time,reported_order,captured_at,details_text,identity_hash) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
+            $q->execute([(int)$user['id'],$round,$message,$subject,$type,$systemEvent?1:0,$position['galaxy']??null,$position['system']??null,$position['orbit']??null,$name,$time,$order,$captured,$details,$identity]);$id=(int)$pdo->lastInsertId();
+            if ($systemEvent && $subject==='Planet zerbrochen' && $position) {
+                $planet=hasaEventPlanet($pdo,$user,$round,$position,$name,$captured);
+                hasaAsfiRecord($pdo,$planet,'ASFI',$name,null,$captured,'breakup',$time);
+            }
+        }
+        $pdo->commit();
+        return ['report_id'=>$id,'message_id'=>$message,'round'=>$round,'owner_user_id'=>(int)$user['id'],'durable'=>true];
+    } catch (Throwable $e) {if($pdo->inTransaction())$pdo->rollBack();throw $e;}
+}
+
+function hasaStoreProduction(PDO $pdo, array $user, array $input): array
+{
+    $round=hasaRound($input['round']??null,true);
+    if ((int)($input['expected_user_id']??0)!==(int)$user['id']) throw new DomainException('account_changed');
+    $position=hasaEventPosition($input['position']??null);
+    if (!$position) throw new InvalidArgumentException('position_required');
+    $sample=hasaEventText($input['sample_id']??null,190);if(!$sample)throw new InvalidArgumentException('sample_id_required');
+    $at=hasaDateTime($input['sampled_at']??null);$values=[];
+    foreach(['metal','mineral','fuel'] as $key){$v=$input['rates'][$key]??null;if(!is_int($v)&&!is_float($v))throw new InvalidArgumentException('invalid_rate');if(!is_finite((float)$v)||abs((float)$v)>1e12)throw new InvalidArgumentException('invalid_rate');$values[]=(float)$v;}
+    $name=hasaEventText($input['planet_name']??null,160);
+    $baseline=null;
+    if(isset($input['baseline'])){if(!is_array($input['baseline']))throw new InvalidArgumentException('invalid_baseline');$baseline=[];foreach(['metal','mineral','fuel']as$key){$v=$input['baseline'][$key]??null;if($v!==null&&(!is_int($v)&&!is_float($v)||!is_finite((float)$v)||abs((float)$v)>1e12))throw new InvalidArgumentException('invalid_baseline');$baseline[$key]=$v;}}
+    $display=[];foreach(['metal','mineral','fuel','population','energy']as$key)$display[$key]=hasaEventText($input['display'][$key]??null,160);
+    $identity=hash('sha256',json_encode([$position,$at,$values,$baseline,$display,$name]));
+    $pdo->beginTransaction();try{
+        hasaEventLockUser($pdo,$user);
+        $q=$pdo->prepare('INSERT INTO hasa_production_samples(owner_user_id,round_number,sample_key,galaxy_number,system_number,orbit_position,planet_name,sampled_at,metal_per_hour,mineral_per_hour,fuel_per_hour,baseline_json,display_json,identity_hash) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)');
+        $q->execute([(int)$user['id'],$round,hash('sha256',$sample),$position['galaxy'],$position['system'],$position['orbit'],$name,$at,...$values,$baseline===null?null:json_encode($baseline),json_encode($display),$identity]);$id=(int)$pdo->lastInsertId();
+        $q=$pdo->prepare('SELECT identity_hash FROM hasa_production_samples WHERE id=?');$q->execute([$id]);if(!hash_equals((string)$q->fetchColumn(),$identity))throw new DomainException('sample_identity_conflict');
+        $pdo->commit();
+        return ['sample_id'=>$sample,'sample_db_id'=>$id,'owner_user_id'=>(int)$user['id'],'round'=>$round,'durable'=>true];
+    }catch(Throwable$e){if($pdo->inTransaction())$pdo->rollBack();throw$e;}
+}
