@@ -30,14 +30,17 @@ const helpers = source.slice(source.indexOf('    function prdrNormalisiereText')
                 scan:pruefeHasaEreignisse, stop:stoppeHasaEreignisScanner, install:installiereHasaEreignisScanner,
                 scanNode:scanneHasaEreignisKnoten, url:ereignisNachrichtenUrl, html:baueHasaEreignisRegisterHtml,
                 merge:vereinigeHasaEreignisRegister, raw:ereignisOriginaltext, key:STORAGE_EREIGNIS_REGISTER,
-                observers:HAA_EREIGNIS_DOKUMENTE};`)(HAA_SERVER_AUTH,HASA_RUNDE,HASA_RUNDE_SCHLUESSEL,istHasaFuerSitzungAktiv,laden,speichern,esc);
+                observers:HAA_EREIGNIS_DOKUMENTE, asfiKey:STORAGE_ASFI_LISTE,
+                asfiEvent:uebernehmeHasaAsfiEreignis, asfiScan:aktualisiereHasaAsfiAusScan,
+                asfiMerge:vereinigeHasaAsfiListen, projection:projiziereHasaAsfiInLokalenScan};`)(HAA_SERVER_AUTH,HASA_RUNDE,HASA_RUNDE_SCHLUESSEL,istHasaFuerSitzungAktiv,laden,speichern,esc);
         window.test = {exports, auth:HAA_SERVER_AUTH, store, writes, setActive(v){active=v;}, list(){return store.get(exports.key)||[];}};
     }, {moduleSource, helpers});
-    async function test(name, fn) {try {await fn(); console.log('PASS ' + name);} catch(e) {console.log('FAIL '+name); throw e;}}
+    let passed = 0;
+    async function test(name, fn) {try {await fn(); passed++; console.log('PASS ' + name);} catch(e) {console.log('FAIL '+name); throw e;}}
     await test('all Wiki catalog titles and specific follow-up precedence', async () => {
         const r = await page.evaluate(() => ({bad:test.exports.catalog.filter(t => test.exports.classify(t+'!') !== t), count:test.exports.catalog.length,
             follow:test.exports.classify('Laserkristalle vom Hund gefressen!')}));
-        assert.deepEqual(r.bad, []); assert.equal(r.count,61); assert.equal(r.follow,'Laserkristalle vom Hund gefressen');
+        assert.deepEqual(r.bad, []); assert.equal(r.count,63); assert.equal(r.follow,'Laserkristalle vom Hund gefressen');
     });
     await test('unknown text remains unclassified; no fictional evaluation', async () => {
         assert.equal(await page.evaluate(() => test.exports.classify('Eine neue Spielmeldung')), null);
@@ -135,6 +138,76 @@ const helpers = source.slice(source.indexOf('    function prdrNormalisiereText')
         assert.ok(!await page.evaluate(() => test.list().some(e=>e.eventType==='Motivationsvideo verschlampt')));
         await page.evaluate(() => test.exports.stop());
     });
+    const report=(subject,id,position,body,time='13.10.2026 05:37:10',cls='MessageReportEvent')=>
+        `<div class="ResPlanetName">UNRELATED ACTIVE PLANET (9:9:9)</div><div class="MessageContainer"><table class="MessageTableNavigation"><tr><td><a href="?cmd=message&action=view&message_id=neighbor">nächste</a></td></tr></table>
+        <table class="MessageTable"><tr><td class="MessageTableCellLeft">${time}</td><td class="MessageTableCell">Raumüberwachung<div>${position}</div></td>
+        <td class="MessageTableCell"><a class="${cls}" href="?cmd=message&action=view&message_id=${id}">${subject}</a></td><td class="MessageTableCell">Aktionen</td></tr></table>
+        <table><tr><td class="MessageTableCellLeft" width="608">${subject}<p>${body}</p></td></tr></table></div>`;
+    await test('real report layout: precise header ID/position, no main-planet or navigation pollution', async () => {
+        await page.evaluate(() => test.setActive(true));
+        await page.setContent(report('Planet zerbrochen','asfi1','Target IV (3:154:4)','Der bisher unbesiedelte Planet "Target IV" ist in mehrere Teile zerbrochen.'));
+        const r=await page.evaluate(() => {test.exports.scan();return {event:test.list().find(e=>e.messageId==='asfi1'),asfi:test.store.get(test.exports.asfiKey)};});
+        assert.equal(r.event.subject,'Planet zerbrochen'); assert.deepEqual(r.event.position,{galaxy:3,system:154,orbit:4});
+        assert.equal(r.event.observations[0].kind,'report');assert.doesNotMatch(r.event.observations[0].rawText,/UNRELATED|nächste/);
+        assert.equal(r.asfi[0].current.type,'ASFI');assert.equal(r.asfi[0].history.length,1);
+    });
+    await test('ASFI deduplication and replacement of stale planet projection without mutating history', async () => {
+        const r=await page.evaluate(()=>{test.exports.scan();const prior={state:'visible',galaxy:3,system:154,planets:[{orbit:4,type:'STPL',name:'OLD',ruler:'OLD OWNER',alliance:'OLD'}]};
+            return {before:prior,projection:test.exports.projection(prior),rows:test.store.get(test.exports.asfiKey)};});
+        assert.equal(r.before.planets[0].type,'STPL');assert.equal(r.projection.planets[0].type,'ASFI');assert.equal(r.projection.planets[0].ruler,null);
+        assert.equal(r.projection.planets[0].alliance,null);assert.equal(r.projection.planets[0].changedByEvent,true);assert.equal(r.rows[0].history.length,1);
+    });
+    await test('unknown position and player-authored same title never create ASFI', async () => {
+        await page.setContent(report('Planet zerbrochen','noPos','Unknown','Ein Planet zerbrach')+report('Planet zerbrochen','privateMail','Fake (3:1:1)','Ein Planet zerbrach',undefined,'MessagePrivate'));
+        const r=await page.evaluate(()=>{test.exports.scan();return test.store.get(test.exports.asfiKey);});
+        assert.equal(r.length,1);
+    });
+    await test('new ASFI from scan, occupation, unknown/missing sight retained, non-ASFI stays archived', async () => {
+        const r=await page.evaluate(()=>{
+            const scan={safeToStore:true,state:'visible',galaxy:3,system:154,observedAt:new Date().toISOString(),planets:[{orbit:4,type:'ASFI',name:'Field',ruler:'Player'}]};
+            test.exports.asfiScan(scan);const occupied=test.store.get(test.exports.asfiKey)[0].current;
+            test.exports.asfiScan({...scan,planets:[]});test.exports.asfiScan({...scan,planets:[{orbit:4,type:'unknown'}]});
+            const kept=test.store.get(test.exports.asfiKey)[0].current;
+            test.exports.asfiScan({...scan,planets:[{orbit:4,type:'STPL',name:'New planet'}]});
+            const old=test.store.get(test.exports.asfiKey)[0];
+            test.exports.asfiScan({...scan,system:0,planets:[{orbit:1,type:'ASFI',name:'Other field'}]});
+            return {occupied,kept,old,html:test.exports.html()};
+        });
+        assert.equal(r.occupied.ruler,'Player');assert.deepEqual(r.occupied,r.kept);assert.equal(r.old.current.type,'STPL');assert.equal(r.old.history.length,3);
+        assert.match(r.html,/3:0:1/);assert.match(r.html,/Frühere ASFI-Positionen/);
+    });
+    await test('re-reading an already applied breakup cannot rewind newer scan', async()=>{
+        const r=await page.evaluate(()=>{test.exports.asfiEvent(test.list().find(e=>e.messageId==='asfi1'));return test.store.get(test.exports.asfiKey).find(e=>e.position.system===154);});
+        assert.equal(r.current.type,'STPL');assert.equal(r.history.length,3);
+    });
+    await test('newly discovered historical breakup does not rewind a clearly later scan',async()=>{
+        const r=await page.evaluate(()=>{test.exports.asfiEvent({id:'historical-new-id',round:8,ownerId:'7',messageId:'old',systemEvent:true,subject:'Planet zerbrochen',position:{galaxy:3,system:154,orbit:4},firstCapturedAt:new Date().toISOString(),reportedTimeText:'01.01.2020 00:00:00'});return test.store.get(test.exports.asfiKey).find(e=>e.position.system===154);});
+        assert.equal(r.current.type,'STPL');assert.equal(r.history.length,4);
+    });
+    await test('hidden genuine report creates no ASFI',async()=>{
+        await page.setContent('<div hidden>'+report('Planet zerbrochen','hidden-asfi','Hidden (4:44:4)','Planet zerbrochen')+'</div>');
+        const r=await page.evaluate(()=>{test.exports.scan();return test.store.get(test.exports.asfiKey);});assert.ok(!r.some(e=>e.position.system===44));
+    });
+    await test('unclaimed placeholder does not imply occupied; fresh sight updates confirmation',async()=>{
+        const r=await page.evaluate(()=>{const scan={safeToStore:true,state:'visible',galaxy:3,system:0,observedAt:'2026-10-13T14:00:00Z',planets:[{orbit:1,type:'ASFI',name:'Other field',ruler:'---'}]};test.exports.asfiScan(scan);test.exports.asfiScan({...scan,observedAt:'2026-10-13T15:00:00Z'});return test.store.get(test.exports.asfiKey).find(e=>e.position.system===0).current;});
+        assert.equal(r.ruler,null);assert.equal(r.lastConfirmedAt,'2026-10-13T15:00:00Z');
+    });
+    await test('21-day old ASFI stays present with review marker; account/round filtering',async()=>{
+        const r=await page.evaluate(()=>{const key=test.exports.asfiKey;const rows=test.store.get(key);rows.push({id:'aged',round:8,ownerId:'7',position:{galaxy:4,system:4,orbit:4},history:[],current:{type:'ASFI',kind:'event',status:'Ereignisnachweis',eventTimeText:'01.01.2020 00:00:00',capturedAt:'2020-01-01T00:00:00Z'}});
+            rows.push({id:'foreign',round:8,ownerId:'9',position:{galaxy:99,system:99,orbit:99},history:[],current:{type:'ASFI'}});test.store.set(key,rows);return {html:test.exports.html(),count:rows.length};});
+        assert.match(r.html,/4:4:4/);assert.match(r.html,/erneut prüfen/);assert.doesNotMatch(r.html,/99:99:99/);assert.equal(r.count,4);
+    });
+    if(process.env.HASA_TEST_REPORTS){
+        for(const [name,title,position] of [['pz.txt','Planet zerbrochen',{galaxy:3,system:154,orbit:4}],['met+.txt','Reiche Metallvorkommen entdeckt',{galaxy:1,system:191,orbit:6}],['gv+.txt','Treffen des Gildenvorstandes',{galaxy:1,system:0,orbit:1}]]){
+            await test('original supplied report '+name,async()=>{
+                const raw=fs.readFileSync(require('path').join(process.env.HASA_TEST_REPORTS,name),'utf8');
+                await page.evaluate(raw=>{test.exports.stop();const d=new DOMParser().parseFromString(raw,'text/html');document.body.replaceChildren(document.importNode(d.querySelector('.MessageContainer'),true));test.exports.scan();},raw);
+                const r=await page.evaluate(title=>{const a=Array.from(document.querySelectorAll('td.MessageTableCell a[href]')).find(a=>a.textContent.trim()===title);const id=test.exports.url(a.getAttribute('href'),location.href).messageId;return test.list().find(e=>e.messageId===id);},title);
+                assert.equal(r.eventType,title);assert.deepEqual(r.position,position);assert.equal(r.observations[0].kind,'report');
+                assert.ok(r.observations[0].rawText.length>150);
+            });
+        }
+    }
     const full = await browser.newPage({viewport:{width:1100,height:900}});
     full.on('pageerror', e=>errors.push(e.message));
     await full.route('**/*',route=>route.fulfill({contentType:'text/html; charset=utf-8',body:`<!doctype html><meta charset="utf-8"><body style="background:#171717;color:#eee"><table><tr><td>12.10.2026 18:40:00</td><td><a href="?cmd=message&action=view&message_id=901">Meteoriteneinschlag</a></td></tr></table></body>`}));
@@ -146,7 +219,7 @@ const helpers = source.slice(source.indexOf('    function prdrNormalisiereText')
             else options.onerror();
         },0);
     });
-    const instrumented=source.replace(/\}\)\(\);\s*$/,`window.__hasaTest={record:registriereHasaEreignis,list:()=>laden(STORAGE_EREIGNIS_REGISTER,[]),key:STORAGE_EREIGNIS_REGISTER};})();`);
+    const instrumented=source.replace(/\}\)\(\);\s*$/,`window.__hasaTest={record:registriereHasaEreignis,list:()=>laden(STORAGE_EREIGNIS_REGISTER,[]),key:STORAGE_EREIGNIS_REGISTER,asfi:()=>laden(STORAGE_ASFI_LISTE,[]),asfiKey:STORAGE_ASFI_LISTE};})();`);
     await test('full Userscript starts, activates and preserves original modules', async () => {
         await full.goto('https://horiversum.org/game/main/main.php');
         await full.evaluate(instrumented);
@@ -154,7 +227,7 @@ const helpers = source.slice(source.indexOf('    function prdrNormalisiereText')
         await full.waitForSelector('#haa-ereignis-register',{state:'attached'});
         assert.equal(await full.locator('#haa-box').locator('details.haa-accordion').count(),5);
         assert.equal(await full.evaluate(()=>__hasaTest.list().length),1);
-        assert.match(await full.locator('#haa-box').innerText(),/Alpha 28/);
+        assert.match(await full.locator('#haa-box').innerText(),/Alpha 29/);
     });
     await test('full Userscript writes native IndexedDB and synchronous fallback', async () => {
         await full.waitForFunction(async ()=>{
@@ -172,6 +245,15 @@ const helpers = source.slice(source.indexOf('    function prdrNormalisiereText')
         await full.reload();await full.evaluate(instrumented);await full.waitForSelector('#haa-ereignis-register',{state:'attached'});
         assert.equal(await full.evaluate(()=>__hasaTest.list().length),2);
     });
+    await test('full ASFI native database persistence and reload', async()=>{
+        const markup=report('Planet zerbrochen','persist-asfi','Field source (3:20:4)','Dieser Planet ist zerbrochen.');
+        await full.evaluate(markup=>{const d=new DOMParser().parseFromString(markup,'text/html');document.body.append(document.importNode(d.querySelector('.MessageContainer'),true));},markup);
+        await full.waitForFunction(()=>__hasaTest.asfi().length===1);
+        await full.waitForFunction(async()=>{const db=await new Promise(resolve=>{const a=indexedDB.open('hasa_lokale_daten_v1',1);a.onsuccess=()=>resolve(a.result);});const row=await new Promise(resolve=>{const a=db.transaction('werte').objectStore('werte').get(__hasaTest.asfiKey);a.onsuccess=()=>resolve(a.result);});db.close();return row&&row.wert.length===1;});
+        assert.equal(await full.evaluate(()=>JSON.parse(localStorage.getItem('gm:'+__hasaTest.asfiKey))[0].current.type),'ASFI');
+        await full.reload();await full.evaluate(instrumented);await full.waitForSelector('#haa-ereignis-register',{state:'attached'});
+        assert.equal(await full.evaluate(()=>__hasaTest.asfi()[0].current.type),'ASFI');
+    });
     await test('compact real UI at 390px, original text readable, stop/restart', async () => {
         await full.setViewportSize({width:390,height:850});
         await full.locator('details[data-haa-bereich="berichte"] > summary').click();
@@ -180,9 +262,9 @@ const helpers = source.slice(source.indexOf('    function prdrNormalisiereText')
         await full.screenshot({path:process.env.HASA_TEST_SCREENSHOT || require('os').tmpdir()+'/hasa-ereignisregister-test.png'});
         await full.locator('#haa-hauptschalter-aus').click();await full.waitForSelector('#haa-hauptschalter-an');
         await full.locator('#haa-hauptschalter-an').click();await full.waitForSelector('#haa-ereignis-register',{state:'attached'});
-        assert.equal(await full.evaluate(()=>__hasaTest.list().length),2);
+        assert.equal(await full.evaluate(()=>__hasaTest.list().length),3);
     });
     assert.deepEqual(errors,[]);
     await browser.close();
-    console.log('23 browser regression groups passed; catalog '+61+' titles covered.');
+    console.log(passed+' browser regression groups passed; catalog '+63+' titles covered.');
 })().catch(e => {console.error(e);process.exit(1);});

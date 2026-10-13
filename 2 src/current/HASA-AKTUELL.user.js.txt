@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         HASA – Horizon Ascension Assistant
 // @namespace    horiversum.hasa
-// @version      1.2.0-alpha.28
+// @version      1.2.0-alpha.29
 // @charset      UTF-8
 // @description  Horizon-Assistent mit kompakter Galaxiescanner-Anzeige und aktiver lokaler IndexedDB
 // @match        https://horiversum.org/game/main/main.php*
@@ -15,6 +15,10 @@
 
 /*
 
+ Alpha29 (13.10.2026): Echte Berichtsräume und Absenderposition erfassen;
+ lokale ASFI-Liste aus Planetzerbruch und sichtbaren Galaxiedaten.
+ Technologischer Durchbruch/Gildenvorstand aufgenommen; Forschung unverändert.
+
  Alpha28 (12.10.2026): Lokales Ereignisregister mit Wiki-Katalog,
  Nachrichtenkennung, Originaltext, Übersicht und geöffneten Berichten.
  Keine automatische Fachauswertung; nur bei gültiger HASA-Anmeldung.
@@ -25,9 +29,9 @@
 ==========================================================
  HASA – Horizon Ascension Assistant
 
- Version : 1.2.0 Alpha 28
+ Version : 1.2.0 Alpha 29
  Status  : Erste Ereignisregistrierung; Alpha27-Bestandssicherung enthalten
- Build   : 2026-10-12
+ Build   : 2026-10-13
 
  Neu in Alpha 26:
  - ältere bekannte Planungsobjekte bleiben im Zielkatalog auswählbar
@@ -182,8 +186,8 @@
         'PHYSICS', 'PSYCHOLOGY', 'NUCLEARPHYSICS', 'SOLARENERGYTECH'
     ]);
 
-    const HASA_VERSION = '1.2.0 Alpha 28';
-    const HASA_BUILD_LABEL = '1.2.0-alpha28-ereignisregister-2026-10-12';
+    const HASA_VERSION = '1.2.0 Alpha 29';
+    const HASA_BUILD_LABEL = '1.2.0-alpha29-asfi-2026-10-13';
     const HASA_RUNDE = 8;
     const HASA_RUNDE_SCHLUESSEL = 'runde8';
     // Die MariaDB und sämtliche Schreibendpunkte trennen Runde 7 und 8 jetzt
@@ -367,7 +371,8 @@
         'Rebellion der Kolonisten', 'Düstere Vorahnungen', 'Science-Ologen verhört',
         'Science-Ologen mit kleiner Spende bedacht', 'Ungenügende Rohstoffreserven für Science-Ologen',
         'Science-Ologen retten Planeten', 'Die Gildenversammlung',
-        'Effizienzverbesserung des Reaktors möglich'
+        'Effizienzverbesserung des Reaktors möglich',
+        'Technologischer Durchbruch', 'Treffen des Gildenvorstandes'
     ];
     const STORAGE_EREIGNIS_REGISTER = 'hasa_ereignisregister_v1_' + HASA_RUNDE_SCHLUESSEL;
     const HAA_EREIGNIS_DOKUMENTE = new Map();
@@ -375,6 +380,48 @@
     let HAA_EREIGNIS_TIMER = null;
     let HAA_EREIGNIS_ANZEIGE_TIMER = null;
     let HAA_EREIGNIS_FEHLER = null;
+
+    function ereignisPosition(text) {
+        const fund = String(text || '').match(/\b(\d+)\s*:\s*(\d+)\s*:\s*(\d+)\b/);
+        if (!fund) return null;
+        const galaxy = Number(fund[1]), system = Number(fund[2]), orbit = Number(fund[3]);
+        return galaxy >= 1 && galaxy <= 255 && system >= 0 && system <= 99999 && orbit >= 1 && orbit <= 255
+            ? { galaxy: galaxy, system: system, orbit: orbit } : null;
+    }
+
+    function ereignisZeilenMeta(link) {
+        const zeile = link.closest('tr');
+        const cells = zeile ? Array.from(zeile.cells || []) : [];
+        if (cells.length < 4 || !cells[0].matches('.MessageTableCellLeft')
+            || !/\d{2}\.\d{2}\.\d{4}\s+\d{2}:\d{2}:\d{2}/.test(cells[0].textContent)) return {};
+        const ort = cells[1].querySelector('div');
+        const ortText = ort ? prdrNormalisiereText(ort.textContent) : '';
+        const name = ortText.replace(/\s*\(\s*\d+\s*:\s*\d+\s*:\s*\d+\s*\)\s*$/, '').trim();
+        return { subject: prdrNormalisiereText(link.textContent), position: ereignisPosition(ortText),
+            positionName: name || null, reportedTimeText: prdrNormalisiereText(cells[0].textContent),
+            systemEvent: link.classList.contains('MessageReportEvent') };
+    }
+
+    function erfasseGeoeffnetenHasaBericht(doc, scopeVorgabe, auchEntfernt) {
+        const scope = scopeVorgabe || doc.querySelector('.MessageContainer');
+        if (!scope || !ereignisIstSpieltext(scope, Boolean(auchEntfernt))) return false;
+        const koerper = Array.from(scope.querySelectorAll('td.MessageTableCellLeft')).find(function (td) {
+            return td.getAttribute('width') === '608' && prdrNormalisiereText(td.textContent).length > 20;
+        });
+        if (!koerper || !ereignisIstSpieltext(koerper, Boolean(auchEntfernt))) return false;
+        const links = Array.from(scope.querySelectorAll('td.MessageTableCell a[href]')).filter(function (a) {
+            return ereignisNachrichtenUrl(a.getAttribute('href'), doc.location.href)
+                && ereignisZeilenMeta(a).subject;
+        });
+        if (links.length !== 1) return false;
+        const link = links[0];
+        const adresse = ereignisNachrichtenUrl(link.getAttribute('href'), doc.location.href);
+        const meta = ereignisZeilenMeta(link);
+        registriereHasaEreignis(ereignisOriginaltext(koerper),
+            Object.assign({}, meta, { headerText: ereignisOriginaltext(link.closest('tr')),
+                messageId: adresse.messageId, kind: 'report', sourceUrl: adresse.url }));
+        return true;
+    }
 
     function ereignisVergleichstext(text) {
         return prdrNormalisiereText(text).normalize('NFKC').toLocaleLowerCase('de-DE')
@@ -436,7 +483,9 @@
             node.append(element.ownerDocument.createTextNode('\n'));
         });
         // Textinhalt erhalten, nur Layout-Leerraum normalisieren; niemals als HTML anzeigen.
-        return String(kopie.textContent || '').replace(/\r\n?/g, '\n').trim();
+        return String(kopie.textContent || '').replace(/\r\n?/g, '\n')
+            .split('\n').map(function (line) { return line.replace(/[ \t\f]+/g, ' ').trim(); }).join('\n')
+            .replace(/\n{3,}/g, '\n\n').trim();
     }
 
     function vereinigeHasaEreignisRegister(a, b) {
@@ -450,6 +499,9 @@
                     if (!alt.observations.some(function (s) { return s.kind === sichtung.kind && s.rawText === sichtung.rawText; })) alt.observations.push(sichtung);
                 });
                 if (!alt.eventType && eintrag.eventType) alt.eventType = eintrag.eventType;
+                ['position', 'planetName', 'subject', 'reportedTimeText', 'systemEvent'].forEach(function (key) {
+                    if (eintrag[key] != null && alt[key] == null) alt[key] = eintrag[key];
+                });
             });
         });
         return Array.from(result.values());
@@ -471,7 +523,9 @@
                 return prdrNormalisiereText(s.rawText) === prdrNormalisiereText(text);
             }));
         });
-        if (eintrag && eintrag.observations.some(function (s) {
+        const neueMetadaten = Boolean(eintrag && ((meta.position && !eintrag.position)
+            || (meta.subject && !eintrag.subject)));
+        if (eintrag && !neueMetadaten && eintrag.observations.some(function (s) {
             return s.kind === meta.kind && s.rawText === text;
         })) return false;
         const jetzt = new Date().toISOString();
@@ -479,7 +533,8 @@
         const planet = text.match(/(?:Kolonie|Planeten?)\s+["„“]([^"„“”]+)["“”]/i);
         const sichtung = {
             kind: meta.kind, rawText: text, capturedAt: jetzt,
-            reportedTimeText: zeit ? zeit[0] : null, // Keine unbewiesene Zeitzone annehmen.
+            reportedTimeText: meta.reportedTimeText || (zeit ? zeit[0] : null), // Keine unbewiesene Zeitzone annehmen.
+            headerText: meta.headerText || null,
             sourceUrl: meta.sourceUrl || null
         };
         if (!eintrag) {
@@ -492,11 +547,19 @@
             };
             register.push(eintrag);
         }
-        eintrag.observations.push(sichtung);
+        if (!eintrag.observations.some(function (s) { return s.kind === sichtung.kind && s.rawText === sichtung.rawText; })) {
+            eintrag.observations.push(sichtung);
+        }
         if (typ) eintrag.eventType = typ;
         if (planet) eintrag.planetName = planet[1];
+        if (meta.position) eintrag.position = meta.position;
+        if (meta.positionName) eintrag.planetName = meta.positionName;
+        if (meta.subject) eintrag.subject = meta.subject;
+        if (meta.reportedTimeText) eintrag.reportedTimeText = meta.reportedTimeText;
+        if (meta.systemEvent) eintrag.systemEvent = true;
         try {
             speichern(STORAGE_EREIGNIS_REGISTER, register);
+            uebernehmeHasaAsfiEreignis(eintrag);
             HAA_EREIGNIS_FEHLER = null;
         } catch (fehler) {
             HAA_EREIGNIS_FEHLER = 'Meldung konnte lokal nicht gespeichert werden.';
@@ -510,6 +573,8 @@
 
     function scanneHasaEreignisKnoten(root, basis, auchEntfernt) {
         if (!ereignisScannerBenutzer() || !root || root.nodeType !== 1) return;
+        const container = root.closest('.MessageContainer') || root.querySelector('.MessageContainer');
+        if (container && erfasseGeoeffnetenHasaBericht(root.ownerDocument, container, auchEntfernt)) return;
         const links = Array.from(root.querySelectorAll('a[href]'));
         if (root.matches('a[href]')) links.unshift(root);
         links.forEach(function (link) {
@@ -522,9 +587,10 @@
                 const u = ereignisNachrichtenUrl(a.getAttribute('href'), basis); return u && u.messageId;
             }).filter(Boolean)).size > 1) zeile = null;
             if (!zeile) zeile = link;
-            registriereHasaEreignis(ereignisOriginaltext(zeile), {
+            if (link.closest('.MessageTableNavigation')) return;
+            registriereHasaEreignis(ereignisOriginaltext(zeile), Object.assign({}, ereignisZeilenMeta(link), {
                 messageId: adresse.messageId, kind: 'overview', sourceUrl: adresse.url
-            });
+            }));
         });
         // Kurze Einblendungen ohne Nachrichtenkennung bleiben als unsichere Sichtung erhalten.
         const kandidaten = [root].concat(Array.from(root.querySelectorAll('p,td,li,div')));
@@ -546,7 +612,9 @@
         if (!doc || !doc.body || besucht.has(doc)) return;
         besucht.add(doc);
         const adresse = ereignisNachrichtenUrl(doc.location.href, window.location.href);
-        if (adresse && ereignisScannerBenutzer()) {
+        const echterBericht = ereignisScannerBenutzer() && erfasseGeoeffnetenHasaBericht(doc);
+        if (echterBericht) { /* tatsächlichen Berichtscope bereits erfasst */ }
+        else if (adresse && ereignisScannerBenutzer()) {
             registriereHasaEreignis(ereignisOriginaltext(doc.body), {
                 messageId: adresse.messageId, kind: 'report', sourceUrl: adresse.url
             });
@@ -604,6 +672,7 @@
 
     function installiereHasaEreignisScanner() {
         if (HAA_EREIGNIS_TIMER) return;
+        (laden(STORAGE_EREIGNIS_REGISTER, []) || []).forEach(uebernehmeHasaAsfiEreignis);
         pruefeHasaEreignisse();
         HAA_EREIGNIS_TIMER = setInterval(pruefeHasaEreignisse, 30000);
     }
@@ -632,8 +701,9 @@
             const voll = e.observations.filter(function (s) { return s.kind === 'report'; });
             const s = voll.length ? voll[voll.length - 1] : e.observations[e.observations.length - 1];
             html += '<details style="margin-top:6px;border-top:1px solid #444;padding-top:5px;">'
-                + '<summary style="cursor:pointer;overflow-wrap:anywhere;">' + esc(e.eventType || 'Noch nicht zugeordnet')
+                + '<summary style="cursor:pointer;overflow-wrap:anywhere;">' + esc(e.eventType || e.subject || 'Noch nicht zugeordnet')
                 + (e.planetName ? ' · ' + esc(e.planetName) : '') + '</summary>'
+                + (e.position ? '<div>' + esc(e.position.galaxy + ':' + e.position.system + ':' + e.position.orbit) + '</div>' : '')
                 + '<div style="color:#aaa;">' + esc(s.reportedTimeText || 'Spielzeit nicht erkannt')
                 + ' · ' + (voll.length ? 'Bericht sichtbar erfasst' : 'Meldung erfasst')
                 + (!e.identityCertain ? ' · ohne Nachrichtenkennung' : '') + '</div>'
@@ -641,7 +711,7 @@
                 + '</details>';
         });
         if (eigene.length > 100) html += '<div>Letzte 100 Meldungen angezeigt; der vollständige Bestand bleibt gespeichert.</div>';
-        return html;
+        return baueHasaAsfiListeHtml() + html;
     }
 
     function aktualisiereHasaEreignisAnzeige() {
@@ -651,6 +721,159 @@
         if (element.dataset.inhalt === html) return;
         element.dataset.inhalt = html;
         element.innerHTML = html;
+    }
+
+    const STORAGE_ASFI_LISTE = 'hasa_asfi_liste_v1_' + HASA_RUNDE_SCHLUESSEL;
+
+    function hasaAsfiZeitKey(text) {
+        const f = String(text || '').match(/^(\d{2})\.(\d{2})\.(\d{4})\s+(\d{2}:\d{2}:\d{2})$/);
+        return f ? f[3] + f[2] + f[1] + f[4].replace(/:/g, '') : null;
+    }
+
+    function vereinigeHasaAsfiListen(a, b) {
+        const map = new Map();
+        [a, b].forEach(function (liste) {
+            (Array.isArray(liste) ? liste : []).forEach(function (row) {
+                if (!row || !row.id || !Array.isArray(row.history)) return;
+                const alt = map.get(row.id);
+                if (!alt) { map.set(row.id, Object.assign({}, row, { history: row.history.slice() })); return; }
+                row.history.forEach(function (sicht) {
+                    if (!alt.history.some(function (s) { return s.id === sicht.id; })) alt.history.push(sicht);
+                });
+                if (String(row.updatedAt || '') > String(alt.updatedAt || '')) {
+                    alt.current = row.current; alt.updatedAt = row.updatedAt;
+                }
+            });
+        });
+        return Array.from(map.values());
+    }
+
+    function uebernehmeHasaAsfiEreignis(e) {
+        if (!e || !e.messageId || !e.systemEvent || e.subject !== 'Planet zerbrochen' || !e.position) return;
+        const owner = ereignisScannerBenutzer();
+        if (!owner || e.ownerId !== owner) return;
+        const rows = vereinigeHasaAsfiListen(laden(STORAGE_ASFI_LISTE, []), []);
+        const id = HASA_RUNDE + ':' + owner + ':' + e.position.galaxy + ':' + e.position.system + ':' + e.position.orbit;
+        let row = rows.find(function (r) { return r.id === id; });
+        if (row && row.history.some(function (s) { return s.id === e.id; })) return;
+        if (!row) {
+            row = { id: id, round: HASA_RUNDE, ownerId: owner, position: e.position, history: [] };
+            rows.push(row);
+        }
+        const sight = { id: e.id, kind: 'event', type: 'ASFI', formerName: e.planetName || null,
+            eventTimeText: e.reportedTimeText || null, capturedAt: e.firstCapturedAt,
+            status: 'Ereignisnachweis', ruler: null, planetName: null };
+        const current = row.current;
+        const altKey = current && hasaAsfiZeitKey(current.eventTimeText);
+        const neuKey = hasaAsfiZeitKey(sight.eventTimeText);
+        // Wieder eingelesene ältere Ereignisse und nachträglich ergänzte Metadaten
+        // drehen einen danach tatsächlich beobachteten Zustand nicht zurück.
+        const spaetereSichtung = current && current.kind === 'scan'
+            && current.capturedAt >= sight.capturedAt;
+        const ereignisTag = neuKey ? Date.UTC(Number(neuKey.slice(0,4)), Number(neuKey.slice(4,6))-1, Number(neuKey.slice(6,8))) : null;
+        const scanZeit = current && current.kind === 'scan' ? Date.parse(current.capturedAt) : NaN;
+        // Zwei volle Kalendertage Abstand sind auch ohne bekannte Spielzeitzone eindeutig.
+        const nachweislichAlterBericht = ereignisTag !== null && Number.isFinite(scanZeit)
+            && scanZeit - ereignisTag > 2 * 86400000;
+        row.history.push(sight);
+        if (!spaetereSichtung && !nachweislichAlterBericht && !(altKey && neuKey && neuKey < altKey)) row.current = sight;
+        row.updatedAt = new Date().toISOString();
+        speichern(STORAGE_ASFI_LISTE, rows);
+    }
+
+    function aktualisiereHasaAsfiAusScan(scan) {
+        const owner = ereignisScannerBenutzer();
+        if (!owner || !scan || !scan.safeToStore || scan.state !== 'visible') return;
+        const rows = vereinigeHasaAsfiListen(laden(STORAGE_ASFI_LISTE, []), []);
+        let changed = false;
+        (scan.planets || []).forEach(function (planet) {
+            const type = String(planet.type || '').toUpperCase();
+            if (!type || type === 'UNKNOWN') return;
+            const id = HASA_RUNDE + ':' + owner + ':' + scan.galaxy + ':' + scan.system + ':' + planet.orbit;
+            let row = rows.find(function (r) { return r.id === id; });
+            if (!row && type !== 'ASFI') return;
+            if (!row) {
+                row = { id: id, round: HASA_RUNDE, ownerId: owner,
+                    position: { galaxy: scan.galaxy, system: scan.system, orbit: planet.orbit }, history: [] };
+                rows.push(row);
+            }
+            const ruler = planet.ruler && !/^(?:[-–—]+|unbesiedelt|unbewohnt|niemand|keiner|unknown)$/i.test(String(planet.ruler).trim())
+                ? planet.ruler : null;
+            const signatur = JSON.stringify([type, planet.name || null, ruler]);
+            if (row.current && row.current.kind === 'scan' && row.current.signature === signatur) {
+                row.current.lastConfirmedAt = scan.observedAt || new Date().toISOString();
+                row.updatedAt = row.current.lastConfirmedAt; changed = true; return;
+            }
+            const sight = { id: 'scan:' + (scan.observedAt || new Date().toISOString()) + ':' + prdrHash(signatur),
+                signature: signatur, kind: 'scan', type: type, planetName: planet.name || null,
+                ruler: ruler, capturedAt: scan.observedAt || new Date().toISOString(),
+                lastConfirmedAt: scan.observedAt || new Date().toISOString(),
+                status: type === 'ASFI' ? (ruler ? 'Besiedelt / Herrscher gemeldet' : 'In Galaxieansicht bestätigt')
+                    : 'An dieser Position anderer Typ bestätigt' };
+            row.history.push(sight); row.current = sight; row.updatedAt = new Date().toISOString(); changed = true;
+        });
+        // Fehlende Umlaufbahn ist kein Nachweis für Verschwinden oder einen Zielort.
+        if (changed) { speichern(STORAGE_ASFI_LISTE, rows); aktualisiereHasaEreignisAnzeige(); }
+    }
+
+    function hasaAsfiAlterTage(sight) {
+        const key = hasaAsfiZeitKey(sight.eventTimeText);
+        // Kalenderalter ist näherungsweise; die Spielzeitzone bleibt unbewiesen.
+        const zeit = key ? Date.UTC(Number(key.slice(0,4)), Number(key.slice(4,6))-1, Number(key.slice(6,8)))
+            : Date.parse(sight.lastConfirmedAt || sight.capturedAt);
+        return Number.isFinite(zeit) ? Math.max(0, Math.floor((Date.now() - zeit) / 86400000)) : null;
+    }
+
+    function projiziereHasaAsfiInLokalenScan(scan) {
+        const owner = ereignisScannerBenutzer();
+        if (!owner || !scan || scan.state !== 'visible') return scan;
+        const kopie = Object.assign({}, scan, { planets: (scan.planets || []).map(function (p) { return Object.assign({}, p); }) });
+        (laden(STORAGE_ASFI_LISTE, []) || []).forEach(function (row) {
+            if (row.ownerId !== owner || row.round !== HASA_RUNDE || !row.current
+                || row.current.kind !== 'event' || row.current.type !== 'ASFI'
+                || row.position.galaxy !== scan.galaxy || row.position.system !== scan.system) return;
+            const alt = kopie.planets.find(function (p) { return p.orbit === row.position.orbit; });
+            const neu = { orbit: row.position.orbit, name: 'Asteroidenfeld (Ereignisnachweis)', type: 'ASFI',
+                ruler: null, alliance: null, status: 'Planet zerbrochen', changedByEvent: true };
+            if (alt) Object.assign(alt, neu); else kopie.planets.push(neu);
+        });
+        return kopie;
+    }
+
+    function baueHasaAsfiListeHtml() {
+        const owner = ereignisScannerBenutzer();
+        if (!owner) return '';
+        const rows = (laden(STORAGE_ASFI_LISTE, []) || []).filter(function (r) {
+            return r.ownerId === owner && r.round === HASA_RUNDE && r.current;
+        }).sort(function (a,b) {
+            return a.position.galaxy-b.position.galaxy || a.position.system-b.position.system || a.position.orbit-b.position.orbit;
+        });
+        const active = rows.filter(function (r) { return r.current.type === 'ASFI'; });
+        let html = '<div style="margin:5px 0 10px;padding-bottom:8px;border-bottom:1px solid #777;">'
+            + '<b style="color:#FFD27C;">☄ ASFI-Liste (lokal) · ' + active.length + ' bekannte Positionen</b>';
+        if (!active.length) html += '<div>Noch kein ASFI mit sicherer Position erfasst.</div>';
+        active.forEach(function (r) {
+            const s = r.current, age = hasaAsfiAlterTage(s);
+            html += '<div style="margin-top:6px;overflow-wrap:anywhere;"><b>'
+                + esc(r.position.galaxy + ':' + r.position.system + ':' + r.position.orbit) + '</b>'
+                + (s.planetName ? ' · ' + esc(s.planetName) : s.formerName ? ' · aus ' + esc(s.formerName) : '')
+                + '<div>' + esc(s.status) + (s.ruler ? ' · ' + esc(s.ruler) : '') + '</div>'
+                + '<div style="color:' + (age !== null && age >= 14 ? '#FFD27C' : '#aaa') + ';">'
+                + (s.eventTimeText ? esc(s.eventTimeText) + ' · ' : '')
+                + (age === null ? 'Alter unbekannt' : 'Beobachtung ca. ' + age + ' Tage alt')
+                + (age !== null && age >= 14 ? ' · erneut prüfen (ungefähre Lebensdauer 14–21 Tage)' : '')
+                + '</div></div>';
+        });
+        const alte = rows.filter(function (r) { return r.current.type !== 'ASFI'; });
+        if (alte.length) {
+            html += '<details style="margin-top:6px;"><summary>Frühere ASFI-Positionen · ' + alte.length + '</summary>';
+            alte.forEach(function (r) {
+                html += '<div>' + esc(r.position.galaxy + ':' + r.position.system + ':' + r.position.orbit)
+                    + ' · jetzt ' + esc(r.current.type) + ' (Sichtung) · Historie erhalten</div>';
+            });
+            html += '</details>';
+        }
+        return html + '</div>';
     }
 
 
@@ -1178,7 +1401,9 @@
 
     function pruefeSichtbaresGalaxiesystem() {
         if (!istHasaFuerSitzungAktiv()) return;
-        planeAutomatischeGalascannerAufnahme(leseGalaxiesystemAusSichtbarerSeite());
+        const scan = leseGalaxiesystemAusSichtbarerSeite();
+        aktualisiereHasaAsfiAusScan(scan);
+        planeAutomatischeGalascannerAufnahme(scan);
     }
 
     function installiereAutomatischenGalaxiescan() {
@@ -1264,11 +1489,13 @@
         let letzterStand = laden(STORAGE_GALASCAN_LETZTER_STAND, null);
 
         if (scan.state === 'visible') {
+            aktualisiereHasaAsfiAusScan(scan);
             speichern(STORAGE_GALASCAN_LETZTER_STAND, scan);
             letzterStand = scan;
         } else if (letzterStand && letzterStand.state === 'visible') {
             anzeigeScan = letzterStand;
         }
+        anzeigeScan = projiziereHasaAsfiInLokalenScan(anzeigeScan);
 
         let html = '<div style="padding:4px 0 2px 0;">';
         const sondenBerichte = laden(STORAGE_PRDR_BERICHTE, []);
@@ -1343,7 +1570,7 @@
                 if (planet) {
                     const planetKoordinate = anzeigeScan.galaxy + ':' + anzeigeScan.system + ':' + orbit;
                     const berichtAnzahl = sichereSondenBerichte.filter(function (bericht) {
-                        return bericht && bericht.targetPlanet
+                        return !planet.changedByEvent && bericht && bericht.targetPlanet
                             && String(bericht.targetPlanet.coordinate || '') === planetKoordinate;
                     }).length;
                     const sondenMarke = berichtAnzahl > 0
@@ -1807,7 +2034,7 @@
 
     function hasaIndexedDbSchluessel() {
         return new Set([
-            STORAGE_EREIGNIS_REGISTER, STORAGE_GALASCAN_LETZTER_STAND, STORAGE_PRDR_BERICHTE, STORAGE_TECHTREE_GRAPH,
+            STORAGE_ASFI_LISTE, STORAGE_EREIGNIS_REGISTER, STORAGE_GALASCAN_LETZTER_STAND, STORAGE_PRDR_BERICHTE, STORAGE_TECHTREE_GRAPH,
             STORAGE_TECHTREE_STATUS, STORAGE_TECHTREE_DEBUG,
             STORAGE_TECHTREE_SPIELSTAND, STORAGE_STAN_STAMMDATEN, STORAGE_STAN_ZIELKATALOG,
             STORAGE_STAN_VERSIONEN, STORAGE_STAN_STATUS, STORAGE_SEITENSCAN_STATUS
@@ -1891,7 +2118,7 @@
             return;
         }
 
-        if ([STORAGE_EREIGNIS_REGISTER, STORAGE_STAN_STAMMDATEN, STORAGE_STAN_VERSIONEN, STORAGE_STAN_ZIELKATALOG].includes(key)) {
+        if ([STORAGE_ASFI_LISTE, STORAGE_EREIGNIS_REGISTER, STORAGE_STAN_STAMMDATEN, STORAGE_STAN_VERSIONEN, STORAGE_STAN_ZIELKATALOG].includes(key)) {
             speichernKlassisch(key, wert);
         }
 
@@ -1939,6 +2166,11 @@
 
             for (const key of hasaIndexedDbSchluessel()) {
                 const vorhanden = await leseHasaIndexedDbWert(db, key);
+                if (key === STORAGE_ASFI_LISTE) {
+                    const rows = vereinigeHasaAsfiListen(vorhanden && vorhanden.wert, ladenKlassisch(key, []));
+                    await schreibeHasaIndexedDbWert(db, key, rows);
+                    HAA_INDEXEDDB_CACHE.set(key, rows); geladen += 1; continue;
+                }
                 if (key === STORAGE_EREIGNIS_REGISTER) {
                     const register = vereinigeHasaEreignisRegister(vorhanden && vorhanden.wert,
                         ladenKlassisch(key, []));

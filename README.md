@@ -32,12 +32,21 @@ Tampermonkey als neues Userscript eingefügt und gespeichert.
 
 ## Aktuelle Entwicklungsreihe
 
-**HASA 1.2.0 Alpha 28 – erste Ereignisregistrierung**
+**HASA 1.2.0 Alpha 29 – echte Berichte und lokale ASFI-Liste**
 
 Aktuelle Testdateien:
 
 - fester Aktualisierungspfad: `2 src/current/HASA-AKTUELL.user.js.txt`
-- archivierte Fassung: `2 src/current/hasa_1.2.0-alpha.28_ereignisregister.user.js.txt`
+- archivierte Fassung: `2 src/current/hasa_1.2.0-alpha.29_asfi.user.js.txt`
+
+Alpha 29 liest tatsächliche Ereignisberichte mit Nachrichtenkennung, Zeit und
+Absenderposition. „Planet zerbrochen“ erzeugt dort ein lokales ASFI, auch ohne
+früheren Scan. Die lokale ASFI-Liste nennt Fundorte und Beobachtungsalter;
+spätere sichtbare Galaxiedaten bestätigen oder ändern den Stand. Historie bleibt
+erhalten, ältere Felder erhalten einen Prüfhinweis statt automatischer Löschung.
+„Technologischer Durchbruch“ und „Treffen des Gildenvorstandes“ sind aufgenommen.
+Bedienung und Grenzen: `1 docs/hasa_1.2.0-alpha.29_asfi.md`.
+Keine automatische Forschungs-Verifikation und keine neue Serverübertragung.
 
 Alpha 28 ergänzt ein lokales Register für sichtbare Ereignismeldungen und bereits
 geöffnete Berichte. Nachrichtenkennung, Originaltext und Zeitangaben bleiben

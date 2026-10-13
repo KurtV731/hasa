@@ -1,6 +1,6 @@
 # HASA – Schwarzes Brett
 
-Stand: 30.09.2026
+Stand: 13.10.2026
 
 Dieses Dokument ist die verbindliche gemeinsame Übergabe- und Verwaltungsstelle für die
 HASA-Entwicklung. Vor jeder HASA-Arbeit wird es vollständig gelesen. Entscheidungen,
@@ -121,11 +121,15 @@ eine neue Runde wird durch eine eigene Rundenkennung getrennt.
 
 - stabile Veröffentlichung: HASA 1.1 Final;
 - aktive Entwicklungsreihe: HASA 1.2;
-- aktueller Teststand: HASA 1.2.0 Alpha 12;
+- aktueller Teststand: HASA 1.2.0 Alpha 29;
 - fester Aktualisierungspfad:
   `2 src/current/HASA-AKTUELL.user.js.txt`;
-- archivierte Alpha-12-Datei:
-  `2 src/current/hasa_1.2.0-alpha.12_forschungs-nullstand.user.js.txt`.
+- archivierte Alpha-29-Datei:
+  `2 src/current/hasa_1.2.0-alpha.29_asfi.user.js.txt`.
+
+Aktueller Stand: echte Berichtserfassung und lokale ASFI-Liste; Einzelheiten siehe neueste Übergabe vom 13.10.2026.
+
+Historischer Zwischenstand Alpha12:
 
 Alpha 12 übernimmt die Funktionen von Alpha 11 und korrigiert alte Forschungsstände,
 wenn Horizon eine sichtbare unerforschte Forschung ohne Stufenangabe, aber mit dem
@@ -1847,3 +1851,28 @@ Kurt: SERKAL_pull_v2.bat im vorhandenen Website-Ordner ausführen. Diese führt 
 **Restpunkte:** Echter Quelltext von Planet zerbrochen mit Koordinaten erforderlich, um die Positionszuordnung am realen Meldungstyp zu prüfen. Anschließend Ereignisfolge und erste ASFI-Liste implementieren; Nachweise für Besiedlung, Verlagerung und Auflösung anhand realer Meldungen/Sichtungen ergänzen. Die vorstehende Lebensdauer wird als Kurts Praxisangabe geführt. Alpha28 bleibt bis zur fertigen nächsten Gesamtfassung unverändert.
 
 **Commit:** Dieser Dokumentationscommit; nach Übertragung online kontrollieren.
+
+
+### 2026-10-13 – CE HASA an Kurt – Alpha29: echte Meldungen und lokale ASFI-Liste
+
+**Status:** FERTIGE GESAMTFASSUNG / TECHNISCHE PRÜFUNGEN BESTANDEN / HORIZON-INSTALLATIONSTEST OFFEN.
+
+**Auftrag/Belege:** Kurt lieferte pz.txt (Planet zerbrochen), met+.txt (Reiche Metallvorkommen entdeckt), gv+.txt (Treffen des Gildenvorstandes). Alle drei vollständigen Quellen gelesen. Der Positionsnachweis steht in der Absenderzelle, nicht im Kopfplanet oder in einem geratenen Linkindex.
+
+**Ergebnis:** Berichtscope MessageContainer/MessageTable, Betreff-Kennung, Headerzeit und Berichtsort strukturiert erfassen; Headerbeleg getrennt, eigentlicher Berichttext ohne Spielekopf/Nachrichtenpfeile/Aktionsspalten. Unbekannte Meldungen mit erkanntem Betreff statt ausschließlich „Noch nicht zugeordnet“. Katalog jetzt 63 Titel einschließlich Technologischer Durchbruch und Treffen des Gildenvorstandes. Technologischer Durchbruch bleibt Freischaltungsbeleg ohne automatische Änderung persönlicher Stufen; Metallfund/Gildenvorstand zunächst registriert ohne Wirkungsberechnung.
+
+**ASFI:** Neue lokale Liste innerhalb Berichte und Ereignisse, Koordinaten numerisch sortiert. Offizielle Planetzerbruchmeldung mit sicherer Senderposition legt ASFI an, auch ohne vorherigen Scan. Private Spielermeldung, versteckter Bericht oder fehlende Koordinate genügen nicht. Quelle, Zeit, Meldungs-ID, ursprünglicher Name und Änderungshistorie erhalten. Ältere lokale Galaxieanzeige für die Darstellung überlagern: ASFI, alte Herrscher-/Allianzangaben und alte Sondenmarkierung nicht als neue ASFI-Werte übernehmen. Rohscans und Berichte bleiben unverändert gespeichert. Diese Darstellung wird nicht als frischer Scan hochgeladen.
+
+**Spätere Sichtungen:** Sichtbares ASFI ergänzen/bestätigen; gemeldete Herrschaft anzeigen; bestätigter anderer Typ archiviert den alten ASFI-Stand an dieser Position. Fehlende/blinde Sicht und unknown-Typen ändern keine Position. Bewegungsziel/Identitätsverknüpfung und Auflösungsgrund bleiben mangels tatsächlicher Nachweise offen. Prüfungshinweis ab ungefähr 14 Tagen, keine altersbedingte Löschung nach 21 Tagen. Gleichbleibende echte Sicht erneuert Bestätigungszeit; Kalenderalter ausdrücklich ungefähr, Spielzeitzone weiterhin unbewiesen. Bereits eingelesene alte Meldung dreht spätere Sicht nicht zurück, klare historische Tagesabstände geprüft; enge unbekannte Zeitfolge zwischen neu eingelesener Meldung und UTC-Scan bleibt fachliche Grenze.
+
+**Daten/Schnittstellen:** Lokale IndexedDB plus synchroner Rückfallspeicher für ASFI und Register, Zusammenführen beim Start. Runde/Konto beachten. Keine neue MariaDB-Übertragung, PHP-Datei, SQL-Migration oder Freigaberechtsänderung. Gemeinsame ASFI-Webliste bleibt gesonderter Schritt. Bestehende Galaxie-/Sondenschnittstellen unverändert. Original-HTML mit Spiel-Laufzeitparametern nicht in GitHub gespeichert.
+
+**Dateien:** 2 src/current/HASA-AKTUELL.user.js.txt; identische hasa_1.2.0-alpha.29_asfi.user.js.txt; 1 docs/hasa_1.2.0-alpha.29_asfi.md; 5 tools/test_hasa_ereignisregister.cjs; README.md; dieses Schwarze Brett. Version, Metadaten, Build Alpha29. Änderungshinweise im Kopf; frühere Gesamtfassungen erhalten.
+
+**Prüfungen:** Syntaxprüfung; 36 bestandene Chromium-Testgruppen mit 63 Titeln, allen drei Originalquellen und tatsächlichen Funktionen sowie vollständigem Userscript: richtige Position/Scope, unbekannte Meldungen, IDs/Doppelungen, Inline-Mutation/Frames, verborgene/private Quellen, Kontotrennung, ASFI-Neuanlage/fehlende Position/Scan/Bestätigung/Platzhalter/anderer Typ/Historie/alte Meldung, Lebensdauer ohne Löschung, Anzeigegrenzen, native IndexedDB/Rückfall/Reload/Wiederherstellung, schmale 390px-Ansicht und Stop/Start. Testansicht visuell geprüft. Keine echte Horizon-Sitzung, keine Spielaktionen, kein produktiver Serveraufruf.
+
+**Installation:** HASA-AKTUALISIEREN.cmd in C:\Hasa; vollständigen Zwischenablageinhalt in vorhandenes Tampermonkey-HASA mit Strg+A/Strg+V übernehmen, speichern, Horizon neu laden, anmelden/aktivieren. PZ-Bericht öffnen; im Register muss ein lokales ASFI an der ausdrücklich genannten Position stehen. Met+/Gv öffnen und richtige Betreffe/Orte prüfen. Keine SQL-/PHP-Migration, kein XML-Neuimport. Website-Reparaturdownload durch diesen HASA-Commit nicht hochgeladen.
+
+**Restpunkte:** Echter Installationstest; zentrale ASFI-Webliste/Synchronisierung mit bestehenden Freigaben, Verlagerungs-/Auflösungsnachweise, genaue Zeitbasis, Mehrtab-/Langzeittest. Durchbruch-Verifikation, Forschungs-Wunschliste und Geräteanmeldung weiterhin eigene Aufträge.
+
+**Commit:** Gemeinsamer Programm-/Dokumentationscommit; nach Übertragung alle sechs Dateien online vergleichen.
