@@ -6,6 +6,7 @@ $api=getenv('HASA_TEST_API') ?: $root.'/3 server/hasa-api';
 require $api.'/bootstrap.php';
 require $api.'/galaxy-access.php';
 require $api.'/events-service.php';
+set_exception_handler(static function(Throwable $e):never{fwrite(STDERR,'FAIL '.$e->getMessage().PHP_EOL);exit(1);});
 $config=hasaConfig()['database'];
 if ($config['host']!=='127.0.0.1' || $config['name']!=='hasa_test_events' || getenv('CI')!=='true') throw new RuntimeException('Disposable CI database required');
 $pdo=hasaPdo();
