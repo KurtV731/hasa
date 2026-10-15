@@ -5,6 +5,7 @@ on:
       - '2 src/current/HASA-AKTUELL.user.js.txt'
       - '3 server/hasa-api/**'
       - '3 server/tests/events_integration.php'
+      - '3 server/tests/initial_password_integration.php'
       - '5 tools/test_hasa_*.cjs'
       - '.github/workflows/hasa-events-tests.yml'
   workflow_dispatch:
@@ -52,3 +53,5 @@ jobs:
           export HASA_TEST_API="$test_api"
           php -r 'file_put_contents(getenv("HASA_TEST_API")."/config.php", "<?php return ".var_export(["database"=>["host"=>"127.0.0.1","name"=>"hasa_test_events","user"=>"root","password"=>getenv("MYSQL_PWD")]],true).";");'
           php '3 server/tests/events_integration.php'
+          php '3 server/tests/initial_password_integration.php'
+

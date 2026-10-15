@@ -1,7 +1,31 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__ . '/bootstrap.php';
-const HASA_AUTH_VERSION = '1.2.0-auth.2';
+const HASA_AUTH_VERSION = '1.2.0-auth.3';
+
+// Nur der Startpasswort-Ablauf: niemals Eingaben, Hashes, Cookies oder Tokens.
+function hasaAuthInitialTrace(array $user): void
+{
+    unset($GLOBALS['hasa_initial_trace'], $_SESSION['initial_password_trace']);
+    if ((int)($user['must_change_password'] ?? 0) !== 1) return;
+    $trace = ['account_id' => (int)$user['id'], 'flow' => bin2hex(random_bytes(8)), 'expires' => time() + 1800];
+    $GLOBALS['hasa_initial_trace'] = $trace;
+    $_SESSION['initial_password_trace'] = $trace;
+}
+function hasaAuthInitialLog(string $step): void
+{
+    $allowed = ['login_received','login_limited','login_invalid_input','login_inactive','login_password_rejected',
+        'login_state_changed','login_accepted','session_expired','session_invalid','csrf_rejected',
+        'change_page','change_received','change_current_invalid_input','change_confirmation_mismatch',
+        'change_password_policy','change_start_password','change_current_rejected','change_same_password',
+        'change_state_changed','change_saved','change_complete','session_renewal_failed','cancelled','server_error'];
+    $trace = $GLOBALS['hasa_initial_trace'] ?? null;
+    if (!is_array($trace) || (int)($trace['expires'] ?? 0) < time() || !in_array($step, $allowed, true)) return;
+    $record = ['at_utc' => gmdate('Y-m-d\TH:i:s\Z'), 'account_id' => (int)$trace['account_id'],
+        'flow' => $trace['flow'], 'step' => $step];
+    // Server-Fehlerprotokoll außerhalb der Webausgabe; feste Felder und Ergebniscodes.
+    error_log('HASA INITIAL_PASSWORD ' . json_encode($record, JSON_UNESCAPED_SLASHES));
+}
 
 function hasaAuthEscape(string $value): string
 {
@@ -72,6 +96,8 @@ function hasaAuthSession(bool $json = false): void
     header('Cache-Control: no-store');
     header('Referrer-Policy: no-referrer');
     $_SESSION['csrf'] ??= bin2hex(random_bytes(32));
+    $trace = $_SESSION['initial_password_trace'] ?? null;
+    if (is_array($trace) && (int)($trace['expires'] ?? 0) >= time()) $GLOBALS['hasa_initial_trace'] = $trace;
 }
 function hasaAuthDb(bool $json = false): PDO
 {
@@ -90,6 +116,7 @@ function hasaAuthCheckCsrf(bool $json = false): void
 {
     $provided = $json ? ($_SERVER['HTTP_X_HASA_CSRF'] ?? '') : ($_POST['csrf'] ?? '');
     if (!is_string($provided) || !hash_equals(hasaAuthCsrf(), $provided)) {
+        hasaAuthInitialLog('csrf_rejected');
         hasaAuthError('Die Sitzung ist abgelaufen. Bitte die Seite neu öffnen.', 403, $json, 'csrf_invalid');
     }
 }
@@ -100,12 +127,14 @@ function hasaAuthCurrent(bool $json = false): ?array
     if (!isset($_SESSION['user_id'])) return null;
     $now = time();
     if ($now - (int)($_SESSION['last_seen'] ?? 0) > 7200 || $now - (int)($_SESSION['logged_at'] ?? 0) > 43200) {
+        hasaAuthInitialLog('session_expired');
         hasaAuthForget(); return null;
     }
     $query = hasaAuthDb($json)->prepare('SELECT id, player_name, role, active, must_change_password, auth_version, is_user_admin, can_manage_user_admins FROM hasa_users WHERE id = ?');
     $query->execute([(int)$_SESSION['user_id']]);
     $user = $query->fetch();
     if (!$user || (int)$user['active'] !== 1 || (int)$user['auth_version'] !== (int)($_SESSION['auth_version'] ?? 0)) {
+        hasaAuthInitialLog('session_invalid');
         hasaAuthForget(); return null;
     }
     $_SESSION['last_seen'] = $now;
@@ -188,18 +217,29 @@ function hasaAuthLogin(PDO $pdo, string $name, string $password): ?array
 {
     $query = $pdo->prepare('SELECT id, player_name, password_hash, role, active, must_change_password, auth_version FROM hasa_users WHERE player_name = ?');
     $query->execute([$name]); $user = $query->fetch();
+    if (!isset($GLOBALS['hasa_initial_trace'])) hasaAuthInitialTrace($user ?: []);
     // Auch unbekannte/noch nicht eingerichtete Namen durchlaufen die Passwortprüfung.
     $hash = $user['password_hash'] ?? hasaAuthHash(bin2hex(random_bytes(32)));
     $valid = password_verify($password, $hash);
-    if (!$valid || !$user || (int)$user['active'] !== 1 || $user['password_hash'] === null) return null;
+    if (!$valid || !$user || (int)$user['active'] !== 1 || $user['password_hash'] === null) {
+        hasaAuthInitialLog($user && (int)$user['active'] !== 1 ? 'login_inactive' : 'login_password_rejected');
+        return null;
+    }
     // Gegen gleichzeitige Sperrung oder Passwortzurücksetzung prüfen.
     $check = $pdo->prepare('UPDATE hasa_users SET last_login_at = UTC_TIMESTAMP() WHERE id = ? AND active = 1 AND auth_version = ? AND password_hash = ?');
     $check->execute([$user['id'], $user['auth_version'], $user['password_hash']]);
     $fresh = $pdo->prepare('SELECT active, auth_version, password_hash FROM hasa_users WHERE id = ?');
     $fresh->execute([$user['id']]); $state = $fresh->fetch();
-    if (!$state || (int)$state['active'] !== 1 || (int)$state['auth_version'] !== (int)$user['auth_version'] || $state['password_hash'] !== $hash) return null;
-    if (!session_regenerate_id(true)) hasaAuthError('Die Sitzung konnte nicht erneuert werden. Bitte erneut anmelden.');
+    if (!$state || (int)$state['active'] !== 1 || (int)$state['auth_version'] !== (int)$user['auth_version'] || $state['password_hash'] !== $hash) {
+        hasaAuthInitialLog('login_state_changed'); return null;
+    }
+    if (!session_regenerate_id(true)) {
+        hasaAuthInitialLog('session_renewal_failed');
+        hasaAuthError('Die Sitzung konnte nicht erneuert werden. Bitte erneut anmelden.');
+    }
     $_SESSION = ['user_id' => (int)$user['id'], 'auth_version' => (int)$user['auth_version'], 'logged_at' => time(), 'last_seen' => time(), 'csrf' => bin2hex(random_bytes(32)), 'return_to' => hasaAuthDestination($_SESSION['return_to'] ?? 'galaxy.php')];
+    if (isset($GLOBALS['hasa_initial_trace'])) $_SESSION['initial_password_trace'] = $GLOBALS['hasa_initial_trace'];
+    hasaAuthInitialLog('login_accepted');
     $clear = $pdo->prepare('DELETE FROM hasa_login_limits WHERE limit_key = ?');
     $clear->execute([hash('sha256', 'name:' . mb_strtolower($name, 'UTF-8'))]);
     unset($user['password_hash']);
@@ -207,28 +247,40 @@ function hasaAuthLogin(PDO $pdo, string $name, string $password): ?array
 }
 function hasaAuthChangePassword(PDO $pdo, array $user, string $current, string $password, string $confirmation): ?string
 {
-    if ($password !== $confirmation) return 'Die beiden neuen Passwörter stimmen nicht überein.';
-    if (mb_strlen($password, 'UTF-8') < 12 || strlen($password) > 72 || str_contains($password, "\0")) return 'Bitte ein Passwort mit mindestens 12 Zeichen und höchstens 72 Bytes wählen.';
-    if (preg_match('/^PPW:[0-9]+$/D', $password)) return 'Bitte ein eigenes Passwort statt eines Startpassworts wählen.';
+    if ((int)($user['must_change_password'] ?? 0) !== 1) unset($GLOBALS['hasa_initial_trace'], $_SESSION['initial_password_trace']);
+    elseif (!isset($GLOBALS['hasa_initial_trace'])) hasaAuthInitialTrace($user);
+    hasaAuthInitialLog('change_received');
+    $reject = static function (string $code, string $message): string { hasaAuthInitialLog($code); return $message; };
+    if ($password !== $confirmation) return $reject('change_confirmation_mismatch', 'Die beiden neuen Passwörter stimmen nicht überein.');
+    if (mb_strlen($password, 'UTF-8') < 12 || strlen($password) > 72 || str_contains($password, "\0")) return $reject('change_password_policy', 'Bitte ein Passwort mit mindestens 12 Zeichen und höchstens 72 Bytes wählen.');
+    if (preg_match('/^PPW:[0-9]+$/D', $password)) return $reject('change_start_password', 'Bitte ein eigenes Passwort statt eines Startpassworts wählen.');
     $query = $pdo->prepare('SELECT password_hash, active, auth_version FROM hasa_users WHERE id = ?');
     $query->execute([$user['id']]); $stored = $query->fetch();
-    if (!$stored || (int)$stored['active'] !== 1 || (int)$stored['auth_version'] !== (int)$user['auth_version'] || !password_verify($current, $stored['password_hash'] ?? '')) return 'Das bisherige Passwort ist nicht richtig oder die Sitzung ist abgelaufen.';
-    if (password_verify($password, $stored['password_hash'])) return 'Bitte ein anderes Passwort als das bisherige wählen.';
+    if (!$stored || (int)$stored['active'] !== 1 || (int)$stored['auth_version'] !== (int)$user['auth_version'] || !password_verify($current, $stored['password_hash'] ?? '')) return $reject('change_current_rejected', 'Das bisherige Passwort ist nicht richtig oder die Sitzung ist abgelaufen.');
+    if (password_verify($password, $stored['password_hash'])) return $reject('change_same_password', 'Bitte ein anderes Passwort als das bisherige wählen.');
     $update = $pdo->prepare('UPDATE hasa_users SET password_hash = ?, must_change_password = 0, auth_version = auth_version + 1 WHERE id = ? AND active = 1 AND auth_version = ?');
     $update->execute([hasaAuthHash($password), $user['id'], $user['auth_version']]);
-    if ($update->rowCount() !== 1) return 'Die Sitzung hat sich geändert. Bitte erneut anmelden.';
-    if (!session_regenerate_id(true)) hasaAuthError('Die Sitzung konnte nicht erneuert werden. Bitte erneut anmelden.');
+    if ($update->rowCount() !== 1) return $reject('change_state_changed', 'Die Sitzung hat sich geändert. Bitte erneut anmelden.');
+    hasaAuthInitialLog('change_saved');
+    if (!session_regenerate_id(true)) {
+        hasaAuthInitialLog('session_renewal_failed');
+        hasaAuthError('Die Sitzung konnte nicht erneuert werden. Bitte erneut anmelden.');
+    }
     $_SESSION['auth_version'] = (int)$user['auth_version'] + 1;
     $_SESSION['csrf'] = bin2hex(random_bytes(32));
     $_SESSION['last_seen'] = time();
+    hasaAuthInitialLog('change_complete');
+    unset($GLOBALS['hasa_initial_trace'], $_SESSION['initial_password_trace']);
     return null;
 }
 // Auth-Seiten/API liefern auch bei technischen Fehlern keine Interna.
 set_exception_handler(static function (Throwable $error): never {
+    hasaAuthInitialLog('server_error');
     error_log('HASA authentication failure: ' . get_class($error));
     $script = basename($_SERVER['SCRIPT_NAME'] ?? '');
     $json = in_array($script, ['auth-status.php','galaxy-read.php','prospection-read.php','systems.php','prospection-reports.php'], true);
     hasaAuthError('Die Funktion ist gerade nicht verfügbar. Bitte später erneut versuchen.', 503, $json);
 });
+
 
 
