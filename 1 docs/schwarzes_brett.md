@@ -121,13 +121,13 @@ eine neue Runde wird durch eine eigene Rundenkennung getrennt.
 
 - stabile Veröffentlichung: HASA 1.1 Final;
 - aktive Entwicklungsreihe: HASA 1.2;
-- aktueller Teststand: HASA 1.2.0 Alpha 29;
+- aktueller Teststand: HASA 1.2.0 Alpha 31;
 - fester Aktualisierungspfad:
   `2 src/current/HASA-AKTUELL.user.js.txt`;
-- archivierte Alpha-29-Datei:
-  `2 src/current/hasa_1.2.0-alpha.29_asfi.user.js.txt`.
+- archivierte Alpha-31-Datei:
+  `2 src/current/hasa_1.2.0-alpha.31_bedienung.user.js.txt`.
 
-Aktueller Stand: echte Berichtserfassung und lokale ASFI-Liste; Einzelheiten siehe neueste Übergabe vom 13.10.2026.
+Aktueller Stand: Alpha31 mit kleinen Listenhaken und Werkzeugleiste oberhalb Ascension; Webansicht12 mit Systempfeilen und automatischer Suche. Alpha30-Serverlisten und Produktionsvergleich enthalten. Einzelheiten siehe neueste Übergabe vom 15.10.2026.
 
 Historischer Zwischenstand Alpha12:
 
@@ -1988,3 +1988,80 @@ Produktivupload aus dieser Sitzung nicht möglich; üblicher WinSCP-Ablauf auf K
 **Praxisergebnis Freigabe:** Kurt bestätigt inzwischen: Obi-Wan sieht 1:191,
 Styl sieht 1:131. Gegenseitiger Austausch damit praktisch bestätigt; kein
 Freigabe-Codefix für diesen Test nötig. Frühere Bedienwünsche bleiben offen.
+
+
+### 2026-10-15 – CE HASA an Kurt – gemeinsame Bedienfassung Alpha31 und Web12
+
+**Status:** FERTIGE GESAMTFASSUNG / LOKALE BROWSER- UND GITHUB-CI-PRÜFUNGEN
+BESTANDEN / PRODUKTIVUPLOAD UND SPIELTEST DURCH KURT OFFEN.
+
+**Auftrag:** Nach Kurts Sammelphase ausdrückliche Freigabe einer neuen gemeinsamen
+Fassung um 20:10 Uhr. Systempfeile und automatische Suche, zusätzlicher
+Alle-sichtbaren-Galaxien-Suchknopf entfällt, Sichtbarkeit laut Freigaben,
+kleine Haken direkt in der Nachrichtenliste und Werkzeugschaltflächen oberhalb
+Ascension. Produktionsrahmen wurden erfragt, nicht zur Entfernung beauftragt.
+
+**Web12:** Vorheriges/nächstes numerisches System über zwei Pfeile, direkte Eingabe
+bleibt. Pfeile und abgeschlossene Änderung sofort, Tipp-Pause 400 ms, keine
+doppelte Anfrage nach anschließendem Verlassen des Feldes. Bestehende Grenzen
+0 und 999999, kein Umlauf. Eingestellte Suchfelder bleiben erhalten; neue Suche
+beginnt auf erster Ergebnisseite. Ein Suchen-Knopf, kein zusätzlicher
+Alle-Galaxien-Knopf. Systemnummer bei Alle sichtbaren auch galaxieübergreifend
+suchbar; galaxy-read.php hebt ausschließlich die frühere Pflicht zur
+Galaxieangabe bei Systemnummer auf. Dieselben Konto-/Freigabeprüfungen bleiben
+bei jeder Abfrage wirksam. Galaxiennummern samt Namen bleiben erhalten.
+
+**Alpha31:** Kompakter 12px-Speicherhaken in der Übersicht, nicht im Einzelbericht.
+Listenzeilen ohne die nur im Einzelbericht verwendete Datumsklasse werden
+ebenfalls sicher nach Nachrichtenzelle, Datum/Zeit und ID erfasst. Freier erster
+Aktionsplatz, belegte Spielaktionen und Löschen bleiben erhalten. Bestätigung
+weiterhin dauerhaft, konto-/runden-/nachrichtengebunden, bei Sonden zusätzlich
+Messdaten bestätigt. Tooltip unterscheidet Übersichtsdaten von tatsächlich
+gespeichertem geöffnetem Volltext; keine Behauptung, ungelesener Volltext sei
+automatisch gesichert. Alte Rohdaten bleiben erhalten.
+
+**Optik:** Galaxiedatenbank, ASFI-Liste, Gildensitzungen und die je nach
+Anmeldung/Recht vorhandenen Schaltflächen mit Statuspunkten in einer eigenen Zeile
+oberhalb Ascension, außerhalb des Galaxiescanner-Akkordeons. Auf schmalen Fenstern
+waagerecht rollbar, ohne das HASA-Fenster zu verbreitern. Bestehende
+Rechte-/Anmeldelogik und Handler erhalten. Produktionsrahmen unverändert:
+Grün über bekannter Referenz, Dunkelrot darunter, gleich ohne Rahmen. Dies
+vergleicht Werte, weist aber keine Ereignisursache nach; Minenausbau kann ebenfalls
+die Produktion ändern.
+
+**Dateien:** Vollständige 2 src/current/HASA-AKTUELL.user.js.txt und identische
+hasa_1.2.0-alpha.31_bedienung.user.js.txt; 3 server/hasa-api/galaxy.php,
+galaxy-read.php; 5 tools/test_hasa_ereignisregister.cjs, test_hasa_live_events.cjs,
+test_hasa_web_ui.cjs; 3 server/tests/system_search_integration.php;
+.github/workflows/hasa-events-tests.yml; README.md;
+1 docs/hasa_1.2.0-alpha.31_bedienung.md; dieses Schwarze Brett.
+
+**Prüfung:** Lokal 33 bestehende Browsergruppen, 22 Live-/Markierungsgruppen und
+8 neue Webnavigationsgruppen bestanden. Tatsächliches vollständiges Userscript,
+IndexedDB/Rückfallspeicher/Reload und schmale 390px-Ansicht geprüft; Toolbar vor
+Ascension und außerhalb Akkordeons, Listenvarianten, keine Einzelberichtmarker,
+Spielaktionen und Kontowechsel. Drei synthetische Testbilder visuell kontrolliert.
+Lokaler Standard-Browserdownload nicht verwendbar; tatsächliche Chromium-Prüfungen
+mit lokal bereitgestelltem Browserpaket durchgeführt. Auf GitHub zusätzlich alle
+PHP-Syntaxprüfungen und echte MariaDB-/Endpunktprüfungen bestanden: bestehende
+22 Ereignisprüfungen, 52 Auth-Diagnoseprüfungen und zwei neue Endpunktprüfungen
+für galaxieübergreifende Systemsuche sowie private fremde Ausschlüsse.
+Anfangs fehlende Galaxie-Hilfsdatei in der neuen Testeinrichtung ergänzt.
+
+**Getesteter Programmstand:** 611512054416d552de25ca76466f6d28ba16c2c0,
+erfolgreicher Lauf https://github.com/KurtV731/hasa/actions/runs/38785656306 .
+Alle elf Programm-/Test-/Anleitungsdateien online vollständig zurückgelesen und
+exakt verglichen; aktueller Scriptpfad und Archivdatei identisch. Frühere
+Gesamtfassungen erhalten. Dieser abschließende Dokumentationscommit übernimmt
+denselben geprüften Programmstand.
+
+**Installation:** Zuerst HASA-Serverupdate.bat, dann HASA-AKTUALISIEREN.cmd.
+Vorhandenes Tampermonkey-HASA vollständig mit Strg+A/Strg+V ersetzen und speichern;
+Horizon und Galaxiedatenbank neu laden, Web bei Bedarf Strg+F5. Kein zweites
+Userscript, keine zusätzliche Migration. Testnutzer benötigen für die
+Spieländerungen dieselbe Alpha31. Website-Reparaturdownload ist weiterhin ein
+getrennter Veröffentlichungsstand; kein FTP-/Produktivupload aus dieser Sitzung.
+
+**Restpunkte:** Tatsächliche Nachrichtenübersicht und Optik auf Kurts und den
+Testgeräten prüfen; Mehrtab-/Langzeitbetrieb weiterhin offen. Ereignisliste danach
+gemeinsam schrittweise durchgehen; neue private Quellen nicht veröffentlichen.
