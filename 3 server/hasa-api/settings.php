@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 require __DIR__.'/auth.php';
-require __DIR__.'/sharing-service.php';
+require __DIR__.'/galaxy-access.php';
 $user=hasaRequireUser();
 if ($user['role']!=='player') hasaAuthError('Für persönliche Freigaben bitte mit dem Playerkonto anmelden.',403,false);
 if (!hasaSharingAvailable() && (int)($user['can_manage_user_admins'] ?? 0)) hasaAuthRedirect('sharing-install.php');
@@ -42,9 +42,9 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
 <h1>Meine Datenfreigaben</h1><p><?=hasaAuthEscape($user['player_name'])?> · <a href="galaxy.php?round=<?=$round?>">Zur Galaxiedatenbank</a> · <a href="password-change.php">Passwort ändern</a></p>
 <?php if($message):?><p class="success" role="status"><?=hasaAuthEscape($message)?></p><?php endif;?>
 <?php if($error):?><p class="error" role="alert"><?=hasaAuthEscape($error)?></p><?php endif;?>
-<form method="get"><input type="hidden" name="round" value="<?=$round?>"><label>Galaxie <select name="galaxy"><?php foreach($galaxies as $n):?><option value="<?=$n?>" <?=$n===$galaxy?'selected':''?>>Galaxie <?=$n?></option><?php endforeach;?></select></label><button>Galaxie öffnen</button></form>
+<form method="get"><input type="hidden" name="round" value="<?=$round?>"><label>Galaxie <select name="galaxy"><?php foreach($galaxies as $n):?><option value="<?=$n?>" <?=$n===$galaxy?'selected':''?>>Galaxie <?=hasaAuthEscape(hasaGalaxyLabel($n))?></option><?php endforeach;?></select></label><button>Galaxie öffnen</button></form>
 <form method="post"><input type="hidden" name="csrf" value="<?=hasaAuthEscape(hasaAuthCsrf())?>"><input type="hidden" name="revision" value="<?=(int)$policy['revision']?>"><input type="hidden" name="round" value="<?=$round?>"><input type="hidden" name="galaxy" value="<?=$galaxy?>">
-<h2>Galaxie <?=$galaxy?> · Runde <?=$round?></h2><p>Diese Auswahl gilt für <strong>alle deine vorhandenen und künftig erfassten Systeme und Planeten</strong> dieser Galaxie. Andere Galaxien und Runden bleiben unverändert.</p>
+<h2>Galaxie <?=hasaAuthEscape(hasaGalaxyLabel((int)$galaxy))?> · Runde <?=$round?></h2><p>Diese Auswahl gilt für <strong>alle deine vorhandenen und künftig erfassten Systeme und Planeten</strong> dieser Galaxie. Andere Galaxien und Runden bleiben unverändert.</p>
 <fieldset><legend>Wer darf meine Daten sehen?</legend>
 <?php foreach(['private'=>'Nur ich','selected'=>'Ausgewählte Mitspieler','alliance'=>'Meine bestätigte Allianz','participants'=>'Alle angemeldeten Player'] as $value=>$label):?><label><input type="radio" name="audience" value="<?=$value?>" <?=$policy['audience']===$value?'checked':''?> <?=$value==='alliance'&&!$alliance?'disabled':''?>><?=hasaAuthEscape($label)?></label><?php endforeach;?>
 <?php if(!$alliance):?><p class="note">Für dein Konto ist noch keine bestätigte Allianz hinterlegt. Wähle deine Allianzmitglieder vorerst einzeln aus. Ein Allianzname im Scanner allein verleiht keine Rechte.</p><?php endif;?>

@@ -1,6 +1,17 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__ . '/sharing-service.php';
+// Von Kurt am 15.10.2026 ausdrücklich zugeordnete Namen der normalen Galaxien.
+function hasaGalaxyName(int $number, ?string $observedName = null): ?string
+{
+    return [1 => 'Green heart', 2 => 'Blue haven', 3 => 'Ghost island',
+        4 => 'Deep water', 5 => 'Fire starter', 6 => 'Pantheom'][$number] ?? $observedName;
+}
+function hasaGalaxyLabel(int $number, ?string $observedName = null): string
+{
+    $name = hasaGalaxyName($number, $observedName);
+    return (string)$number . ($name ? ' · ' . $name : '');
+}
 // Gemeinsame, rundenbezogene Sichtbarkeit für sämtliche Galaxie-Lesezugriffe.
 function hasaGalaxySchema(): void
 {
@@ -55,8 +66,11 @@ function hasaGalaxyCatalog(PDO $pdo, array $user, int $round): array
     $query = $pdo->prepare('SELECT g.game_id AS galaxy, ' . $metadata . ' FROM hasa_galaxies g WHERE g.round_number = ? AND ' . $condition . ' ORDER BY g.game_id');
     $query->execute(array_merge($metadataParams, [$round], $params));
     $rows = [];
-    for ($i = 1; $i <= 6; $i++) $rows[$i] = ['galaxy' => $i, 'name' => null, 'type' => 'normal'];
-    foreach ($query->fetchAll() as $row) $rows[(int)$row['galaxy']] = $row;
+    for ($i = 1; $i <= 6; $i++) $rows[$i] = ['galaxy' => $i, 'name' => hasaGalaxyName($i), 'type' => 'normal'];
+    foreach ($query->fetchAll() as $row) {
+        $row['name'] = hasaGalaxyName((int)$row['galaxy'], $row['name']);
+        $rows[(int)$row['galaxy']] = $row;
+    }
     ksort($rows);
     return array_values($rows);
 }

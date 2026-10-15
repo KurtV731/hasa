@@ -74,7 +74,7 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
   <div class="filters">
     <label>Galaxie <select name="galaxy"><option value="">Alle sichtbaren</option>
       <?php foreach ($hasaGalaxies as $galaxy): ?>
-      <option value="<?= (int)$galaxy['galaxy'] ?>"><?= hasaAuthEscape((string)$galaxy['galaxy'] . ($galaxy['name'] ? ' · ' . $galaxy['name'] : '')) ?></option>
+      <option value="<?= (int)$galaxy['galaxy'] ?>"><?= hasaAuthEscape(hasaGalaxyLabel((int)$galaxy['galaxy'], $galaxy['name'])) ?></option>
       <?php endforeach; ?>
     </select></label>
     <label>System <input name="system" type="number" min="0" max="999999" step="1" inputmode="numeric"></label>

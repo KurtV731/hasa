@@ -1960,3 +1960,31 @@ Private Galaxie in Auktion verfügbar gelesen. Letztere Meldung enthält keine
 Auktionszielkoordinate; Handelszentrum ist Absender. Aukt.txt war identisch zur
 Metall-Endmeldung, echter Auktionsquelltext noch offen. Originale mit
 Spiel-Laufzeitparametern nicht öffentlich ins Repository kopieren.
+
+
+### 2026-10-15 – Kurt an CE HASA – Galaxiennummern mit Namen anzeigen
+
+**Auftrag:** Auf Wunsch eines Testspielers sollen die Galaxieauswahlen Nummer und
+Namen zeigen. Kurt ordnet ausdrücklich zu: 1 Green heart, 2 Blue haven,
+3 Ghost island, 4 Deep water, 5 Fire starter, 6 Pantheom. Schreibweise exakt
+übernommen. Diese explizite Zuordnung ersetzt für diese sechs Anzeigen die frühere
+offene Zuordnung; keine Namen aus einer Bildreihenfolge geraten.
+
+**Umsetzung:** Gemeinsame Anzeigezuordnung in galaxy-access.php für die sechs
+normalen Galaxien, auch ohne eigene gespeicherte Namen. Galaxiedatenbank und
+Meine Datenfreigaben zeigen Nummer plus Name; die Freigabeüberschrift ebenso.
+Gespeicherte Beobachtungen werden nicht umgeschrieben. Weitere Galaxien behalten
+ihre sichtbarkeitsgeprüften erfassten Namen. Keine Änderung an Freigaben oder
+Filterwerten; numerische Galaxie-IDs bleiben die technischen Werte.
+
+**Dateien:** 3 server/hasa-api/galaxy-access.php, galaxy.php, settings.php und
+dieses Schwarze Brett. Keine Migration, kein Userscriptupdate.
+**Prüfung:** Bestehender GitHub-Workflow prüft PHP-Syntax, Browserregression und
+MariaDB-Integration dieses Programmcommits; Ergebnis vor Abschluss kontrollieren.
+**Installation:** HASA-Serverupdate.bat ausführen, danach Seiten mit Strg+F5 neu laden.
+Produktivupload aus dieser Sitzung nicht möglich; üblicher WinSCP-Ablauf auf Kurts PC.
+**Commit:** Dieser gemeinsame Programm-/Dokumentationscommit, online zurückzulesen.
+
+**Praxisergebnis Freigabe:** Kurt bestätigt inzwischen: Obi-Wan sieht 1:191,
+Styl sieht 1:131. Gegenseitiger Austausch damit praktisch bestätigt; kein
+Freigabe-Codefix für diesen Test nötig. Frühere Bedienwünsche bleiben offen.
