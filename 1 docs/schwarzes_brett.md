@@ -1,6 +1,6 @@
 # HASA – Schwarzes Brett
 
-Stand: 13.10.2026
+Stand: 15.10.2026
 
 Dieses Dokument ist die verbindliche gemeinsame Übergabe- und Verwaltungsstelle für die
 HASA-Entwicklung. Vor jeder HASA-Arbeit wird es vollständig gelesen. Entscheidungen,
@@ -1897,3 +1897,66 @@ Kurt: SERKAL_pull_v2.bat im vorhandenen Website-Ordner ausführen. Diese führt 
 **Restpunkte:** Echter Installationstest, Originaltitel der Vorkommens-Endmeldung, Mehrtab-/Langzeitbetrieb, sichere Spielzeitbasis und Verlagerungsnachweise. Forschungs-Wunschliste, Geräteanmeldung und frühere offene Aufträge behalten.
 
 **Commit:** Programmcommit 1710b769737e64df82ccdcfd2e19729a5c2328bd, Testhärtung 70e92296507dfaea8514bd1b549019394ebce9eb; alle 17 Dateien online vollständig verglichen. Dieser abschließende Dokumentationscommit hält das bestandene CI-Ergebnis fest.
+
+
+### 2026-10-15 – CE HASA an Kurt – Diagnose des ersten Passwortwechsels auth.3
+
+**Status:** GITHUB-PRÜFUNGEN BESTANDEN / PRODUKTIVUPLOAD UND PRIVATER LOGWEG OFFEN.
+
+**Auftrag:** Nach Fehlanmeldung eines neu angelegten aktiven Players mit offenem
+Pflichtwechsel möchte Kurt ausschließlich Anmeldung mit Startpasswort und ersten
+Passwortwechsel nachvollziehen. Weder bisheriges noch neues Passwort soll sichtbar
+oder protokolliert werden. Kein weiterer Passwortreset durch diese Änderung.
+
+**Ergebnis:** Serverprotokoll mit festem Präfix HASA INITIAL_PASSWORD, UTC-Zeit,
+technischer Kontonummer, zufälliger nicht authentifizierender Ablaufkennung und
+festem Ergebnisschlüssel. Erfasst werden bekannte Konten mit offenem Pflichtwechsel:
+Anfrage, Eingabefehler, Loginbegrenzung, Sperre, abgelehnte Passwortprüfung,
+erfolgreicher Login, Passwortwechselseite, Validierungsgründe, Speichern und
+Abschluss, Sitzungs-/CSRF-Probleme soweit zuordenbar, bestätigte Abmeldung sowie
+technischer Fehler. Diagnosezuordnung höchstens 30 Minuten, nach erfolgreichem
+Pflichtwechsel beendet. Normale spätere Logins und freiwillige Passwortwechsel
+erzeugen keine Diagnosezeilen. Passwortreset ermöglicht erneut einen Pflichtablauf.
+
+**Grenzen/Datenschutz:** Keine Passwörter, Teile, Längen, Hashes, IP-Adressen,
+Spielernamen, Cookies, CSRF-Werte, Rohformulare oder Stacktraces in Diagnosezeilen.
+Keine Tastatur-/Bildschirmaufzeichnung. Nicht abgesendete Browserformulare,
+unbekannte Spielernamen und vollständig verlorene Sitzungen sind nicht sicher
+kontobezogen sichtbar. Fehlende Zeile beweist keine Ursache. Der Hostinganbieter
+bestimmt Verfügbarkeit, Pfad, Zugriff und Aufbewahrung des privaten PHP-Fehlerlogs;
+kein neuer öffentlicher Logendpunkt und kein Spieldatenzugriff.
+
+**Dateien:** 3 server/hasa-api/auth.php (auth.3), login.php,
+password-change.php, logout.php; 3 server/tests/initial_password_integration.php;
+.github/workflows/hasa-events-tests.yml; 1 docs/initial_password_diagnostics.md;
+dieses Schwarze Brett. Keine Änderung am Tampermonkey-Skript oder SQL-Schema.
+
+**Prüfung:** Programmcommit b140fe80a033389eadd4ed9e64658a2076232d67 im separaten
+Diagnosezweig geprüft. GitHub-Lauf
+https://github.com/KurtV731/hasa/actions/runs/38684355511 erfolgreich:
+PHP-Syntax sämtlicher API-Dateien, bisherige Browserregressionen und isolierte
+MariaDB-Integration einschließlich neuer echter Passwort-/Sitzungsprüfungen.
+Neue Tests prüfen Ablehnung und Erfolg, Kontostand, Speicherung/Pflichtwechsel,
+Ablaufkorrelation, Ende der Diagnose, Ablaufzeit, feste Logfelder und Ausschluss
+aller zur Laufzeit erzeugten Testgeheimnisse. Produktionskonten/-konfiguration
+nicht verwendet. Lokal war keine verwendbare PHP-Laufzeit vorhanden; entscheidende
+Laufzeitprüfungen deshalb tatsächlich in GitHub-CI durchgeführt.
+
+**Installation für Kurt:** HASA-Serverupdate.bat im vorhandenen HASA-Ordner starten,
+danach Loginseite neu öffnen. Vier vollständige Auth-Dateien werden zusammen
+hochgeladen; private config.php bleibt erhalten. Kein Userscriptupdate, keine
+Migration und kein erneuter Passwortreset erforderlich. Vor Obi-Wans erneutem
+Versuch sicherstellen, dass das Hosting das private PHP-Fehlerlog verfügbar macht;
+anschließend dort nach HASA INITIAL_PASSWORD filtern. Frühere Versuche können
+nicht nachträglich rekonstruiert werden. Kein produktiver Upload aus dieser Sitzung.
+
+**Übernommener Stand:** Kurt bestätigte am 14.10.2026 den Alpha29-Praxistest samt
+Erhalt von ASFI 3:154:4 nach Neuladen. Zwei dauerhafte Testnutzer prüfen praktisch.
+Die zwei Bedienkorrekturen (kleine Speicherhaken in der Nachrichtenübersicht;
+betreffende Schaltflächen in einer Zeile oberhalb Ascension) bleiben als nächster
+eigener Auftrag offen; anschließend Ereignisliste gemeinsam schrittweise prüfen.
+Neue private Originalquellen: Endtitel Reiche Metallvorkommen erschöpft und
+Private Galaxie in Auktion verfügbar gelesen. Letztere Meldung enthält keine
+Auktionszielkoordinate; Handelszentrum ist Absender. Aukt.txt war identisch zur
+Metall-Endmeldung, echter Auktionsquelltext noch offen. Originale mit
+Spiel-Laufzeitparametern nicht öffentlich ins Repository kopieren.
