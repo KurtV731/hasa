@@ -6,6 +6,7 @@ on:
       - '3 server/hasa-api/**'
       - '3 server/tests/events_integration.php'
       - '3 server/tests/initial_password_integration.php'
+      - '3 server/tests/system_search_integration.php'
       - '5 tools/test_hasa_*.cjs'
       - '.github/workflows/hasa-events-tests.yml'
   workflow_dispatch:
@@ -41,6 +42,7 @@ jobs:
           find '3 server/hasa-api' -name '*.php' -print0 | xargs -0 -n1 php -l
           node '5 tools/test_hasa_ereignisregister.cjs'
           node '5 tools/test_hasa_live_events.cjs'
+          node '5 tools/test_hasa_web_ui.cjs'
       - name: Disposable MariaDB integration
         env:
           MYSQL_PWD: disposable-ci-only
@@ -54,4 +56,6 @@ jobs:
           php -r 'file_put_contents(getenv("HASA_TEST_API")."/config.php", "<?php return ".var_export(["database"=>["host"=>"127.0.0.1","name"=>"hasa_test_events","user"=>"root","password"=>getenv("MYSQL_PWD")]],true).";");'
           php '3 server/tests/events_integration.php'
           php '3 server/tests/initial_password_integration.php'
+          php '3 server/tests/system_search_integration.php'
+
 

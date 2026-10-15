@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         HASA – Horizon Ascension Assistant
 // @namespace    horiversum.hasa
-// @version      1.2.0-alpha.30
+// @version      1.2.0-alpha.31
 // @charset      UTF-8
 // @description  Horizon-Assistent mit kompakter Galaxiescanner-Anzeige und aktiver lokaler IndexedDB
 // @match        https://horiversum.org/game/main/main.php*
@@ -14,6 +14,9 @@
 // ==/UserScript==
 
 /*
+
+ Alpha31 (15.10.2026): Kleine Speicherhaken direkt in der Nachrichtenliste;
+ Werkzeugleiste außerhalb des Galaxiescanners oberhalb von Ascension.
 
  Alpha30 (13.10.2026): Übersicht direkt erfassen und in MariaDB sichern.
  Grünes Häkchen erst nach Serverbestätigung; zentrale ASFI-/Gildenlisten.
@@ -33,9 +36,9 @@
 ==========================================================
  HASA – Horizon Ascension Assistant
 
- Version : 1.2.0 Alpha 30
+ Version : 1.2.0 Alpha 31
  Status  : Serverlisten, bestätigte Häkchen und Produktion im Spiel
- Build   : 2026-10-13
+ Build   : 2026-10-15
 
  Neu in Alpha 26:
  - ältere bekannte Planungsobjekte bleiben im Zielkatalog auswählbar
@@ -190,8 +193,8 @@
         'PHYSICS', 'PSYCHOLOGY', 'NUCLEARPHYSICS', 'SOLARENERGYTECH'
     ]);
 
-    const HASA_VERSION = '1.2.0 Alpha 30';
-    const HASA_BUILD_LABEL = '1.2.0-alpha30-serverlisten-2026-10-13';
+    const HASA_VERSION = '1.2.0 Alpha 31';
+    const HASA_BUILD_LABEL = '1.2.0-alpha31-bedienung-2026-10-15';
     const HASA_RUNDE = 8;
     const HASA_RUNDE_SCHLUESSEL = 'runde8';
     // Die MariaDB und sämtliche Schreibendpunkte trennen Runde 7 und 8 jetzt
@@ -397,9 +400,9 @@
         const zeile = link.closest('tr');
         const cells = zeile ? Array.from(zeile.cells || []) : [];
         const zeitText = cells[0] ? prdrNormalisiereText(ereignisOriginaltext(cells[0])) : '';
-        if (cells.length < 4 || !cells[0].matches('.MessageTableCellLeft')
+        if (cells.length < 4 || !cells[2].contains(link)
             || !/\d{2}\.\d{2}\.\d{4}\s+\d{2}:\d{2}:\d{2}/.test(zeitText)) return {};
-        const ort = cells[1].querySelector('div');
+        const ort = cells[1].querySelector('div') || cells[1];
         const ortText = ort ? prdrNormalisiereText(ort.textContent) : '';
         const name = ortText.replace(/\s*\(\s*\d+\s*:\s*\d+\s*:\s*\d+\s*\)\s*$/, '').trim();
         return { subject: prdrNormalisiereText(link.textContent), position: ereignisPosition(ortText),
@@ -984,43 +987,48 @@
 
     function markiereHasaGespeicherteBerichte() {
         const owner = ereignisScannerBenutzer();
-        for (const [img, mark] of HAA_GAME_MARKS) {
-            if (!owner || !img.isConnected || !/messages_empty/i.test(img.getAttribute('src') || '')) {
-                mark.span.remove();img.style.display=mark.display;img.title=mark.title;HAA_GAME_MARKS.delete(img);
-            }
-        }
+        const eligible = new Set();
+        const seen = new Set();
         const byMessage = new Map((laden(STORAGE_EREIGNIS_REGISTER, []) || []).filter(function (e) {
             return e.ownerId === owner && e.round === HASA_RUNDE && e.messageId;
         }).map(function (e) { return [e.messageId, e]; }));
         const docs = new Set([document, ...HAA_EREIGNIS_DOKUMENTE.keys()]);
         docs.forEach(function (doc) {
             if (!doc.body) return;
-            doc.querySelectorAll('td.MessageTableCell a[href]').forEach(function (link) {
+            // Die Einzelberichtseite besitzt einen eigenen breiten Textkörper.
+            // Markierungen gehören ausschließlich in die Nachrichtenübersicht.
+            if (doc.querySelector('.MessageContainer td.MessageTableCellLeft[width="608"]')) return;
+            doc.querySelectorAll('td a[href]').forEach(function (link) {
                 const address = ereignisNachrichtenUrl(link.getAttribute('href'), doc.location.href);
-                if (!address || !ereignisZeilenMeta(link).subject || !ereignisIstSpieltext(link, false)) return;
+                if (!address || link.closest('.MessageTableNavigation')
+                    || !ereignisZeilenMeta(link).subject || !ereignisIstSpieltext(link, false)) return;
                 const cells = link.closest('tr').cells;
-                const img = cells[3] && cells[3].querySelector('img.MessageButtons');
-                if (!img || !/messages_empty/i.test(img.getAttribute('src') || '')) return; // Nur den leeren ersten Platz nutzen.
+                const img = cells[3] && cells[3].querySelector('img.MessageButtons, img[src*="messages_empty"]');
+                if (!img || !/messages_empty/i.test(img.getAttribute('src') || '')) return;
+                seen.add(img);
                 if (!HAA_GAME_SLOT_TITLES.has(img)) HAA_GAME_SLOT_TITLES.set(img,img.title);
                 const e = byMessage.get(address.messageId);
                 const confirmed = owner && hasaEventServerBestaetigt(e);
-                let mark = HAA_GAME_MARKS.get(img);
-                if (confirmed && !mark) {
-                    const span = doc.createElement('span'); span.textContent = '✓'; span.className = 'haa-stored-mark';
-                    span.setAttribute('role','img'); span.setAttribute('aria-label','In MariaDB gespeichert');
-                    span.title = 'Titel, Zeit und Berichtsort in MariaDB gespeichert' + (hasaEventPayload(e).details ? ' · Berichttext ebenfalls gespeichert' : '');
-                    span.style.cssText = 'display:inline-block;width:19px;height:21px;line-height:21px;text-align:center;color:#35df69;font-weight:bold;font-size:18px;vertical-align:middle;';
-                    mark = { span: span, display: img.style.display, title: HAA_GAME_SLOT_TITLES.get(img) };
-                    HAA_GAME_MARKS.set(img,mark); img.before(span); img.style.display='none';
-                } else if (!confirmed && mark) {
-                    mark.span.remove(); img.style.display=mark.display; img.title=mark.title; HAA_GAME_MARKS.delete(img);
-                }
-                if (!confirmed && owner) img.title = 'Noch nicht vom Server bestätigt' + (HAA_EVENT_SYNC_ERROR ? ' · Anmeldung/Serververbindung prüfen' : '');
-                else if (!owner) img.title=HAA_GAME_SLOT_TITLES.get(img);
+                if (confirmed) {
+                    eligible.add(img);
+                    let mark = HAA_GAME_MARKS.get(img);
+                    if (!mark) {
+                        const span = doc.createElement('span'); span.textContent = '✓'; span.className = 'haa-stored-mark';
+                        span.setAttribute('role','img'); span.setAttribute('aria-label','In MariaDB gespeichert');
+                        span.style.cssText = 'display:inline-block;width:19px;height:21px;line-height:21px;text-align:center;color:#35df69;font-weight:bold;font-size:12px;vertical-align:middle;';
+                        mark = { span: span, display: img.style.display, title: HAA_GAME_SLOT_TITLES.get(img) };
+                        HAA_GAME_MARKS.set(img,mark); img.before(span); img.style.display='none';
+                    }
+                    mark.span.title = 'Titel, Zeit und Berichtsort in MariaDB gespeichert' + (hasaEventPayload(e).details ? ' · Berichttext ebenfalls gespeichert' : '');
+                } else if (owner) img.title = 'Noch nicht vom Server bestätigt' + (HAA_EVENT_SYNC_ERROR ? ' · Anmeldung/Serververbindung prüfen' : '');
             });
         });
-        for (const [img, mark] of HAA_GAME_MARKS) if (!img.isConnected) { mark.span.remove(); HAA_GAME_MARKS.delete(img); }
-        for (const img of HAA_GAME_SLOT_TITLES.keys()) if(!img.isConnected)HAA_GAME_SLOT_TITLES.delete(img);
+        for (const [img, mark] of HAA_GAME_MARKS) if (!eligible.has(img)) {
+            mark.span.remove(); img.style.display=mark.display; img.title=mark.title; HAA_GAME_MARKS.delete(img);
+        }
+        for (const [img, title] of HAA_GAME_SLOT_TITLES) if (!seen.has(img)) {
+            img.title=title; HAA_GAME_SLOT_TITLES.delete(img);
+        }
     }
 
     function hasaParseRate(text) {
@@ -1754,23 +1762,12 @@
         }
     }
 
-    function baueGalascannerImportHtml() {
+    function baueHasaWerkzeugleisteHtml() {
         const scan = leseGalaxiesystemAusSichtbarerSeite();
-        let anzeigeScan = scan;
-        let letzterStand = laden(STORAGE_GALASCAN_LETZTER_STAND, null);
-
-        if (scan.state === 'visible') {
-            aktualisiereHasaAsfiAusScan(scan);
-            speichern(STORAGE_GALASCAN_LETZTER_STAND, scan);
-            letzterStand = scan;
-        } else if (letzterStand && letzterStand.state === 'visible') {
-            anzeigeScan = letzterStand;
-        }
-        anzeigeScan = projiziereHasaAsfiInLokalenScan(anzeigeScan);
-
-        let html = '<div style="padding:4px 0 2px 0;">';
-        const sondenBerichte = laden(STORAGE_PRDR_BERICHTE, []);
-        const sichereSondenBerichte = Array.isArray(sondenBerichte) ? sondenBerichte : [];
+        const anzeigeScan = scan.state === 'visible' ? scan : (laden(STORAGE_GALASCAN_LETZTER_STAND, null) || scan);
+        const berichte = laden(STORAGE_PRDR_BERICHTE, []);
+        const sichereSondenBerichte = Array.isArray(berichte) ? berichte : [];
+        let html = '';
         const uebertragen = sichereSondenBerichte.filter(function (bericht) {
             return bericht && bericht.serverUploadedAt;
         }).length;
@@ -1813,25 +1810,46 @@
         } else if (anzeigeScan.state === 'visible') {
             scannerTitel = 'Gespeicherte Ansicht; nicht sendbar';
         }
-        html += '<div style="min-height:24px;display:flex;justify-content:flex-end;align-items:center;gap:7px;margin-bottom:3px;">'
+        html += '<div id="haa-werkzeuge" role="toolbar" aria-label="HASA Werkzeuge" style="min-height:28px;display:flex;flex-wrap:nowrap;align-items:center;gap:7px;margin:4px 0 7px;max-width:100%;overflow-x:auto;white-space:nowrap;">'
             + '<span title="' + esc(lokalTitel) + '" style="color:#7CFF7C;cursor:help;">●</span>'
             + '<span title="' + esc(transferTitel) + '" style="color:' + transferFarbe + ';cursor:help;">●</span>'
             + '<span title="' + esc(scannerTitel) + '" style="color:' + scannerFarbe + ';cursor:help;">●</span>'
             + (!HAA_SERVER_AUTH.authenticated
-                ? '<button id="haa-galascan-anmeldung" type="button" style="font-size:11px;cursor:pointer;">Anmelden</button>'
+                ? '<button id="haa-galascan-anmeldung" type="button" style="flex:0 0 auto;font-size:11px;cursor:pointer;">Anmelden</button>'
                 : '')
             + (HASA_RUNDE_SERVERUEBERTRAGUNG_AKTIV && !galascannerApiSchluessel(false)
-                ? '<button id="haa-galascan-schluessel" type="button" style="font-size:11px;cursor:pointer;">API-Schlüssel</button>'
+                ? '<button id="haa-galascan-schluessel" type="button" style="flex:0 0 auto;font-size:11px;cursor:pointer;">API-Schlüssel</button>'
                 : '')
             + '<button id="haa-galascan-datenbank" type="button" '
-            + 'style="font-size:11px;font-weight:bold;cursor:pointer;">Galaxiedatenbank</button>'
-            + '<button id="haa-asfi-liste" type="button" style="font-size:11px;cursor:pointer;">ASFI-Liste</button>'
-            + '<button id="haa-gildensitzungen" type="button" style="font-size:11px;cursor:pointer;">Gildensitzungen</button>'
+            + 'style="flex:0 0 auto;font-size:11px;font-weight:bold;cursor:pointer;">Galaxiedatenbank</button>'
+            + '<button id="haa-asfi-liste" type="button" style="flex:0 0 auto;font-size:11px;cursor:pointer;">ASFI-Liste</button>'
+            + '<button id="haa-gildensitzungen" type="button" style="flex:0 0 auto;font-size:11px;cursor:pointer;">Gildensitzungen</button>'
             + (HAA_SERVER_AUTH.authenticated && HAA_SERVER_AUTH.isUserAdmin
                 ? '<button id="haa-galascan-benutzerverwaltung" type="button" '
-                    + 'style="font-size:11px;font-weight:bold;cursor:pointer;">Zur Benutzerverwaltung</button>'
+                    + 'style="flex:0 0 auto;font-size:11px;font-weight:bold;cursor:pointer;">Zur Benutzerverwaltung</button>'
                 : '')
             + '</div>';
+
+        return html;
+    }
+
+    function baueGalascannerImportHtml() {
+        const scan = leseGalaxiesystemAusSichtbarerSeite();
+        let anzeigeScan = scan;
+        let letzterStand = laden(STORAGE_GALASCAN_LETZTER_STAND, null);
+
+        if (scan.state === 'visible') {
+            aktualisiereHasaAsfiAusScan(scan);
+            speichern(STORAGE_GALASCAN_LETZTER_STAND, scan);
+            letzterStand = scan;
+        } else if (letzterStand && letzterStand.state === 'visible') {
+            anzeigeScan = letzterStand;
+        }
+        anzeigeScan = projiziereHasaAsfiInLokalenScan(anzeigeScan);
+
+        let html = '<div style="padding:4px 0 2px 0;">';
+        const sondenBerichte = laden(STORAGE_PRDR_BERICHTE, []);
+        const sichereSondenBerichte = Array.isArray(sondenBerichte) ? sondenBerichte : [];
 
         if (anzeigeScan.state === 'visible') {
             html += '<table style="width:100%;margin-top:2px;border-collapse:collapse;color:#eee;">';
@@ -4652,6 +4670,7 @@ return box;
             }
 
             html += baueNavigationHtml();
+            html += baueHasaWerkzeugleisteHtml();
             html += baueAccordionBereichHtml('ascension', '⭐ Ascension', ascensionHtml);
             let alarmHtml = '<div style="font-weight:bold;color:#FFD27C;margin:2px 0 5px;">🏗 Baualarm</div>';
             alarmHtml += baueBaualarmHtml(ziel);
@@ -6717,6 +6736,7 @@ return box;
     window.addEventListener('load', starteSicher);
     setTimeout(starteSicher, 800);
 })();
+
 
 
 

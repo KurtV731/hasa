@@ -32,12 +32,18 @@ Tampermonkey als neues Userscript eingefügt und gespeichert.
 
 ## Aktuelle Entwicklungsreihe
 
-**HASA 1.2.0 Alpha 30 – zentrale ASFI-Liste und Spielmarkierungen**
+**HASA 1.2.0 Alpha 31 – Nachrichtenliste und Werkzeugleiste**
 
 Aktuelle Testdateien:
 
 - fester Aktualisierungspfad: `2 src/current/HASA-AKTUELL.user.js.txt`
-- archivierte Fassung: `2 src/current/hasa_1.2.0-alpha.30_serverlisten.user.js.txt`
+- archivierte Fassung: `2 src/current/hasa_1.2.0-alpha.31_bedienung.user.js.txt`
+
+Alpha 31 bündelt kleine Speicherhaken direkt in der Nachrichtenliste und eine
+eigene Werkzeugzeile oberhalb von Ascension. Die Webansicht erhält Systempfeile
+mit automatischer Suche; die zusätzliche Suchschaltfläche entfällt. Systemnummern
+können auch über alle freigegebenen Galaxien gesucht werden. Vollständige
+Installation und Prüfgrenzen: `1 docs/hasa_1.2.0-alpha.31_bedienung.md`.
 
 Sichtbare Meldungen werden bereits in der Übersicht erfasst. Ein grünes Häkchen
 im ersten freien Aktionsplatz bestätigt die Speicherung auf dem HASA-Server.
@@ -191,3 +197,4 @@ Schnittstellen. Gemeinsam mit SerKal genutzte Ressourcen auf `serkal.de` werden
 zwischen CE HASA und CE SerKal abgestimmt.
 
 Weitere technische Hinweise stehen unter `1 docs`.
+

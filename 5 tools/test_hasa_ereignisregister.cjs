@@ -7,7 +7,7 @@ const moduleSource = source.slice(source.indexOf('    // Alpha28: Rohmeldungen')
 const helpers = source.slice(source.indexOf('    function prdrNormalisiereText'), source.indexOf('    // Alpha28: Rohmeldungen'));
 (async () => {
     let options={headless:true};
-    if(process.env.HASA_TEST_BROWSER) options={...options,executablePath:process.env.HASA_TEST_BROWSER,args:['--no-sandbox','--single-process','--no-zygote','--disable-webgl']};
+    if(process.env.HASA_TEST_BROWSER) options={...options,executablePath:process.env.HASA_TEST_BROWSER,args:['--no-sandbox','--single-process','--no-zygote','--disable-webgl','--disable-gpu','--disable-software-rasterizer','--use-gl=disabled']};
     const browser = await chromium.launch(options);
     const page = await browser.newPage();
     const errors = [];
@@ -227,7 +227,13 @@ const helpers = source.slice(source.indexOf('    function prdrNormalisiereText')
         await full.waitForSelector('#haa-asfi-liste',{state:'attached'});
         assert.equal(await full.locator('#haa-box').locator('details.haa-accordion').count(),4);
         assert.equal(await full.evaluate(()=>__hasaTest.list().length),1);
-        assert.match(await full.locator('#haa-box').innerText(),/Alpha 30/);
+        assert.match(await full.locator('#haa-box').innerText(),/Alpha 31/);
+        const layout = await full.evaluate(() => {
+            const bar = document.querySelector('#haa-werkzeuge');
+            const asc = document.querySelector('details[data-haa-bereich="ascension"]');
+            return {outside: !bar.closest('details'), before: !!(bar.compareDocumentPosition(asc) & Node.DOCUMENT_POSITION_FOLLOWING), count: document.querySelectorAll('#haa-asfi-liste').length};
+        });
+        assert.deepEqual(layout,{outside:true,before:true,count:1});
     });
     await test('full Userscript writes native IndexedDB and synchronous fallback', async () => {
         await full.waitForFunction(async ()=>{
@@ -268,3 +274,4 @@ const helpers = source.slice(source.indexOf('    function prdrNormalisiereText')
     await browser.close();
     console.log(passed+' browser regression groups passed; catalog '+63+' titles covered.');
 })().catch(e => {console.error(e);process.exit(1);});
+

@@ -5,7 +5,7 @@ const source=fs.readFileSync(fs.existsSync(local)?local:path.join(__dirname,'../
 const helpers=source.slice(source.indexOf('    function prdrNormalisiereText'),source.indexOf('    // Alpha28: Rohmeldungen'));
 const moduleSource=source.slice(source.indexOf('    // Alpha28: Rohmeldungen'),source.indexOf('    function parsePrdrBericht'));
 (async()=>{
- const browser=await chromium.launch(process.env.HASA_TEST_BROWSER?{headless:true,executablePath:process.env.HASA_TEST_BROWSER,args:['--no-sandbox','--single-process','--no-zygote','--disable-webgl']}:{headless:true});
+ const browser=await chromium.launch(process.env.HASA_TEST_BROWSER?{headless:true,executablePath:process.env.HASA_TEST_BROWSER,args:['--no-sandbox','--single-process','--no-zygote','--disable-webgl','--disable-gpu','--disable-software-rasterizer','--use-gl=disabled']}:{headless:true});
  const page=await browser.newPage({viewport:{width:1200,height:800}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.route('**/*',r=>r.fulfill({contentType:'text/html; charset=utf-8',body:'<!doctype html><body style="background:#313744;color:white"></body>'}));
  await page.goto('https://horiversum.org/game/main/main.php');
@@ -47,6 +47,18 @@ const moduleSource=source.slice(source.indexOf('    // Alpha28: Rohmeldungen'),s
  });
  await test('re-scan does not duplicate event or upload after success',async()=>{
   const r=await page.evaluate(async()=>{const before=live.requests.length;live.api.scan();live.control.keyReady=true;await live.api.flush();live.control.keyReady=false;return {before,after:live.requests.length,rows:live.store.get(live.api.eventsKey).length};});assert.equal(r.before,r.after);assert.equal(r.rows,1);
+ });
+ await test('overview variants record and mark without report-only date class',async()=>{
+  await page.setContent(overview('101').replace('MessageTableCellLeft','MessageTableCell').replaceAll('class="MessageButtons"',''));
+  await page.evaluate(async()=>{live.api.scan();live.control.keyReady=true;await live.api.flush();live.control.keyReady=false;});
+  assert.equal(await page.locator('.haa-stored-mark').count(),1);
+  assert.equal(await page.locator('.haa-stored-mark').evaluate(n=>getComputedStyle(n).fontSize),'12px');
+  assert.equal(await page.locator('.delete').count(),1);
+ });
+ await test('single report header never receives overview marker',async()=>{
+  await page.setContent('<div class="MessageContainer">'+overview('100')+'<table><tr><td class="MessageTableCellLeft" width="608">Original report text retained, without storage mark.</td></tr></table></div>');
+  await page.evaluate(()=>live.api.mark());assert.equal(await page.locator('.haa-stored-mark').count(),0);
+  await page.setContent(overview('100'));await page.evaluate(()=>live.api.mark());assert.equal(await page.locator('.haa-stored-mark').count(),1);
  });
  await test('game action taking the slot is never hidden by old green marker',async()=>{
   await page.evaluate(()=>{document.querySelector('img.MessageButtons').src='game_action.gif';live.api.mark();});
@@ -97,3 +109,4 @@ const moduleSource=source.slice(source.indexOf('    // Alpha28: Rohmeldungen'),s
  });
  assert.deepEqual(errors,[]);await browser.close();console.log(passed+' live browser test groups passed');
 })().catch(e=>{console.error(e);process.exit(1);});
+

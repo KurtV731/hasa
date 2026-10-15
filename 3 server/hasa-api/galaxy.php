@@ -12,7 +12,7 @@ try {
 $hasaRound = hasaRound($_GET['round'] ?? null);
 $hasaGalaxies = hasaGalaxyCatalog(hasaPdo(), $hasaUser, $hasaRound);
 $hasaFilters = hasaFilterOptions(hasaPdo(), $hasaUser, $hasaRound);
-// HASA Webansicht 1.2.0-web.11 – verdichteter Planetenvergleich für bis zu 14 Spalten.
+// HASA Webansicht 1.2.0-web.12 – verdichteter Planetenvergleich für bis zu 14 Spalten.
 $hasaNonce = base64_encode(random_bytes(18));
 header('Content-Type: text/html; charset=utf-8');
 header('X-Content-Type-Options: nosniff');
@@ -34,6 +34,13 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
   .filters,.toolbar { display:flex; flex-wrap:wrap; gap:.6rem; align-items:end; }
   label { display:grid; gap:.2rem; } input,select,button { font:inherit; padding:.45rem; border:1px solid #64748b; border-radius:.35rem; }
   input,select { width:9rem; background:#172033; color:#f3f4f6; } select[name=type] { width:18rem; max-width:100%; } select[name=galaxy] { width:18rem; max-width:100%; } input[name=q] { width:min(24rem,100%); }
+  .system-field { display:grid; gap:.2rem; }
+  .system-control { display:flex; width:13rem; max-width:100%; align-items:stretch; }
+  .system-control input { width:6rem; min-width:0; flex:1; text-align:center; border-radius:0; appearance:textfield; -moz-appearance:textfield; font-weight:700; }
+  .system-control input::-webkit-inner-spin-button,.system-control input::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; }
+  .system-control button { flex:0 0 2.6rem; padding:.45rem .3rem; background:#263249; color:#f87171; }
+  .system-control button:first-child { border-radius:.35rem 0 0 .35rem; border-right:0; }
+  .system-control button:last-child { border-radius:0 .35rem .35rem 0; border-left:0; }
   button { background:#2563eb; color:white; cursor:pointer; } a { color:#bfdbfe; } button:disabled { opacity:.5; cursor:default; }
   button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible,.scroll:focus-visible { outline:3px solid #facc15; outline-offset:2px; }
   details.filters-more { margin-top:.6rem; } summary { cursor:pointer; color:#bfdbfe; } .filters-more .filters { padding-top:.6rem; }
@@ -77,11 +84,14 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
       <option value="<?= (int)$galaxy['galaxy'] ?>"><?= hasaAuthEscape(hasaGalaxyLabel((int)$galaxy['galaxy'], $galaxy['name'])) ?></option>
       <?php endforeach; ?>
     </select></label>
-    <label>System <input name="system" type="number" min="0" max="999999" step="1" inputmode="numeric"></label>
+    <div class="system-field"><label for="system-number">System</label><div class="system-control" role="group" aria-label="Systemnavigation">
+      <button id="system-back" type="button" aria-label="Vorheriges System" title="Vorheriges System">◀</button>
+      <input id="system-number" name="system" type="number" min="0" max="999999" step="1" inputmode="numeric" aria-label="Systemnummer">
+      <button id="system-forward" type="button" aria-label="Nächstes System" title="Nächstes System">▶</button>
+    </div></div>
     <label>Suchbegriff <input name="q" type="search" maxlength="160" placeholder="Name, Spieler, Allianz, Typ …"></label>
     <button type="submit">Suchen</button>
     <button id="position" type="button" disabled>Standort anzeigen</button>
-    <button id="all" type="button">Alle sichtbaren Galaxien durchsuchen</button>
   </div>
   <details class="filters-more"><summary>Weitere Suchfelder</summary><div class="filters">
     <label>Spieler <input name="player" maxlength="120"></label>
@@ -142,9 +152,34 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
     form.elements.system.value = position.system;
     form.requestSubmit();
   });
-  document.querySelector('#all').addEventListener('click', () => {
-    form.elements.galaxy.value = ''; form.elements.system.value = ''; form.requestSubmit();
+  const systemInput = form.elements.system;
+  const systemBack = document.querySelector('#system-back');
+  const systemForward = document.querySelector('#system-forward');
+  let systemTimer = null;
+  let lastSystemSearch = null;
+  function systemSearchKey() { return form.elements.galaxy.value + ':' + systemInput.value; }
+  function updateSystemButtons() {
+    const value = systemInput.value.trim();
+    const invalid = !systemInput.validity.valid;
+    systemBack.disabled = invalid || value === '' || Number(value) <= 0;
+    systemForward.disabled = invalid || (value !== '' && Number(value) >= 999999);
+  }
+  function searchChangedSystem() {
+    clearTimeout(systemTimer);
+    updateSystemButtons();
+    if (systemInput.validity.valid && systemSearchKey() !== lastSystemSearch) form.requestSubmit();
+  }
+  for (const [button, step] of [[systemBack,-1],[systemForward,1]]) button.addEventListener('click', () => {
+    if (!systemInput.validity.valid) return;
+    const next = Math.max(0, Math.min(999999, Number(systemInput.value || 0) + step));
+    systemInput.value = String(next);
+    searchChangedSystem();
   });
+  systemInput.addEventListener('input', () => {
+    clearTimeout(systemTimer); updateSystemButtons();
+    systemTimer = setTimeout(searchChangedSystem, 400);
+  });
+  systemInput.addEventListener('change', searchChangedSystem);
   document.querySelector('#previous').addEventListener('click', () => { offset = Math.max(0, offset - pageLimit); loadResults(); });
   document.querySelector('#next').addEventListener('click', () => { offset += pageLimit; loadResults(); });
   function element(tag, text, className) {
@@ -327,7 +362,9 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
     event.preventDefault();
     if (!form.reportValidity()) return;
     const galaxy = form.elements.galaxy.value.trim(), system = form.elements.system.value.trim();
-    if (system && !galaxy) { status.textContent = 'Bitte für eine Systemsuche auch die Galaxie angeben.'; return; }
+    clearTimeout(systemTimer);
+    lastSystemSearch = systemSearchKey();
+    updateSystemButtons();
     activeParams = new URLSearchParams({ round: activeRound });
     for (const name of filterNames) { const value = form.elements[name].value.trim(); if (value !== '') activeParams.set(name, value); }
     if (galaxy && system !== '') rememberPosition(galaxy, system);
@@ -386,6 +423,7 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
 </script>
 </body>
 </html>
+
 
 
 
