@@ -2,7 +2,7 @@
 declare(strict_types=1);
 $api=getenv('HASA_TEST_API');
 if (!$api || getenv('CI')!=='true') throw new RuntimeException('Disposable CI required');
-require $api.'/auth.php'; require $api.'/events-service.php';
+require $api.'/auth.php'; require $api.'/galaxy-access.php'; require $api.'/events-service.php';
 $stage='setup';$diagnostic=[];
 set_exception_handler(static function(Throwable $e):never{global $stage,$diagnostic;fwrite(STDERR,'FAIL system-search integration '.get_class($e).' at '.$stage.' '.json_encode($diagnostic).PHP_EOL);exit(1);});
 $config=hasaConfig()['database'];
