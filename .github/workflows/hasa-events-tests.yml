@@ -45,6 +45,7 @@ jobs:
           node '5 tools/test_hasa_web_ui.cjs'
           node '5 tools/test_hasa_research.cjs'
           node '5 tools/test_hasa_menu.cjs'
+          node '5 tools/test_hasa_scroll.cjs'
       - name: Disposable MariaDB integration
         env:
           MYSQL_PWD: disposable-ci-only

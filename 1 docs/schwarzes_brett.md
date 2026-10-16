@@ -2085,3 +2085,12 @@ gemeinsam schrittweise durchgehen; neue private Quellen nicht veröffentlichen.
 - Gezielt im echten Browser geprüft: Erststart geschlossen, schließen → Seitenwechsel geschlossen, Auswahl bleibt, nur ein Bereich offen, alte abgetrennte Elemente ändern keinen Zustand; Ascension ohne Punkte/mit Prognose unsichtbar, freie oder investierte Punkte sichtbar; Diagnose abgeschaltet. Zusätzlich 7 Forschungsfälle, 33 bestehende Browsergruppen und 22 Live-Datengruppen bestanden. Vorheriger CI-Lauf der Forschungskorrektur erfolgreich.
 - Weitere bereits freigegebene Vorgabe fürs nächste Bündel, noch umzusetzen: Ressourcenfarbe ereignisgebunden statt Vergleichsrahmen. Normal grau/rahmenlos; laufende positive Ereignisse betroffene Ressourcen grün, negative rot; Motivationsvideo alle kräftig grün für seine Stunde (laut Kurt ca. 24-fach). Ende entfernt nur die jeweilige Ereigniswirkung. Minenausbau allein markiert nicht grün. Erkennungsmerkmale/Originaltexte des Motivationsvideos noch prüfen.
 - Keine neue Alpha und kein Serverupdate durch diesen Arbeitsstand ausgeliefert. Hauptzweig weiter Alpha 31.
+
+
+## 2026-10-16 – Forschungsplaner springt beim Forschungsseitenwechsel nach oben
+
+- Meldung von Obi-Wan / rampage4296: Voraussetzungen im Planer gescrollt, anschließend zwischen Horizon-Forschungsseiten gewechselt → Planer wieder oben.
+- Im echten Browser reproduziert: bisheriger Code stellt scrollTop 600 her und fügt danach den Pfeilrahmen durch Umhängen des Inhaltelements ein. Das setzt die Position wieder auf 0 zurück (Test 0 statt 600). Anschließende Scroll-Ereignisse können diesen falschen Nullstand speichern.
+- Im gemeinsamen Vorbereitungszweig korrigiert: endgültigen Pfeilrahmen und Innenhöhe zuerst herstellen, anschließend gespeicherte Position anwenden. Scroll-Ereignisse bereits entfernter alter Inhalte ignorieren.
+- Browserregression prüft Wiederherstellung bei Start, erneuten Aufbau beim Forschungswechsel (950 bleibt 950), ignorierte alte Elemente und bewusstes Zurückscrollen auf 0. Zusätzlich 33 bestehende Browsergruppen, Menüprüfungen und 7 Forschungsfälle bestanden. Neuer Scrolltest in CI aufgenommen.
+- Weiterhin Vorbereitung für das nächste gemeinsame Update, noch keine neue Alpha ausgeliefert.

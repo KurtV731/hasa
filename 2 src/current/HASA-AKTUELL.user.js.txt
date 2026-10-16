@@ -4602,11 +4602,15 @@ return box;
         Array.from(document.querySelectorAll('#haa-box .haa-bereich-inhalt')).forEach(function (inhalt) {
             const bereich = inhalt.dataset.haaScrollBereich || '';
             const gespeichert = scrollStaende && Number(scrollStaende[bereich]);
+            // Erst den endgültigen Scrollcontainer samt Pfeilrahmen und Höhe
+            // herstellen. Das spätere Umhängen setzt sonst scrollTop wieder auf 0.
+            if (bereich === 'techtree') installierePlanScrollHinweise(inhalt);
+            aktualisiereInnenhoehe();
             if (Number.isFinite(gespeichert) && gespeichert > 0) {
                 inhalt.scrollTop = gespeichert;
             }
-            if (bereich === 'techtree') installierePlanScrollHinweise(inhalt);
             inhalt.addEventListener('scroll', function () {
+                if (!inhalt.isConnected) return;
                 const aktuell = laden(STORAGE_UI_SCROLL, {});
                 const neu = aktuell && typeof aktuell === 'object' && !Array.isArray(aktuell) ? aktuell : {};
                 neu[bereich] = Math.round(inhalt.scrollTop);
