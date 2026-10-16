@@ -53,6 +53,7 @@ vollständige Datei übernehmen. Keine zweite parallele HASA-Installation anlege
 Lokal: 33 bestehende Browsergruppen, 26 Live-/Ressourcengruppen, 7 Forschungsfälle,
 Menü-/Zwischenzielprüfung und Scroll-Navigationsprüfung mit tatsächlichem Chromium.
 Der vollständige Userscriptstart samt IndexedDB, Rückfallspeicher und Neuladen ist
-enthalten. Zusätzlich Gesamtprüfung auf GitHub vor Übernahme nach main erforderlich:
-Browser, PHP-Syntax und isolierte MariaDB-Endpunktprüfungen.
+enthalten. Gesamtprüfung auf GitHub erfolgreich: Browser, PHP-Syntax und isolierte
+MariaDB-Endpunktprüfungen. Geprüfter Programmcommit: 823d5272d12112bffa91bce91601c15ea0eac40e.
+Prüflauf: https://github.com/KurtV731/hasa/actions/runs/38893386349 .
 Ein echter Horizon-Praxistest auf den Testgeräten folgt nach der Installation.

@@ -2137,3 +2137,11 @@ Labor früh gegenüber erst Ressourcenproduktion ausbauen, nötige Energie und
 Folgeausbauten, Ressourcenwartezeiten und Parallelität berücksichtigen.
 Keine globale Optimalitätszusage ohne vollständige Zeiten/Kosten/Spielregeln.
 Kurt sammelt zunächst Zielvorschläge; noch keine Strategiefunktion beauftragt.
+
+**Abschluss Alpha32:** GitHub-Gesamtprüfung auf Programmcommit
+823d5272d12112bffa91bce91601c15ea0eac40e erfolgreich, Lauf
+https://github.com/KurtV731/hasa/actions/runs/38893386349 . Alle Browser-/Forschungs-/Menü-/Scrolltests,
+PHP-Syntax und isolierte MariaDB-Endpunktprüfungen bestanden. Acht Release-Dateien
+online exakt verglichen; aktive Gesamtdatei und Alpha32-Archiv identisch. Dieser
+Dokumentationsabschluss übernimmt denselben geprüften Programmcode nach main.
+Kein Produktiv-/FTP-Upload aus dieser Sitzung. Update auf Kurts/Testgeräten folgt.
