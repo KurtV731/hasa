@@ -225,13 +225,14 @@ const helpers = source.slice(source.indexOf('    function prdrNormalisiereText')
         await full.evaluate(instrumented);
         await full.locator('#haa-hauptschalter-an').click();
         await full.waitForSelector('#haa-asfi-liste',{state:'attached'});
-        assert.equal(await full.locator('#haa-box').locator('details.haa-accordion').count(),4);
+        assert.equal(await full.locator('#haa-box').locator('details.haa-accordion').count(),3);
+        assert.equal(await full.locator('details[data-haa-bereich="ascension"]').count(),0);
         assert.equal(await full.evaluate(()=>__hasaTest.list().length),1);
         assert.match(await full.locator('#haa-box').innerText(),/Alpha 31/);
         const layout = await full.evaluate(() => {
             const bar = document.querySelector('#haa-werkzeuge');
-            const asc = document.querySelector('details[data-haa-bereich="ascension"]');
-            return {outside: !bar.closest('details'), before: !!(bar.compareDocumentPosition(asc) & Node.DOCUMENT_POSITION_FOLLOWING), count: document.querySelectorAll('#haa-asfi-liste').length};
+            const first = document.querySelector('details.haa-accordion');
+            return {outside: !bar.closest('details'), before: !!(bar.compareDocumentPosition(first) & Node.DOCUMENT_POSITION_FOLLOWING), count: document.querySelectorAll('#haa-asfi-liste').length};
         });
         assert.deepEqual(layout,{outside:true,before:true,count:1});
     });

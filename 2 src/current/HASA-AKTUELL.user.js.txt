@@ -1945,6 +1945,7 @@
     const STORAGE_TECHTREE_GRAPH = 'haa_techtree_graph_v103i';
     const STORAGE_TECHTREE_STATUS = 'haa_techtree_status_v103f';
     const STORAGE_TECHTREE_DEBUG = 'haa_techtree_debug_v103g';
+    const TECHTREE_DIAGNOSE_ANZEIGEN = false;
     const STORAGE_UI_BOX_ZU = 'haa_ui_box_zu_v101e1';
     const STORAGE_UI_AKTIVER_BEREICH = 'haa_ui_aktiver_bereich_v101e2';
     const STORAGE_UI_SCROLL = 'haa_ui_scroll_v101e2';
@@ -3182,6 +3183,15 @@ return box;
         return laden(STORAGE_ASCENSION_STATUS, null);
     }
 
+    function hatAscensionPunkte(status) {
+        if (!status) return false;
+        return [status.apFrei, status.apInvestiert, status.apGesamt]
+            .some(function (wert) { return Number.isFinite(wert) && wert > 0; })
+            || (Array.isArray(status.skills) && status.skills.some(function (skill) {
+                return Number.isFinite(skill.stufe) && skill.stufe > 0;
+            }));
+    }
+
     function baueAscensionDashboardHtml(status) {
         let html = '';
         html += '<div style="margin-bottom:8px;">';
@@ -4355,7 +4365,7 @@ return box;
             });
         }
         const debugDaten = laden(STORAGE_TECHTREE_DEBUG, null);
-        if (debugDaten && Array.isArray(debugDaten.lines)) {
+        if (TECHTREE_DIAGNOSE_ANZEIGEN && debugDaten && Array.isArray(debugDaten.lines)) {
             html += '<details style="margin-top:10px;border:1px solid #704f2a;border-radius:4px;background:#130f0b;">';
             html += '<summary style="cursor:pointer;padding:6px;color:#FFD27C;font-weight:bold;">Diagnose</summary>';
             html += '<div style="padding:6px;">';
@@ -4561,6 +4571,9 @@ return box;
 
         Array.from(document.querySelectorAll('#haa-box details.haa-accordion')).forEach(function (details) {
             details.addEventListener('toggle', function () {
+                // Beim Neuaufbau können noch Toggle-Ereignisse alter Elemente
+                // ausstehen. Sie dürfen den aktuellen Menüstand nicht verändern.
+                if (!details.isConnected) return;
                 const bereich = details.dataset.haaBereich || '';
 
                 if (!details.open) {
@@ -4676,7 +4689,9 @@ return box;
 
             html += baueNavigationHtml();
             html += baueHasaWerkzeugleisteHtml();
-            html += baueAccordionBereichHtml('ascension', '⭐ Ascension', ascensionHtml);
+            if (hatAscensionPunkte(ascStatus)) {
+                html += baueAccordionBereichHtml('ascension', '⭐ Ascension', ascensionHtml);
+            }
             let alarmHtml = '<div style="font-weight:bold;color:#FFD27C;margin:2px 0 5px;">🏗 Baualarm</div>';
             alarmHtml += baueBaualarmHtml(ziel);
             alarmHtml += '<div style="font-weight:bold;color:#FFD27C;margin:12px 0 5px;padding-top:8px;border-top:1px solid #555;">🔬 Forschungsalarm</div>';
@@ -4809,7 +4824,7 @@ return box;
     let HAA_AUDIO_KEEPALIVE_GAIN = null;
     let HAA_AUDIO_NACHHOLEN = 0;
     let HAA_UI_BOX_ZU = laden(STORAGE_UI_BOX_ZU, '0') === '1';
-    let HAA_UI_AKTIVER_BEREICH = laden(STORAGE_UI_AKTIVER_BEREICH, 'ascension') || 'ascension';
+    let HAA_UI_AKTIVER_BEREICH = laden(STORAGE_UI_AKTIVER_BEREICH, '') || '';
 
     /*
      * HASA 0.8 Beobachter-Engine
