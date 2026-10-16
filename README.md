@@ -32,34 +32,27 @@ Tampermonkey als neues Userscript eingefügt und gespeichert.
 
 ## Aktuelle Entwicklungsreihe
 
-**HASA 1.2.0 Alpha 31 – Nachrichtenliste und Werkzeugleiste**
+**HASA 1.2.0 Alpha 32 – Korrekturen aus dem Testbetrieb**
 
-Aktuelle Testdateien:
+- Aktueller vollständiger Code: `2 src/current/HASA-AKTUELL.user.js.txt`
+- Identische Archivfassung: `2 src/current/hasa_1.2.0-alpha.32_testerrunde.user.js.txt`
+- Anleitung und Grenzen: `1 docs/hasa_1.2.0-alpha.32_testerrunde.md`
 
-- fester Aktualisierungspfad: `2 src/current/HASA-AKTUELL.user.js.txt`
-- archivierte Fassung: `2 src/current/hasa_1.2.0-alpha.31_bedienung.user.js.txt`
+Alpha 32 sichert Forschungsstände, Menüzustand und Planer-Scrollposition ab.
+Ein Klick auf eine Voraussetzung öffnet deren Zwischenziel direkt im Planer.
+Die Forschungsdiagnose ist vorerst ausgeblendet; Ascension erscheint erst bei
+nachgewiesenen Punkten oder gekauften Stufen. Ressourcenraten erscheinen grau,
+bei erkannten Produktionssteigerungen grün und bei ausdrücklich gemeldeten
+Produktionssenkungen rot, jeweils ohne Rahmen. Reine Messabweichungen lösen keine
+Farbe mehr aus. Die Aktivierungserkennung des Motivationsvideos bleibt bis zu
+einem echten Muster seiner Laufanzeige offen; verfügbar bedeutet nicht gestartet.
 
-Alpha 31 bündelt kleine Speicherhaken direkt in der Nachrichtenliste und eine
-eigene Werkzeugzeile oberhalb von Ascension. Die Webansicht erhält Systempfeile
-mit automatischer Suche; die zusätzliche Suchschaltfläche entfällt. Systemnummern
-können auch über alle freigegebenen Galaxien gesucht werden. Vollständige
-Installation und Prüfgrenzen: `1 docs/hasa_1.2.0-alpha.31_bedienung.md`.
-
-Sichtbare Meldungen werden bereits in der Übersicht erfasst. Ein grünes Häkchen
-im ersten freien Aktionsplatz bestätigt die Speicherung auf dem HASA-Server.
-Planetzerbruch und echte Scans führen eine MariaDB-ASFI-Liste; bestätigte andere
-Planetentypen entfernen die Position aus der aktuellen Liste. Gildensitzungen
-werden als einfache Zeitliste gespeichert. Die Stundenproduktion des sichtbaren
-Planeten wird alle 15 Minuten gelesen; Grün/Rot und ein Tooltip zeigen den
-Vergleich mit einem bekannten Referenzwert. Die bisherige lange Berichtsanzeige
-ist ausgeblendet, ihre Daten bleiben erhalten.
-
-**Einrichtung:** zuerst `HASA-Serverupdate.bat`, anschließend als Benutzerleitung
-`https://serkal.de/hasa/events-install.php` öffnen und einmal „Ereignislisten
-einrichten“ anklicken. Danach `HASA-AKTUALISIEREN.cmd`, vollständigen Inhalt in
-Tampermonkey ersetzen und Horizon neu laden. Neue Serverdateien müssen vor dem
-Userscript produktiv hochgeladen sein. Vollständige Anleitung und Grenzen:
-`1 docs/hasa_1.2.0-alpha.30_serverlisten.md`.
+**Update von Alpha 31:** `HASA-AKTUALISIEREN.cmd` ausführen, vorhandenen
+Tampermonkey-Code vollständig ersetzen, speichern und Horizon neu laden.
+Kein Serverupdate, keine SQL-Migration und kein erneuter STAN-Import für Alpha 32.
+Tester erhalten denselben vollständigen Code. Neueinrichtungen benötigen weiterhin
+die Servergrundlage aus Alpha 30/31. Nachrichtenhaken, Werkzeugleiste und Websuche
+bleiben erhalten.
 
 Alpha 28 ergänzt ein lokales Register für sichtbare Ereignismeldungen und bereits
 geöffnete Berichte. Nachrichtenkennung, Originaltext und Zeitangaben bleiben

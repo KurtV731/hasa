@@ -1,6 +1,6 @@
 # HASA – Schwarzes Brett
 
-Stand: 15.10.2026
+Stand: 16.10.2026
 
 Dieses Dokument ist die verbindliche gemeinsame Übergabe- und Verwaltungsstelle für die
 HASA-Entwicklung. Vor jeder HASA-Arbeit wird es vollständig gelesen. Entscheidungen,
@@ -121,13 +121,13 @@ eine neue Runde wird durch eine eigene Rundenkennung getrennt.
 
 - stabile Veröffentlichung: HASA 1.1 Final;
 - aktive Entwicklungsreihe: HASA 1.2;
-- aktueller Teststand: HASA 1.2.0 Alpha 31;
+- aktueller Teststand: HASA 1.2.0 Alpha 32;
 - fester Aktualisierungspfad:
   `2 src/current/HASA-AKTUELL.user.js.txt`;
-- archivierte Alpha-31-Datei:
-  `2 src/current/hasa_1.2.0-alpha.31_bedienung.user.js.txt`.
+- archivierte Alpha-32-Datei:
+  `2 src/current/hasa_1.2.0-alpha.32_testerrunde.user.js.txt`.
 
-Aktueller Stand: Alpha31 mit kleinen Listenhaken und Werkzeugleiste oberhalb Ascension; Webansicht12 mit Systempfeilen und automatischer Suche. Alpha30-Serverlisten und Produktionsvergleich enthalten. Einzelheiten siehe neueste Übergabe vom 15.10.2026.
+Aktueller Stand: Alpha32 mit Tester-Korrekturen für Forschungsstand, Menü, Scrollposition und Zwischenzielnavigation. Ereignisgebundene Ressourcenfarben ersetzen Vergleichsrahmen. Web12/Servergrundlage unverändert. Motivationsvideo-Aktivierungserkennung bleibt mangels echtem Laufanzeigemuster offen. Einzelheiten siehe Übergabe vom 16.10.2026.
 
 Historischer Zwischenstand Alpha12:
 
@@ -2094,3 +2094,46 @@ gemeinsam schrittweise durchgehen; neue private Quellen nicht veröffentlichen.
 - Im gemeinsamen Vorbereitungszweig korrigiert: endgültigen Pfeilrahmen und Innenhöhe zuerst herstellen, anschließend gespeicherte Position anwenden. Scroll-Ereignisse bereits entfernter alter Inhalte ignorieren.
 - Browserregression prüft Wiederherstellung bei Start, erneuten Aufbau beim Forschungswechsel (950 bleibt 950), ignorierte alte Elemente und bewusstes Zurückscrollen auf 0. Zusätzlich 33 bestehende Browsergruppen, Menüprüfungen und 7 Forschungsfälle bestanden. Neuer Scrolltest in CI aufgenommen.
 - Weiterhin Vorbereitung für das nächste gemeinsame Update, noch keine neue Alpha ausgeliefert.
+
+
+## 2026-10-16 – CE HASA an Kurt und Testnutzer – Alpha32 Tagesupdate
+
+**Autorisierung:** Kurt beauftragt ausdrücklich das letzte Tagesupdate (13:17 Uhr),
+damit die engagierten Tester die jüngsten Korrekturen erhalten.
+
+**Ergebnis:** Vollständige Alpha32 samt identischer Archivfassung, README und
+eigener Anleitung. Forschungsstand, Menüzustand, Ascension-Sichtbarkeit,
+ausgeblendete Diagnose und Planer-Scrollposition aus dem Vorbereitungszweig übernommen.
+Zwischenziel-Klick hält den Forschungsplaner nun ausdrücklich offen und zeigt die
+neuen Voraussetzungen ab oben; andere Scrollstände bleiben erhalten.
+
+**Ressourcen:** Stundenraten normal grau, bei erkannter positiver Wirkung grün,
+ausdrücklich gemeldeter Senkung rot, ohne Rahmen. Messabweichungen allein färben
+nicht. Positive und negative Wirkungsstände getrennt; Ende einer Wirkung löscht
+nicht die andere. Negative Meldung hat Farbpriorität. Bestehende Vorkommensmeldungen
+einschließlich echter Metall-Endmeldung unterstützt. Negative Wirkung nur aus
+ausdrücklichem Produktionstext, keine Auswirkungen aus Schadensüberschriften raten.
+
+**Offene Grenze:** Für Motivationsvideo fehlt die echte Aktivierungs-/Restlaufanzeige.
+„Verfügbar“ löst keinen Bonus aus. Kräftig grün für die laut Kurt einstündige
+24-fache Produktion bleibt daher offen, ebenso noch unbekannte negative Endtexte.
+Fehlende Endmeldung kann eine Markierung stehen lassen. Echte Quellen privat sichern.
+Keine weiteren Funktionen oder automatische Spielaktionen für diese Lücke erfinden.
+
+**Prüfung:** Lokal 33 bestehende Browsergruppen, 26 Live-/Ressourcengruppen,
+7 Forschungsfälle, Menü-/Zwischenziel- und Scrollprüfung bestanden. Vollständiger
+Start, IndexedDB, Neuladen und schmale Ansicht enthalten. Gesamte GitHub-CI vor
+Übernahme nach main kontrollieren. Neuer Spieltest durch Kurt/Tester folgt.
+
+**Installation:** Nur HASA-AKTUALISIEREN.cmd, vorhandenen Tampermonkey-Code vollständig
+ersetzen, speichern, Horizon neu laden. Tester dieselbe vollständige Datei.
+Kein Serverupdate, keine Migration, kein STAN-Neuimport für dieses Update.
+Website-Reparaturdownload bleibt gesonderter Veröffentlichungsstand; kein FTP-Upload.
+
+**Planungskorrektur von Kurt:** Die bisherige große Forschungs-Wunschliste meint
+zunächst einen begrenzten Anfangsstrategie-Wegweiser: aus bekanntem Istzustand zu
+konkreten Anfangszielen (Kandidat Kolonieschiff/nächste Kolonie) Varianten vergleichen.
+Labor früh gegenüber erst Ressourcenproduktion ausbauen, nötige Energie und
+Folgeausbauten, Ressourcenwartezeiten und Parallelität berücksichtigen.
+Keine globale Optimalitätszusage ohne vollständige Zeiten/Kosten/Spielregeln.
+Kurt sammelt zunächst Zielvorschläge; noch keine Strategiefunktion beauftragt.

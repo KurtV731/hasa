@@ -61,6 +61,23 @@ const points = take('    function hatAscensionPunkte(', '    function baueAscens
         assert.match(source,/const TECHTREE_DIAGNOSE_ANZEIGEN = false;/);
         assert.match(source,/if \(TECHTREE_DIAGNOSE_ANZEIGEN && debugDaten/);
         assert.match(source,/if \(hatAscensionPunkte\(ascStatus\)\) \{\s*html \+= baueAccordionBereichHtml\('ascension'/);
+        const targetHandler=take("        Array.from(document.querySelectorAll('.haa-req-ziel'))", '        const debugKopieren =');
+        const target=await page.evaluate(handler=>{
+            document.body.innerHTML='<button class="haa-req-ziel" data-id="HULLTECH" data-type="research" data-name="Hulltech" data-level="2">Hulltech</button>';
+            return new Function(`
+                let HAA_UI_AKTIVER_BEREICH='';
+                const STORAGE_STAN_AUSWAHL='selection', STORAGE_STAN_NAVIGATION='nav', STORAGE_STAN_AUSWAHL_OFFEN='picker', STORAGE_UI_AKTIVER_BEREICH='menu', STORAGE_UI_SCROLL='scroll';
+                const store={scroll:{techtree:900,alarme:10}};
+                const speichern=(k,v)=>{store[k]=v;}, laden=(k,d)=>store[k]||d;
+                let imported=null,rendered=false;
+                function importiereTechTreeZiel(id,level) {imported={id,level};return Promise.resolve();}
+                function baueBox(){rendered=true;}
+                ${handler}
+                document.querySelector('.haa-req-ziel').click();
+                return {active:HAA_UI_AKTIVER_BEREICH,store,imported,rendered};
+            `)();
+        },targetHandler);
+        assert.equal(target.active,'techtree');assert.equal(target.store.menu,'techtree');assert.equal(target.store.scroll.techtree,0);assert.equal(target.store.scroll.alarme,10);assert.deepEqual(target.imported,{id:'HULLTECH',level:2});assert.equal(target.rendered,true);
         console.log('PASS closed state survives navigation; selection preserved; single open menu; stale events ignored; Ascension points gated; research diagnosis hidden');
     } finally {await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

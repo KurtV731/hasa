@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         HASA – Horizon Ascension Assistant
 // @namespace    horiversum.hasa
-// @version      1.2.0-alpha.31
+// @version      1.2.0-alpha.32
 // @charset      UTF-8
 // @description  Horizon-Assistent mit kompakter Galaxiescanner-Anzeige und aktiver lokaler IndexedDB
 // @match        https://horiversum.org/game/main/main.php*
@@ -14,6 +14,10 @@
 // ==/UserScript==
 
 /*
+
+ Alpha32 (16.10.2026): Forschungsstand und Scrollposition abgesichert;
+ Menüs bleiben geschlossen, Zwischenziele direkt im offenen Planer.
+ Ressourcenfarben nur bei erkannten laufenden Ereignissen, ohne Rahmen.
 
  Alpha31 (15.10.2026): Kleine Speicherhaken direkt in der Nachrichtenliste;
  Werkzeugleiste außerhalb des Galaxiescanners oberhalb von Ascension.
@@ -193,8 +197,8 @@
         'PHYSICS', 'PSYCHOLOGY', 'NUCLEARPHYSICS', 'SOLARENERGYTECH'
     ]);
 
-    const HASA_VERSION = '1.2.0 Alpha 31';
-    const HASA_BUILD_LABEL = '1.2.0-alpha31-bedienung-2026-10-15';
+    const HASA_VERSION = '1.2.0 Alpha 32';
+    const HASA_BUILD_LABEL = '1.2.0-alpha32-testerrunde-2026-10-16';
     const HASA_RUNDE = 8;
     const HASA_RUNDE_SCHLUESSEL = 'runde8';
     // Die MariaDB und sämtliche Schreibendpunkte trennen Runde 7 und 8 jetzt
@@ -1073,23 +1077,42 @@
     function hasaProductionEvent(e) {
         if (!e.position || !e.systemEvent || !e.subject || !e.messageId) return;
         const subject=e.subject;
-        let resource=null,start=false,end=false;
+        let resource=null,start=false,end=false,negative=false;
         if(subject==='Reiche Metallvorkommen entdeckt'){resource='metal';start=true;}
         if(subject==='Reiche Mineralvorkommen entdeckt'){resource='mineral';start=true;}
         if(subject==='Unterirdischer Treibstoffsee entdeckt'){resource='fuel';start=true;}
         if (/(?:Metallvorkommen|Mineralvorkommen|Treibstoffsee).*(?:erschöpft|versiegt|beendet|vorbei|normalisiert)/i.test(subject)) {
             resource=/Metall/i.test(subject)?'metal':/Mineral/i.test(subject)?'mineral':'fuel';end=true;
         }
+        // Negative Wirkung nur aus ausdrücklich genannter Produktion ableiten,
+        // nicht aus geringeren Messwerten, Kosten oder einem Ereignistitel raten.
+        const reports=(e.observations||[]).filter(function(o){return o.kind==='report';});
+        const effectText=subject+' '+reports.map(function(o){return o.rawText||'';}).join(' ');
+        const decrease=effectText.match(/(?:Eisenerz|Metall|Mineral|Treibstoff)(?:produktion|förderung)\s+(?:ist\s+|wird\s+|wurde\s+)?(?:um\s+\d+(?:[,.]\d+)?\s*%\s+)?(?:verringert|gesenkt|reduziert)/i);
+        const recovered=effectText.match(/(?:Eisenerz|Metall|Mineral|Treibstoff)(?:produktion|förderung)\s+(?:ist\s+|wird\s+)?(?:wieder\s+)?normal(?:isiert)?/i);
+        if(!resource && (decrease||recovered)){
+            const effect=(decrease||recovered)[0];
+            resource=/Mineral/i.test(effect)?'mineral':/Treibstoff/i.test(effect)?'fuel':'metal';
+            start=!!decrease;negative=true;end=!!recovered;
+        }
         if(!resource)return;
         const key=hasaProductionKey(e.ownerId,e.position),all=laden(STORAGE_PRODUCTION_TRACKER,{})||{};
         const state=all[key]||{baseline:{},active:{},eventOrder:{},eventIds:{},lastSampleAt:null};
-        if(state.eventIds[e.id])return;
+        state.negative=state.negative||{};
+        state.positive=state.positive||{};
+        if(state.positive[resource]===undefined)state.positive[resource]=!!state.active[resource] && !state.negative[resource];
+        const direction=negative?'negative':'positive';
+        const effectId=e.id+':'+resource+':'+direction+':'+(end?'end':'start');
+        if(state.eventIds[effectId])return;
         const order=hasaAsfiZeitKey(e.reportedTimeText);
-        state.eventIds[e.id]=true;
-        if(!order || !state.eventOrder[resource] || order>=state.eventOrder[resource]) {
-            state.active[resource]=start;
-            if(end){state.resetBaseline=state.resetBaseline||{};state.resetBaseline[resource]=true;}
-            if(order)state.eventOrder[resource]=order;
+        state.eventIds[effectId]=true;
+        const orderKey=resource+':'+direction;
+        const previousOrder=state.eventOrder[orderKey] || (!negative && state.eventOrder[resource]);
+        if(!order || !previousOrder || order>=previousOrder) {
+            state[negative?'negative':'positive'][resource]=start;
+            state.active[resource]=!!state.positive[resource] || !!state.negative[resource];
+            if(end && !state.active[resource]){state.resetBaseline=state.resetBaseline||{};state.resetBaseline[resource]=true;}
+            if(order)state.eventOrder[orderKey]=order;
         }
         state.updatedAt=new Date().toISOString();all[key]=state;speichern(STORAGE_PRODUCTION_TRACKER,all);
         maleHasaProduktion();
@@ -1115,7 +1138,7 @@
 
     function maleHasaProduktion() {
         const owner=ereignisScannerBenutzer(),snapshot=owner && leseHasaProduktion();
-        if(!snapshot){HAA_RATE_MARKS.forEach(function(span){span.style.outline='';span.style.outlineOffset='';span.title='';});return;}
+        if(!snapshot){HAA_RATE_MARKS.forEach(function(span){span.style.outline='';span.style.outlineOffset='';span.style.color='';span.style.fontWeight='';span.title='';});return;}
         const state=(laden(STORAGE_PRODUCTION_TRACKER,{})||{})[hasaProductionKey(owner,snapshot.position)]||{baseline:{},active:{}};
         for(const key of ['metal','mineral','fuel']) {
             const node=snapshot.nodes[key];let span=node.querySelector('[data-haa-rate]');
@@ -1124,14 +1147,16 @@
             const current=snapshot.rates[key],base=state.baseline[key];
             const known=typeof base==='number' && Number.isFinite(base),difference=known?current-base:null;
             const pct=known && base!==0 ? difference/Math.abs(base)*100 : null;
-            const positive=known?difference>0:state.active[key],negative=known && difference<0;
-            span.style.outline=negative?'2px solid #a50000':positive?'2px solid #29cc66':'';
-            span.style.outlineOffset=positive||negative?'2px':'';
+            const negative=!!(state.active[key] && state.negative && state.negative[key]);
+            const positive=!!state.active[key] && !negative;
+            span.style.outline='';span.style.outlineOffset='';
+            span.style.color=negative?'#ff6666':positive?'#7cff7c':'#aaa';
+            span.style.fontWeight=positive||negative?'bold':'';
             span.title='Aktuell: '+current.toLocaleString('de-DE')+'/h · '
                 +(known?'Grundwert: '+base.toLocaleString('de-DE')+'/h':'Grundwert noch unbekannt')
                 +(pct!==null?' · '+(pct>0?'+':'')+pct.toLocaleString('de-DE',{maximumFractionDigits:1})+' %':'')
-                +(state.active[key]?' · Erhöhungsmeldung registriert':'')
-                +' · Vergleich zum gespeicherten Wert; weitere Spieländerungen können mitwirken';
+                +(negative?' · Produktionssenkung gemeldet':positive?' · Produktionssteigerung gemeldet':' · Keine erkannte laufende Produktionswirkung')
+                +' · Prozentwert ist ein Messvergleich, keine bestätigte Ereignisstärke';
         }
         for(const node of HAA_RATE_MARKS)if(!node.isConnected)HAA_RATE_MARKS.delete(node);
     }
@@ -4429,6 +4454,11 @@ return box;
                 speichern(STORAGE_STAN_AUSWAHL, neu);
                 speichern(STORAGE_STAN_NAVIGATION, { category: type, targetId: id, at: Date.now() });
                 speichern(STORAGE_STAN_AUSWAHL_OFFEN, '0');
+                HAA_UI_AKTIVER_BEREICH = 'techtree';
+                speichern(STORAGE_UI_AKTIVER_BEREICH, 'techtree');
+                const scrollStaende=laden(STORAGE_UI_SCROLL,{})||{};
+                scrollStaende.techtree=0;
+                speichern(STORAGE_UI_SCROLL,scrollStaende);
                 importiereTechTreeZiel(id, level, true).catch(function () {});
                 baueBox();
             };

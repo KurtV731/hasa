@@ -81,17 +81,43 @@ const moduleSource=source.slice(source.indexOf('    // Alpha28: Rohmeldungen'),s
  await test('initial sample establishes reference, repeat within 15 minutes skipped',async()=>{
   const r=await page.evaluate(()=>{live.api.sample(false);live.api.sample(false);return {samples:live.store.get(live.api.samplesKey),state:Object.values(live.store.get(live.api.trackerKey))[0]};});assert.equal(r.samples.length,1);assert.equal(r.state.baseline.metal,500);assert.equal(r.samples[0].payload.expected_user_id,7);
  });
- await test('positive metal comparison draws green frame and correct 40 percent',async()=>{
-  const r=await page.evaluate(()=>{live.api.event({id:'bonus',ownerId:'7',messageId:'bonus',systemEvent:true,subject:'Reiche Metallvorkommen entdeckt',position:{galaxy:1,system:191,orbit:6},reportedTimeText:'13.10.2026 22:00:00'});document.getElementById('metal').innerHTML="8'093<br>(700/h)";live.api.paint();const n=document.querySelector('#metal [data-haa-rate]');return {outline:n.style.outline,title:n.title};});assert.match(r.outline,/29|204/);assert.match(r.title,/\+40 %/);
+ await test('positive event colors rate green without frame; measured comparison remains available',async()=>{
+  const r=await page.evaluate(()=>{live.api.event({id:'bonus',ownerId:'7',messageId:'bonus',systemEvent:true,subject:'Reiche Metallvorkommen entdeckt',position:{galaxy:1,system:191,orbit:6},reportedTimeText:'13.10.2026 22:00:00'});document.getElementById('metal').innerHTML="8'093<br>(700/h)";live.api.paint();const n=document.querySelector('#metal [data-haa-rate]');return {outline:n.style.outline,color:n.style.color,title:n.title};});assert.equal(r.outline,'');assert.equal(r.color,'rgb(124, 255, 124)');assert.match(r.title,/\+40 %/);
  });
- await test('negative comparison draws dark red frame and minus 20 percent',async()=>{
-  const r=await page.evaluate(()=>{document.getElementById('metal').innerHTML="8'093<br>(400/h)";live.api.paint();const n=document.querySelector('#metal [data-haa-rate]');return {outline:n.style.outline,title:n.title};});assert.match(r.outline,/165/);assert.match(r.title,/-20 %/);
+ await test('lower measured rate alone cannot turn positive event red',async()=>{
+  const r=await page.evaluate(()=>{document.getElementById('metal').innerHTML="8'093<br>(400/h)";live.api.paint();const n=document.querySelector('#metal [data-haa-rate]');return {outline:n.style.outline,color:n.style.color,title:n.title};});assert.equal(r.outline,'');assert.equal(r.color,'rgb(124, 255, 124)');assert.match(r.title,/-20 %/);
  });
  await test('end notification permits new baseline, normal rate removes frame',async()=>{
   const r=await page.evaluate(()=>{live.api.event({id:'end',ownerId:'7',messageId:'end',systemEvent:true,subject:'Metallvorkommen erschöpft',position:{galaxy:1,system:191,orbit:6},reportedTimeText:'13.10.2026 23:00:00'});document.getElementById('metal').innerHTML="8'093<br>(600/h)";live.api.sample(true);live.api.paint();const n=document.querySelector('#metal [data-haa-rate]');return {outline:n.style.outline,title:n.title};});assert.equal(r.outline,'');assert.match(r.title,/Grundwert: 600\/h/);
  });
  await test('due measurement after saved 15-minute interval adds a sample',async()=>{
   const r=await page.evaluate(()=>{const all=live.store.get(live.api.trackerKey);Object.values(all)[0].lastSampleAt=new Date(Date.now()-16*60*1000).toISOString();live.store.set(live.api.trackerKey,all);const before=live.store.get(live.api.samplesKey).length;live.api.sample(false);return {before,after:live.store.get(live.api.samplesKey).length};});assert.equal(r.after,r.before+1);
+ });
+ await test('mine expansion without event remains uncolored',async()=>{
+  const r=await page.evaluate(()=>{document.getElementById('metal').innerHTML="8'093<br>(900/h)";live.api.paint();return document.querySelector('#metal [data-haa-rate]').style.color;});assert.equal(r,'rgb(170, 170, 170)');
+ });
+ await test('explicit production reduction is red; recovery removes color',async()=>{
+  const r=await page.evaluate(()=>{
+   const event={id:'negative',ownerId:'7',messageId:'negative',systemEvent:true,subject:'Produktionsmeldung',position:{galaxy:1,system:191,orbit:6},reportedTimeText:'14.10.2026 01:00:00',observations:[{kind:'report',rawText:'Metallproduktion wird um 20 % verringert'}]};
+   live.api.event(event);const color=document.querySelector('#metal [data-haa-rate]').style.color;
+   live.api.event({...event,id:'recovery',messageId:'recovery',reportedTimeText:'14.10.2026 02:00:00',observations:[{kind:'report',rawText:'Metallproduktion ist wieder normal'}]});
+   return {color,after:document.querySelector('#metal [data-haa-rate]').style.color};
+  });assert.equal(r.color,'rgb(255, 102, 102)');assert.equal(r.after,'rgb(170, 170, 170)');
+ });
+ await test('available motivation video never means active production bonus',async()=>{
+  const r=await page.evaluate(()=>{live.api.event({id:'video',ownerId:'7',messageId:'video',systemEvent:true,subject:'Motivationsvideo verfügbar',position:{galaxy:1,system:191,orbit:6},reportedTimeText:'14.10.2026 03:00:00'});return Array.from(document.querySelectorAll('[data-haa-rate]')).map(n=>n.style.color);});assert.ok(r.every(c=>c==='rgb(170, 170, 170)'));
+ });
+ await test('ending a negative effect preserves a separate positive effect',async()=>{
+  const r=await page.evaluate(()=>{
+   const event={ownerId:'7',systemEvent:true,position:{galaxy:1,system:191,orbit:6},reportedTimeText:'14.10.2026 04:00:00'};
+   live.api.event({...event,id:'overlap-plus',messageId:'overlap-plus',subject:'Reiche Metallvorkommen entdeckt'});
+   live.api.event({...event,id:'overlap-minus',messageId:'overlap-minus',subject:'Produktionsmeldung',observations:[{kind:'report',rawText:'Metallproduktion wird verringert'}]});
+   const red=document.querySelector('#metal [data-haa-rate]').style.color;
+   live.api.event({...event,id:'overlap-normal',messageId:'overlap-normal',subject:'Produktionsmeldung',observations:[{kind:'report',rawText:'Metallproduktion ist wieder normal'}]});
+   const green=document.querySelector('#metal [data-haa-rate]').style.color;
+   live.api.event({...event,id:'overlap-end',messageId:'overlap-end',subject:'Reiche Metallvorkommen erschöpft'});
+   return {red,green,normal:document.querySelector('#metal [data-haa-rate]').style.color};
+  });assert.deepEqual(r,{red:'rgb(255, 102, 102)',green:'rgb(124, 255, 124)',normal:'rgb(170, 170, 170)'});
  });
  await test('missing or ambiguous current coordinate suppresses mistaken sampling and frame',async()=>{
   const r=await page.evaluate(()=>{document.querySelector('.TickPlanetEntry').setAttribute('onmouseover',"return overlib('x',CAPTION,'1:191:6 - Someone else');");const before=live.store.get(live.api.samplesKey).length;live.api.sample(true);live.api.paint();return {read:live.api.read(),before,after:live.store.get(live.api.samplesKey).length,outline:document.querySelector('#metal [data-haa-rate]').style.outline};});assert.equal(r.read,null);assert.equal(r.after,r.before);assert.equal(r.outline,'');
