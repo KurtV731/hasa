@@ -2065,3 +2065,12 @@ getrennter Veröffentlichungsstand; kein FTP-/Produktivupload aus dieser Sitzung
 **Restpunkte:** Tatsächliche Nachrichtenübersicht und Optik auf Kurts und den
 Testgeräten prüfen; Mehrtab-/Langzeitbetrieb weiterhin offen. Ereignisliste danach
 gemeinsam schrittweise durchgehen; neue private Quellen nicht veröffentlichen.
+
+
+## 2026-10-16 – Prüfung Forschungsstand energytech (separater Korrekturzweig)
+
+- rampage4296 / Obi-Wan meldete energytech Stufe 10 statt 1 während laufender Forschung; nach Abschluss und erneutem Öffnen war Stufe 1 korrekt.
+- Nachgewiesene Parser-Schwachstelle: Fehlt eine eigene Stufenangabe im Kopf, liest der bisherige Parser auch Beschreibung, Voraussetzungen und umgebende Forschungsblöcke. Ein synthetischer Browserfall übernimmt dadurch „Voraussetzung: Physik Stufe 10“ als ENERGYTECH-Level 10. Der Originalquelltext des Vorfalls liegt nicht vor; der genaue damalige Auslöser bleibt unbestätigt.
+- Im Zweig `fix-forschungsstand-2026-10-16` liest Forschung nur eindeutig beschriftete Kopfstufen. Fehlen diese, bleibt ein bekannter Stand erhalten; ein sichtbarer Forschen-Knopf ergibt wie bisher Stufe 0. Gebäudeleser unverändert. Keine pauschale Zielstufe-minus-eins-Regel für Forschung eingeführt, da deren laufendes Originalmarkup fehlt.
+- Sieben gezielte Browserprüfungen: Voraussetzungen, laufender Auftrag, unbekannter Stand, Forschen/0, Abschluss/1, Korrektur eines alten Fehlwertes, Kosten und echte Stufe 10. Alte Fassung scheitert am Voraussetzungstest (10 statt unbekannt), Korrektur besteht alle sieben Fälle.
+- Noch keine neue Alpha ausgeliefert; aktive Alpha 31 auf main bleibt unverändert. Falls der Fehler erneut auftritt, Forschungs-Seitenquelltext während des laufenden Auftrags privat sichern (keine Sitzungstoken öffentlich einstellen).

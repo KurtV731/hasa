@@ -43,6 +43,7 @@ jobs:
           node '5 tools/test_hasa_ereignisregister.cjs'
           node '5 tools/test_hasa_live_events.cjs'
           node '5 tools/test_hasa_web_ui.cjs'
+          node '5 tools/test_hasa_research.cjs'
       - name: Disposable MariaDB integration
         env:
           MYSQL_PWD: disposable-ci-only

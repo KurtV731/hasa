@@ -3532,14 +3532,14 @@ return box;
         };
     }
 
-    function ermittleTechTreeStufeAusKopf(kopf) {
+    function ermittleTechTreeStufeAusKopf(kopf, nurKopf) {
         if (!kopf) return null;
 
         const body = findeKoerperZeileZumKopf(kopf);
         const container = kopf.closest(
             'form, .BldTable, .ResTable, .BldContainerAccordionBox, .ResContainerAccordionBox'
         ) || kopf.parentElement;
-        const texte = [text(kopf), text(body), text(container)].filter(Boolean);
+        const texte = (nurKopf ? [text(kopf)] : [text(kopf), text(body), text(container)]).filter(Boolean);
         const muster = [
             /(?:Ausbaustufe|Forschungsstufe|Forschungslevel|Stufe|Level|Lvl\.?)\s*:?\s*(\d+)/i,
             /\(\s*(?:Ausbaustufe|Forschungsstufe|Forschungslevel|Stufe|Level|Lvl\.?)\s*:?\s*(\d+)\s*\)/i,
@@ -3552,6 +3552,11 @@ return box;
                 if (treffer) return Number(treffer[1]);
             }
         }
+
+        // Bei Forschung sind Beschreibungen, Voraussetzungen, Kosten und andere
+        // Forschungen keine Quelle für den eigenen Stand. Ohne klare Kopfstufe
+        // bleibt der bekannte Stand erhalten (bzw. Forschen unten ergibt Stufe 0).
+        if (nurKopf) return null;
 
         // Horizon zeigt die Stufe teilweise nur als erste reine Zahl in einer
         // Funktionszeile. Nur kleine plausible Stufen akzeptieren, niemals Kosten.
@@ -3621,7 +3626,7 @@ return box;
         koepfe.forEach(function (kopf) {
             if (!kopf || kopf.closest('#haa-box')) return;
             const name = leseTechTreeNameAusKopf(kopf);
-            let level = ermittleTechTreeStufeAusKopf(kopf);
+            let level = ermittleTechTreeStufeAusKopf(kopf, typ === 'research');
             const body = findeKoerperZeileZumKopf(kopf);
             // Horizon beschriftet einen laufenden Bau bereits mit der Zielstufe,
             // obwohl bis zum Ablauf des Timers nur die vorherige Stufe vorhanden ist.
@@ -6736,6 +6741,7 @@ return box;
     window.addEventListener('load', starteSicher);
     setTimeout(starteSicher, 800);
 })();
+
 
 
 
