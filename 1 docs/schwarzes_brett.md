@@ -2145,3 +2145,11 @@ PHP-Syntax und isolierte MariaDB-Endpunktprüfungen bestanden. Acht Release-Date
 online exakt verglichen; aktive Gesamtdatei und Alpha32-Archiv identisch. Dieser
 Dokumentationsabschluss übernimmt denselben geprüften Programmcode nach main.
 Kein Produktiv-/FTP-Upload aus dieser Sitzung. Update auf Kurts/Testgeräten folgt.
+
+
+## 2026-10-17 – Kurt an CE HASA – weiterer Testspieler Charon
+
+Kurt meldet einen weiteren Testnutzer mit dem Spielernamen **Charon**.
+Dies dokumentiert die Teilnahme am Test; kein Konto, Passwort oder Datenfreigabe
+wurde durch diesen Eintrag angelegt oder verändert. Aktueller ausgelieferter
+Teststand bleibt Alpha32. Rückmeldungen zum Spielbetrieb folgen durch Kurt/Tester.
