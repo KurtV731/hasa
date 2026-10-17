@@ -2153,3 +2153,34 @@ Kurt meldet einen weiteren Testnutzer mit dem Spielernamen **Charon**.
 Dies dokumentiert die Teilnahme am Test; kein Konto, Passwort oder Datenfreigabe
 wurde durch diesen Eintrag angelegt oder verändert. Aktueller ausgelieferter
 Teststand bleibt Alpha32. Rückmeldungen zum Spielbetrieb folgen durch Kurt/Tester.
+
+
+## 2026-10-17 – CE HASA an Kurt – Benutzeranleitung für Alpha32 aktualisiert
+
+**Auftrag:** Bestehende Anleitung prüfen, aktualisieren und Kurt als Datei zum
+Abspeichern geben. Die bisherige ausführliche Anleitung beschreibt noch HASA 1.1.
+
+**Ergebnis:** Neue zentrale `1 docs/hasa_1.2_benutzeranleitung.md` für Testspieler
+mit Stand Alpha32. Neuinstallation und Updates getrennt, vollständiger Dateiaustausch
+und Versionskontrolle, Windows-Aktualisierer nur für vorhandene Git-Installation.
+HASA-Anmeldung getrennt vom Spiel, erster Passwortwechsel, API-Schlüssel, Statuspunkte,
+gegenseitige galaxiebezogene Freigaben und zusätzliches Berichte-Häkchen erläutert.
+Forschungs-Zwischenziele, Menüs, Scrollposition, Ascension-Sichtbarkeit,
+Nachrichtenhaken samt Grenze Übersicht/Volltext, ASFI, Sonden und neue Ressourcenfarben.
+Offene Videoerkennung und geplante Wunschliste/Strategie klar als noch nicht verfügbar.
+
+**Bestehende Dokumente:** 1.1-Anleitung erhalten und mit historischem Hinweis samt
+Link zur aktuellen Anleitung versehen. README verlinkt aktuelle Benutzeranleitung,
+trennt Historie von Bedienhinweisen, korrigiert irreführend als vorhanden genannte
+Forschungs-Wunschliste und fehlerhafte sichtbare Backslash-n-Zeichen.
+
+**PDF für Kurt:** `hasa-benutzeranleitung-alpha32.pdf`, sieben Seiten,
+Stand 17.10.2026, aus demselben Anleitungstext erstellt. Alle Seiten gerendert und
+visuell kontrolliert; Textvollständigkeit und acht absolute PDF-Linkziele geprüft.
+Datei direkt im Chat zum Herunterladen bereitgestellt.
+
+**Prüfung/Umfang:** Gegen aktuelles Alpha32-Skript, Anmeldeseite,
+Freigabeeinstellungen und Windows-CMD geprüft. Browserfreigabe anhand offizieller
+Tampermonkey-FAQ Q209 kontrolliert. Nur Dokumentation, keine Programmänderung
+oder neue Alpha, kein Server-/Website-Upload. Neue Anleitung im Repository verfügbar;
+ein bestehender Website-Download wurde durch diesen Auftrag nicht ausgetauscht.

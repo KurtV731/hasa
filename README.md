@@ -1,4 +1,4 @@
-# HASA – Horizon Ascension System Assistant
+# HASA – Horizon Ascension Assistant
 
 HASA ist ein Tampermonkey-Userscript für das Browsergame Horizon. Es liest
 sichtbare Spielinformationen aus, bereitet sie auf und unterstützt bei
@@ -30,6 +30,15 @@ Vollständige Installationsdatei:
 Die Datei ist absichtlich als `.txt` abgelegt. Ihr vollständiger Inhalt wird in
 Tampermonkey als neues Userscript eingefügt und gespeichert.
 
+## Aktuelle Anleitung
+
+[Benutzeranleitung für HASA 1.2 / Alpha 32](1%20docs/hasa_1.2_benutzeranleitung.md)
+
+Für neue Testspieler: Installation, Aktualisierung, Anmeldung, Freigaben,
+Forschungsplanung, Nachrichtenhaken und Ressourcenfarben in einer Anleitung.
+Die [Anleitung für 1.1](1%20docs/hasa_1.1_benutzeranleitung.md) bleibt als historischer
+Versionsstand erhalten.
+
 ## Aktuelle Entwicklungsreihe
 
 **HASA 1.2.0 Alpha 32 – Korrekturen aus dem Testbetrieb**
@@ -54,6 +63,12 @@ Tester erhalten denselben vollständigen Code. Neueinrichtungen benötigen weite
 die Servergrundlage aus Alpha 30/31. Nachrichtenhaken, Werkzeugleiste und Websuche
 bleiben erhalten.
 
+## Historische Entwicklungsschritte
+
+Die folgenden Abschnitte dokumentieren frühere Versionen, nicht die aktuelle
+Bedienfolge. Später ersetzte Schalter und Anzeigen sind kein zusätzlicher
+Einrichtungsschritt. Für den aktuellen Testbetrieb gilt die oben verlinkte Anleitung.
+
 Alpha 28 ergänzt ein lokales Register für sichtbare Ereignismeldungen und bereits
 geöffnete Berichte. Nachrichtenkennung, Originaltext und Zeitangaben bleiben
 nachvollziehbar erhalten; unbekannte Nachrichten werden zunächst nur registriert.
@@ -62,7 +77,16 @@ eine gültige HASA-Anmeldung und speichert getrennt nach Konto und Runde.
 Die Fachauswertung folgt später. Bedienung und Grenzen:
 `1 docs/hasa_1.2.0-alpha.28_ereignisregister.md`.
 
-Alpha 27 erhält bekannte Schiffe und Verteidigungen aus älteren STAN-Ständen\nals auswählbare Ziele. Historische Ziele sind gekennzeichnet; die aktuelle XML\nbleibt unverändert.\n\nAlpha 25 zeigt fehlende sekundäre Voraussetzungen mit Herkunft, trennt Physik von\nNuklearphysik und speichert Gebäudestände je Planet; Forschungsstände gelten\nplanetenübergreifend. Normale Zielwahl nutzt die nächste vorhandene Stufe,\ndie Zielstufe bleibt veränderbar.\n\nAlpha 24 importiert gültige STAN-XML-Daten auch dann, wenn der Server hinter dem
+Alpha 27 erhält bekannte Schiffe und Verteidigungen aus älteren STAN-Ständen
+als auswählbare Ziele. Historische Ziele sind gekennzeichnet; die aktuelle XML
+bleibt unverändert.
+
+Alpha 25 zeigt fehlende sekundäre Voraussetzungen mit Herkunft, trennt Physik von
+Nuklearphysik und speichert Gebäudestände je Planet; Forschungsstände gelten
+planetenübergreifend. Normale Zielwahl nutzt die nächste vorhandene Stufe,
+die Zielstufe bleibt veränderbar.
+
+Alpha 24 importiert gültige STAN-XML-Daten auch dann, wenn der Server hinter dem
 XML-Ende PHP-Warnmeldungen angehängt hat. Unbekannte Zusätze und beschädigte XML
 bleiben gesperrt; die Erfolgsmeldung weist auf ignorierte Serverwarnungen hin.
 
@@ -145,16 +169,21 @@ werden direkt in IndexedDB geschrieben. Der bisherige Tampermonkey-Bestand bleib
 unverändert als Rückfallebene erhalten. Kleine Einstellungen und der API-Schlüssel
 verbleiben bewusst im Tampermonkey-Speicher.
 
-Die Entwicklungsreihe 1.2 umfasst außerdem:
+Bereits umgesetzt in der Entwicklungsreihe 1.2:
 
 - leichten Bereitschaftsmodus vor der ausdrücklichen HASA-Aktivierung;
 - Galaxiescanner und serverseitige API;
 - automatische Erfassung sichtbarer Systeme;
 - dauerhaft erhaltenen Forschungsstand beim Seitenwechsel;
 - gemeinsame Gruppe für Bau- und Forschungsalarm;
-- eine editierbare persönliche Forschungs-Wunschliste mit automatischer
-  Reihenfolge der Voraussetzungen für ein gewähltes Forschungsziel;
 - lesende externe Galaxiedatenbank für die Galaxien 1 bis 6.
+
+## Noch geplant
+
+Eine persönliche Forschungs-Wunschliste und ein begrenzter Wegweiser für
+Anfangsziele sind noch nicht als Funktionen verfügbar. Die Planung soll zunächst
+konkrete Ziele wie das Kolonieschiff untersuchen und Produktion, Forschung und
+Energie berücksichtigen. Dazu werden Zielvorschläge und Vergleichsdaten gesammelt.
 
 ## Funktionen der Version 1.1
 

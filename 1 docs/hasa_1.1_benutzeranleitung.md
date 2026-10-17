@@ -2,7 +2,11 @@
 
 ## Vom Horizon-Spieler zum HASA-Nutzer – ohne Vorkenntnisse
 
-**Stand: 28.08.2026**
+**Stand: 28.08.2026 · Historischer Stand für HASA 1.1**
+
+> Für die aktuelle Testversion Alpha 32 gilt die
+> [Benutzeranleitung HASA 1.2](hasa_1.2_benutzeranleitung.md).
+> Die folgenden Download- und Bedienhinweise beschreiben ausschließlich Version 1.1.
 
 Diese Anleitung richtet sich ausdrücklich an Horizon-Spieler, die noch nie mit Tampermonkey, Userscripts oder HASA gearbeitet haben.
 
