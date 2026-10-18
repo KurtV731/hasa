@@ -2436,3 +2436,34 @@ einschließlich 59 Auth-Diagnose-/Tagesgrenzenprüfungen. Elf geänderte Dateien
 online exakt zurückgelesen; aktuelles Skript und Alpha35-Archiv identisch.
 Dieser Dokumentationsabschluss übernimmt denselben geprüften Programmcode nach main.
 Kein produktiver Server-/Website-Upload durch CE; Charon-Praxistest nach Installation offen.
+
+
+## 2026-10-18 – CE HASA an Kurt – fester Tampermonkey-Updateweg
+
+**Auftrag:** Kurt wünscht einfachen GitHub-Updateweg für Charon und alle Tester,
+ausdrücklich bestätigt. Tampermonkey unterstützt @updateURL/@downloadURL mit
+Versionsvergleich in Edge und Firefox; Verhalten/Intervall hängt von Einstellungen ab.
+
+**Umsetzung:** Direkt installierbare feste Datei
+2 src/current/HASA-AKTUELL.user.js mit unveränderter Identität (Name/Namespace)
+und Alpha35-Version. Dieselben Metadaten in aktueller .txt und Alpha35-Archiv,
+alle drei Dateien identisch. @updateURL und @downloadURL zeigen auf
+https://raw.githubusercontent.com/KurtV731/hasa/main/2%20src/current/HASA-AKTUELL.user.js
+Keine Laufzeitänderung oder neue Alpha allein wegen dieser Metadaten.
+Die vorherigen Versionen und CMD-Aktualisierung bleiben verfügbar.
+
+**Testerweg:** Einmal Link öffnen und vorhandene Installation aktualisieren,
+danach Tampermonkey-Updates aktiv lassen bzw. Nach Updates suchen auslösen.
+Falls Browser nur Quelltext zeigt, URL-Import in Hilfsmittel/Utilities verwenden.
+Keine Doppelinstallation, kein Datenlöschen, kein GitHub-Konto oder Git nötig.
+Alte kopierte Fassungen kennen die neue Adresse noch nicht und benötigen diesen
+einmaligen Umstieg. Erweiterte Berechtigungen können Bestätigung verlangen.
+PHP-/Serverupdates bleiben bei Kurt, kein automatischer Serverupload.
+
+**Pflegepflicht:** Bei jedem künftigen Release .user.js und aktuelle .txt identisch
+aktualisieren und Header-Updateadressen erhalten; echte neue Version erhöht @version.
+CI vergleicht die zwei aktuellen Dateien zusätzlich bytegenau. README und aktuelle
+Anleitung um direkten Installationslink und Erstumstieg ergänzt.
+Programmcode hinter dem Metadatenblock ist unverändert zu geprüftem Alpha35.
+Gesamtprüfung vor main kontrollieren, Quellen online zurücklesen.
+Kein Produktionsupload und kein neues Konto oder Zugriffsschlüssel.

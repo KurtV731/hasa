@@ -39,6 +39,33 @@ Forschungsplanung, Nachrichtenhaken und Ressourcenfarben in einer Anleitung.
 Die [Anleitung für 1.1](1%20docs/hasa_1.1_benutzeranleitung.md) bleibt als historischer
 Versionsstand erhalten.
 
+## Installation und automatische Userscript-Updates
+
+[HASA direkt in Tampermonkey installieren oder aktualisieren](https://raw.githubusercontent.com/KurtV731/hasa/main/2%20src/current/HASA-AKTUELL.user.js)
+
+Einmal den Link öffnen und im Tampermonkey-Dialog die vorhandene HASA-Installation
+aktualisieren. Name und Namespace bleiben gleich; kein zweites aktives HASA anlegen.
+Lokale Daten behalten. Falls der Browser nur Quelltext zeigt: Tampermonkey →
+Übersicht → Hilfsmittel/Utilities → Von URL installieren/importieren und denselben
+Link einfügen. Das Userscript muss in Tampermonkey für Updates freigegeben sein.
+
+Danach prüft Tampermonkey gemäß seiner Einstellung auf neuere Versionen und kann
+sie von der festen GitHub-Adresse installieren. Für sofortige Prüfung beim
+vorhandenen HASA „Nach Updates suchen“ verwenden; anschließend Horizon neu laden.
+Berechtigungsänderungen können eine Bestätigung verlangen. Keine Zusage eines
+sofortigen oder zu einer bestimmten Uhrzeit erfolgenden automatischen Updates.
+
+Der Link liefert immer den freigegebenen main-Stand. Updates benötigen kein
+GitHub-Konto oder Git auf dem Tester-PC. Serverupdates führt weiterhin Kurt aus;
+das Userscript verteilt weder PHP-Dateien noch Datenbankmigrationen.
+
+Die vorhandene .user.js.txt-Datei und HASA-AKTUALISIEREN.cmd bleiben gültig.
+Die direkt installierbare .user.js-Datei muss bei künftigen Releases bytegleich
+mit der aktuellen .user.js.txt-Datei gepflegt werden; CI kontrolliert dies.
+@updateURL und @downloadURL bleiben bei allen neuen Fassungen erhalten;
+@version muss bei neuen Programmversionen steigen. Die heutige Ergänzung verändert
+nur Installationsmetadaten, keine Laufzeitfunktion: weiterhin Alpha35.
+
 ## Aktuelle Entwicklungsreihe
 
 **HASA 1.2.0 Alpha 35 – Anmeldung und Sitzungsstatus**

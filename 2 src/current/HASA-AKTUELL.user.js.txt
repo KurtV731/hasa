@@ -3,6 +3,8 @@
 // @namespace    horiversum.hasa
 // @version      1.2.0-alpha.35
 // @charset      UTF-8
+// @updateURL    https://raw.githubusercontent.com/KurtV731/hasa/main/2%20src/current/HASA-AKTUELL.user.js
+// @downloadURL  https://raw.githubusercontent.com/KurtV731/hasa/main/2%20src/current/HASA-AKTUELL.user.js
 // @description  Horizon-Assistent mit kompakter Galaxiescanner-Anzeige und aktiver lokaler IndexedDB
 // @match        https://horiversum.org/game/main/main.php*
 // @grant        GM_getValue

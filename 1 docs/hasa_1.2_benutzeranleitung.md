@@ -58,6 +58,25 @@ dann das Userscript mit `HASA-AKTUALISIEREN.cmd` vollständig ersetzen und Horiz
 neu laden. Einmal bei HASA ab- und wieder anmelden, damit das Tagescookie entsteht.
 Keine Datenbankmigration und kein STAN-Neuimport.
 
+### Einfacher Weg für Tester: direkt von GitHub
+
+[HASA mit Tampermonkey installieren/aktualisieren](https://raw.githubusercontent.com/KurtV731/hasa/main/2%20src/current/HASA-AKTUELL.user.js)
+
+Den Link einmal öffnen und im Tampermonkey-Dialog das vorhandene HASA aktualisieren.
+Falls nur Quelltext erscheint, denselben Link in Tampermonkey → Übersicht →
+Hilfsmittel/Utilities → Von URL installieren/importieren einfügen.
+Kein zweites aktives HASA-Skript anlegen und keine lokalen Daten löschen.
+
+Ab dieser Installation enthalten die Metadaten die feste Updatequelle.
+Tampermonkey sucht entsprechend seiner Update-Einstellung nach neueren Versionen;
+für sofortige Prüfung beim bestehenden HASA „Nach Updates suchen“ verwenden.
+Nach einem Update Horizon neu laden. Für neue Berechtigungen kann Tampermonkey
+eine Bestätigung verlangen. GitHub-Konto oder Git sind auf Tester-PCs nicht nötig.
+
+Das betrifft ausschließlich das Userscript. Serverupdates bleiben Kurts Aufgabe.
+Bereits früher per Kopieren installierte Fassungen ohne Updateadresse müssen
+einmal mit der hier verlinkten Fassung aktualisiert werden.
+
 ## 3. HASA-Anmeldung und erste Einrichtung
 
 Die HASA-Anmeldung ist von der Anmeldung im Spiel Horizon getrennt.
