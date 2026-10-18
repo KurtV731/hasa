@@ -127,7 +127,7 @@ eine neue Runde wird durch eine eigene Rundenkennung getrennt.
 - archivierte Alpha-34-Datei:
   `2 src/current/hasa_1.2.0-alpha.34_ressourcenzeile.user.js.txt`.
 
-Aktueller Stand: Alpha33 erkennt bestätigte Motivationsvideo-Startberichte und markiert Ressourcen für eine Stunde ab Nachrichtenzeit kräftig grün; danach übrige Ereignisfarben. Alpha32-Korrekturen für Forschungsstand, Menü, Scrollposition und Zwischenzielnavigation bleiben erhalten. Web12/Servergrundlage unverändert. Einzelheiten siehe Übergabe vom 18.10.2026.
+Aktueller Stand: Alpha34 verhindert Umbrüche innerhalb der Ressourcenrate. Enthalten: Alpha33 erkennt bestätigte Motivationsvideo-Startberichte und markiert Ressourcen für eine Stunde ab Nachrichtenzeit kräftig grün; danach übrige Ereignisfarben. Alpha32-Korrekturen für Forschungsstand, Menü, Scrollposition und Zwischenzielnavigation bleiben erhalten. Web12/Servergrundlage unverändert. Einzelheiten siehe Übergabe vom 18.10.2026.
 
 Historischer Zwischenstand Alpha12:
 
@@ -2271,3 +2271,9 @@ Aktive vollständige Datei und identisches Alpha34-Archiv; Alpha33 erhalten.
 Nur Tampermonkey-Code über HASA-AKTUALISIEREN.cmd ersetzen, speichern, neu laden.
 Kein Serverupdate oder Migration. Benutzeranleitung Alpha33 beschreibt weiterhin
 dieselbe Bedienung; PDF bleibt datierter Alpha32-Stand.
+
+**Abschluss Alpha34:** Gesamtprüfung auf Programmcommit 95d76c2dbf7395456a4236301aa836677d12bf2d
+erfolgreich: https://github.com/KurtV731/hasa/actions/runs/39120330942 .
+Browser-/Video-/Planer-/Webprüfungen, PHP-Syntax und isolierte MariaDB-Prüfungen
+bestanden. Fünf Release-Dateien online exakt verglichen; aktive Datei und Archiv
+identisch. Derselbe geprüfte Programmcode mit diesem Dokumentationsabschluss nach main.
