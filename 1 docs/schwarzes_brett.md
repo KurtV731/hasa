@@ -2184,3 +2184,24 @@ Freigabeeinstellungen und Windows-CMD geprüft. Browserfreigabe anhand offiziell
 Tampermonkey-FAQ Q209 kontrolliert. Nur Dokumentation, keine Programmänderung
 oder neue Alpha, kein Server-/Website-Upload. Neue Anleitung im Repository verfügbar;
 ein bestehender Website-Download wurde durch diesen Auftrag nicht ausgetauscht.
+
+
+## 2026-10-18 – CE HASA an Kurt – Motivationsvideo mv.txt ausgewertet
+
+**Ergebnis:** Der echte Quelltext belegt Verfügbarkeit, noch keinen Start.
+Bericht „Motivationsvideo verfügbar“ bietet genau einen manuellen Antwortlink
+(`MessageReportResponse`) zum Abspielen während der Werbepause. Antwortoption
+ist eine Spielaktion, kein Ausführungs- oder Erfolgsnachweis. Keine
+Aktivierungsbestätigung, Restlaufzeit oder Endmeldung in der Quelle enthalten.
+
+**Entscheidung:** Alpha32 behandelt Verfügbarkeit bereits korrekt ohne
+Produktionsbonus. Keine neue Userscript-Version und keine Spielaktion ausgeführt.
+Eine Stunde und etwa 24-fache Produktion bleiben Kurts Praxisangaben;
+kein Timer ab Berichtsdatum. Für Umsetzung fehlt eine echte Anzeige nach
+erfolgreichem manuellem Start bzw. während des laufenden Bonus oder dessen Ende.
+
+**Prüfung/Ablage:** Aktuelles schwarzes Brett und Skript über GitHub gelesen,
+Original lokal geprüft; Titel und Antwortlink/Spielaktion bestätigt,
+sichtbaren Inhalt auf Laufzeitnachweise geprüft. Nur tokenfreier Befund in
+`1 docs/werkstatt/motivationsvideo_quellbefund.md`; privates Original nicht hochgeladen.
+Keine Programmänderung oder Server-/Websitebereitstellung.
