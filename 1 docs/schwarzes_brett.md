@@ -121,13 +121,13 @@ eine neue Runde wird durch eine eigene Rundenkennung getrennt.
 
 - stabile Veröffentlichung: HASA 1.1 Final;
 - aktive Entwicklungsreihe: HASA 1.2;
-- aktueller Teststand: HASA 1.2.0 Alpha 34;
+- aktueller Teststand: HASA 1.2.0 Alpha 35;
 - fester Aktualisierungspfad:
   `2 src/current/HASA-AKTUELL.user.js.txt`;
-- archivierte Alpha-34-Datei:
-  `2 src/current/hasa_1.2.0-alpha.34_ressourcenzeile.user.js.txt`.
+- archivierte Alpha-35-Datei:
+  `2 src/current/hasa_1.2.0-alpha.35_anmeldestatus.user.js.txt`.
 
-Aktueller Stand: Alpha34 verhindert Umbrüche innerhalb der Ressourcenrate. Enthalten: Alpha33 erkennt bestätigte Motivationsvideo-Startberichte und markiert Ressourcen für eine Stunde ab Nachrichtenzeit kräftig grün; danach übrige Ereignisfarben. Alpha32-Korrekturen für Forschungsstand, Menü, Scrollposition und Zwischenzielnavigation bleiben erhalten. Web12/Servergrundlage unverändert. Einzelheiten siehe Übergabe vom 18.10.2026.
+Aktueller Stand: Alpha35 korrigiert Anmeldereiter und Statusprüfung, benennt die Web-Cookiepartition ausdrücklich und liefert auth.4 mit fester Tagesgrenze. Konkreter Charon-Praxistest steht aus. Die erweiterte Benutzerverwaltung bleibt offen. Alpha34 verhindert Umbrüche innerhalb der Ressourcenrate. Enthalten: Alpha33 erkennt bestätigte Motivationsvideo-Startberichte und markiert Ressourcen für eine Stunde ab Nachrichtenzeit kräftig grün; danach übrige Ereignisfarben. Alpha32-Korrekturen für Forschungsstand, Menü, Scrollposition und Zwischenzielnavigation bleiben erhalten. Web12/Servergrundlage unverändert. Einzelheiten siehe Übergabe vom 18.10.2026.
 
 Historischer Zwischenstand Alpha12:
 
@@ -2385,3 +2385,44 @@ Pflichtwechsel erzwingen und bisherige Sitzungen beim Reset entwerten.
 
 Nur Anforderung ergänzt, keine Nummer produktiv freigegeben, kein Zähler
 verändert und kein Passwortreset durchgeführt. Teil des gemeinsamen Updates.
+
+
+
+## 2026-10-18 – CE HASA an Kurt – Alpha35 gegen Anmeldeschleife
+
+**Auftrag:** Nach bloßer Aufnahme der Verwaltungswünsche verlangt Kurt wieder
+konkrete Weiterentwicklung. Charon bestätigt erfolgreiches Passwortändern,
+meldet danach ständige Anmeldeaufforderung und neue Reiter bei jedem Klick.
+Kurt wünscht höchstens tägliche Anmeldung. Diese störende Schleife hat Vorrang
+vor der Komfortverwaltung; Fehlerkorrektur gemäß Ausnahme der Bündelregel.
+
+**Befund:** Jeder Klick bisher _blank, Status nur im 30-Sekunden-Takt; Netzfehler
+verwerfen bestätigte Anmeldung. GM-Transport ohne ausdrücklich gesetzte
+Web-Cookiepartition. auth.3 bisher 2h Leerlauf/12h absolut und Browser-Sitzungscookie.
+Das Bild beweist keine konkrete Cookie-/Hostingursache und keinen Sitzungstimeout.
+Mitkopierte ASFI-Leerliste ist normale Listenansicht. Keine produktive Sitzung gelesen.
+
+**Umsetzung:** Alpha35 behält offenen Anmeldereiter der laufenden Spielseite,
+prüft Fokus/Rückkehr sofort, bietet manuellen Statusknopf und sichtbare Hinweise.
+Kein Formularreload bei wiederholtem Klick. Transportfehler bleiben von bestätigter
+Abmeldung getrennt; kein Schreiben ohne serverseitige Sitzung und CSRF. Explizite
+Cookiepartition https://serkal.de nur für HASA-Anfragen, kein Kopieren von Cookies
+oder Passwörtern. Exakter Hauptgame-Startschutz zusätzlich zu @match/@noframes.
+auth.4 hat Tagescookie und feste 24h seit Login; Aktivität verlängert nicht.
+Sperre/Reset/Rechteentzug/Logout bleiben wirksam. Hosting kann Sitzungen früher
+bereinigen; eine tägliche Sitzung ist daher keine Garantie gegen Cookieverlust.
+
+**Prüfung:** JS-Syntax und 13 neue Chromium-Fälle lokal bestanden, einschließlich
+echtem Cross-Origin-Anmeldereiter mit entferntem opener und Wiederverwendung.
+Kontrollierter GM-Transport, keine Behauptung eines echten Tampermonkey-Tests.
+CI um Browserfälle und PHP/MariaDB-Tagesgrenzenprüfung erweitert; Gesamtprüfung
+vor Übernahme nach main kontrollieren. Originalbild nicht öffentlich gespeichert.
+
+**Installation:** HASA-Serverupdate.bat und HASA-AKTUALISIEREN.cmd/komplettes
+Userscript ersetzen. Horizon neu laden und einmal HASA ab-/anmelden fürs Tagescookie.
+Keine Migration oder STAN-Import. Kein produktiver Upload durch CE.
+Charons Browserprofil und tatsächliche Sitzung anschließend praktisch testen.
+
+**Offen:** Komfortverwaltung bleibt angefordert, nicht implementiert. Die umfassende
+Webfenstergröße/Schließkopplung über Spielnavigation hinweg bleibt ebenfalls offen.
+Diese Alpha liefert gezielte Anmeldefehlerkorrektur, keinen Abschluss jener Aufgaben.

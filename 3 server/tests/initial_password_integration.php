@@ -10,7 +10,9 @@ if ($config['host'] !== '127.0.0.1' || $config['name'] !== 'hasa_test_events') t
 set_exception_handler(static function (Throwable $e): never { ob_end_clean(); fwrite(STDERR, 'FAIL diagnostic integration' . PHP_EOL); exit(1); });
 $log = tempnam(sys_get_temp_dir(), 'hasa-initial-');
 ini_set('error_log', $log);
-session_start();
+$_SERVER['HTTPS'] = 'on';
+$_SERVER['SCRIPT_NAME'] = '/hasa/auth-status.php';
+hasaAuthSession();
 $pdo = hasaPdo();
 $secret = bin2hex(random_bytes(16));
 $new = bin2hex(random_bytes(16));
@@ -68,9 +70,24 @@ try {
     hasaAuthInitialLog('login_received');
     check(file_get_contents($log) === $before, 'expired trace not logged');
     foreach ([$secret, $new, $wrong, $hash, $load()['password_hash'], session_id(), $_SESSION['csrf'], $name] as $sensitive) check(!str_contains(file_get_contents($log), $sensitive), 'no secrets or names in log');
+    $params = session_get_cookie_params();
+    check($params['lifetime'] === 86400 && $params['secure'] && $params['httponly'] && $params['samesite'] === 'None' && $params['path'] === '/hasa/', 'day cookie retains transport protections');
+    unset($GLOBALS['hasa_initial_trace'], $_SESSION['initial_password_trace']);
+    check(hasaAuthLogin($pdo, $name, $wrong) !== null, 'login for daily session checks');
+    $_SESSION['logged_at'] = time() - 86390;
+    $_SESSION['last_seen'] = time() - 18000;
+    check(hasaAuthCurrent() !== null, 'five hours idle and nearly one day remain authenticated');
+    check($_SESSION['logged_at'] <= time() - 86390, 'activity does not extend absolute deadline');
+    $_SESSION['logged_at'] = time() - 86400;
+    check(hasaAuthCurrent() === null && !isset($_SESSION['user_id']), 'absolute day boundary expires even active session');
+    check(hasaAuthLogin($pdo, $name, $wrong) !== null, 'login before revocation');
+    $pdo->exec('UPDATE hasa_users SET auth_version=auth_version+1 WHERE id=' . $id);
+    check(hasaAuthCurrent() === null, 'revocation still immediate during daily lifetime');
+
 } finally {
     $pdo->prepare('DELETE FROM hasa_users WHERE id=?')->execute([$id]);
     unlink($log);
 }
 ob_end_clean();
 echo $n . " initial-password diagnostic checks passed\n";
+

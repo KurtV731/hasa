@@ -1,7 +1,9 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__ . '/bootstrap.php';
-const HASA_AUTH_VERSION = '1.2.0-auth.3';
+const HASA_AUTH_VERSION = '1.2.0-auth.4';
+// Feste Tagesgrenze ab erfolgreicher Anmeldung, keine gleitende Verlängerung.
+const HASA_AUTH_SESSION_SECONDS = 86400;
 
 // Nur der Startpasswort-Ablauf: niemals Eingaben, Hashes, Cookies oder Tokens.
 function hasaAuthInitialTrace(array $user): void
@@ -85,13 +87,13 @@ function hasaAuthSession(bool $json = false): void
     ini_set('session.use_strict_mode', '1');
     ini_set('session.use_only_cookies', '1');
     ini_set('session.use_trans_sid', '0');
-    ini_set('session.gc_maxlifetime', '43200');
+    ini_set('session.gc_maxlifetime', (string)HASA_AUTH_SESSION_SECONDS);
     session_name('HASA_SESSION');
     $path = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/hasa/')), '/') . '/';
     // Das Tampermonkey-Skript läuft auf horiversum.org und ruft die API auf
     // serkal.de auf. SameSite=None erlaubt dabei die angemeldete Sitzung;
     // Secure, HttpOnly und der zusätzliche CSRF-Header schützen den Schreibzugriff.
-    session_set_cookie_params(['lifetime' => 0, 'path' => $path, 'secure' => $https, 'httponly' => true, 'samesite' => 'None']);
+    session_set_cookie_params(['lifetime' => HASA_AUTH_SESSION_SECONDS, 'path' => $path, 'secure' => $https, 'httponly' => true, 'samesite' => 'None']);
     if (!session_start()) hasaAuthError('Die Anmeldung ist gerade nicht verfügbar.', 503, $json);
     header('Cache-Control: no-store');
     header('Referrer-Policy: no-referrer');
@@ -126,7 +128,7 @@ function hasaAuthCurrent(bool $json = false): ?array
     hasaAuthSession($json);
     if (!isset($_SESSION['user_id'])) return null;
     $now = time();
-    if ($now - (int)($_SESSION['last_seen'] ?? 0) > 7200 || $now - (int)($_SESSION['logged_at'] ?? 0) > 43200) {
+    if ($now - (int)($_SESSION['last_seen'] ?? 0) >= HASA_AUTH_SESSION_SECONDS || $now - (int)($_SESSION['logged_at'] ?? 0) >= HASA_AUTH_SESSION_SECONDS) {
         hasaAuthInitialLog('session_expired');
         hasaAuthForget(); return null;
     }
@@ -281,6 +283,7 @@ set_exception_handler(static function (Throwable $error): never {
     $json = in_array($script, ['auth-status.php','galaxy-read.php','prospection-read.php','systems.php','prospection-reports.php'], true);
     hasaAuthError('Die Funktion ist gerade nicht verfügbar. Bitte später erneut versuchen.', 503, $json);
 });
+
 
 
 

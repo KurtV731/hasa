@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         HASA – Horizon Ascension Assistant
 // @namespace    horiversum.hasa
-// @version      1.2.0-alpha.34
+// @version      1.2.0-alpha.35
 // @charset      UTF-8
 // @description  Horizon-Assistent mit kompakter Galaxiescanner-Anzeige und aktiver lokaler IndexedDB
 // @match        https://horiversum.org/game/main/main.php*
@@ -14,6 +14,9 @@
 // ==/UserScript==
 
 /*
+
+ Alpha35 (18.10.2026): Anmeldereiter wiederverwenden, Status direkt prüfen;
+ gezielte Cookie-Partition und Schutz gegen Start auf HASA-Webseiten.
 
  Alpha34 (18.10.2026): Produktionsrate und /h bleiben auch in Fettschrift zusammen.
 
@@ -45,9 +48,9 @@
 ==========================================================
  HASA – Horizon Ascension Assistant
 
- Version : 1.2.0 Alpha 31
- Status  : Serverlisten, bestätigte Häkchen und Produktion im Spiel
- Build   : 2026-10-15
+ Version : 1.2.0 Alpha 35
+ Status  : Anmeldestatus, Tages-Sitzung und vorhandene Spielassistenten
+ Build   : 2026-10-18
 
  Neu in Alpha 26:
  - ältere bekannte Planungsobjekte bleiben im Zielkatalog auswählbar
@@ -186,6 +189,8 @@
     // Horizon verwendet eingebettete Seitenbereiche. Ohne diese zusätzliche
     // Sicherung könnte Tampermonkey HASA dort ein zweites Mal starten.
     if (window.top !== window.self) return;
+    if (window.location.origin !== 'https://horiversum.org'
+            || window.location.pathname !== '/game/main/main.php') return;
 
     // Fremdrassen: nicht als erreichbare Spielerziele im Explorer anzeigen.
     // Die Datensätze bleiben bewusst gespeichert, damit sie später z. B.
@@ -202,8 +207,8 @@
         'PHYSICS', 'PSYCHOLOGY', 'NUCLEARPHYSICS', 'SOLARENERGYTECH'
     ]);
 
-    const HASA_VERSION = '1.2.0 Alpha 34';
-    const HASA_BUILD_LABEL = '1.2.0-alpha34-ressourcenzeile-2026-10-18';
+    const HASA_VERSION = '1.2.0 Alpha 35';
+    const HASA_BUILD_LABEL = '1.2.0-alpha35-anmeldestatus-2026-10-18';
     const HASA_RUNDE = 8;
     const HASA_RUNDE_SCHLUESSEL = 'runde8';
     // Die MariaDB und sämtliche Schreibendpunkte trennen Runde 7 und 8 jetzt
@@ -232,6 +237,9 @@
     let HAA_PRDR_SENDET = false;
     let HAA_AUTH_TIMER = null;
     let HAA_AUTH_ABFRAGE = null;
+    let HAA_ANMELDEFENSTER = null;
+    let HAA_ANMELDEHINWEIS = '';
+    let HAA_AUTH_RUECKKEHR_INSTALLIERT = false;
     const HAA_SERVER_AUTH = {
         checkedAt: 0,
         authenticated: false,
@@ -251,6 +259,9 @@
                 timeout: options.timeout || 20000,
                 anonymous: false,
                 withCredentials: true,
+                // HASA wurde als eigene Webseite angemeldet, nicht unter der Spielseite.
+                ...(new URL(options.url).origin === 'https://serkal.de'
+                    ? { cookiePartition: { topLevelSite: 'https://serkal.de' } } : {}),
                 headers: options.headers || { 'Accept': 'application/json' },
                 data: options.data,
                 onload: function (response) {
@@ -308,7 +319,10 @@
             HAA_SERVER_AUTH.error = null;
             return HAA_SERVER_AUTH;
         }).catch(function (fehler) {
-            verwerfeHasaServerAnmeldung(fehler && fehler.message ? fehler.message : 'Anmeldestatus nicht erreichbar');
+            // Ein Netz-/Serverfehler ist kein Nachweis für eine Abmeldung.
+            // Schreibendpunkte prüfen Sitzung und CSRF weiterhin selbst.
+            HAA_SERVER_AUTH.checkedAt = Date.now();
+            HAA_SERVER_AUTH.error = fehler && fehler.message ? fehler.message : 'Anmeldestatus nicht erreichbar';
             return HAA_SERVER_AUTH;
         }).finally(function () {
             HAA_AUTH_ABFRAGE = null;
@@ -1769,7 +1783,49 @@
         HAA_GALASCAN_TIMER = setInterval(pruefeSichtbaresGalaxiesystem, 35000);
     }
 
+    async function pruefeHasaAnmeldungNachRueckkehr(manuell) {
+        if (!manuell && !istHasaFuerSitzungAktiv()) return;
+        await aktualisiereHasaServerAnmeldung(true);
+        HAA_ANMELDEHINWEIS = HAA_SERVER_AUTH.error
+            ? 'Anmeldestatus nicht erreichbar: ' + HAA_SERVER_AUTH.error
+            : HAA_SERVER_AUTH.passwordChangeRequired
+                ? 'Bitte den ersten Passwortwechsel auf der HASA-Webseite abschließen.'
+                : HAA_SERVER_AUTH.authenticated
+                    ? 'Angemeldet als ' + HAA_SERVER_AUTH.playerName + '.'
+                    : 'Keine HASA-Sitzung im Spiel erkannt. Wenn die HASA-Webseite bereits angemeldet ist: gleichen Browser und dasselbe Profil verwenden; Cookiezugriff von Tampermonkey prüfen. Der API-Schlüssel ersetzt die Anmeldung nicht.';
+        if (hasaServerSchreibbereit()) {
+            verarbeiteGalascannerWarteschlange();
+            verarbeitePrdrUebertragung();
+        }
+        baueBox();
+    }
+
+    function oeffneHasaAnmeldung() {
+        HAA_ANMELDEHINWEIS = 'Nach der Anmeldung zum Spiel zurückkehren; HASA prüft den Status automatisch.';
+        try {
+            if (HAA_ANMELDEFENSTER && !HAA_ANMELDEFENSTER.closed) {
+                HAA_ANMELDEFENSTER.focus();
+            } else {
+                HAA_ANMELDEFENSTER = window.open(HASA_LOGIN_URL, 'HASA_Anmeldung');
+                if (HAA_ANMELDEFENSTER) {
+                    HAA_ANMELDEFENSTER.opener = null;
+                    HAA_ANMELDEFENSTER.focus();
+                } else HAA_ANMELDEHINWEIS = 'Der Browser hat den Anmeldereiter blockiert. Bitte das Öffnen für diesen Klick erlauben.';
+            }
+        } catch (_) {
+            HAA_ANMELDEHINWEIS = 'Der Anmeldereiter ist nicht erreichbar. Bitte direkt https://serkal.de/hasa/login.php öffnen und danach den Anmeldestatus prüfen.';
+        }
+        baueBox();
+    }
+
     function installiereHasaAnmeldungspruefung() {
+        if (!HAA_AUTH_RUECKKEHR_INSTALLIERT) {
+            HAA_AUTH_RUECKKEHR_INSTALLIERT = true;
+            window.addEventListener('focus', function () { pruefeHasaAnmeldungNachRueckkehr(false); });
+            document.addEventListener('visibilitychange', function () {
+                if (document.visibilityState === 'visible') pruefeHasaAnmeldungNachRueckkehr(false);
+            });
+        }
         if (HAA_AUTH_TIMER) return;
         HAA_AUTH_TIMER = setInterval(async function () {
             const vorher = HAA_SERVER_AUTH.authenticated;
@@ -1812,11 +1868,11 @@
 
         const anmeldung = document.getElementById('haa-galascan-anmeldung');
         if (anmeldung) {
-            anmeldung.onclick = function () {
-                const fenster = window.open(HASA_LOGIN_URL, '_blank');
-                if (fenster) fenster.opener = null;
-            };
+            anmeldung.onclick = oeffneHasaAnmeldung;
         }
+
+        const statusPruefen = document.getElementById('haa-anmeldestatus-pruefen');
+        if (statusPruefen) statusPruefen.onclick = function () { pruefeHasaAnmeldungNachRueckkehr(true); };
 
         const benutzerverwaltung = document.getElementById('haa-galascan-benutzerverwaltung');
         if (benutzerverwaltung) {
@@ -1856,7 +1912,9 @@
             + ' lokal gespeichert';
         let transferFarbe = '#888';
         let transferTitel = 'Anmeldestatus wird geprüft';
-        if (HAA_SERVER_AUTH.checkedAt && !HAA_SERVER_AUTH.authenticated) {
+        if (HAA_SERVER_AUTH.error) {
+            transferTitel = 'Anmeldestatus nicht erreichbar: ' + HAA_SERVER_AUTH.error;
+        } else if (HAA_SERVER_AUTH.checkedAt && !HAA_SERVER_AUTH.authenticated) {
             transferTitel = HAA_SERVER_AUTH.error
                 ? 'HASA-Anmeldung konnte nicht geprüft werden: ' + HAA_SERVER_AUTH.error
                 : 'Nicht bei HASA angemeldet; lokale Erfassung läuft weiter';
@@ -1896,7 +1954,7 @@
             + '<span title="' + esc(transferTitel) + '" style="color:' + transferFarbe + ';cursor:help;">●</span>'
             + '<span title="' + esc(scannerTitel) + '" style="color:' + scannerFarbe + ';cursor:help;">●</span>'
             + (!HAA_SERVER_AUTH.authenticated
-                ? '<button id="haa-galascan-anmeldung" type="button" style="flex:0 0 auto;font-size:11px;cursor:pointer;">Anmelden</button>'
+                ? '<button id="haa-galascan-anmeldung" type="button" style="flex:0 0 auto;font-size:11px;cursor:pointer;">Anmelden</button><button id="haa-anmeldestatus-pruefen" type="button" style="flex:0 0 auto;font-size:11px;cursor:pointer;">Anmeldestatus prüfen</button>'
                 : '')
             + (HASA_RUNDE_SERVERUEBERTRAGUNG_AKTIV && !galascannerApiSchluessel(false)
                 ? '<button id="haa-galascan-schluessel" type="button" style="flex:0 0 auto;font-size:11px;cursor:pointer;">API-Schlüssel</button>'
@@ -1910,6 +1968,7 @@
                     + 'style="flex:0 0 auto;font-size:11px;font-weight:bold;cursor:pointer;">Zur Benutzerverwaltung</button>'
                 : '')
             + '</div>';
+        if (HAA_ANMELDEHINWEIS) html += '<div id="haa-anmeldehinweis" role="status" style="font-size:11px;white-space:normal;margin:3px 0 6px;">' + esc(HAA_ANMELDEHINWEIS) + '</div>';
 
         return html;
     }
@@ -6846,6 +6905,7 @@ return box;
     window.addEventListener('load', starteSicher);
     setTimeout(starteSicher, 800);
 })();
+
 
 
 

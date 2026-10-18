@@ -1,6 +1,6 @@
 # HASA – Benutzeranleitung für die Testversion
 
-Stand: 18.10.2026 · HASA 1.2.0 Alpha 33 · Spielrunde 8
+Stand: 18.10.2026 · HASA 1.2.0 Alpha 35 · Spielrunde 8
 
 Diese Anleitung richtet sich an die eingeladenen Testspieler. Die stabile
 Veröffentlichung HASA 1.1 hat einen anderen Funktionsstand.
@@ -42,7 +42,7 @@ Ein Update ersetzt den Code im **vorhandenen** Tampermonkey-Skript:
 2. Im Tampermonkey-Dashboard das vorhandene HASA-Skript öffnen.
 3. Einmal in den Codetext klicken, dann **Strg+A**, **Strg+V**.
 4. Speichern und Horizon neu laden.
-5. Im HASA-Kopf die Versionsnummer kontrollieren: derzeit **1.2.0 Alpha 33**.
+5. Im HASA-Kopf die Versionsnummer kontrollieren: derzeit **1.2.0 Alpha 35**.
 
 Kein zweites HASA daneben anlegen und für ein normales Update keine gespeicherten
 Daten löschen.
@@ -53,11 +53,10 @@ kopiert den vollständigen aktuellen Code in die Zwischenablage. Erst danach fol
 die Schritte im Tampermonkey-Editor. Die CMD-Datei benötigt Git und ein vorhandenes
 lokales Repository; sie ersetzt den Tampermonkey-Code nicht selbst.
 
-**Von Alpha 32 auf Alpha 33:** Nur das Userscript aktualisieren. Kein Serverupdate,
-keine Datenbankmigration und kein erneuter STAN-Import nötig.
-
-Serverupdates führt der Betreiber zentral aus, wenn ein Update sie ausdrücklich
-verlangt. Testspieler laden keine Serverdateien hoch.
+**Auf Alpha35 aktualisieren:** `HASA-Serverupdate.bat` für auth.4 ausführen,
+dann das Userscript mit `HASA-AKTUALISIEREN.cmd` vollständig ersetzen und Horizon
+neu laden. Einmal bei HASA ab- und wieder anmelden, damit das Tagescookie entsteht.
+Keine Datenbankmigration und kein STAN-Neuimport.
 
 ## 3. HASA-Anmeldung und erste Einrichtung
 
@@ -78,6 +77,20 @@ Wird in HASA zusätzlich **API-Schlüssel** angeboten, den vom Betreiber erhalte
 HASA-Schlüssel dort einmal eingeben. Für die Serverübertragung werden eine gültige
 Anmeldung, abgeschlossener Passwortwechsel und der konfigurierte Schlüssel benötigt.
 Ein Schlüssel allein ersetzt die persönliche Anmeldung nicht.
+
+Ab Alpha35 verwendet ein weiterer Klick auf **Anmelden** den noch offenen
+Anmeldereiter derselben Spielseite erneut. Bei Rückkehr ins Spiel wird die
+Anmeldung sofort geprüft. **Anmeldestatus prüfen** wiederholt die Prüfung ohne
+einen neuen Reiter. Wenn die Webanmeldung funktioniert, im Spiel aber keine
+Sitzung erkannt wird: denselben Browser und dasselbe Profil verwenden und den
+Cookiezugriff von Tampermonkey prüfen. Nicht wiederholt neue Passwörter vergeben.
+
+Serverfassung auth.4 setzt eine feste Höchstdauer von **24 Stunden ab Anmeldung**;
+Aktivität verlängert diese Grenze nicht. Das Tagescookie kann Browserneustarts
+überstehen. Abmelden, Kontosperre, Reset, Rechteentzug, gelöschte Cookies oder
+früher gelöschte Sitzungsdaten beim Hosting können die Anmeldung vorher beenden.
+Das persönliche Passwort wird nicht im Userscript gespeichert.
+
 
 Die kleinen Statuspunkte besitzen Erklärungen beim Darüberfahren mit der Maus:
 lokale Sondenerfassung, Serverübertragung und Erkennung des sichtbaren Systems.
@@ -300,3 +313,4 @@ werden nicht automatisch als gemeinschaftliche Daten veröffentlicht.
 
 Die Versionsnummer in dieser Anleitung bezeichnet ihren geprüften Stand.
 Bei künftigen Updates deren Änderungshinweise zusätzlich beachten.
+

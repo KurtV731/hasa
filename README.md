@@ -41,11 +41,20 @@ Versionsstand erhalten.
 
 ## Aktuelle Entwicklungsreihe
 
-**HASA 1.2.0 Alpha 34 – Ressourcenrate ohne Zeilenumbruch**
+**HASA 1.2.0 Alpha 35 – Anmeldung und Sitzungsstatus**
 
 - Aktueller vollständiger Code: `2 src/current/HASA-AKTUELL.user.js.txt`
-- Identische Archivfassung: `2 src/current/hasa_1.2.0-alpha.34_ressourcenzeile.user.js.txt`
+- Identische Archivfassung: `2 src/current/hasa_1.2.0-alpha.35_anmeldestatus.user.js.txt`
 - Anleitung und Grenzen der Videoerkennung: `1 docs/hasa_1.2.0-alpha.33_motivationsvideo.md`
+
+Alpha35 verwendet den offenen Anmeldereiter erneut und prüft den Status direkt
+nach der Rückkehr ins Spiel. Netzwerkfehler werden nicht als Abmeldung gewertet.
+HASA-Anfragen benennen die Cookie-Partition der eigenen Webseite ausdrücklich.
+Ein zusätzlicher Startschutz verhindert HASA auf fremden Webseiten auch bei
+versehentlich zu breit eingestellten Tampermonkey-Regeln.
+Serverfassung auth.4 erlaubt höchstens 24 Stunden ab Anmeldung, mit Tagescookie;
+Sperre, Reset, Rechteentzug und Abmeldung bleiben wirksam. Keine neue Datenbankmigration.
+Details und Grenzen: `1 docs/hasa_1.2.0-alpha.35_anmeldestatus.md`.
 
 Alpha34 hält jede Produktionsrate einschließlich Klammern und `/h` auf einer
 Zeile. Fettschrift und Ereignisfarben bleiben erhalten; kein abgetrenntes `h)`.
@@ -58,11 +67,12 @@ die Stunde nicht. Nach Ablauf kehren die übrigen Ereignisfarben oder Grau zurü
 Die durch Kurts Beispiel eingeordnete Spielzeit wird in Europe/Berlin interpretiert,
 unabhängig von der Browserzeitzone. Eine reine Verfügbarkeitsmeldung genügt nicht.
 
-**Update von Alpha 33:** `HASA-AKTUALISIEREN.cmd` ausführen, vorhandenen
-Tampermonkey-Code vollständig ersetzen, speichern und Horizon neu laden.
-Startbericht in der Nachrichtenübersicht sichtbar machen oder öffnen.
-Kein Serverupdate, keine SQL-Migration und kein neuer STAN-Import nötig.
-Alle bisherigen Menü-, Forschungs-, Scroll- und Ressourcen-Korrekturen bleiben enthalten.
+**Update auf Alpha35:** `HASA-Serverupdate.bat` für auth.4 ausführen.
+Danach `HASA-AKTUALISIEREN.cmd`, vollständigen vorhandenen Tampermonkey-Code
+ersetzen, speichern und Horizon neu laden. Für das neue Tagescookie einmal
+bei HASA ab- und wieder anmelden. Kein SQL-Import oder STAN-Neuimport.
+Alle bisherigen Video-, Menü-, Forschungs-, Scroll- und Ressourcen-Korrekturen bleiben enthalten.
+Die erweiterte Benutzerverwaltung ist weiterhin ein gesonderter offener Auftrag.
 
 ## Historische Entwicklungsschritte
 
@@ -220,4 +230,5 @@ Schnittstellen. Gemeinsam mit SerKal genutzte Ressourcen auf `serkal.de` werden
 zwischen CE HASA und CE SerKal abgestimmt.
 
 Weitere technische Hinweise stehen unter `1 docs`.
+
 

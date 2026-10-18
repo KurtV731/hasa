@@ -47,6 +47,7 @@ jobs:
           node '5 tools/test_hasa_menu.cjs'
           node '5 tools/test_hasa_scroll.cjs'
           node '5 tools/test_hasa_motivation.cjs'
+          node '5 tools/test_hasa_auth_ui.cjs'
       - name: Disposable MariaDB integration
         env:
           MYSQL_PWD: disposable-ci-only
@@ -61,5 +62,6 @@ jobs:
           php '3 server/tests/events_integration.php'
           php '3 server/tests/initial_password_integration.php'
           php '3 server/tests/system_search_integration.php'
+
 
 
