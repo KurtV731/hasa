@@ -41,27 +41,24 @@ Versionsstand erhalten.
 
 ## Aktuelle Entwicklungsreihe
 
-**HASA 1.2.0 Alpha 32 – Korrekturen aus dem Testbetrieb**
+**HASA 1.2.0 Alpha 33 – bestätigtes Motivationsvideo**
 
 - Aktueller vollständiger Code: `2 src/current/HASA-AKTUELL.user.js.txt`
-- Identische Archivfassung: `2 src/current/hasa_1.2.0-alpha.32_testerrunde.user.js.txt`
-- Anleitung und Grenzen: `1 docs/hasa_1.2.0-alpha.32_testerrunde.md`
+- Identische Archivfassung: `2 src/current/hasa_1.2.0-alpha.33_motivationsvideo.user.js.txt`
+- Anleitung und Grenzen: `1 docs/hasa_1.2.0-alpha.33_motivationsvideo.md`
 
-Alpha 32 sichert Forschungsstände, Menüzustand und Planer-Scrollposition ab.
-Ein Klick auf eine Voraussetzung öffnet deren Zwischenziel direkt im Planer.
-Die Forschungsdiagnose ist vorerst ausgeblendet; Ascension erscheint erst bei
-nachgewiesenen Punkten oder gekauften Stufen. Ressourcenraten erscheinen grau,
-bei erkannten Produktionssteigerungen grün und bei ausdrücklich gemeldeten
-Produktionssenkungen rot, jeweils ohne Rahmen. Reine Messabweichungen lösen keine
-Farbe mehr aus. Die Aktivierungserkennung des Motivationsvideos bleibt bis zu
-einem echten Muster seiner Laufanzeige offen; verfügbar bedeutet nicht gestartet.
+Alpha33 erkennt **Motivationsvideo abgespielt** als bestätigten Startbericht.
+Für den zugeordneten Planeten erscheinen die drei Ressourcen-Stundenraten eine
+Stunde ab Nachrichtenzeit besonders kräftig grün. Erneutes Einlesen verlängert
+die Stunde nicht. Nach Ablauf kehren die übrigen Ereignisfarben oder Grau zurück.
+Die durch Kurts Beispiel eingeordnete Spielzeit wird in Europe/Berlin interpretiert,
+unabhängig von der Browserzeitzone. Eine reine Verfügbarkeitsmeldung genügt nicht.
 
-**Update von Alpha 31:** `HASA-AKTUALISIEREN.cmd` ausführen, vorhandenen
+**Update von Alpha 32:** `HASA-AKTUALISIEREN.cmd` ausführen, vorhandenen
 Tampermonkey-Code vollständig ersetzen, speichern und Horizon neu laden.
-Kein Serverupdate, keine SQL-Migration und kein erneuter STAN-Import für Alpha 32.
-Tester erhalten denselben vollständigen Code. Neueinrichtungen benötigen weiterhin
-die Servergrundlage aus Alpha 30/31. Nachrichtenhaken, Werkzeugleiste und Websuche
-bleiben erhalten.
+Startbericht in der Nachrichtenübersicht sichtbar machen oder öffnen.
+Kein Serverupdate, keine SQL-Migration und kein neuer STAN-Import nötig.
+Alle bisherigen Menü-, Forschungs-, Scroll- und Ressourcen-Korrekturen bleiben enthalten.
 
 ## Historische Entwicklungsschritte
 

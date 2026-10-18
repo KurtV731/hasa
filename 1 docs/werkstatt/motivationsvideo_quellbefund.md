@@ -1,6 +1,22 @@
 # Motivationsvideo: Befund aus mv.txt
 
-Stand: 18.10.2026 · geprüfter Programmstand: HASA 1.2.0 Alpha 32
+Stand: 18.10.2026
+
+## Ergänzung nach erfolgreichem Start – Grundlage für Alpha33
+
+Kurt lieferte danach ein Bild des Berichts **Motivationsvideo abgespielt**
+mit Startzeit 18.10.2026 12:01:55 und bestätigtem Ende 13:01:55.
+Damit liegt zusätzlich zur Verfügbarkeit ein tatsächlicher Erfolgsnachweis vor.
+Zwei HTML-Aufzeichnungen der Spielübersicht und Gebäudeseite zeigen übereinstimmende
+Ressourcenraten, enthalten selbst aber keine Video-Restlaufanzeige.
+
+Alpha33 verwendet den bestätigten Berichtstitel und die Original-Nachrichtenzeit
+mit einer Stunde Laufzeit. Europe/Berlin ist die anhand von Kurts Zeitangaben
+verwendete Spielzeiteinordnung; eine Rechnerzeitzone wird nicht unterstellt.
+Details: [Alpha33](../hasa_1.2.0-alpha.33_motivationsvideo.md).
+Die folgenden Abschnitte bewahren den früheren Befund zu **mv.txt vor dem Start**.
+
+## Erstbefund – geprüfter Programmstand Alpha32
 
 ## Was die Quelle tatsächlich belegt
 

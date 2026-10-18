@@ -1,6 +1,6 @@
 # HASA – Benutzeranleitung für die Testversion
 
-Stand: 17.10.2026 · HASA 1.2.0 Alpha 32 · Spielrunde 8
+Stand: 18.10.2026 · HASA 1.2.0 Alpha 33 · Spielrunde 8
 
 Diese Anleitung richtet sich an die eingeladenen Testspieler. Die stabile
 Veröffentlichung HASA 1.1 hat einen anderen Funktionsstand.
@@ -42,7 +42,7 @@ Ein Update ersetzt den Code im **vorhandenen** Tampermonkey-Skript:
 2. Im Tampermonkey-Dashboard das vorhandene HASA-Skript öffnen.
 3. Einmal in den Codetext klicken, dann **Strg+A**, **Strg+V**.
 4. Speichern und Horizon neu laden.
-5. Im HASA-Kopf die Versionsnummer kontrollieren: derzeit **1.2.0 Alpha 32**.
+5. Im HASA-Kopf die Versionsnummer kontrollieren: derzeit **1.2.0 Alpha 33**.
 
 Kein zweites HASA daneben anlegen und für ein normales Update keine gespeicherten
 Daten löschen.
@@ -53,7 +53,7 @@ kopiert den vollständigen aktuellen Code in die Zwischenablage. Erst danach fol
 die Schritte im Tampermonkey-Editor. Die CMD-Datei benötigt Git und ein vorhandenes
 lokales Repository; sie ersetzt den Tampermonkey-Code nicht selbst.
 
-**Von Alpha 31 auf Alpha 32:** Nur das Userscript aktualisieren. Kein Serverupdate,
+**Von Alpha 32 auf Alpha 33:** Nur das Userscript aktualisieren. Kein Serverupdate,
 keine Datenbankmigration und kein erneuter STAN-Import nötig.
 
 Serverupdates führt der Betreiber zentral aus, wenn ein Update sie ausdrücklich
@@ -235,17 +235,28 @@ HASA liest die Stundenproduktion des gerade sichtbaren Planeten ungefähr alle
 |---|---|
 | Grau, ohne Rahmen | Keine erkannte laufende Produktionswirkung. |
 | Grün | Eine passende Produktionssteigerung wurde erkannt. |
+| Kräftig grün und besonders fett | Ein bestätigtes Motivationsvideo läuft noch innerhalb seiner Stunde. |
 | Rot | Eine ausdrücklich gemeldete Produktionssenkung wurde erkannt. |
 
 Ein Minenausbau allein färbt die Anzeige nicht. Eine eingelesene Endmeldung beendet
 die betreffende Markierung. Fehlt der passende Endtext, kann die Farbe stehen bleiben.
 Bei gleichzeitig erkannten positiven und negativen Wirkungen hat Rot Vorrang.
+Während eines bestätigten Motivationsvideos hat dessen kräftig grüne Markierung
+Vorrang; nach Ablauf erscheinen die übrigen weiterhin geltenden Ereignisfarben.
 
 Der Prozentwert im Tooltip vergleicht Messwerte. Er ist keine zugesicherte Stärke
 des Ereignisses. Für ein unbekanntes Ausgangsniveau wird kein Prozentsatz erfunden.
 
-**Motivationsvideo:** „Verfügbar“ ist noch kein Startnachweis. Die besondere
-Markierung während der tatsächlichen Laufzeit ist in Alpha 32 noch nicht enthalten.
+**Motivationsvideo:** „Verfügbar“ ist kein Startnachweis. HASA benötigt den
+Startbericht **Motivationsvideo abgespielt** mit eindeutiger Koordinate und
+Nachrichtenzeit. Diesen Bericht in der Nachrichtenübersicht sichtbar machen oder
+öffnen. Die Stunde zählt ab der Nachrichtenzeit, nicht ab dem Einlesen. Wiederholtes
+Lesen verlängert sie nicht. Beispiel: Start 12:01:55, Ende 13:01:55.
+Die Spielzeit wird als Europe/Berlin ausgewertet; die Rechnerzeitzone ist unabhängig.
+Nach Ablauf endet die Markierung automatisch, solange HASA läuft. Nach einem
+Neuladen wird dieselbe gespeicherte Endzeit geprüft. Unvollständige oder zeitlich
+mehrdeutige Meldungen lösen keine Videomarkierung aus. Der tatsächlich angezeigte
+Produktionswert kommt weiter aus Horizon; HASA rechnet ihn nicht pauschal mit 24 hoch.
 
 ## 12. Wenn etwas nicht stimmt
 
@@ -282,7 +293,8 @@ werden nicht automatisch als gemeinschaftliche Daten veröffentlicht.
 
 ## 14. Weiterführende Hinweise
 
-- [Änderungen und Grenzen von Alpha 32](hasa_1.2.0-alpha.32_testerrunde.md)
+- [Änderungen und Grenzen von Alpha 33](hasa_1.2.0-alpha.33_motivationsvideo.md)
+- [Vorheriges Update Alpha 32](hasa_1.2.0-alpha.32_testerrunde.md)
 - [Historische Anleitung für HASA 1.1](hasa_1.1_benutzeranleitung.md)
 - [Projekt und aktueller Code](https://github.com/KurtV731/hasa)
 

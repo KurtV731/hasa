@@ -1,6 +1,6 @@
 # HASA – Schwarzes Brett
 
-Stand: 16.10.2026
+Stand: 18.10.2026
 
 Dieses Dokument ist die verbindliche gemeinsame Übergabe- und Verwaltungsstelle für die
 HASA-Entwicklung. Vor jeder HASA-Arbeit wird es vollständig gelesen. Entscheidungen,
@@ -121,13 +121,13 @@ eine neue Runde wird durch eine eigene Rundenkennung getrennt.
 
 - stabile Veröffentlichung: HASA 1.1 Final;
 - aktive Entwicklungsreihe: HASA 1.2;
-- aktueller Teststand: HASA 1.2.0 Alpha 32;
+- aktueller Teststand: HASA 1.2.0 Alpha 33;
 - fester Aktualisierungspfad:
   `2 src/current/HASA-AKTUELL.user.js.txt`;
-- archivierte Alpha-32-Datei:
-  `2 src/current/hasa_1.2.0-alpha.32_testerrunde.user.js.txt`.
+- archivierte Alpha-33-Datei:
+  `2 src/current/hasa_1.2.0-alpha.33_motivationsvideo.user.js.txt`.
 
-Aktueller Stand: Alpha32 mit Tester-Korrekturen für Forschungsstand, Menü, Scrollposition und Zwischenzielnavigation. Ereignisgebundene Ressourcenfarben ersetzen Vergleichsrahmen. Web12/Servergrundlage unverändert. Motivationsvideo-Aktivierungserkennung bleibt mangels echtem Laufanzeigemuster offen. Einzelheiten siehe Übergabe vom 16.10.2026.
+Aktueller Stand: Alpha33 erkennt bestätigte Motivationsvideo-Startberichte und markiert Ressourcen für eine Stunde ab Nachrichtenzeit kräftig grün; danach übrige Ereignisfarben. Alpha32-Korrekturen für Forschungsstand, Menü, Scrollposition und Zwischenzielnavigation bleiben erhalten. Web12/Servergrundlage unverändert. Einzelheiten siehe Übergabe vom 18.10.2026.
 
 Historischer Zwischenstand Alpha12:
 
@@ -2205,3 +2205,45 @@ Original lokal geprüft; Titel und Antwortlink/Spielaktion bestätigt,
 sichtbaren Inhalt auf Laufzeitnachweise geprüft. Nur tokenfreier Befund in
 `1 docs/werkstatt/motivationsvideo_quellbefund.md`; privates Original nicht hochgeladen.
 Keine Programmänderung oder Server-/Websitebereitstellung.
+
+
+## 2026-10-18 – CE HASA an Kurt – Alpha33 bestätigtes Motivationsvideo
+
+**Neuer Nachweis:** Kurts Bild zeigt **Motivationsvideo abgespielt** mit
+Nachrichtenzeit 18.10.2026 12:01:55 und Planet Ikan 1:191:6. Kurt bestätigt Ende
+13:01:55. nmv1.txt (Übersicht) und nmv2.txt (Gebäude) zeigen identische Stundenraten
+14.796 Eisenerz, 12.784 Minerale, 2.702 Treibstoff. Diese zwei HTML-Seiten enthalten
+selbst keinen Video-Laufzeithinweis. Das Bild und Kurts Endzeit ergänzen damit den
+früheren reinen Verfügbarkeitsbefund.
+
+**Umsetzung Alpha33:** Neuer Katalogtitel, bestätigter Startbericht mit Position,
+ID, Konto/Runde und vollständiger Zeit. Feste Stunde ab Original-Nachrichtenzeit.
+Spielzeiteinordnung Europe/Berlin anhand Kurts Beispiel, unabhängig von Browserzone;
+keine nicht belegte Zeitstufe aus Rechnerlokalzeit. Ungültige/mehrdeutige DST-Zeit
+ablehnen. Erneutes Lesen/Neuladen verlängert nichts. Gespeicherter Start kann nach
+verspäteter Anmeldung wieder aufgenommen werden; alter/fremder Stand wirkt nicht.
+
+**Anzeige:** Drei Ressourcenraten des berichteten Planeten kräftig grün, Gewicht 900;
+Endzeit mit Spielzeitzone im Tooltip. Ablauf-Timer nimmt Videoanzeige selbst zurück;
+nach Schlaf/Neuladen feste Endzeit erneut prüfen. Andere Wirkungsstände bleiben
+erhalten und erscheinen danach wieder. Erhöhte Werte während Video nicht als
+fehlenden Normalgrundwert lernen. Keine Multiplikation mit 24; Messwerte bleiben
+die Spielwerte. Keine automatische Spielantwort oder Flottenbeschleunigungsanzeige.
+
+**Prüfung:** 14 neue tatsächliche Chromium-Fälle einschließlich echter vereinfachter
+Übersichtsstruktur, abweichender Browserzone Brisbane, Verfügbarkeit, Start,
+Zeitgrenze und automatischem Timeout, Wiederlesen/Neuladen, Grundwertschutz,
+Wirkungsrückkehr, Auth-/Konto-/Runden-/Planetenabgrenzung und ungültigen Zeiten.
+33 bestehende Browsergruppen und 26 Live-Gruppen lokal bestanden.
+Grüne Testanzeige visuell kontrolliert. GitHub-Gesamtprüfung vor main prüfen.
+
+**Dateien:** Aktuelle vollständige Datei und identische Alpha33-Archivdatei,
+Motivationsvideo-Test und CI-Erweiterung, bestehender Katalogtest, README,
+aktuelle Benutzeranleitung, eigene Alpha33-Anleitung und aktualisierter Quellenbefund.
+Originale mit Sitzungs-/Laufzeitparametern privat, nur synthetische tokenfreie Tests.
+
+**Installation:** HASA-AKTUALISIEREN.cmd, vollständigen Tampermonkey-Code ersetzen,
+speichern, Horizon neu laden und Startbericht sichtbar machen/öffnen.
+Kein Serverupdate, keine Migration, kein STAN-Neuimport. Echter Spieltest folgt.
+Die gestern erzeugte PDF bleibt ihr ausdrücklich datierter Alpha32-Stand;
+aktuelle Markdown-Anleitung ist auf Alpha33 aktualisiert.

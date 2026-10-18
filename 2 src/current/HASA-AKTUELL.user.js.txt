@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         HASA – Horizon Ascension Assistant
 // @namespace    horiversum.hasa
-// @version      1.2.0-alpha.32
+// @version      1.2.0-alpha.33
 // @charset      UTF-8
 // @description  Horizon-Assistent mit kompakter Galaxiescanner-Anzeige und aktiver lokaler IndexedDB
 // @match        https://horiversum.org/game/main/main.php*
@@ -14,6 +14,9 @@
 // ==/UserScript==
 
 /*
+
+ Alpha33 (18.10.2026): Bestätigtes Motivationsvideo eine Stunde ab
+ Meldungszeit kräftig grün; danach andere Ereignisfarben wiederherstellen.
 
  Alpha32 (16.10.2026): Forschungsstand und Scrollposition abgesichert;
  Menüs bleiben geschlossen, Zwischenziele direkt im offenen Planer.
@@ -197,8 +200,8 @@
         'PHYSICS', 'PSYCHOLOGY', 'NUCLEARPHYSICS', 'SOLARENERGYTECH'
     ]);
 
-    const HASA_VERSION = '1.2.0 Alpha 32';
-    const HASA_BUILD_LABEL = '1.2.0-alpha32-testerrunde-2026-10-16';
+    const HASA_VERSION = '1.2.0 Alpha 33';
+    const HASA_BUILD_LABEL = '1.2.0-alpha33-motivationsvideo-2026-10-18';
     const HASA_RUNDE = 8;
     const HASA_RUNDE_SCHLUESSEL = 'runde8';
     // Die MariaDB und sämtliche Schreibendpunkte trennen Runde 7 und 8 jetzt
@@ -359,7 +362,7 @@
         'Reiche Mineralvorkommen entdeckt', 'Reiche Metallvorkommen entdeckt',
         'Unterirdischer Treibstoffsee entdeckt', 'Abschirmungsverbesserung',
         'Meteorit abgefangen', 'Hohe Geburtenrate nach Stromausfall',
-        'Laserkristalle', 'Hirnsteigerungsdroge', 'Motivationsvideo verfügbar',
+        'Laserkristalle', 'Hirnsteigerungsdroge', 'Motivationsvideo verfügbar', 'Motivationsvideo abgespielt',
         'Planet durchläuft Zeitanomalie', 'Soldatenaustauschprogramm',
         'Quantenfluktuation im Subraumlager', 'Treibstoffnebel entdeckt', 'Planet zerbrochen',
         'Fliegender Händler', 'Schiffsangebot auf dem Schwarzmarkt',
@@ -681,6 +684,12 @@
             if (!frame.isConnected) { frame.removeEventListener('load', handler); HAA_EREIGNIS_FRAMES.delete(frame); }
         }
         scanneHasaEreignisDokument(document, new Set());
+        (laden(STORAGE_EREIGNIS_REGISTER, []) || []).forEach(function(e){
+            if(e && e.subject==='Motivationsvideo abgespielt'){
+                const start=hasaMotivationStartzeit(e.reportedTimeText);
+                if(start!==null && start+3600000>Date.now())hasaProductionEvent(e);
+            }
+        });
         aktualisiereHasaEreignisAnzeige();
         markiereHasaGespeicherteBerichte();
         maleHasaProduktion();
@@ -688,7 +697,10 @@
 
     function installiereHasaEreignisScanner() {
         if (HAA_EREIGNIS_TIMER) return;
-        (laden(STORAGE_EREIGNIS_REGISTER, []) || []).forEach(uebernehmeHasaAsfiEreignis);
+        (laden(STORAGE_EREIGNIS_REGISTER, []) || []).forEach(function(e) {
+            uebernehmeHasaAsfiEreignis(e);
+            if(e && e.subject==='Motivationsvideo abgespielt') hasaProductionEvent(e);
+        });
         pruefeHasaEreignisse();
         HAA_EREIGNIS_TIMER = setInterval(pruefeHasaEreignisse, 30000);
     }
@@ -902,6 +914,7 @@
     let HAA_EVENT_SYNC_TIMER = null;
     let HAA_EVENT_SYNC_RETRY = null;
     let HAA_PRODUCTION_TIMER = null;
+    let HAA_MOTIVATION_END_TIMER = null;
     let HAA_EVENT_SYNC_ERROR = null;
     const HAA_GAME_MARKS = new Map();
     const HAA_GAME_SLOT_TITLES = new Map();
@@ -1074,9 +1087,44 @@
 
     function hasaProductionKey(owner,position) { return HASA_RUNDE+':'+owner+':'+position.galaxy+':'+position.system+':'+position.orbit; }
 
+    function hasaMotivationStartzeit(roh) {
+        const match=String(roh||'').match(/^(\d{2})\.(\d{2})\.(\d{4})\s+(\d{2}):(\d{2}):(\d{2})$/);
+        if(!match || Number(match[3])<2020 || Number(match[3])>2100)return null;
+        const utc=Date.UTC(+match[3],+match[2]-1,+match[1],+match[4],+match[5],+match[6]);
+        // Spielzeit Europe/Berlin: von Kurt am 18.10.2026 mit Start
+        // 12:01:55 und Ende 13:01:55 bestätigt. Nicht die Rechnerzeitzone verwenden.
+        const formatter=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Berlin',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'});
+        const expected=match[3]+match[2]+match[1]+match[4]+match[5]+match[6];
+        const candidates=[utc-3600000,utc-7200000].filter(function(candidate){
+            const parts={};formatter.formatToParts(new Date(candidate)).forEach(function(p){parts[p.type]=p.value;});
+            return parts.year+parts.month+parts.day+parts.hour+parts.minute+parts.second===expected;
+        });
+        // Ungültige Daten sowie doppelte/nicht existente Zeit bei Zeitumstellung ablehnen.
+        return candidates.length===1 ? candidates[0] : null;
+    }
+
+    function hasaMotivationAktiv(state) {
+        const video=state && state.motivation,now=Date.now();
+        return !!video && Number.isFinite(video.startedAt) && Number.isFinite(video.endsAt)
+            && video.endsAt===video.startedAt+3600000 && video.startedAt<=now && now<video.endsAt;
+    }
+
     function hasaProductionEvent(e) {
         if (!e.position || !e.systemEvent || !e.subject || !e.messageId) return;
+        if(e.round!==undefined && e.round!==HASA_RUNDE)return;
+        if(String(e.ownerId)!==String(ereignisScannerBenutzer()))return;
         const subject=e.subject;
+        if(subject==='Motivationsvideo abgespielt'){
+            const startedAt=hasaMotivationStartzeit(e.reportedTimeText);
+            if(startedAt===null || startedAt>Date.now())return;
+            const key=hasaProductionKey(e.ownerId,e.position),all=laden(STORAGE_PRODUCTION_TRACKER,{})||{};
+            const state=all[key]||{baseline:{},active:{},eventOrder:{},eventIds:{},lastSampleAt:null};
+            if(!state.motivation || startedAt>state.motivation.startedAt){
+                state.motivation={id:e.id,messageId:e.messageId,startedAt:startedAt,endsAt:startedAt+3600000,timeZone:'Europe/Berlin'};
+                all[key]=state;speichern(STORAGE_PRODUCTION_TRACKER,all);
+            }
+            maleHasaProduktion();return;
+        }
         let resource=null,start=false,end=false,negative=false;
         if(subject==='Reiche Metallvorkommen entdeckt'){resource='metal';start=true;}
         if(subject==='Reiche Mineralvorkommen entdeckt'){resource='mineral';start=true;}
@@ -1125,8 +1173,8 @@
         const state=all[key]||{baseline:{},active:{},eventOrder:{},eventIds:{},lastSampleAt:null};
         if(!force && state.lastSampleAt && Date.now()-Date.parse(state.lastSampleAt)<15*60*1000){maleHasaProduktion();return;}
         for(const resource of ['metal','mineral','fuel']) {
-            if(state.resetBaseline && state.resetBaseline[resource]){state.baseline[resource]=snapshot.rates[resource];delete state.resetBaseline[resource];}
-            else if(state.baseline[resource]===undefined && !state.active[resource])state.baseline[resource]=snapshot.rates[resource];
+            if(state.resetBaseline && state.resetBaseline[resource] && !hasaMotivationAktiv(state)){state.baseline[resource]=snapshot.rates[resource];delete state.resetBaseline[resource];}
+            else if(state.baseline[resource]===undefined && !state.active[resource] && !hasaMotivationAktiv(state))state.baseline[resource]=snapshot.rates[resource];
         }
         const at=new Date().toISOString(),id=key+':'+at;
         const baseline={metal:state.baseline.metal??null,mineral:state.baseline.mineral??null,fuel:state.baseline.fuel??null};
@@ -1137,9 +1185,12 @@
     }
 
     function maleHasaProduktion() {
+        clearTimeout(HAA_MOTIVATION_END_TIMER);HAA_MOTIVATION_END_TIMER=null;
         const owner=ereignisScannerBenutzer(),snapshot=owner && leseHasaProduktion();
         if(!snapshot){HAA_RATE_MARKS.forEach(function(span){span.style.outline='';span.style.outlineOffset='';span.style.color='';span.style.fontWeight='';span.title='';});return;}
         const state=(laden(STORAGE_PRODUCTION_TRACKER,{})||{})[hasaProductionKey(owner,snapshot.position)]||{baseline:{},active:{}};
+        const motivation=hasaMotivationAktiv(state);
+        if(motivation)HAA_MOTIVATION_END_TIMER=setTimeout(maleHasaProduktion,Math.max(1,state.motivation.endsAt-Date.now()+20));
         for(const key of ['metal','mineral','fuel']) {
             const node=snapshot.nodes[key];let span=node.querySelector('[data-haa-rate]');
             if(!span){const text=Array.from(node.childNodes).find(function(n){return n.nodeType===3 && /\/h\)/.test(n.textContent);});
@@ -1150,12 +1201,13 @@
             const negative=!!(state.active[key] && state.negative && state.negative[key]);
             const positive=!!state.active[key] && !negative;
             span.style.outline='';span.style.outlineOffset='';
-            span.style.color=negative?'#ff6666':positive?'#7cff7c':'#aaa';
-            span.style.fontWeight=positive||negative?'bold':'';
+            span.style.color=motivation?'#00ff55':negative?'#ff6666':positive?'#7cff7c':'#aaa';
+            span.style.fontWeight=motivation?'900':positive||negative?'bold':'';
             span.title='Aktuell: '+current.toLocaleString('de-DE')+'/h · '
                 +(known?'Grundwert: '+base.toLocaleString('de-DE')+'/h':'Grundwert noch unbekannt')
                 +(pct!==null?' · '+(pct>0?'+':'')+pct.toLocaleString('de-DE',{maximumFractionDigits:1})+' %':'')
-                +(negative?' · Produktionssenkung gemeldet':positive?' · Produktionssteigerung gemeldet':' · Keine erkannte laufende Produktionswirkung')
+                +(negative?' · Produktionssenkung gemeldet':positive?' · Produktionssteigerung gemeldet':motivation?'':' · Keine erkannte laufende Produktionswirkung')
+                +(motivation?' · Motivationsvideo aktiv · Ende '+new Intl.DateTimeFormat('de-DE',{timeZone:'Europe/Berlin',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).format(new Date(state.motivation.endsAt))+' Spielzeit (Europe/Berlin)':'')
                 +' · Prozentwert ist ein Messvergleich, keine bestätigte Ereignisstärke';
         }
         for(const node of HAA_RATE_MARKS)if(!node.isConnected)HAA_RATE_MARKS.delete(node);
@@ -1172,6 +1224,7 @@
         clearTimeout(HAA_EVENT_SYNC_TIMER);HAA_EVENT_SYNC_TIMER=null;
         clearInterval(HAA_EVENT_SYNC_RETRY);HAA_EVENT_SYNC_RETRY=null;
         clearInterval(HAA_PRODUCTION_TIMER);HAA_PRODUCTION_TIMER=null;
+        clearTimeout(HAA_MOTIVATION_END_TIMER);HAA_MOTIVATION_END_TIMER=null;
         HAA_GAME_MARKS.forEach(function(mark,img){mark.span.remove();img.style.display=mark.display;img.title=mark.title;});HAA_GAME_MARKS.clear();
         HAA_GAME_SLOT_TITLES.forEach(function(title,img){img.title=title;});HAA_GAME_SLOT_TITLES.clear();
         HAA_RATE_MARKS.forEach(function(span){if(span.parentNode)span.replaceWith(span.ownerDocument.createTextNode(span.textContent));});HAA_RATE_MARKS.clear();
@@ -6790,6 +6843,7 @@ return box;
     window.addEventListener('load', starteSicher);
     setTimeout(starteSicher, 800);
 })();
+
 
 
 
