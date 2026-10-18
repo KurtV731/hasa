@@ -2426,3 +2426,13 @@ Charons Browserprofil und tatsächliche Sitzung anschließend praktisch testen.
 **Offen:** Komfortverwaltung bleibt angefordert, nicht implementiert. Die umfassende
 Webfenstergröße/Schließkopplung über Spielnavigation hinweg bleibt ebenfalls offen.
 Diese Alpha liefert gezielte Anmeldefehlerkorrektur, keinen Abschluss jener Aufgaben.
+
+
+**Abschluss Alpha35:** Gesamtprüfung auf Programmcommit 8c190f159aebf1c664cfbb20020073f6f2ddb584
+erfolgreich: https://github.com/KurtV731/hasa/actions/runs/39133021856 .
+13 Auth-UI-, 33 Browsergruppen-, 26 Live-, 14 Video-, 8 Webnavigation-Prüfungen,
+Forschung/Menü/Scroll, PHP-Syntax und isolierte MariaDB-Prüfungen bestanden,
+einschließlich 59 Auth-Diagnose-/Tagesgrenzenprüfungen. Elf geänderte Dateien
+online exakt zurückgelesen; aktuelles Skript und Alpha35-Archiv identisch.
+Dieser Dokumentationsabschluss übernimmt denselben geprüften Programmcode nach main.
+Kein produktiver Server-/Website-Upload durch CE; Charon-Praxistest nach Installation offen.
