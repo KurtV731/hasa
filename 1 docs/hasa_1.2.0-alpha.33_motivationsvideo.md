@@ -50,7 +50,10 @@ automatischer Ablauf, Rückkehr zu positiven/negativen Farben, abgelaufene Meldu
 Konten-/Runden-/Planetenabgrenzung, fehlerhafte/zukünftige/mehrdeutige Zeiten und
 Wiederaufnahme eines gespeicherten Berichts nach später Anmeldung.
 Zusätzlich vorhandene Browser- und Live-Datenprüfungen.
-GitHub-Gesamtprüfung vor Übernahme nach main kontrollieren.
+GitHub-Gesamtprüfung bestanden auf Programmcommit 5beb169c5f04b7a8678fcc6e93572bcdd9bbda4a:
+https://github.com/KurtV731/hasa/actions/runs/39118957549 .
+Alle Browserprüfungen, PHP-Syntax und isolierte MariaDB-Prüfungen erfolgreich.
+Tatsächlicher Horizon-Spieltest nach Installation steht noch aus.
 
 Originalquellen mit laufzeitbezogenen Spielparametern bleiben privat.
 Öffentliche Tests verwenden ausschließlich bereinigte, synthetische Strukturen.

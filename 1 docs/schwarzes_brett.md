@@ -2247,3 +2247,11 @@ speichern, Horizon neu laden und Startbericht sichtbar machen/öffnen.
 Kein Serverupdate, keine Migration, kein STAN-Neuimport. Echter Spieltest folgt.
 Die gestern erzeugte PDF bleibt ihr ausdrücklich datierter Alpha32-Stand;
 aktuelle Markdown-Anleitung ist auf Alpha33 aktualisiert.
+
+**Abschluss Alpha33:** GitHub-Gesamtprüfung auf Programmcommit 5beb169c5f04b7a8678fcc6e93572bcdd9bbda4a
+erfolgreich: https://github.com/KurtV731/hasa/actions/runs/39118957549 .
+14 Motivationsvideo-Fälle, 33 Browsergruppen, 26 Live-Gruppen, Webnavigation,
+Forschung/Menü/Scroll, PHP-Syntax und isolierte MariaDB-Prüfungen bestanden.
+Zehn geänderte Dateien online exakt zurückgelesen; aktive Datei und Alpha33-Archiv
+identisch. Dieser Dokumentationsabschluss übernimmt denselben geprüften Programmcode
+nach main. Kein Server-/Website-Upload; tatsächlicher Spieltest nach Installation.
