@@ -2312,3 +2312,55 @@ Alpha34 bleibt unverändert, kein Upload oder Änderung von Server-/Programmdate
 **Prüfung:** Aktuelles Skript und Ausschaltpfad gelesen; Window.open-Verhalten anhand
 MDN geprüft: https://developer.mozilla.org/en-US/docs/Web/API/Window/open .
 Konkrete Popup-/Kopplungsimplementierung und Browserprüfungen stehen noch aus.
+
+
+## 2026-10-18 – Kurt an CE HASA – Komfort in der Benutzerverwaltung (nächstes Bündel)
+
+**Status: AUFGENOMMENER FUNKTIONSWUNSCH / NOCH NICHT IMPLEMENTIERT.**
+Kurt möchte vergebene START-Passwörter nachsehen, eigene Tippfehler nachträglich
+korrigieren und die letzten Benutzereingaben des Anmelde-/Pflichtwechselprozesses
+direkt in der Benutzerverwaltung sehen. Weitere Bedienwünsche können folgen.
+Gemäß geltender Bündelregel keine neue Alpha nur für diese Aufnahme.
+
+**Praxisergebnis:** Charon bestätigt im vorgelegten Bild die erfolgreiche Anmeldung
+mit großem N am Namensende und den abgeschlossenen persönlichen Passwortwechsel.
+Das Bild beweist keine bestimmte Ursache oder Groß-/Kleinschreibungsregel der
+Datenbank; die konkrete Namensprüfung bei Umsetzung gesondert testen.
+Keine Zugangsdaten aus dem Bild veröffentlicht.
+
+**Aktueller Codebefund:** useradmin.1 zeigt Startpasswort ausschließlich in der
+erfolgreichen POST-Antwort und speichert nur den Prüfhash. Spätere Klartextanzeige
+bisher vergebener Passwörter daher nicht aus dem Hash rekonstruierbar; keine
+automatische Rücksetzung bestehender Konten. Web-Benutzerverwaltung bietet keine
+Namenskorrektur, obwohl die gesonderte Root-CLI bereits rename kennt.
+auth.3 schreibt nur feste Diagnoseereignisse ins private PHP-Fehlerlog;
+keine letzten Namen/Formulare und keine Verwaltungsansicht dieser Schritte.
+
+**Zielumfang für die Ausarbeitung im gemeinsamen Update:**
+- Kontoübersicht mit genauer Schreibweise des Spielernamens, Kontostatus und
+  offenem/abgeschlossenem Pflichtwechsel. Spielernamen nachträglich korrigieren,
+  dabei bestehende Konto-ID und alle zugeordneten Daten/Freigaben erhalten;
+  Namenskollisionen einschließlich reiner Schreibweisenänderungen prüfen.
+- Künftig ausgegebene Startpasswörter für berechtigte Verwalter erneut anzeigbar
+  und kopierbar machen, solange sie noch gültig sind. Dazu geschützte zusätzliche
+  Ablage und deren Schlüssel-/Löschkonzept vor Implementierung festlegen; keine
+  Klartext-Logablage. Bei erfolgreichem Wechsel oder Ersetzung nicht weiter als
+  gültigen Zugang zeigen. Für ältere nur gehashte Startpasswörter ehrlich
+  „nicht erneut verfügbar“ anzeigen; vorhandene Resetfunktion ausdrücklich anbieten.
+- Tippfehler am Zugang gezielt korrigierbar; Auswirkungen einer Namenskorrektur
+  oder eines ersetzten Startpassworts für den Administrator klar anzeigen.
+  Persönliches Spielerpasswort weiterhin ausschließlich vom Spieler gesetzt.
+- Letzte serverseitig empfangene Schritte mit Zeitpunkt, eingegebenem Spielernamen,
+  zugeordnetem Konto soweit sicher bekannt, Schritt und verständlichem Ergebnis
+  anzeigen. Keine Passwortfelder, Cookies, CSRF-Werte oder kompletten Rohformulare
+  aufzeichnen. Unbekannte/falsch geschriebene Namen nicht bloß wegen Ähnlichkeit
+  einem fremden Konto zuordnen. Nur serverseitige Schritte beweisbar; keine
+  vorgetäuschte Aufzeichnung nicht gesendeter Tastatureingaben.
+- Konten- und Diagnosezugriff weiter innerhalb des bestehenden Verwaltungsbereichs;
+  keine neuen Leserechte auf private Spieldaten. Begrenzte Aufbewahrung und
+  Löschung der zusätzlichen personenbezogenen Diagnoseangaben festlegen.
+
+**Abgrenzung:** Dies ist die dokumentierte Anforderung samt Quellbefund,
+keine fertige Erweiterung. Keine produktiven Konten geändert, keine Migration
+oder Serverbereitstellung und kein neues Userscript. Umsetzung, Migration falls
+erforderlich, Browser-/Berechtigungs-/Ablaufprüfungen stehen noch aus.
