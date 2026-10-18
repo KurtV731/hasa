@@ -2467,3 +2467,12 @@ Anleitung um direkten Installationslink und Erstumstieg ergänzt.
 Programmcode hinter dem Metadatenblock ist unverändert zu geprüftem Alpha35.
 Gesamtprüfung vor main kontrollieren, Quellen online zurücklesen.
 Kein Produktionsupload und kein neues Konto oder Zugriffsschlüssel.
+
+
+**Abschluss Updateweg:** Gesamtprüfung auf 0a87f3da002357a1b240e491ab542c856608bc9e
+erfolgreich: https://github.com/KurtV731/hasa/actions/runs/39134570396 .
+Bytevergleich der aktuellen .user.js/.txt und alle Browser-/PHP-/MariaDB-Prüfungen
+bestanden. Sieben Dateien online exakt zurückgelesen. Ausführbarer Code hinter
+dem Metadatenblock identisch zum zuvor geprüften Alpha35. Keine neue Programmversion.
+Derselbe geprüfte Stand wird mit diesem Dokumentationsabschluss nach main übernommen.
+Installation im tatsächlichen Tampermonkey bleibt der Test auf Kurts/Charons Rechner.
