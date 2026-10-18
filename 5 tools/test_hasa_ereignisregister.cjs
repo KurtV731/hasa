@@ -228,7 +228,7 @@ const helpers = source.slice(source.indexOf('    function prdrNormalisiereText')
         assert.equal(await full.locator('#haa-box').locator('details.haa-accordion').count(),3);
         assert.equal(await full.locator('details[data-haa-bereich="ascension"]').count(),0);
         assert.equal(await full.evaluate(()=>__hasaTest.list().length),1);
-        assert.match(await full.locator('#haa-box').innerText(),/Alpha 33/);
+        assert.match(await full.locator('#haa-box').innerText(),/Alpha 34/);
         const layout = await full.evaluate(() => {
             const bar = document.querySelector('#haa-werkzeuge');
             const first = document.querySelector('details.haa-accordion');

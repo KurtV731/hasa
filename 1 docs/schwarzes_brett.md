@@ -121,11 +121,11 @@ eine neue Runde wird durch eine eigene Rundenkennung getrennt.
 
 - stabile Veröffentlichung: HASA 1.1 Final;
 - aktive Entwicklungsreihe: HASA 1.2;
-- aktueller Teststand: HASA 1.2.0 Alpha 33;
+- aktueller Teststand: HASA 1.2.0 Alpha 34;
 - fester Aktualisierungspfad:
   `2 src/current/HASA-AKTUELL.user.js.txt`;
-- archivierte Alpha-33-Datei:
-  `2 src/current/hasa_1.2.0-alpha.33_motivationsvideo.user.js.txt`.
+- archivierte Alpha-34-Datei:
+  `2 src/current/hasa_1.2.0-alpha.34_ressourcenzeile.user.js.txt`.
 
 Aktueller Stand: Alpha33 erkennt bestätigte Motivationsvideo-Startberichte und markiert Ressourcen für eine Stunde ab Nachrichtenzeit kräftig grün; danach übrige Ereignisfarben. Alpha32-Korrekturen für Forschungsstand, Menü, Scrollposition und Zwischenzielnavigation bleiben erhalten. Web12/Servergrundlage unverändert. Einzelheiten siehe Übergabe vom 18.10.2026.
 
@@ -2255,3 +2255,19 @@ Forschung/Menü/Scroll, PHP-Syntax und isolierte MariaDB-Prüfungen bestanden.
 Zehn geänderte Dateien online exakt zurückgelesen; aktive Datei und Alpha33-Archiv
 identisch. Dieser Dokumentationsabschluss übernimmt denselben geprüften Programmcode
 nach main. Kein Server-/Website-Upload; tatsächlicher Spieltest nach Installation.
+
+
+## 2026-10-18 – CE HASA an Kurt – Alpha34 Produktionsrate ohne Umbruch
+
+Kurt bestätigt die Videoanzeige praktisch, meldet aber abgetrenntes h) bei
+fetten Stundenraten. Kleine Optikkorrektur: nur die von HASA markierte Rate samt
+Klammern und /h mit white-space: nowrap zusammenhalten. Bestand, Zahlentext,
+Ereignisfarbe, Gewicht und Videolaufzeit unverändert. Kein neuer Spielablauf.
+
+14 vorhandene Video-Browserprüfungen lokal bestanden, schmale Tabellenanzeige
+visuell kontrolliert: Rate und Einheit jeweils in einer Zeile. Versionsassertion
+des bestehenden Gesamtstarts angepasst. GitHub-Gesamtprüfung vor main kontrollieren.
+Aktive vollständige Datei und identisches Alpha34-Archiv; Alpha33 erhalten.
+Nur Tampermonkey-Code über HASA-AKTUALISIEREN.cmd ersetzen, speichern, neu laden.
+Kein Serverupdate oder Migration. Benutzeranleitung Alpha33 beschreibt weiterhin
+dieselbe Bedienung; PDF bleibt datierter Alpha32-Stand.

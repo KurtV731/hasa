@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         HASA – Horizon Ascension Assistant
 // @namespace    horiversum.hasa
-// @version      1.2.0-alpha.33
+// @version      1.2.0-alpha.34
 // @charset      UTF-8
 // @description  Horizon-Assistent mit kompakter Galaxiescanner-Anzeige und aktiver lokaler IndexedDB
 // @match        https://horiversum.org/game/main/main.php*
@@ -14,6 +14,8 @@
 // ==/UserScript==
 
 /*
+
+ Alpha34 (18.10.2026): Produktionsrate und /h bleiben auch in Fettschrift zusammen.
 
  Alpha33 (18.10.2026): Bestätigtes Motivationsvideo eine Stunde ab
  Meldungszeit kräftig grün; danach andere Ereignisfarben wiederherstellen.
@@ -200,8 +202,8 @@
         'PHYSICS', 'PSYCHOLOGY', 'NUCLEARPHYSICS', 'SOLARENERGYTECH'
     ]);
 
-    const HASA_VERSION = '1.2.0 Alpha 33';
-    const HASA_BUILD_LABEL = '1.2.0-alpha33-motivationsvideo-2026-10-18';
+    const HASA_VERSION = '1.2.0 Alpha 34';
+    const HASA_BUILD_LABEL = '1.2.0-alpha34-ressourcenzeile-2026-10-18';
     const HASA_RUNDE = 8;
     const HASA_RUNDE_SCHLUESSEL = 'runde8';
     // Die MariaDB und sämtliche Schreibendpunkte trennen Runde 7 und 8 jetzt
@@ -1201,6 +1203,7 @@
             const negative=!!(state.active[key] && state.negative && state.negative[key]);
             const positive=!!state.active[key] && !negative;
             span.style.outline='';span.style.outlineOffset='';
+            span.style.whiteSpace='nowrap';
             span.style.color=motivation?'#00ff55':negative?'#ff6666':positive?'#7cff7c':'#aaa';
             span.style.fontWeight=motivation?'900':positive||negative?'bold':'';
             span.title='Aktuell: '+current.toLocaleString('de-DE')+'/h · '
