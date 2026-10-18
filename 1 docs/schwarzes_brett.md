@@ -2277,3 +2277,38 @@ erfolgreich: https://github.com/KurtV731/hasa/actions/runs/39120330942 .
 Browser-/Video-/Planer-/Webprüfungen, PHP-Syntax und isolierte MariaDB-Prüfungen
 bestanden. Fünf Release-Dateien online exakt verglichen; aktive Datei und Archiv
 identisch. Derselbe geprüfte Programmcode mit diesem Dokumentationsabschluss nach main.
+
+
+## 2026-10-18 – Kurt an CE HASA – Webfenster an HASA koppeln (nächstes Bündel)
+
+**Status: BESCHLOSSENER BEDIENWUNSCH / NOCH NICHT IMPLEMENTIERT.**
+Kurt bemängelt, dass die DB-Abfrage nach Schließen/Ausschalten von HASA offen bleibt.
+Aus HASA geöffnete Webseiten sollen als kleinere eigenständige, gerahmte Fenster
+erscheinen statt bildschirmgroßer Tabs/Fenster.
+
+**Befund:** galaxy/Anmeldung/Benutzerverwaltung öffnen derzeit _blank ohne
+Größenangaben; ASFI/Gilde zusätzlich mit noopener. Fensterreferenzen werden nicht
+dauerhaft verwaltet, HASA aus schließt keine Webfenster.
+
+**Vorgesehen fürs nächste gemeinsame Update:**
+- Webaufrufe über eine gemeinsame Fensterverwaltung öffnen, z.B. um 1100×750,
+  auf verfügbare Bildschirmfläche begrenzen, zentrieren, verschiebbar/vergrößerbar
+  mit Scrollleisten und normalem Browser-/Betriebssystemrahmen.
+- Bereits geöffnetes zugehöriges Fenster wiederverwenden/in den Vordergrund holen.
+- Bei HASA aus die von diesem HASA geöffneten DB-/ASFI-/Gilden-Lesefenster schließen.
+  Manuell unabhängig geöffnete Seiten anderer Zwecke bleiben unangetastet.
+- Reinen Horizon-Seitenwechsel und späteres HASA aus zusammen prüfen: Beziehungen
+  dürfen beim Neuaufbau nicht verloren gehen. Auch mehrere Spieltabs berücksichtigen.
+- Anmelde-/Verwaltungsdialoge bei der Umsetzung gesondert behandeln; laufende
+  Formulare nicht versehentlich durch normales Spielnavigieren verwerfen.
+- Browser entscheidet über genaue Fensterdekoration und kann Popup-Wünsche
+  übersteuern; blockierte Fenster nachvollziehbar anzeigen.
+
+**Release-Regel von Kurt (direkt zuvor):** Kleine optische/Bedienkorrekturen sammeln
+und erst im nächsten gemeinsamen Update ausliefern. Keine neue Versionsrunde allein
+für diesen Eintrag. Sofortige Zwischenupdates nur bei ernsthaft störenden Fehlern.
+Alpha34 bleibt unverändert, kein Upload oder Änderung von Server-/Programmdateien.
+
+**Prüfung:** Aktuelles Skript und Ausschaltpfad gelesen; Window.open-Verhalten anhand
+MDN geprüft: https://developer.mozilla.org/en-US/docs/Web/API/Window/open .
+Konkrete Popup-/Kopplungsimplementierung und Browserprüfungen stehen noch aus.
