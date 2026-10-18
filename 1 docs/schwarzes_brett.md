@@ -2364,3 +2364,24 @@ keine letzten Namen/Formulare und keine Verwaltungsansicht dieser Schritte.
 keine fertige Erweiterung. Keine produktiven Konten geändert, keine Migration
 oder Serverbereitstellung und kein neues Userscript. Umsetzung, Migration falls
 erforderlich, Browser-/Berechtigungs-/Ablaufprüfungen stehen noch aus.
+
+
+### Ergänzung von Kurt – freie Startpasswortnummern gezielt vergeben
+
+Kurt möchte nachweislich nie vergebene Nummern gezielt verwenden können,
+insbesondere das von ihm als unbenutzt genannte PPW:4712. Wunsch für die
+Benutzerverwaltung: eine freie Nummer auswählen und als Startpasswort für
+ein berechtigt verwaltetes Konto vergeben bzw. dessen Zugang damit zurücksetzen.
+Der normale fortlaufende Zähler darf dadurch nicht blind zurückgedreht werden.
+
+Vor Umsetzung die tatsächliche Verfügbarkeit prüfen: Eine Lücke oder ein
+fehlgeschlagener Bedienversuch beweist nicht, dass das Passwort nie ausgegeben
+wurde. Bisherige Hashablage allein liefert keine vollständige Ausgabehistorie.
+4712 ist hier Kurts Angabe, kein bestätigter Produktivbefund. Nummern künftig
+mit nachvollziehbarem Vergabestatus führen, gezielte Vergabe transaktional gegen
+gleichzeitige/doppelte Ausgabe absichern; bereits ausgegebene oder verbrauchte
+Nummern nicht als „nie vergeben“ anbieten. Bestehende Konto-ID erhalten,
+Pflichtwechsel erzwingen und bisherige Sitzungen beim Reset entwerten.
+
+Nur Anforderung ergänzt, keine Nummer produktiv freigegeben, kein Zähler
+verändert und kein Passwortreset durchgeführt. Teil des gemeinsamen Updates.
