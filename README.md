@@ -41,6 +41,10 @@ Versionsstand erhalten.
 
 ## Installation und automatische Userscript-Updates
 
+Für Technik-Einsteiger: [HASA aktualisieren - ganz in Ruhe](1%20docs/hasa_updates_ganz_in_ruhe.md).
+Die Anleitung erklärt den einmaligen Umstieg, die tatsächlichen Dialoge und künftige Updates.
+
+
 [HASA direkt in Tampermonkey installieren oder aktualisieren](https://raw.githubusercontent.com/KurtV731/hasa/main/2%20src/current/HASA-AKTUELL.user.js)
 
 Einmal den Link öffnen und im Tampermonkey-Dialog die vorhandene HASA-Installation

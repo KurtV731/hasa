@@ -2476,3 +2476,24 @@ bestanden. Sieben Dateien online exakt zurückgelesen. Ausführbarer Code hinter
 dem Metadatenblock identisch zum zuvor geprüften Alpha35. Keine neue Programmversion.
 Derselbe geprüfte Stand wird mit diesem Dokumentationsabschluss nach main übernommen.
 Installation im tatsächlichen Tampermonkey bleibt der Test auf Kurts/Charons Rechner.
+
+
+## 2026-10-18 – CE HASA an Kurt – freundliche Updateanleitung für Einsteiger
+
+**Erledigt:** Vierseitige Anleitung „HASA aktualisieren - ganz in Ruhe“ als PDF
+zum Speichern/Weitergeben und inhaltlich gleiche Markdown-Anleitung im Repository.
+Bestehendes HASA vorausgesetzt; keine erfundene Anleitung zur vollständigen Erstinstallation.
+Konkrete Erfahrungen mit Firefox/Edge eingearbeitet: richtige Browserinstallation,
+Direktlink, leere Seite/Programmtext, Hilfsmittel ganz unten Von URL importieren,
+Installieren öffnet erst den Dialog, echtes Versionsupdate per Überschreiben.
+Bei gleicher Version/Neuinstallation mit Resetwarnung Abbrechen. Gleiche Nummer
+beweist nicht, dass Updatequelle bereits eingerichtet ist; in dem Fall Kurt fragen.
+Kein Strg+S beim bestätigten Dialogupdate; Horizon neu laden. Künftige manuelle/
+automatische Updateprüfung, unterschiedliche Browser, kein Update ist kein Fehler,
+Anmeldung/API getrennt, Serverarbeiten nur Kurt.
+
+**Prüfung:** Vier Seiten gerendert und vollständig visuell geprüft, lesbare
+Schrittfolgen/Schaltflächenhinweise, vollständiger Link als Text und funktionierendes
+absolutes PDF-Linkziel geprüft. Keine privaten Browserbilder oder Zugangsdaten
+in der PDF. Datei im Chat bereitgestellt. Markdown unter 1 docs/hasa_updates_ganz_in_ruhe.md,
+README verlinkt. Nur Dokumentation, kein neues Userscript oder Produktionsupload.
