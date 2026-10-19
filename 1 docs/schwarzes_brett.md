@@ -2558,3 +2558,22 @@ abschließenden Lauf berichtigt. Zehn geänderte Dateien online zurückgelesen,
 die drei Skriptfassungen einschließlich korrigierter Version exakt identisch.
 Derselbe geprüfte Programmcode wird nach main übernommen. Charons tatsächlicher
 Praxistest, Fremdseitenanzeige und wiederkehrende Anmeldung bleiben offen.
+
+
+## 2026-10-19 - Kurt an CE HASA - Wassereinbruch in Metallmine
+
+**Neue echte Quelle geprüft / nächstes Bündel, noch nicht implementiert.**
+Datei w e message.txt enthält Übersicht und geöffneten Bericht:
+„Wassereinbruch in Metallmine“, Absender Minenbehörde, Typfilter MMSFL.
+Wirkung ausdrücklich: Minenproduktion für unbestimmte Zeit herabgesetzt zum
+Abpumpen. Sichtbare Metallrate 66/h. Keine feste Prozentzahl, Dauer oder sichere
+Beschädigung/Minenstufenänderung belegt. Nur Metall zuordnen.
+
+Alpha36 kennt bisher Mineralmine im Katalog; Metalltitel fehlt und allgemeiner
+Negativparser trifft die Formulierung Minenproduktion ... herabgesetzt nicht.
+Gezielte Katalog-/Wirkungserkennung für echten Systembericht mit bisherigen
+Konto-/Runden-/Positions-/Kennungsprüfungen fürs nächste gemeinsame Update vorsehen.
+Nicht aus bloßem Zahlenrückgang starten oder nach erfundener Frist enden lassen.
+Echte End-/Normalisierungsmeldung bleibt als Quelle offen.
+Details: 1 docs/werkstatt/metallmine_wassereinbruch_quellbefund.md.
+Original privat; keine Spielaktion, kein Serverupload und keine neue Alpha.
