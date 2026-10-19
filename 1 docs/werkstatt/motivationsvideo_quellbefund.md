@@ -1,6 +1,31 @@
 # Motivationsvideo: Befund aus mv.txt
 
-Stand: 18.10.2026
+Stand: 19.10.2026
+
+## Ergänzung vom 19.10.2026 - message.txt vor dem Start
+
+Die neue privat gelieferte Datei ist eine Nachrichtenübersicht, kein geöffneter
+Einzelbericht. Sie enthält den Listeneintrag **Motivationsvideo verfügbar** vom
+17.10.2026, 21:47:29, mit Absender Handelszentrum und einer Planetenposition.
+Der zum Eintrag gehörende Typfilter lautet `BSTAV`. Der Filterwert stammt hier
+aus der Aktion zum Verschieben dieses Nachrichtentyps, nicht aus einem
+Start-/Aktivierungslink. Keiner dieser Links wurde ausgeführt.
+
+**Einordnung:** Zusätzlicher echter Beleg für „verfügbar / noch nicht gestartet“
+gemäß Kurts Beschreibung. Keine Startbestätigung, Restlaufzeit oder Endmeldung
+in dieser Quelle. Berichtszeit ist die Zeit der Verfügbarkeitsmeldung, kein
+Startzeitpunkt. Angezeigte Produktionsraten dürfen nicht allein als Beleg für
+Normalproduktion oder einen Videoeffekt interpretiert werden.
+
+**Programmprüfung:** Aktuelles Alpha35 kennt den Verfügbarkeitstitel bereits.
+`hasaProductionEvent` beginnt die Videostunde nur beim bestätigten Titel
+**Motivationsvideo abgespielt** mit passendem Konto/Runde/Planet, Nachrichtenkennung
+und gültiger Originalzeit. Keine kräftig grüne Videoanzeige oder neuer Timer aus
+„verfügbar“. Dieser Zusatzbefund erfordert keine Programmänderung oder neue Alpha.
+
+Original bleibt privat: dynamische Spielparameter, private Kontoangaben und
+vollständige HTML-Seite nicht in GitHub übernehmen. Dokumentiert sind nur
+benötigte, bereinigte Erkennungsmerkmale.
 
 ## Ergänzung nach erfolgreichem Start – Grundlage für Alpha33
 

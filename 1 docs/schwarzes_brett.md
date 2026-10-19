@@ -2497,3 +2497,21 @@ Schrittfolgen/Schaltflächenhinweise, vollständiger Link als Text und funktioni
 absolutes PDF-Linkziel geprüft. Keine privaten Browserbilder oder Zugangsdaten
 in der PDF. Datei im Chat bereitgestellt. Markdown unter 1 docs/hasa_updates_ganz_in_ruhe.md,
 README verlinkt. Nur Dokumentation, kein neues Userscript oder Produktionsupload.
+
+
+## 2026-10-19 - CE HASA an Kurt / gemeinsamer Quellenbefund - Video nur verfügbar
+
+Kurt liefert message.txt zur Vervollständigung für beide Fachbereiche.
+Privat lokal gelesen: Nachrichtenübersicht mit „Motivationsvideo verfügbar“,
+Handelszentrum, Nachrichtenzeit und Planetenposition. Typfilter BSTAV im Link
+zum Verschieben des Nachrichtentyps; kein Start- oder Erfolgsbeleg. Kein
+geöffneter Einzelbericht und keine Video-Restlaufzeit/Endmeldung in dieser Datei.
+
+Aktuelles Alpha35 über GitHub geprüft: Verfügbarkeitstitel bekannt, Videostart
+nur bei „Motivationsvideo abgespielt“ mit den vorhandenen Nachweisprüfungen.
+Daher nur Quelle ergänzen, keine neue Fassung, kein Timer ab Eingang der Meldung
+und keine kräftig grüne Videoanzeige aus dem bloßen Listeneintrag.
+Quelle/Abgrenzung in 1 docs/werkstatt/motivationsvideo_quellbefund.md ergänzt.
+Original mit dynamischen/privaten Spielparametern bleibt privat. Keine
+Spielaktion, Nachricht an Dritte oder produktive Bereitstellung ausgeführt.
+Reine Dokumentation, keine erneute Programm-Testserie erforderlich.
