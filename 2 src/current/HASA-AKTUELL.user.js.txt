@@ -209,7 +209,7 @@
         'PHYSICS', 'PSYCHOLOGY', 'NUCLEARPHYSICS', 'SOLARENERGYTECH'
     ]);
 
-    const HASA_VERSION = '1.2.0 Alpha 35';
+    const HASA_VERSION = '1.2.0 Alpha 36';
     const HASA_BUILD_LABEL = '1.2.0-alpha36-mausbedienung-2026-10-19';
     const HASA_RUNDE = 8;
     const HASA_RUNDE_SCHLUESSEL = 'runde8';
