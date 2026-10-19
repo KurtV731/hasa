@@ -1,6 +1,6 @@
 # HASA – Benutzeranleitung für die Testversion
 
-Stand: 18.10.2026 · HASA 1.2.0 Alpha 35 · Spielrunde 8
+Stand: 19.10.2026 · HASA 1.2.0 Alpha 36 · Spielrunde 8
 
 Diese Anleitung richtet sich an die eingeladenen Testspieler. Die stabile
 Veröffentlichung HASA 1.1 hat einen anderen Funktionsstand.
@@ -42,7 +42,7 @@ Ein Update ersetzt den Code im **vorhandenen** Tampermonkey-Skript:
 2. Im Tampermonkey-Dashboard das vorhandene HASA-Skript öffnen.
 3. Einmal in den Codetext klicken, dann **Strg+A**, **Strg+V**.
 4. Speichern und Horizon neu laden.
-5. Im HASA-Kopf die Versionsnummer kontrollieren: derzeit **1.2.0 Alpha 35**.
+5. Im HASA-Kopf die Versionsnummer kontrollieren: derzeit **1.2.0 Alpha 36**.
 
 Kein zweites HASA daneben anlegen und für ein normales Update keine gespeicherten
 Daten löschen.
@@ -53,10 +53,16 @@ kopiert den vollständigen aktuellen Code in die Zwischenablage. Erst danach fol
 die Schritte im Tampermonkey-Editor. Die CMD-Datei benötigt Git und ein vorhandenes
 lokales Repository; sie ersetzt den Tampermonkey-Code nicht selbst.
 
-**Auf Alpha35 aktualisieren:** `HASA-Serverupdate.bat` für auth.4 ausführen,
-dann das Userscript mit `HASA-AKTUALISIEREN.cmd` vollständig ersetzen und Horizon
-neu laden. Einmal bei HASA ab- und wieder anmelden, damit das Tagescookie entsteht.
-Keine Datenbankmigration und kein STAN-Neuimport.
+**Von Alpha35 auf Alpha36:** In Tampermonkey nach Updates suchen, angebotene
+Aktualisierung bestätigen und Horizon neu laden. Kein Serverupdate, SQL-Import
+oder STAN-Neuimport für diese Mauskorrektur nötig. Für ältere Fassungen bleibt
+die einmalige auth.4-Serverinstallation aus Alpha35 relevant, falls noch offen.
+
+Verschieben oder Vergrößern endet auch bei Fokus-/Tabwechsel und verlorener
+Maustastenfreigabe. Falls ein Fenster die Bedienung stört: HASA zunächst nur über
+den Schalter in der Tampermonkey-Übersicht deaktivieren und betroffene Seiten neu
+laden. Bei weiteren Problemen ein Bild des tatsächlichen Fensters mit sichtbarer
+Adresszeile und der installierten HASA-Version an Kurt geben. Nicht zuerst löschen.
 
 ### Einfacher Weg für Tester: direkt von GitHub
 

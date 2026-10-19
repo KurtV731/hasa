@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         HASA – Horizon Ascension Assistant
 // @namespace    horiversum.hasa
-// @version      1.2.0-alpha.35
+// @version      1.2.0-alpha.36
 // @charset      UTF-8
 // @updateURL    https://raw.githubusercontent.com/KurtV731/hasa/main/2%20src/current/HASA-AKTUELL.user.js
 // @downloadURL  https://raw.githubusercontent.com/KurtV731/hasa/main/2%20src/current/HASA-AKTUELL.user.js
@@ -17,7 +17,7 @@
 
 /*
 
- Alpha35 (18.10.2026): Anmeldereiter wiederverwenden, Status direkt prüfen;
+ Alpha36 (19.10.2026): Verschieben und Größenänderung enden auch bei\n verlorener Maustastenfreigabe, Fokusverlust und Fensterneuaufbau.\n\n Alpha35 (18.10.2026): Anmeldereiter wiederverwenden, Status direkt prüfen;
  gezielte Cookie-Partition und Schutz gegen Start auf HASA-Webseiten.
 
  Alpha34 (18.10.2026): Produktionsrate und /h bleiben auch in Fettschrift zusammen.
@@ -50,9 +50,9 @@
 ==========================================================
  HASA – Horizon Ascension Assistant
 
- Version : 1.2.0 Alpha 35
+ Version : 1.2.0 Alpha 36
  Status  : Anmeldestatus, Tages-Sitzung und vorhandene Spielassistenten
- Build   : 2026-10-18
+ Build   : 2026-10-19
 
  Neu in Alpha 26:
  - ältere bekannte Planungsobjekte bleiben im Zielkatalog auswählbar
@@ -210,7 +210,7 @@
     ]);
 
     const HASA_VERSION = '1.2.0 Alpha 35';
-    const HASA_BUILD_LABEL = '1.2.0-alpha35-anmeldestatus-2026-10-18';
+    const HASA_BUILD_LABEL = '1.2.0-alpha36-mausbedienung-2026-10-19';
     const HASA_RUNDE = 8;
     const HASA_RUNDE_SCHLUESSEL = 'runde8';
     // Die MariaDB und sämtliche Schreibendpunkte trennen Runde 7 und 8 jetzt
@@ -3011,6 +3011,8 @@
             return;
         }
 
+        if (e.currentTarget !== box || !box.isConnected) return;
+        beendeHasaFensterInteraktion();
         const r = box.getBoundingClientRect();
         HAA_DRAG_AKTIV = true;
         HAA_DRAG_BOX = box;
@@ -3029,6 +3031,12 @@
             return;
         }
 
+        if (!(e.buttons & 1) || !HAA_DRAG_BOX.isConnected
+                || document.getElementById('haa-box') !== HAA_DRAG_BOX) {
+            beendeHasaDrag();
+            return;
+        }
+
         const links = HAA_DRAG_BOX_X + (e.clientX - HAA_DRAG_START_X);
         const oben = HAA_DRAG_BOX_Y + (e.clientY - HAA_DRAG_START_Y);
         const geschnappt = snappeFensterPosition(HAA_DRAG_BOX, links, oben, e);
@@ -3039,16 +3047,15 @@
     }
 
     function beendeHasaDrag() {
-        if (!HAA_DRAG_AKTIV || !HAA_DRAG_BOX) {
-            return;
-        }
-
-        HAA_DRAG_BOX.style.cursor = 'move';
-        HAA_DRAG_BOX.style.userSelect = '';
-        speichereFensterPosition(HAA_DRAG_BOX);
-
+        const box = HAA_DRAG_BOX;
         HAA_DRAG_AKTIV = false;
         HAA_DRAG_BOX = null;
+        if (!box) return;
+        box.style.cursor = 'move';
+        box.style.userSelect = '';
+        if (box.isConnected && document.getElementById('haa-box') === box) {
+            speichereFensterPosition(box);
+        }
     }
 
     function aktiviereHasaDrag(box) {
@@ -3066,7 +3073,8 @@
         if (e.button !== 0) return;
         const griff = e.currentTarget;
         const box = document.getElementById('haa-box');
-        if (!griff || !box) return;
+        if (!griff || !box || !griff.isConnected || griff.closest('#haa-box') !== box) return;
+        beendeHasaFensterInteraktion();
 
         const r = box.getBoundingClientRect();
         HAA_RESIZE_AKTIV = true;
@@ -3082,6 +3090,12 @@
 
     function bewegeHasaResize(e) {
         if (!HAA_RESIZE_AKTIV || !HAA_RESIZE_BOX || !HAA_RESIZE_START_RECT) return;
+
+        if (!(e.buttons & 1) || !HAA_RESIZE_BOX.isConnected
+                || document.getElementById('haa-box') !== HAA_RESIZE_BOX) {
+            beendeHasaResize();
+            return;
+        }
 
         const richtung = HAA_RESIZE_RICHTUNG;
         const dx = e.clientX - HAA_RESIZE_START_X;
@@ -3128,13 +3142,21 @@
     }
 
     function beendeHasaResize() {
-        if (!HAA_RESIZE_AKTIV || !HAA_RESIZE_BOX) return;
-        HAA_RESIZE_BOX.style.userSelect = '';
-        speichereFensterPosition(HAA_RESIZE_BOX);
-        speichereFensterGroesse(HAA_RESIZE_BOX);
+        const box = HAA_RESIZE_BOX;
         HAA_RESIZE_AKTIV = false;
         HAA_RESIZE_BOX = null;
         HAA_RESIZE_START_RECT = null;
+        if (!box) return;
+        box.style.userSelect = '';
+        if (box.isConnected && document.getElementById('haa-box') === box) {
+            speichereFensterPosition(box);
+            speichereFensterGroesse(box);
+        }
+    }
+
+    function beendeHasaFensterInteraktion() {
+        beendeHasaDrag();
+        beendeHasaResize();
     }
 
     function aktiviereHasaResize(box) {
@@ -3164,9 +3186,15 @@
     }
 
     document.addEventListener('mousemove', bewegeHasaDrag);
-    document.addEventListener('mouseup', beendeHasaDrag);
+    document.addEventListener('mouseup', beendeHasaFensterInteraktion, true);
     document.addEventListener('mousemove', bewegeHasaResize);
-    document.addEventListener('mouseup', beendeHasaResize);
+    // Auch außerhalb des Dokuments verlorene Freigaben sicher beenden.
+    window.addEventListener('blur', beendeHasaFensterInteraktion);
+    window.addEventListener('pagehide', beendeHasaFensterInteraktion);
+    document.addEventListener('mouseleave', beendeHasaFensterInteraktion);
+    document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState !== 'visible') beendeHasaFensterInteraktion();
+    });
     window.addEventListener('resize', function () {
         const box = document.getElementById('haa-box');
         if (!box) return;
@@ -3178,6 +3206,7 @@
     }, { passive: true });
 
     function grundBox() {
+        beendeHasaFensterInteraktion();
         const alt = document.getElementById('haa-box');
         if (alt) alt.remove();
 
@@ -6866,6 +6895,7 @@ return box;
     }
 
     function deaktiviereHasaFuerSitzung() {
+        beendeHasaFensterInteraktion();
         setzeHasaSitzungAktiv(false);
         stoppeHasaLaufendeArbeit();
         HAA_START_GELAUFEN = false;

@@ -1,6 +1,6 @@
 # HASA – Schwarzes Brett
 
-Stand: 18.10.2026
+Stand: 19.10.2026
 
 Dieses Dokument ist die verbindliche gemeinsame Übergabe- und Verwaltungsstelle für die
 HASA-Entwicklung. Vor jeder HASA-Arbeit wird es vollständig gelesen. Entscheidungen,
@@ -121,13 +121,13 @@ eine neue Runde wird durch eine eigene Rundenkennung getrennt.
 
 - stabile Veröffentlichung: HASA 1.1 Final;
 - aktive Entwicklungsreihe: HASA 1.2;
-- aktueller Teststand: HASA 1.2.0 Alpha 35;
+- aktueller Teststand: HASA 1.2.0 Alpha 36;
 - fester Aktualisierungspfad:
   `2 src/current/HASA-AKTUELL.user.js.txt`;
-- archivierte Alpha-35-Datei:
-  `2 src/current/hasa_1.2.0-alpha.35_anmeldestatus.user.js.txt`.
+- archivierte Alpha-36-Datei:
+  `2 src/current/hasa_1.2.0-alpha.36_mausbedienung.user.js.txt`.
 
-Aktueller Stand: Alpha35 korrigiert Anmeldereiter und Statusprüfung, benennt die Web-Cookiepartition ausdrücklich und liefert auth.4 mit fester Tagesgrenze. Konkreter Charon-Praxistest steht aus. Die erweiterte Benutzerverwaltung bleibt offen. Alpha34 verhindert Umbrüche innerhalb der Ressourcenrate. Enthalten: Alpha33 erkennt bestätigte Motivationsvideo-Startberichte und markiert Ressourcen für eine Stunde ab Nachrichtenzeit kräftig grün; danach übrige Ereignisfarben. Alpha32-Korrekturen für Forschungsstand, Menü, Scrollposition und Zwischenzielnavigation bleiben erhalten. Web12/Servergrundlage unverändert. Einzelheiten siehe Übergabe vom 18.10.2026.
+Aktueller Stand: Alpha36 sichert Mausbedienung gegen verlorene Freigabe, Fenster-/Tabwechsel und Fensterneuaufbau ab. Charons zusätzliche Anzeige außerhalb des Spiels und Anmeldeproblem sind nicht als gelöst bestätigt. Alpha35 korrigiert Anmeldereiter und Statusprüfung, benennt die Web-Cookiepartition ausdrücklich und liefert auth.4 mit fester Tagesgrenze. Konkreter Charon-Praxistest steht aus. Die erweiterte Benutzerverwaltung bleibt offen. Alpha34 verhindert Umbrüche innerhalb der Ressourcenrate. Enthalten: Alpha33 erkennt bestätigte Motivationsvideo-Startberichte und markiert Ressourcen für eine Stunde ab Nachrichtenzeit kräftig grün; danach übrige Ereignisfarben. Alpha32-Korrekturen für Forschungsstand, Menü, Scrollposition und Zwischenzielnavigation bleiben erhalten. Web12/Servergrundlage unverändert. Einzelheiten siehe Übergabe vom 18.10.2026.
 
 Historischer Zwischenstand Alpha12:
 
@@ -2515,3 +2515,35 @@ Quelle/Abgrenzung in 1 docs/werkstatt/motivationsvideo_quellbefund.md ergänzt.
 Original mit dynamischen/privaten Spielparametern bleibt privat. Keine
 Spielaktion, Nachricht an Dritte oder produktive Bereitstellung ausgeführt.
 Reine Dokumentation, keine erneute Programm-Testserie erforderlich.
+
+
+## 2026-10-19 - CE HASA an Kurt - Alpha36 gegen festhängende Mausbedienung
+
+**Anlass:** Charons weiterer Bericht: Fenster folgt dem Cursor, verändert Größe,
+verdeckt Inhalte, erscheint nach seiner Beschreibung außerhalb des Spiels; erneute
+Anmeldung. Aktuelle Vorlage zeigt den Chatbericht, nicht das störende Fenster.
+Keine Schuldzuweisung und keine Behauptung einer gelösten Fremdseiten-/Cookieursache.
+
+**Gesicherter Codebefund Alpha35:** Nur document-mouseup beendet Drag/Resize.
+Verlorene Freigabe, Fokus-/Tabwechsel, gestoppte Ereignisweitergabe oder abgetrennte
+Elemente können aktive Flags hinterlassen. Keine buttons-Prüfung vor Bewegung.
+
+**Umsetzung Alpha36:** Bewegungen nur bei gedrückter linker Taste. Capture-mouseup,
+blur/pagehide/mouseleave/visibilitychange beenden; keine automatische Wiederaufnahme.
+Drag/Resize gegenseitig beenden. Vor Neuaufbau/HASA aus abbrechen. Alte Elemente
+dürfen nicht starten oder aktuellen Speicherstand überschreiben; Flags vor
+Speichern aufheben. Vorhandene Origin-/Pfadbegrenzung und Anmeldeprüfung unverändert.
+Alle Update-Header erhalten, Direktdownload/.txt/neues Alpha36-Archiv identisch.
+
+**Prüfung:** 14 lokale Chromium-Fälle mit tatsächlichen Funktionen bestanden:
+normale Bewegung/Resize, verlorenes Loslassen, Fokus/Seitenwechsel, Tab versteckt,
+Capture trotz stopPropagation, Ausschluss gleichzeitiger Aktionen, abgetrennte
+Elemente und Formularknöpfe. JS-Syntax bestanden. Gemeinsame CI vor main prüfen.
+Kein Originalbild, Spieltoken oder Nutzerpasswort öffentlich abgelegt.
+
+**Praxistest:** Ernsthaft störender Fehler erlaubt diese Zwischenfassung gemäß
+Bündelregel. Von Alpha35 nur Tampermonkey-Updateprüfung/Bestätigung und Horizon
+neu laden; kein Serverupdate oder SQL-/STAN-Import. Komfortverwaltung weiter offen.
+Charon zuerst deaktivieren statt löschen lassen. Für fremde Seiten tatsächliches
+Fensterbild mit Adresszeile und aktivierte HASA-Fassungen erfragen; keine reine
+Behauptung als vollständige technische Diagnose ausgeben. Keine Produktivaktion.

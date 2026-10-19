@@ -32,7 +32,7 @@ Tampermonkey als neues Userscript eingefügt und gespeichert.
 
 ## Aktuelle Anleitung
 
-[Benutzeranleitung für HASA 1.2 / Alpha 32](1%20docs/hasa_1.2_benutzeranleitung.md)
+[Benutzeranleitung für HASA 1.2 / Alpha 36](1%20docs/hasa_1.2_benutzeranleitung.md)
 
 Für neue Testspieler: Installation, Aktualisierung, Anmeldung, Freigaben,
 Forschungsplanung, Nachrichtenhaken und Ressourcenfarben in einer Anleitung.
@@ -67,16 +67,23 @@ Die vorhandene .user.js.txt-Datei und HASA-AKTUALISIEREN.cmd bleiben gültig.
 Die direkt installierbare .user.js-Datei muss bei künftigen Releases bytegleich
 mit der aktuellen .user.js.txt-Datei gepflegt werden; CI kontrolliert dies.
 @updateURL und @downloadURL bleiben bei allen neuen Fassungen erhalten;
-@version muss bei neuen Programmversionen steigen. Die heutige Ergänzung verändert
-nur Installationsmetadaten, keine Laufzeitfunktion: weiterhin Alpha35.
+@version muss bei neuen Programmversionen steigen. Der feste Updateweg wurde
+mit Alpha35 eingerichtet und bleibt in neueren Fassungen erhalten.
 
 ## Aktuelle Entwicklungsreihe
 
-**HASA 1.2.0 Alpha 35 – Anmeldung und Sitzungsstatus**
+**HASA 1.2.0 Alpha 36 – sichere Mausbedienung**
 
 - Aktueller vollständiger Code: `2 src/current/HASA-AKTUELL.user.js.txt`
-- Identische Archivfassung: `2 src/current/hasa_1.2.0-alpha.35_anmeldestatus.user.js.txt`
+- Identische Archivfassung: `2 src/current/hasa_1.2.0-alpha.36_mausbedienung.user.js.txt`
 - Anleitung und Grenzen der Videoerkennung: `1 docs/hasa_1.2.0-alpha.33_motivationsvideo.md`
+
+Alpha36 beendet Verschieben und Größenänderung auch nach verlorener Mausfreigabe,
+Fokus-/Tabwechsel, Verlassen der Seite und Neuaufbau des Fensters. Es bewegt oder
+vergrößert sich nicht weiter, wenn die linke Maustaste bereits losgelassen wurde.
+Alte abgetrennte Fensterelemente ändern keinen gespeicherten Stand.
+Details: `1 docs/hasa_1.2.0-alpha.36_mausbedienung.md`.
+Dies erklärt nicht automatisch Anzeigen außerhalb von Horizon oder Anmeldeprobleme.
 
 Alpha35 verwendet den offenen Anmeldereiter erneut und prüft den Status direkt
 nach der Rückkehr ins Spiel. Netzwerkfehler werden nicht als Abmeldung gewertet.
@@ -98,12 +105,12 @@ die Stunde nicht. Nach Ablauf kehren die übrigen Ereignisfarben oder Grau zurü
 Die durch Kurts Beispiel eingeordnete Spielzeit wird in Europe/Berlin interpretiert,
 unabhängig von der Browserzeitzone. Eine reine Verfügbarkeitsmeldung genügt nicht.
 
-**Update auf Alpha35:** `HASA-Serverupdate.bat` für auth.4 ausführen.
-Danach `HASA-AKTUALISIEREN.cmd`, vollständigen vorhandenen Tampermonkey-Code
-ersetzen, speichern und Horizon neu laden. Für das neue Tagescookie einmal
-bei HASA ab- und wieder anmelden. Kein SQL-Import oder STAN-Neuimport.
-Alle bisherigen Video-, Menü-, Forschungs-, Scroll- und Ressourcen-Korrekturen bleiben enthalten.
-Die erweiterte Benutzerverwaltung ist weiterhin ein gesonderter offener Auftrag.
+**Update von Alpha35 auf Alpha36:** In Tampermonkey nach Updates suchen,
+Aktualisierung bestätigen und Horizon neu laden. Nur das Userscript wird benötigt;
+kein erneuter Serverupload und kein SQL-/STAN-Import.
+Beim Wechsel von älteren Fassungen bleibt die einmalige auth.4-Serverinstallation
+aus Alpha35 erforderlich, falls Kurt sie noch nicht durchgeführt hat.
+Alle bisherigen Korrekturen bleiben enthalten; Komfortverwaltung weiterhin offen.
 
 ## Historische Entwicklungsschritte
 
