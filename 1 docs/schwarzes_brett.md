@@ -2547,3 +2547,14 @@ neu laden; kein Serverupdate oder SQL-/STAN-Import. Komfortverwaltung weiter off
 Charon zuerst deaktivieren statt löschen lassen. Für fremde Seiten tatsächliches
 Fensterbild mit Adresszeile und aktivierte HASA-Fassungen erfragen; keine reine
 Behauptung als vollständige technische Diagnose ausgeben. Keine Produktivaktion.
+
+
+**Abschluss Alpha36:** Gesamtprüfung auf 6d5a89d0a55b95385fae093be66d0093bb05da73
+erfolgreich: https://github.com/KurtV731/hasa/actions/runs/39232607681 .
+14 neue Drag-/Resize-Fälle und bestehende Ereignis-/Live-/Video-/Auth-/Web-/
+Forschungs-/Menü-/Scrollprüfungen, PHP-Syntax und isolierte MariaDB-Integration
+bestanden. Erste CI fand noch die alte sichtbare Versionskonstante; vor diesem
+abschließenden Lauf berichtigt. Zehn geänderte Dateien online zurückgelesen,
+die drei Skriptfassungen einschließlich korrigierter Version exakt identisch.
+Derselbe geprüfte Programmcode wird nach main übernommen. Charons tatsächlicher
+Praxistest, Fremdseitenanzeige und wiederkehrende Anmeldung bleiben offen.
