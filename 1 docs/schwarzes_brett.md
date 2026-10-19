@@ -2577,3 +2577,24 @@ Nicht aus bloßem Zahlenrückgang starten oder nach erfundener Frist enden lasse
 Echte End-/Normalisierungsmeldung bleibt als Quelle offen.
 Details: 1 docs/werkstatt/metallmine_wassereinbruch_quellbefund.md.
 Original privat; keine Spielaktion, kein Serverupload und keine neue Alpha.
+
+
+## 2026-10-19 – Kurt an CE HASA – Kolonisationszeiten als Tooltip / offizielle 1.2
+
+**Auftrag ausgeführt als Vorbereitung fürs nächste gemeinsame Update.**
+Offizielle ladbare 1.2 bleibt Ziel; Alpha36 ist weiterhin der aktuelle Teststand,
+keine offizielle 1.2 veröffentlicht. Kurts Discord-Beitrag nennt SCOL: 3 Stunden
+Besiedelungsdauer. Community-Angabe ausdrücklich als solche kennzeichnen.
+Bau-/Flugzeit getrennt; keine Berechnung aus diesem Wert ableiten.
+
+Tooltip-Code und Browserprüfung im Branch
+feature/kolonisations-tooltips-20261019 vorbereitet: Schiffsauswahl, gewähltes
+Ziel und Zwischenzielliste. Andere bekannte Kolonisationsschiffe zeigen noch
+unbelegte Dauer, keine erfundenen Werte. Der genannte Wiki-Link war nicht
+erreichbar (direkter Abruf HTTP 503); vollständige Zeittabelle bleibt offen.
+Details: 1 docs/werkstatt/kolonisationsschiffe_tooltips.md im Vorbereitungsbranch.
+
+Keine neue Alpha allein für diese Ergänzung. Main-Userscript unverändert.
+Vor Übernahme ins nächste Bündel Versions-/Archivpflege und Gesamtprüfung.
+Keine produktive Bereitstellung oder Spielaktion. Private Bildschirmaufnahme
+nicht hochgeladen. Gezielter Chromium-Test und JS-Syntax lokal bestanden.

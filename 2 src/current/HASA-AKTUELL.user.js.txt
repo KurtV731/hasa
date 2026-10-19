@@ -4431,6 +4431,21 @@ return box;
     }
 
 
+
+    // Besiedelungsdauer ist von Bau- und Flugzeit getrennt.
+    // Quelle: Kurts Discord-Ausschnitt vom 19.10.2026; Wiki derzeit nicht erreichbar.
+    function kolonisationsTooltip(objekt) {
+        if (!objekt || objekt.type !== 'ship') return '';
+        const id = String(objekt.id || '').trim().toUpperCase();
+        const ids = ['SCOL', 'GRCO', 'CCOL', 'FCOL', 'LRCO', 'ICOL', 'GCOL', 'ASCS', 'LACS', 'IACS'];
+        if (!ids.includes(id)) return '';
+        if (id === 'SCOL') {
+            return 'Besiedelungsdauer: 3 Stunden (Community-Angabe vom 19.10.2026; noch nicht im Spiel geprüft).\n'
+                + 'Bau- und Flugzeit kommen zusätzlich hinzu.';
+        }
+        return 'Besiedelungsdauer: noch nicht belegt.\nBau- und Flugzeit werden getrennt betrachtet.';
+    }
+
     function baueStanNavigationHtml() {
         const daten = ladeStanBestandMitFallback();
         const status = laden(STORAGE_STAN_STATUS, null);
@@ -4452,7 +4467,7 @@ return box;
         html += '<div style="margin-top:8px;border-top:1px solid #555;padding-top:7px;">';
         if (auswahl) {
             html += '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">';
-            html += '<div><span style="color:#aaa;font-size:11px;">Gewähltes Ziel</span><br><b style="color:#FFD27C;">' + esc(auswahl.name) + ' (' + esc(auswahl.id) + ')</b></div>';
+            html += '<div><span style="color:#aaa;font-size:11px;">Gewähltes Ziel</span><br><b title="' + esc(kolonisationsTooltip(auswahl)) + '" style="color:#FFD27C;">' + esc(auswahl.name) + ' (' + esc(auswahl.id) + ')</b></div>';
             html += '<button id="haa-stan-auswahl-umschalten" style="font-size:11px;">' + (auswahlOffen ? 'Auswahl schließen' : 'Ziel ändern') + '</button>';
             html += '</div>';
         } else {
@@ -4490,7 +4505,7 @@ return box;
                     html += '<div style="padding:2px 0 4px 5px;">';
                     objekte.forEach(function (o) {
                         const aktiv = auswahl && auswahl.id === o.id && auswahl.type === o.type;
-                        html += '<button class="haa-stan-ziel" data-id="' + esc(o.id) + '" data-name="' + esc(o.name) + '" data-type="' + esc(o.type) + '" style="display:block;width:100%;text-align:left;margin:2px 0;padding:4px 6px;background:' + (aktiv ? '#4a402a' : '#2a251f') + ';color:' + (aktiv ? '#FFD27C' : '#fff') + ';border:1px solid #555;border-radius:2px;cursor:pointer;">' + esc(o.name) + ' (' + esc(o.id) + ')' + (o.historical ? ' <small style="color:#FFD27C;">[älterer Stand' + (o.knownDataDate ? ': ' + esc(o.knownDataDate) : '') + ']</small>' : '') + '</button>';
+                        html += '<button title="' + esc(kolonisationsTooltip(o)) + '" class="haa-stan-ziel" data-id="' + esc(o.id) + '" data-name="' + esc(o.name) + '" data-type="' + esc(o.type) + '" style="display:block;width:100%;text-align:left;margin:2px 0;padding:4px 6px;background:' + (aktiv ? '#4a402a' : '#2a251f') + ';color:' + (aktiv ? '#FFD27C' : '#fff') + ';border:1px solid #555;border-radius:2px;cursor:pointer;">' + esc(o.name) + ' (' + esc(o.id) + ')' + (o.historical ? ' <small style="color:#FFD27C;">[älterer Stand' + (o.knownDataDate ? ': ' + esc(o.knownDataDate) : '') + ']</small>' : '') + '</button>';
                     });
                     html += '</div></details>';
                 });
@@ -4531,7 +4546,7 @@ return box;
                 if (!gruppe.length) return;
                 html += '<div style="margin-top:7px;color:#FFD27C;font-weight:bold;">' + techTreeTypSymbol(typ) + ' ' + esc(techTreeTypLabel(typ)) + '</div>';
                 gruppe.sort(function (a,b) { return String(a.name).localeCompare(String(b.name),'de'); }).forEach(function (req) {
-                    html += '<div style="display:grid;grid-template-columns:18px minmax(180px,1fr) auto;gap:4px;padding:2px 0;color:' + (req.erledigt ? '#888' : '#fff') + ';"><span>' + (req.erledigt ? '✓' : '➜') + '</span><button type="button" class="haa-req-ziel" data-id="' + esc(req.id) + '" data-name="' + esc(req.name) + '" data-type="' + esc(req.type || 'unknown') + '" data-level="' + esc(req.level) + '" title="Als Zwischenziel übernehmen" style="text-align:left;background:transparent;border:0;padding:0;color:inherit;cursor:pointer;text-decoration:underline;text-decoration-style:dotted;">' + esc(req.name) + ' <small style="display:block;color:#aaa;">' + esc((req.direkt ? 'Direkt' : 'Sekundär') + ' · für ' + (req.fuer || []).join(', ')) + '</small> <span style="color:#777;font-size:10px;">[' + esc(req.id) + ']</span></button><b style="text-align:right;white-space:nowrap;">benötigt ' + esc(req.level) + (req.aktuell !== null ? '<br><span style="font-weight:normal;color:#aaa;">vorhanden ' + esc(req.aktuell) + '</span>' : '') + '</b></div>';
+                    html += '<div style="display:grid;grid-template-columns:18px minmax(180px,1fr) auto;gap:4px;padding:2px 0;color:' + (req.erledigt ? '#888' : '#fff') + ';"><span>' + (req.erledigt ? '✓' : '➜') + '</span><button type="button" class="haa-req-ziel" data-id="' + esc(req.id) + '" data-name="' + esc(req.name) + '" data-type="' + esc(req.type || 'unknown') + '" data-level="' + esc(req.level) + '" title="' + esc(["Als Zwischenziel übernehmen", kolonisationsTooltip(req)].filter(Boolean).join("\n")) + '" style="text-align:left;background:transparent;border:0;padding:0;color:inherit;cursor:pointer;text-decoration:underline;text-decoration-style:dotted;">' + esc(req.name) + ' <small style="display:block;color:#aaa;">' + esc((req.direkt ? 'Direkt' : 'Sekundär') + ' · für ' + (req.fuer || []).join(', ')) + '</small> <span style="color:#777;font-size:10px;">[' + esc(req.id) + ']</span></button><b style="text-align:right;white-space:nowrap;">benötigt ' + esc(req.level) + (req.aktuell !== null ? '<br><span style="font-weight:normal;color:#aaa;">vorhanden ' + esc(req.aktuell) + '</span>' : '') + '</b></div>';
                 });
             });
         }
