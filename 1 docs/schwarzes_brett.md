@@ -2632,3 +2632,36 @@ Ressourcen bis zur tatsächlichen Trennung gültig. Keine alten Daten löschen,
 keine Links blind ersetzen, keine neue Userscriptfassung wegen dieser Notiz.
 Keine lokale PC-, DNS-, Datenbank-, Server-/Websiteaktion ausgeführt.
 README verlinkt den Plan; Dokumentationsänderung online zurücklesen.
+
+
+## 2026-10-20 – Kurt an CE HASA – zwei echte Berichte / Recycling / Koloschiff-Tooltip
+
+**Privat gelesen:** m e message(1).txt und wieder trocken---.txt.
+Meteoriteneinschlag ist als Titel schon bekannt. Originaltext belegt
+verwertbare Metall-/Mineralanteile, mögliche Schäden bleiben unbestätigt.
+Kurt ergänzt: Meteorit erhöht recycelbaren Materialbestand; Schrott/Trümmer
+aus Schiffen und Gebäuden können ebenfalls später Ressourcen liefern.
+Als Recyclinghinweis festhalten, ohne Menge oder Stundenproduktionsbonus zu erfinden.
+Details: 1 docs/werkstatt/meteorit_recycling_quellbefund.md.
+
+Wassereinbruch repariert bestätigt im geöffneten Bericht ausdrücklich
+normale Arbeit in der Metallmine; bisherige Lücke zur Entwarnung geschlossen.
+Metallstart und Reparatur im Vorbereitungsbranch implementiert. Eigene
+Wirkungsgruppe bewahrt andere Mali und Boni, Zeitordnung verhindert Wiederbeginn
+aus älterem Bericht. Konto/Runde/Position/Systembericht weiterhin erforderlich;
+Titel allein und Mineralminen-Text beenden den Metallzustand nicht.
+Bereits gespeicherte Berichte werden beim Start/Scan wieder berücksichtigt.
+Katalog 66 Titel, keine geschätzte automatische Endfrist.
+Details: 1 docs/werkstatt/metallmine_wassereinbruch_quellbefund.md.
+
+**Koloschiff-Tooltip:** realisierbar und bereits am 19.10. vorbereitet/getestet.
+SCOL drei Stunden als Community-Angabe; übrige Zeiten noch unbelegt.
+Bestehende Vorbereitung in denselben neuen Branch übernommen:
+feature/ereignisse-kolos-20261020. Auswahl, gewähltes Ziel und Voraussetzungen.
+Keine Vermischung mit Bau- oder Flugzeit und keine automatische Planerrechnung.
+
+**Prüfung:** Lokal 33 Live-Gruppen (sieben neue) sowie 33 Register-/Browsergruppen
+mit 66 Titeln bestanden. Gesamt-CI im Vorbereitungsbranch abschließend kontrollieren.
+Vorbereitung ist keine neue veröffentlichte Userscriptfassung; Alpha36 auf main
+unverändert. Versions-/Archivpflege vor gemeinsamer Veröffentlichung erforderlich.
+Private Originale nicht hochgeladen, keine produktiven Uploads oder Spielaktionen.

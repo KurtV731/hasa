@@ -119,6 +119,82 @@ const moduleSource=source.slice(source.indexOf('    // Alpha28: Rohmeldungen'),s
    return {red,green,normal:document.querySelector('#metal [data-haa-rate]').style.color};
   });assert.deepEqual(r,{red:'rgb(255, 102, 102)',green:'rgb(124, 255, 124)',normal:'rgb(170, 170, 170)'});
  });
+ await test('real metal flooding requires an opened report and only colors metal',async()=>{
+  const r=await page.evaluate(()=>{
+   const event={id:'flood-start',ownerId:'7',round:8,messageId:'flood-start',systemEvent:true,subject:'Wassereinbruch in Metallmine',position:{galaxy:1,system:191,orbit:6},reportedTimeText:'18.10.2026 22:50:54'};
+   live.api.event(event);
+   const before=document.querySelector('#metal [data-haa-rate]').style.color;
+   const body='Auf ihrer Kolonie "Test" ist es zu einem Wassereinbruch in ihrer Metallmine gekommen. Die Minenproduktion wird für unbestimmte Zeit herabgesetzt, um das Wasser abzupumpen. Schäden an ihrer Mine sind nicht auszuschließen.';
+   for(const wrong of [{ownerId:'8'},{round:9},{systemEvent:false}]) live.api.event({...event,...wrong,observations:[{kind:'report',rawText:body}]});
+   const rejected=document.querySelector('#metal [data-haa-rate]').style.color;
+   live.api.event({...event,observations:[{kind:'report',rawText:body}]});
+   return {before,rejected,colors:['metal','mineral','fuel'].map(k=>document.querySelector('[data-haa-rate="'+k+'"]').style.color)};
+  });assert.equal(r.before,'rgb(170, 170, 170)');assert.equal(r.rejected,r.before);assert.deepEqual(r.colors,['rgb(255, 102, 102)','rgb(170, 170, 170)','rgb(170, 170, 170)']);
+ });
+ await test('video temporarily overrides flooding and restores its red state',async()=>{
+  const r=await page.evaluate(()=>{
+   const all=live.store.get(live.api.trackerKey),key=live.api.productionKey('7',{galaxy:1,system:191,orbit:6});
+   const now=Date.now();all[key].motivation={startedAt:now-1000,endsAt:now-1000+3600000};live.store.set(live.api.trackerKey,all);live.api.paint();
+   const green=document.querySelector('#metal [data-haa-rate]').style.color;
+   all[key].motivation.endsAt=Date.now()-1;live.store.set(live.api.trackerKey,all);live.api.paint();
+   return {green,red:document.querySelector('#metal [data-haa-rate]').style.color};
+  });assert.deepEqual(r,{green:'rgb(0, 255, 85)',red:'rgb(255, 102, 102)'});
+ });
+ await test('repair needs exact metal body; overview, vague and mineral text cannot end metal flooding',async()=>{
+  const r=await page.evaluate(()=>{
+   const event={ownerId:'7',messageId:'repair-preview',id:'repair-preview',systemEvent:true,subject:'Wassereinbruch repariert',position:{galaxy:1,system:191,orbit:6},reportedTimeText:'19.10.2026 20:37:19'};
+   for(const body of [null,'Die Mine läuft wieder.', 'Der Wassereinbruch in der Mineralmine auf ihrer Kolonie "Test" konnte zurückgedrängt werden. Die normale Arbeit in der Mine kann fortgesetzt werden.']){
+    live.api.event({...event,observations:body?[{kind:'report',rawText:body}]:[]});
+   }
+   return document.querySelector('#metal [data-haa-rate]').style.color;
+  });assert.equal(r,'rgb(255, 102, 102)');
+ });
+ await test('real repair clears only flooding; separate bonus survives and older flood cannot restart it',async()=>{
+  const r=await page.evaluate(()=>{
+   const base={ownerId:'7',systemEvent:true,position:{galaxy:1,system:191,orbit:6}};
+   live.api.event({...base,id:'flood-plus',messageId:'flood-plus',subject:'Reiche Metallvorkommen entdeckt',reportedTimeText:'19.10.2026 20:30:00'});
+   live.api.event({...base,id:'repair-confirmed',messageId:'repair-confirmed',subject:'Wassereinbruch repariert',reportedTimeText:'19.10.2026 20:37:19',observations:[{kind:'report',rawText:'Der Wassereinbruch in der Metallmine auf ihrer Kolonie "Test" konnte zurückgedrängt werden. Die normale Arbeit in der Mine kann fortgesetzt werden.'}]});
+   const recovered=document.querySelector('#metal [data-haa-rate]').style.color;
+   live.api.event({...base,id:'older-flood',messageId:'older-flood',subject:'Wassereinbruch in Metallmine',reportedTimeText:'18.10.2026 22:50:54',observations:[{kind:'report',rawText:'Wassereinbruch in ihrer Metallmine. Die Minenproduktion wird für unbestimmte Zeit herabgesetzt, um das Wasser abzupumpen.'}]});
+   const older=document.querySelector('#metal [data-haa-rate]').style.color;
+   live.api.event({...base,id:'flood-plus-end',messageId:'flood-plus-end',subject:'Metallvorkommen erschöpft',reportedTimeText:'19.10.2026 21:00:00'});
+   return {recovered,older,normal:document.querySelector('#metal [data-haa-rate]').style.color};
+  });assert.deepEqual(r,{recovered:'rgb(124, 255, 124)',older:'rgb(124, 255, 124)',normal:'rgb(170, 170, 170)'});
+ });
+ await test('flood repair does not clear a distinct production reduction',async()=>{
+  const r=await page.evaluate(()=>{
+   const base={ownerId:'7',systemEvent:true,position:{galaxy:1,system:191,orbit:6},reportedTimeText:'20.10.2026 01:00:00'};
+   live.api.event({...base,id:'separate-minus',messageId:'separate-minus',subject:'Produktionsmeldung',observations:[{kind:'report',rawText:'Metallproduktion wird verringert'}]});
+   live.api.event({...base,id:'another-flood',messageId:'another-flood',subject:'Wassereinbruch in Metallmine',observations:[{kind:'report',rawText:'Wassereinbruch in ihrer Metallmine. Die Minenproduktion wird für unbestimmte Zeit herabgesetzt, um das Wasser abzupumpen.'}]});
+   live.api.event({...base,id:'another-repair',messageId:'another-repair',subject:'Wassereinbruch repariert',reportedTimeText:'20.10.2026 02:00:00',observations:[{kind:'report',rawText:'Der Wassereinbruch in der Metallmine konnte zurückgedrängt werden. Die normale Arbeit in der Mine kann fortgesetzt werden.'}]});
+   const remains=document.querySelector('#metal [data-haa-rate]').style.color;
+   live.api.event({...base,id:'separate-recovery',messageId:'separate-recovery',subject:'Produktionsmeldung',reportedTimeText:'20.10.2026 03:00:00',observations:[{kind:'report',rawText:'Metallproduktion ist wieder normal'}]});
+   return {remains,normal:document.querySelector('#metal [data-haa-rate]').style.color};
+  });assert.deepEqual(r,{remains:'rgb(255, 102, 102)',normal:'rgb(170, 170, 170)'});
+ });
+ await test('meteor report is captured without inventing a production bonus or damage',async()=>{
+  const r=await page.evaluate(()=>{
+   const before=JSON.stringify(live.store.get(live.api.trackerKey));
+   live.api.record('Auf ihrer Kolonie "Test" ist ein großer Meteorit in ihre Stadt eingeschlagen. Schäden an den Gebäuden sind nicht auszuschließen. Wir vermuten, dass reiche Mineral- und Metallanteile in diesem Meteor vorhanden waren, die jetzt durch ihre Recyclinganlagen aufgearbeitet werden können.',{messageId:'meteor-source',subject:'Meteoriteneinschlag',position:{galaxy:1,system:191,orbit:6},reportedTimeText:'20.10.2026 07:55:03',systemEvent:true,kind:'report'});
+   return {before,after:JSON.stringify(live.store.get(live.api.trackerKey)),event:live.store.get(live.api.eventsKey).find(e=>e.messageId==='meteor-source')};
+  });assert.equal(r.before,r.after);assert.ok(r.event);assert.equal(r.event.subject,'Meteoriteneinschlag');
+ });
+ await test('saved start and repair are replayed after upgrade in either capture order',async()=>{
+  const r=await page.evaluate(()=>{
+   const oldTracker=live.store.get(live.api.trackerKey),oldEvents=live.store.get(live.api.eventsKey);
+   const base={round:8,ownerId:'7',systemEvent:true,position:{galaxy:1,system:191,orbit:6}};
+   const start={...base,id:'saved-start',messageId:'saved-start',subject:'Wassereinbruch in Metallmine',reportedTimeText:'18.10.2026 22:50:54',observations:[{kind:'report',rawText:'Wassereinbruch in ihrer Metallmine. Die Minenproduktion wird für unbestimmte Zeit herabgesetzt, um das Wasser abzupumpen.'}]};
+   const end={...base,id:'saved-end',messageId:'saved-end',subject:'Wassereinbruch repariert',reportedTimeText:'19.10.2026 20:37:19',observations:[{kind:'report',rawText:'Der Wassereinbruch in der Metallmine konnte zurückgedrängt werden. Die normale Arbeit in der Mine kann fortgesetzt werden.'}]};
+   const results=[];
+   for(const events of [[start,end],[end,start]]){
+    live.store.set(live.api.trackerKey,{});live.store.set(live.api.eventsKey,events);live.api.scan();
+    const state=live.store.get(live.api.trackerKey)[live.api.productionKey('7',base.position)];
+    results.push({flood:state.waterIngress.metal,color:document.querySelector('#metal [data-haa-rate]').style.color});
+   }
+   live.store.set(live.api.trackerKey,oldTracker);live.store.set(live.api.eventsKey,oldEvents);live.api.paint();
+   return results;
+  });assert.deepEqual(r,[{flood:false,color:'rgb(170, 170, 170)'},{flood:false,color:'rgb(170, 170, 170)'}]);
+ });
  await test('missing or ambiguous current coordinate suppresses mistaken sampling and frame',async()=>{
   const r=await page.evaluate(()=>{document.querySelector('.TickPlanetEntry').setAttribute('onmouseover',"return overlib('x',CAPTION,'1:191:6 - Someone else');");const before=live.store.get(live.api.samplesKey).length;live.api.sample(true);live.api.paint();return {read:live.api.read(),before,after:live.store.get(live.api.samplesKey).length,outline:document.querySelector('#metal [data-haa-rate]').style.outline};});assert.equal(r.read,null);assert.equal(r.after,r.before);assert.equal(r.outline,'');
  });
