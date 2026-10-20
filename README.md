@@ -6,6 +6,17 @@ Ascension, Forschung, Bauüberwachung und Galaxieerfassung.
 
 HASA informiert, analysiert und erinnert. HASA spielt nicht selbst.
 
+## Eigene Webpräsenz und Projektablage
+
+Ziel ist die eigenständige HASA-Webpräsenz unter **https://hasa.li**.
+Kurt legt das lokale Projekt unter **PPD\HASA** ab; die Unterorganisation
+übernimmt der CE HASA. Die veröffentlichte Fassung nutzt derzeit weiterhin
+die bisherigen Serveradressen. Der Umzug ist noch nicht produktiv vollzogen.
+
+[Zielstruktur und geordneter Umzug](1%20docs/hasa_domain_und_projektordnung.md)
+beschreiben die Trennung von SerKal, vorhandene Abhängigkeiten und den Erhalt
+der Daten und funktionierenden Installation.
+
 ## HASA auf dem PC aktualisieren
 
 Im Hauptordner des lokal geklonten Repositorys liegt:

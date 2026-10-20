@@ -1,6 +1,6 @@
 # HASA – Schwarzes Brett
 
-Stand: 19.10.2026
+Stand: 20.10.2026
 
 Dieses Dokument ist die verbindliche gemeinsame Übergabe- und Verwaltungsstelle für die
 HASA-Entwicklung. Vor jeder HASA-Arbeit wird es vollständig gelesen. Entscheidungen,
@@ -2605,3 +2605,30 @@ Neue Tooltipprüfung sowie bestehende Browser-/PHP-/MariaDB-Prüfungen bestanden
 Alle sechs geänderten Dateien am Commit exakt zurückgelesen.
 Main enthält aus diesem Auftrag nur diese Übergabe und die Quellennotiz;
 die vorbereitete Programmänderung bleibt bis zum gemeinsamen Update im Branch.
+
+
+## 2026-10-20 – Kurt an CE HASA – eigene Domain hasa.li / PPD\HASA
+
+**Verbindliche Produktentscheidung aufgenommen.** HASA erhält eine eigene
+Webpräsenz mit eigenen öffentlichen Links unter https://hasa.li und wird von
+der SerKal-Webpräsenz getrennt. Lokaler übergeordneter Projektordner ist
+PPD\HASA (Personal Program Data); Unterorganisation liegt beim CE HASA.
+Kein Laufwerk bekannt, keine lokale Verschiebung behaupten.
+
+Zielstruktur und Umzugsinventar:
+1 docs/hasa_domain_und_projektordnung.md. Quellcheckout, private Verbindungsdaten
+und Sicherungen getrennt unter dem HASA-Ordner vorsehen; vorhandene nummerierte
+Quellordner und Archive erhalten. Zielstruktur ist vorbereitet, nicht lokal angelegt.
+
+Aktuellen Code geprüft: Web/API-URLs und explizite Cookiepartition hängen
+weiter an serkal.de. Neuer Host erfordert abgestimmten Wechsel von Anmeldung,
+Datenbank/Freigaben, Userscript, Browserrechten, Downloads und Dokumentation.
+Updatehelfer verwenden relative Projektpfade; privates Serveruploadziel und
+%LOCALAPPDATA%\HASA\server-update.json beim Umzug ausdrücklich berücksichtigen.
+
+**Status:** Organisation dokumentiert, produktive Umschaltung offen.
+Bestehende SerKal-Abstimmungsregel bleibt für real noch gemeinsam genutzte
+Ressourcen bis zur tatsächlichen Trennung gültig. Keine alten Daten löschen,
+keine Links blind ersetzen, keine neue Userscriptfassung wegen dieser Notiz.
+Keine lokale PC-, DNS-, Datenbank-, Server-/Websiteaktion ausgeführt.
+README verlinkt den Plan; Dokumentationsänderung online zurücklesen.
