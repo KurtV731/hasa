@@ -1,7 +1,8 @@
 # Wassereinbruch in Metallmine - geprüfter Quellenbefund
 
-Stand: 19.10.2026. Quelle: privat gelieferte Datei w e message.txt.
-Status: Erkennungsauftrag für nächstes gemeinsames Update; noch keine Programmänderung.
+Stand: 20.10.2026. Quellen: privat gelieferte Dateien w e message.txt und
+wieder trocken---.txt. Status: Start-/Enderkennung im gemeinsamen
+Vorbereitungsbranch feature/ereignisse-kolos-20261020 implementiert; noch nicht veröffentlicht.
 
 ## Eindeutige Merkmale
 
@@ -34,13 +35,30 @@ weiter beachten. Nicht allein aus einer niedrigeren Zahl oder einer beliebigen
 gleichlautenden Spielernachricht einen Ereignisstart ableiten. Rote Kennzeichnung
 nur der betroffenen Metall-Stundenrate; keine Umrechnung der sichtbaren Werte.
 
-## Offene Grenze
+## Entwarnung jetzt belegt
 
-„Unbestimmte Zeit“ liefert keinen Endzeitpunkt. Kein automatisches Zurücksetzen
-nach geschätzter Dauer. Eine echte Entwarnung bzw. Normalisierungsmeldung noch
-sammeln; deren Originalwortlaut ist hier nicht enthalten. Während eines bestätigten
-Motivationsvideos bleibt die bestehende Videoanzeige vorrangig, anschließend muss
-ein weiterhin aktiver negativer Metallzustand wieder erscheinen.
+Die neue Datei wieder trocken---.txt enthält den geöffneten Systembericht
+**Wassereinbruch repariert**, Absender Minenbehörde, Nachrichtenzeit
+19.10.2026 20:37:19, dieselbe Kolonie wie beim Beginn.
+Text: „Der Wassereinbruch in der Metallmine auf ihrer Kolonie [...] konnte
+zurückgedrängt werden. Die normale Arbeit in der Mine kann fortgesetzt werden.“
+
+Das ist ein ausdrücklicher Endnachweis für den Wassereinbruch in der Metallmine.
+Der Titel allein ist ressourcenunspezifisch. Die Umsetzung verlangt deshalb
+den geöffneten Bericht mit Metallmine und bestätigter Fortsetzung normaler Arbeit.
+Keine Endzeit aus „unbestimmte Zeit“ berechnen; keine unbekannte Mineralmine
+allein aus dem gleichen Titel zurücksetzen.
+
+Start und Ende werden als eigene Wirkungsgruppe waterIngress mit Zeitordnung
+geführt. Eine Reparatur beendet keinen separaten Produktionsmalus und erhält
+einen noch aktiven Bonus. Ein älterer Startbericht kann eine neuere Reparatur
+nicht rückgängig machen. Gespeicherte Berichte werden auch nach einem Update
+wieder ausgewertet. Während eines bestätigten Motivationsvideos hat dessen
+kräftige Grünanzeige Vorrang, danach erscheint eine fortbestehende Senkung wieder.
+
+Der Katalog wird um Wassereinbruch in Metallmine und Wassereinbruch repariert
+ergänzt (66 Titel). Der generische Parser bleibt für andere Produktionsmeldungen.
+Aktuell veröffentlichte Alpha36 enthält diese Vorbereitung noch nicht.
 
 ## Prüfung und Datenschutz
 
@@ -49,3 +67,6 @@ geprüft; keine Spiel- oder Löschaktion ausgeführt. Aktuelles Alpha36 und
 Produktionshandler über GitHub kontrolliert. Original enthält dynamische/private
 Spielparameter und wird nicht öffentlich hochgeladen. Nur bereinigter Befund
 in diesem Dokument. Keine neue Userscript-Fassung allein für diese Aufnahme.
+
+Gesamtprüfung erfolgreich: https://github.com/KurtV731/hasa/actions/runs/39463002172 .
+Geprüfter Vorbereitungscommit: 1710952eeeacbff850c5dc07dd9e19ca0e6886ed.
