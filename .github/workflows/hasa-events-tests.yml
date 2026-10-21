@@ -8,6 +8,8 @@ on:
       - '3 server/tests/events_integration.php'
       - '3 server/tests/initial_password_integration.php'
       - '3 server/tests/system_search_integration.php'
+      - '3 server/tests/sharing_global_integration.php'
+      - '4 database/hasa_1_2_0_sharing_global_migration.sql'
       - '5 tools/test_hasa_*.cjs'
       - '.github/workflows/hasa-events-tests.yml'
   workflow_dispatch:
@@ -65,6 +67,8 @@ jobs:
           php '3 server/tests/events_integration.php'
           php '3 server/tests/initial_password_integration.php'
           php '3 server/tests/system_search_integration.php'
+          php '3 server/tests/sharing_global_integration.php'
+          HASA_TEST_SHARING_HTML="$test_api/sharing-global-fixture.html" node '5 tools/test_hasa_sharing_ui.cjs'
 
 
 
