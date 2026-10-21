@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         HASA – Horizon Ascension Assistant
 // @namespace    horiversum.hasa
-// @version      1.2.0-alpha.36
+// @version      1.2.0-alpha.37
 // @charset      UTF-8
 // @updateURL    https://raw.githubusercontent.com/KurtV731/hasa/main/2%20src/current/HASA-AKTUELL.user.js
 // @downloadURL  https://raw.githubusercontent.com/KurtV731/hasa/main/2%20src/current/HASA-AKTUELL.user.js
@@ -209,8 +209,8 @@
         'PHYSICS', 'PSYCHOLOGY', 'NUCLEARPHYSICS', 'SOLARENERGYTECH'
     ]);
 
-    const HASA_VERSION = '1.2.0 Alpha 36';
-    const HASA_BUILD_LABEL = '1.2.0-alpha36-mausbedienung-2026-10-19';
+    const HASA_VERSION = '1.2.0 Alpha 37';
+    const HASA_BUILD_LABEL = '1.2.0-alpha37-ereignisse-kolos-2026-10-21';
     const HASA_RUNDE = 8;
     const HASA_RUNDE_SCHLUESSEL = 'runde8';
     // Die MariaDB und sämtliche Schreibendpunkte trennen Runde 7 und 8 jetzt
@@ -388,7 +388,7 @@
         'Mietanfrage der Handelsgilde', 'Sektenführer erschienen', 'Sektenführer verschwunden',
         'Galaktische Generalamnestie', 'Insider Handel', 'Bruchlandung eines Raketenschlittens',
         'Erhöhte Energieausbeute durch Sonnenfleckenaktivität',
-        'Wassereinbruch in Mineralmine', 'Radioaktivitätsleck', 'Reaktorkernschmelze',
+        'Wassereinbruch in Mineralmine', 'Wassereinbruch in Metallmine', 'Wassereinbruch repariert', 'Radioaktivitätsleck', 'Reaktorkernschmelze',
         'Meteoriteneinschlag', 'Schwächung der Verteidigungsbereitschaft',
         'Zwischenfall auf Testgelände', 'Polsprung', 'Ausbruch einer Seuche',
         'Seuche erfolgreich bekämpft', 'Quarantäne zur Seuchenbekämpfung', 'Seuche verbreitet sich',
@@ -703,6 +703,7 @@
         }
         scanneHasaEreignisDokument(document, new Set());
         (laden(STORAGE_EREIGNIS_REGISTER, []) || []).forEach(function(e){
+            if(e && ['Wassereinbruch in Metallmine','Wassereinbruch repariert'].includes(e.subject))hasaProductionEvent(e);
             if(e && e.subject==='Motivationsvideo abgespielt'){
                 const start=hasaMotivationStartzeit(e.reportedTimeText);
                 if(start!==null && start+3600000>Date.now())hasaProductionEvent(e);
@@ -717,7 +718,7 @@
         if (HAA_EREIGNIS_TIMER) return;
         (laden(STORAGE_EREIGNIS_REGISTER, []) || []).forEach(function(e) {
             uebernehmeHasaAsfiEreignis(e);
-            if(e && e.subject==='Motivationsvideo abgespielt') hasaProductionEvent(e);
+            if(e && ['Motivationsvideo abgespielt','Wassereinbruch in Metallmine','Wassereinbruch repariert'].includes(e.subject)) hasaProductionEvent(e);
         });
         pruefeHasaEreignisse();
         HAA_EREIGNIS_TIMER = setInterval(pruefeHasaEreignisse, 30000);
@@ -1143,7 +1144,7 @@
             }
             maleHasaProduktion();return;
         }
-        let resource=null,start=false,end=false,negative=false;
+        let resource=null,start=false,end=false,negative=false,flood=false;
         if(subject==='Reiche Metallvorkommen entdeckt'){resource='metal';start=true;}
         if(subject==='Reiche Mineralvorkommen entdeckt'){resource='mineral';start=true;}
         if(subject==='Unterirdischer Treibstoffsee entdeckt'){resource='fuel';start=true;}
@@ -1154,6 +1155,20 @@
         // nicht aus geringeren Messwerten, Kosten oder einem Ereignistitel raten.
         const reports=(e.observations||[]).filter(function(o){return o.kind==='report';});
         const effectText=subject+' '+reports.map(function(o){return o.rawText||'';}).join(' ');
+        // Nur geöffnete Systemberichte belegen den Beginn bzw. die Entwarnung.
+        // Eigene Wirkungsgruppe: Reparatur beendet keinen anderen Produktionsmalus.
+        const reportTexts=reports.map(function(o){return String(o.rawText||'').replace(/\s+/g,' ').trim();});
+        if(subject==='Wassereinbruch in Metallmine' && reportTexts.some(function(t){
+            return /Wassereinbruch in ihrer Metallmine/.test(t)
+                && /Die Minenproduktion wird für unbestimmte Zeit herabgesetzt, um das Wasser abzupumpen\./.test(t);
+        })){resource='metal';start=true;negative=true;flood=true;}
+        if(subject==='Wassereinbruch repariert'){
+            const matching=reportTexts.filter(function(t){return /Die normale Arbeit in der Mine kann fortgesetzt werden\./.test(t);});
+            const metal=matching.some(function(t){return /Der Wassereinbruch in der Metallmine/.test(t);});
+            const mineral=matching.some(function(t){return /Der Wassereinbruch in der Mineralmine/.test(t);});
+            if(metal && !mineral){resource='metal';end=true;negative=true;flood=true;}
+        }
+        if(flood && !hasaAsfiZeitKey(e.reportedTimeText))return;
         const decrease=effectText.match(/(?:Eisenerz|Metall|Mineral|Treibstoff)(?:produktion|förderung)\s+(?:ist\s+|wird\s+|wurde\s+)?(?:um\s+\d+(?:[,.]\d+)?\s*%\s+)?(?:verringert|gesenkt|reduziert)/i);
         const recovered=effectText.match(/(?:Eisenerz|Metall|Mineral|Treibstoff)(?:produktion|förderung)\s+(?:ist\s+|wird\s+)?(?:wieder\s+)?normal(?:isiert)?/i);
         if(!resource && (decrease||recovered)){
@@ -1166,8 +1181,9 @@
         const state=all[key]||{baseline:{},active:{},eventOrder:{},eventIds:{},lastSampleAt:null};
         state.negative=state.negative||{};
         state.positive=state.positive||{};
+        state.waterIngress=state.waterIngress||{};
         if(state.positive[resource]===undefined)state.positive[resource]=!!state.active[resource] && !state.negative[resource];
-        const direction=negative?'negative':'positive';
+        const direction=flood?'waterIngress':negative?'negative':'positive';
         const effectId=e.id+':'+resource+':'+direction+':'+(end?'end':'start');
         if(state.eventIds[effectId])return;
         const order=hasaAsfiZeitKey(e.reportedTimeText);
@@ -1175,8 +1191,8 @@
         const orderKey=resource+':'+direction;
         const previousOrder=state.eventOrder[orderKey] || (!negative && state.eventOrder[resource]);
         if(!order || !previousOrder || order>=previousOrder) {
-            state[negative?'negative':'positive'][resource]=start;
-            state.active[resource]=!!state.positive[resource] || !!state.negative[resource];
+            state[direction][resource]=start;
+            state.active[resource]=!!state.positive[resource] || !!state.negative[resource] || !!state.waterIngress[resource];
             if(end && !state.active[resource]){state.resetBaseline=state.resetBaseline||{};state.resetBaseline[resource]=true;}
             if(order)state.eventOrder[orderKey]=order;
         }
@@ -1216,7 +1232,7 @@
             const current=snapshot.rates[key],base=state.baseline[key];
             const known=typeof base==='number' && Number.isFinite(base),difference=known?current-base:null;
             const pct=known && base!==0 ? difference/Math.abs(base)*100 : null;
-            const negative=!!(state.active[key] && state.negative && state.negative[key]);
+            const negative=!!(state.active[key] && ((state.negative && state.negative[key]) || (state.waterIngress && state.waterIngress[key])));
             const positive=!!state.active[key] && !negative;
             span.style.outline='';span.style.outlineOffset='';
             span.style.whiteSpace='nowrap';
@@ -4431,6 +4447,21 @@ return box;
     }
 
 
+
+    // Besiedelungsdauer ist von Bau- und Flugzeit getrennt.
+    // Quelle: Kurts Discord-Ausschnitt vom 19.10.2026; Wiki derzeit nicht erreichbar.
+    function kolonisationsTooltip(objekt) {
+        if (!objekt || objekt.type !== 'ship') return '';
+        const id = String(objekt.id || '').trim().toUpperCase();
+        const ids = ['SCOL', 'GRCO', 'CCOL', 'FCOL', 'LRCO', 'ICOL', 'GCOL', 'ASCS', 'LACS', 'IACS'];
+        if (!ids.includes(id)) return '';
+        if (id === 'SCOL') {
+            return 'Besiedelungsdauer: 3 Stunden (Community-Angabe vom 19.10.2026; noch nicht im Spiel geprüft).\n'
+                + 'Bau- und Flugzeit kommen zusätzlich hinzu.';
+        }
+        return 'Besiedelungsdauer: noch nicht belegt.\nBau- und Flugzeit werden getrennt betrachtet.';
+    }
+
     function baueStanNavigationHtml() {
         const daten = ladeStanBestandMitFallback();
         const status = laden(STORAGE_STAN_STATUS, null);
@@ -4452,7 +4483,7 @@ return box;
         html += '<div style="margin-top:8px;border-top:1px solid #555;padding-top:7px;">';
         if (auswahl) {
             html += '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">';
-            html += '<div><span style="color:#aaa;font-size:11px;">Gewähltes Ziel</span><br><b style="color:#FFD27C;">' + esc(auswahl.name) + ' (' + esc(auswahl.id) + ')</b></div>';
+            html += '<div><span style="color:#aaa;font-size:11px;">Gewähltes Ziel</span><br><b title="' + esc(kolonisationsTooltip(auswahl)) + '" style="color:#FFD27C;">' + esc(auswahl.name) + ' (' + esc(auswahl.id) + ')</b></div>';
             html += '<button id="haa-stan-auswahl-umschalten" style="font-size:11px;">' + (auswahlOffen ? 'Auswahl schließen' : 'Ziel ändern') + '</button>';
             html += '</div>';
         } else {
@@ -4490,7 +4521,7 @@ return box;
                     html += '<div style="padding:2px 0 4px 5px;">';
                     objekte.forEach(function (o) {
                         const aktiv = auswahl && auswahl.id === o.id && auswahl.type === o.type;
-                        html += '<button class="haa-stan-ziel" data-id="' + esc(o.id) + '" data-name="' + esc(o.name) + '" data-type="' + esc(o.type) + '" style="display:block;width:100%;text-align:left;margin:2px 0;padding:4px 6px;background:' + (aktiv ? '#4a402a' : '#2a251f') + ';color:' + (aktiv ? '#FFD27C' : '#fff') + ';border:1px solid #555;border-radius:2px;cursor:pointer;">' + esc(o.name) + ' (' + esc(o.id) + ')' + (o.historical ? ' <small style="color:#FFD27C;">[älterer Stand' + (o.knownDataDate ? ': ' + esc(o.knownDataDate) : '') + ']</small>' : '') + '</button>';
+                        html += '<button title="' + esc(kolonisationsTooltip(o)) + '" class="haa-stan-ziel" data-id="' + esc(o.id) + '" data-name="' + esc(o.name) + '" data-type="' + esc(o.type) + '" style="display:block;width:100%;text-align:left;margin:2px 0;padding:4px 6px;background:' + (aktiv ? '#4a402a' : '#2a251f') + ';color:' + (aktiv ? '#FFD27C' : '#fff') + ';border:1px solid #555;border-radius:2px;cursor:pointer;">' + esc(o.name) + ' (' + esc(o.id) + ')' + (o.historical ? ' <small style="color:#FFD27C;">[älterer Stand' + (o.knownDataDate ? ': ' + esc(o.knownDataDate) : '') + ']</small>' : '') + '</button>';
                     });
                     html += '</div></details>';
                 });
@@ -4531,7 +4562,7 @@ return box;
                 if (!gruppe.length) return;
                 html += '<div style="margin-top:7px;color:#FFD27C;font-weight:bold;">' + techTreeTypSymbol(typ) + ' ' + esc(techTreeTypLabel(typ)) + '</div>';
                 gruppe.sort(function (a,b) { return String(a.name).localeCompare(String(b.name),'de'); }).forEach(function (req) {
-                    html += '<div style="display:grid;grid-template-columns:18px minmax(180px,1fr) auto;gap:4px;padding:2px 0;color:' + (req.erledigt ? '#888' : '#fff') + ';"><span>' + (req.erledigt ? '✓' : '➜') + '</span><button type="button" class="haa-req-ziel" data-id="' + esc(req.id) + '" data-name="' + esc(req.name) + '" data-type="' + esc(req.type || 'unknown') + '" data-level="' + esc(req.level) + '" title="Als Zwischenziel übernehmen" style="text-align:left;background:transparent;border:0;padding:0;color:inherit;cursor:pointer;text-decoration:underline;text-decoration-style:dotted;">' + esc(req.name) + ' <small style="display:block;color:#aaa;">' + esc((req.direkt ? 'Direkt' : 'Sekundär') + ' · für ' + (req.fuer || []).join(', ')) + '</small> <span style="color:#777;font-size:10px;">[' + esc(req.id) + ']</span></button><b style="text-align:right;white-space:nowrap;">benötigt ' + esc(req.level) + (req.aktuell !== null ? '<br><span style="font-weight:normal;color:#aaa;">vorhanden ' + esc(req.aktuell) + '</span>' : '') + '</b></div>';
+                    html += '<div style="display:grid;grid-template-columns:18px minmax(180px,1fr) auto;gap:4px;padding:2px 0;color:' + (req.erledigt ? '#888' : '#fff') + ';"><span>' + (req.erledigt ? '✓' : '➜') + '</span><button type="button" class="haa-req-ziel" data-id="' + esc(req.id) + '" data-name="' + esc(req.name) + '" data-type="' + esc(req.type || 'unknown') + '" data-level="' + esc(req.level) + '" title="' + esc(["Als Zwischenziel übernehmen", kolonisationsTooltip(req)].filter(Boolean).join("\n")) + '" style="text-align:left;background:transparent;border:0;padding:0;color:inherit;cursor:pointer;text-decoration:underline;text-decoration-style:dotted;">' + esc(req.name) + ' <small style="display:block;color:#aaa;">' + esc((req.direkt ? 'Direkt' : 'Sekundär') + ' · für ' + (req.fuer || []).join(', ')) + '</small> <span style="color:#777;font-size:10px;">[' + esc(req.id) + ']</span></button><b style="text-align:right;white-space:nowrap;">benötigt ' + esc(req.level) + (req.aktuell !== null ? '<br><span style="font-weight:normal;color:#aaa;">vorhanden ' + esc(req.aktuell) + '</span>' : '') + '</b></div>';
                 });
             });
         }

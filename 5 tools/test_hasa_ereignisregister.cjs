@@ -40,7 +40,7 @@ const helpers = source.slice(source.indexOf('    function prdrNormalisiereText')
     await test('all Wiki catalog titles and specific follow-up precedence', async () => {
         const r = await page.evaluate(() => ({bad:test.exports.catalog.filter(t => test.exports.classify(t+'!') !== t), count:test.exports.catalog.length,
             follow:test.exports.classify('Laserkristalle vom Hund gefressen!')}));
-        assert.deepEqual(r.bad, []); assert.equal(r.count,64); assert.equal(r.follow,'Laserkristalle vom Hund gefressen');
+        assert.deepEqual(r.bad, []); assert.equal(r.count,66); assert.equal(r.follow,'Laserkristalle vom Hund gefressen');
     });
     await test('unknown text remains unclassified; no fictional evaluation', async () => {
         assert.equal(await page.evaluate(() => test.exports.classify('Eine neue Spielmeldung')), null);
@@ -273,7 +273,7 @@ const helpers = source.slice(source.indexOf('    function prdrNormalisiereText')
     });
     assert.deepEqual(errors,[]);
     await browser.close();
-    console.log(passed+' browser regression groups passed; catalog '+63+' titles covered.');
+    console.log(passed+' browser regression groups passed; catalog '+66+' titles covered.');
 })().catch(e => {console.error(e);process.exit(1);});
 
 
