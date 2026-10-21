@@ -1,8 +1,7 @@
 # Wassereinbruch in Metallmine - geprüfter Quellenbefund
 
-Stand: 20.10.2026. Quellen: privat gelieferte Dateien w e message.txt und
-wieder trocken---.txt. Status: Start-/Enderkennung im gemeinsamen
-Vorbereitungsbranch feature/ereignisse-kolos-20261020 implementiert; noch nicht veröffentlicht.
+Stand: 21.10.2026. Quellen: privat gelieferte Dateien w e message.txt und
+wieder trocken---.txt. Status: Start-/Enderkennung mit Alpha37 veröffentlicht.
 
 ## Eindeutige Merkmale
 
@@ -22,15 +21,15 @@ Minerale und Treibstoff sind separat angezeigt. Keine bestätigte Beschädigung,
 
 ## Erkennungsauftrag
 
-Aktuelles Alpha36 kennt Wassereinbruch in Mineralmine, aber diesen Metalltitel
+Die frühere Alpha36 kennt Wassereinbruch in Mineralmine, aber diesen Metalltitel
 noch nicht. Die generische negative Produktionserkennung erwartet explizit
 Metall-/Eisenerzproduktion oder -förderung mit verringert/gesenkt/reduziert.
 Der echte Bericht sagt stattdessen Minenproduktion ... herabgesetzt und benötigt
 die eindeutige Metallzuordnung aus diesem geprüften Meldungstyp.
 
-Im nächsten gemeinsamen Update den Metalltitel in den Katalog aufnehmen und den
+Alpha37 nimmt den Metalltitel in den Katalog auf und behandelt den
 echten geöffneten Systembericht mit bestätigter Wirkung gezielt als negative
-Metallproduktion behandeln. Konto, Runde, Berichtsplanet und Nachrichtenkennung
+Metallproduktion. Konto, Runde, Berichtsplanet und Nachrichtenkennung
 weiter beachten. Nicht allein aus einer niedrigeren Zahl oder einer beliebigen
 gleichlautenden Spielernachricht einen Ereignisstart ableiten. Rote Kennzeichnung
 nur der betroffenen Metall-Stundenrate; keine Umrechnung der sichtbaren Werte.
@@ -58,7 +57,7 @@ kräftige Grünanzeige Vorrang, danach erscheint eine fortbestehende Senkung wie
 
 Der Katalog wird um Wassereinbruch in Metallmine und Wassereinbruch repariert
 ergänzt (66 Titel). Der generische Parser bleibt für andere Produktionsmeldungen.
-Aktuell veröffentlichte Alpha36 enthält diese Vorbereitung noch nicht.
+Alpha37 enthält diese Erkennung einschließlich Wiederauswertung gespeicherter Berichte.
 
 ## Prüfung und Datenschutz
 
@@ -66,7 +65,10 @@ Privates HTML als Text gelesen, sichtbaren Bericht, Tabellenkopf und Typfilter
 geprüft; keine Spiel- oder Löschaktion ausgeführt. Aktuelles Alpha36 und
 Produktionshandler über GitHub kontrolliert. Original enthält dynamische/private
 Spielparameter und wird nicht öffentlich hochgeladen. Nur bereinigter Befund
-in diesem Dokument. Keine neue Userscript-Fassung allein für diese Aufnahme.
+in diesem Dokument. Gebündelte Veröffentlichung als Alpha37; keine produktiven Serveruploads.
 
 Gesamtprüfung erfolgreich: https://github.com/KurtV731/hasa/actions/runs/39463002172 .
 Geprüfter Vorbereitungscommit: 1710952eeeacbff850c5dc07dd9e19ca0e6886ed.
+
+Alpha37-Gesamtprüfung einschließlich erneutem Einbruch nach Reparatur:
+https://github.com/KurtV731/hasa/actions/runs/39634963721 .

@@ -121,13 +121,13 @@ eine neue Runde wird durch eine eigene Rundenkennung getrennt.
 
 - stabile Veröffentlichung: HASA 1.1 Final;
 - aktive Entwicklungsreihe: HASA 1.2;
-- aktueller Teststand: HASA 1.2.0 Alpha 36;
+- aktueller Teststand: HASA 1.2.0 Alpha 37;
 - fester Aktualisierungspfad:
   `2 src/current/HASA-AKTUELL.user.js.txt`;
-- archivierte Alpha-36-Datei:
-  `2 src/current/hasa_1.2.0-alpha.36_mausbedienung.user.js.txt`.
+- archivierte Alpha-37-Datei:
+  `2 src/current/hasa_1.2.0-alpha.37_ereignisse-kolos.user.js.txt`.
 
-Aktueller Stand: Alpha36 sichert Mausbedienung gegen verlorene Freigabe, Fenster-/Tabwechsel und Fensterneuaufbau ab. Charons zusätzliche Anzeige außerhalb des Spiels und Anmeldeproblem sind nicht als gelöst bestätigt. Alpha35 korrigiert Anmeldereiter und Statusprüfung, benennt die Web-Cookiepartition ausdrücklich und liefert auth.4 mit fester Tagesgrenze. Konkreter Charon-Praxistest steht aus. Die erweiterte Benutzerverwaltung bleibt offen. Alpha34 verhindert Umbrüche innerhalb der Ressourcenrate. Enthalten: Alpha33 erkennt bestätigte Motivationsvideo-Startberichte und markiert Ressourcen für eine Stunde ab Nachrichtenzeit kräftig grün; danach übrige Ereignisfarben. Alpha32-Korrekturen für Forschungsstand, Menü, Scrollposition und Zwischenzielnavigation bleiben erhalten. Web12/Servergrundlage unverändert. Einzelheiten siehe Übergabe vom 18.10.2026.
+Aktueller Stand: Alpha37 ergänzt die bestätigte Metallminen-Wassereinbruch-/Reparaturerkennung einschließlich gespeicherter Berichte und Kolonisationsschiff-Tooltips. sharing.2 vereinfacht separat die serverseitige Freigabe; produktive Einrichtung durch Kurt bleibt erforderlich. Alpha36 sichert Mausbedienung gegen verlorene Freigabe, Fenster-/Tabwechsel und Fensterneuaufbau ab. Charons zusätzliche Anzeige außerhalb des Spiels und Anmeldeproblem sind nicht als gelöst bestätigt. Alpha35 korrigiert Anmeldereiter und Statusprüfung, benennt die Web-Cookiepartition ausdrücklich und liefert auth.4 mit fester Tagesgrenze. Konkreter Charon-Praxistest steht aus. Die erweiterte Benutzerverwaltung bleibt offen. Alpha34 verhindert Umbrüche innerhalb der Ressourcenrate. Enthalten: Alpha33 erkennt bestätigte Motivationsvideo-Startberichte und markiert Ressourcen für eine Stunde ab Nachrichtenzeit kräftig grün; danach übrige Ereignisfarben. Alpha32-Korrekturen für Forschungsstand, Menü, Scrollposition und Zwischenzielnavigation bleiben erhalten. Web12/Servergrundlage unverändert. Einzelheiten siehe Übergabe vom 18.10.2026.
 
 Historischer Zwischenstand Alpha12:
 
@@ -2706,3 +2706,35 @@ bestanden, ebenso bisherige Browser-, PHP-Syntax-, Ereignis-/Auth-/Suchprüfunge
 Sieben Programm-/Testdateien am geprüften Commit exakt zurückgelesen.
 Dokumentationsabschluss übernimmt unveränderten geprüften Programmcode nach main.
 Produktiver Upload und einmalige Einrichtung durch Kurt stehen noch aus.
+
+
+## 2026-10-21 – Kurt an CE HASA – Alpha37: Wassereinbruch endlich in Downloadfassung
+
+**Befund:** F9 funktioniert laut Kurt überall. Die erneut eingelesene Metallminen-
+Wassereinbruchsmeldung färbt die Produktion nicht. Main/Download lieferte noch
+Alpha36; die am 20.10. geprüfte Ereignisauswertung lag nur im Vorbereitungsbranch.
+Ein gespeicherter Bericht bzw. grüner Haken allein weist keine aktive Wirkung nach.
+
+**Umsetzung:** Gemeinsame Veröffentlichung Alpha37 mit eindeutiger Start-/Enderkennung
+für Metallminen-Wassereinbruch, Zeitordnung, Konten-/Runden-/Planetenprüfung und
+Wiederauswertung bereits lokal gespeicherter vollständiger Berichte. Nur Metall
+wird rot; Video behält Vorrang. Reparatur erhält andere aktive Wirkungen; keine
+angenommene Endfrist oder errechnete Produktionsrate. Übersichtstitel ohne geöffneten
+Berichtstext reicht hier nicht aus. Koloschiff-Tooltips aus der geprüften Vorbereitung
+mitgenommen, SCOL drei Stunden als Community-Angabe, andere Dauern unbelegt.
+F9 und die aktuelle sharing.2-Serverumsetzung bleiben erhalten.
+
+**Prüfung:** Programmcommit 7ddd4fd3a888362deb6fbdb86e82a8fde3f935b7.
+Gesamtprüfung: https://github.com/KurtV731/hasa/actions/runs/39634963721 .
+34 Live-Browsergruppen einschließlich erneuten Einbruchs nach Reparatur,
+33 Registergruppen/66 Titel, Tooltipprüfung und bestehende Browser-/PHP-/MariaDB-
+Prüfungen bestanden. Beide aktuellen Dateien und Alpha37-Archiv bytegleich.
+Programmdateien am geprüften Commit exakt zurückgelesen; Dokumentationsabschluss
+mit unverändertem Programmcode nach main übernehmen.
+
+**Installation:** Vorhandenes HASA in Tampermonkey auf Alpha37 aktualisieren,
+Horizon neu laden. Vollständig gespeicherte Berichte werden erneut ausgewertet;
+falls nur die Übersicht erfasst wurde, den betreffenden Bericht einmal öffnen.
+Für diese Userscriptkorrektur kein Serverupdate und keine Migration nötig.
+Keine Spielaktionen, produktiven Uploads oder privaten Originale veröffentlicht.
+Stabile Veröffentlichung bleibt 1.1 Final; dies ist noch keine offizielle 1.2 Final.

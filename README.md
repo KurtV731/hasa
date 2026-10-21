@@ -51,7 +51,7 @@ Alte Einzelregeln bleiben erhalten, jeder Player speichert einmal die neue Auswa
 
 ## Aktuelle Anleitung
 
-[Benutzeranleitung für HASA 1.2 / Alpha 36](1%20docs/hasa_1.2_benutzeranleitung.md)
+[Benutzeranleitung für HASA 1.2 / Alpha 37](1%20docs/hasa_1.2_benutzeranleitung.md)
 
 Für neue Testspieler: Installation, Aktualisierung, Anmeldung, Freigaben,
 Forschungsplanung, Nachrichtenhaken und Ressourcenfarben in einer Anleitung.
@@ -91,11 +91,17 @@ mit Alpha35 eingerichtet und bleibt in neueren Fassungen erhalten.
 
 ## Aktuelle Entwicklungsreihe
 
-**HASA 1.2.0 Alpha 36 – sichere Mausbedienung**
+**HASA 1.2.0 Alpha 37 – Metallminen-Ereignisse und Koloschiff-Tooltips**
 
 - Aktueller vollständiger Code: `2 src/current/HASA-AKTUELL.user.js.txt`
-- Identische Archivfassung: `2 src/current/hasa_1.2.0-alpha.36_mausbedienung.user.js.txt`
+- Identische Archivfassung: `2 src/current/hasa_1.2.0-alpha.37_ereignisse-kolos.user.js.txt`
 - Anleitung und Grenzen der Videoerkennung: `1 docs/hasa_1.2.0-alpha.33_motivationsvideo.md`
+
+Alpha37 erkennt bestätigte Wassereinbrüche und Reparaturen der Metallmine,
+wertet gespeicherte vollständige Berichte erneut aus und bewahrt andere Wirkungen.
+Ein erneuter Einbruch nach Reparatur färbt Metall erneut rot.
+Koloschiff-Tooltips zeigen belegte Besiedelungsangaben getrennt von Bau und Flug.
+[Änderungen und Installation](1%20docs/hasa_1.2.0-alpha.37_ereignisse-kolos.md).
 
 Alpha36 beendet Verschieben und Größenänderung auch nach verlorener Mausfreigabe,
 Fokus-/Tabwechsel, Verlassen der Seite und Neuaufbau des Fensters. Es bewegt oder

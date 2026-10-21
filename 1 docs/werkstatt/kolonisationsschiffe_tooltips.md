@@ -1,7 +1,6 @@
 # Kolonisationsschiffe: Besiedelungsdauer im Tooltip
 
-Stand: 19.10.2026. Für das nächste gemeinsame HASA-1.2-Update vorbereitet;
-kein neuer veröffentlichter Userscriptstand. Main bleibt Alpha36.
+Stand: 21.10.2026. Im gemeinsamen HASA-1.2-Update Alpha37 veröffentlicht.
 
 ## Quelle und gesicherte Angabe
 
@@ -36,9 +35,9 @@ alle drei Tooltipstellen, Herkunftshinweis, Trennung der Zeiten, unbekannte Daue
 ID-/Typ-Abgrenzung, Erhalt aller Auswahlobjekte und des Zwischenzielhinweises.
 Regressionstest: 5 tools/test_hasa_colony_tooltips.cjs, zusätzlich in CI.
 
-Vorbereitung im Branch feature/kolonisations-tooltips-20261019. Nicht als eigenes
-Alpha-Update ausliefern. Bei Übernahme ins nächste gemeinsame Update die echte
-Versionsnummer erhöhen, Archiv und beide aktuellen Skriptdateien identisch pflegen.
+Vorbereitung im Branch feature/kolonisations-tooltips-20261019; mit Alpha37
+zusammen mit der Ereigniskorrektur übernommen. Archiv und beide aktuellen
+Skriptdateien sind identisch, Versionsnummer und Laufzeitanzeige erhöht.
 Keine Spielaktionen, keine Server-/Website-Uploads, keine offizielle 1.2-Freigabe.
 
 Geprüfter Programmcommit: a7e0d5fc2509f6d8fdf5ed91cd401a84dd38b814.

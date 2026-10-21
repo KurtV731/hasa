@@ -1,6 +1,6 @@
 # HASA – Benutzeranleitung für die Testversion
 
-Stand: 19.10.2026 · HASA 1.2.0 Alpha 36 · Spielrunde 8
+Stand: 21.10.2026 · HASA 1.2.0 Alpha 37 · Spielrunde 8
 
 Diese Anleitung richtet sich an die eingeladenen Testspieler. Die stabile
 Veröffentlichung HASA 1.1 hat einen anderen Funktionsstand.
@@ -288,6 +288,14 @@ Bei gleichzeitig erkannten positiven und negativen Wirkungen hat Rot Vorrang.
 Während eines bestätigten Motivationsvideos hat dessen kräftig grüne Markierung
 Vorrang; nach Ablauf erscheinen die übrigen weiterhin geltenden Ereignisfarben.
 
+**Wassereinbruch in der Metallmine seit Alpha37:** Den Bericht einmal öffnen,
+damit HASA die bestätigte Produktionssenkung samt Planet und Nachrichtenzeit liest.
+Dann wird die Metall-Stundenrate rot. Der geöffnete Bericht „Wassereinbruch repariert“
+mit bestätigter normaler Arbeit in der Metallmine beendet genau diesen Malus.
+Ein erneuter Einbruch wird wieder rot; ältere Berichte überschreiben keine neuere
+Entwarnung. Vollständig gespeicherte Berichte werden nach dem Update erneut
+berücksichtigt. Ein Haken für Speicherung allein bedeutet keine erkannte Wirkung.
+
 Der Prozentwert im Tooltip vergleicht Messwerte. Er ist keine zugesicherte Stärke
 des Ereignisses. Für ein unbekanntes Ausgangsniveau wird kein Prozentsatz erfunden.
 
@@ -345,3 +353,12 @@ werden nicht automatisch als gemeinschaftliche Daten veröffentlicht.
 Die Versionsnummer in dieser Anleitung bezeichnet ihren geprüften Stand.
 Bei künftigen Updates deren Änderungshinweise zusätzlich beachten.
 
+
+
+### Besiedelungsdauer im Forschungsplaner seit Alpha37
+
+Bei Kolonisationsschiffen zeigen Auswahl, gewähltes Ziel und Voraussetzungen einen
+Tooltip zur Besiedelungsdauer. SCOL: drei Stunden laut Community-Angabe vom
+19.10.2026, noch nicht im Spiel bestätigt. Bei anderen Schiffen ohne gesicherte
+Angabe steht „noch nicht belegt“. Bau- und Flugzeit kommen zusätzlich hinzu;
+die Planerberechnungen werden dadurch nicht verändert.
