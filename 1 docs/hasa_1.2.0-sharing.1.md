@@ -1,5 +1,9 @@
 # HASA sharing.1 – Meine Datenfreigaben
 
+Historischer Stand. Abgelöst durch [sharing.2 – eine Datenfreigabe](hasa_1.2.0-sharing.2.md)
+am 21.10.2026 auf Kurts Auftrag. Die nachstehenden galaxieweisen Regeln gelten
+nicht für sharing.2.
+
 ## Installation für Kurt
 
 1. HASA-Serverupdate.bat in C:\Hasa starten: vorhandener Ablauf holt GitHub und lädt die PHP-Dateien hoch. Die Reparaturdatei-Upload-Batch ist hierfür nicht zuständig.

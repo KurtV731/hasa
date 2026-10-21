@@ -1,6 +1,6 @@
 # HASA – Schwarzes Brett
 
-Stand: 20.10.2026
+Stand: 21.10.2026
 
 Dieses Dokument ist die verbindliche gemeinsame Übergabe- und Verwaltungsstelle für die
 HASA-Entwicklung. Vor jeder HASA-Arbeit wird es vollständig gelesen. Entscheidungen,
@@ -2672,3 +2672,37 @@ Gesamtprüfung erfolgreich: https://github.com/KurtV731/hasa/actions/runs/394630
 Browser-/PHP-/MariaDB-Prüfungen bestanden. Alle neun Branch-Dateien am Commit
 exakt zurückgelesen. Main übernimmt nur diesen Befund; Programm bleibt im
 Vorbereitungsbranch bis zum nächsten gebündelten Release.
+
+
+## 2026-10-21 – Kurt an CE HASA – Freigaben vereinfachen (sharing.2)
+
+**Expliziter Auftrag:** Alles Galaxiebezogene aus der Datenfreigabe entfernen;
+ganzer Auswahlblock, Galaxie öffnen, Überschrift und sichtbare Rundennummer weg.
+Freigaben gelten gemeinsam für alle eigenen vorhandenen und neuen Erfassungen.
+Forschung und sonstige Galaxie-Suchfilter werden davon nicht berührt.
+
+**Umsetzung:** Ein Formular, gemeinsames Publikum und Sondenoption.
+Zentrale Berechtigung je Konto/Runde in neuen Tabellen hasa_round_sharing und
+hasa_round_recipients. Auch der eigene Beitrag muss nicht mehr in der jeweiligen
+Galaxie liegen. Gegenseitigkeit, bestätigte Allianz, private Grundeinstellung,
+Probeoptionen, Konto-/CSRF-/Revisionsschutz und interne Rundentrennung bleiben.
+Keine automatische Ausweitung gespeicherter Einzelgalaxie-Regeln; alte Tabellen
+bleiben erhalten, jeder Player wählt die gemeinsame Freigabe einmal neu.
+
+**Installation:** Serverupdate-BAT, einmal sharing-install.php mit Benutzerleitung
+ausführen (alternativ neue sharing_global-Migration), Playerfreigaben speichern.
+Kein neues Userscript und keine Produktivaktion durch CE. Bestehende Domain bleibt
+bis zum geprüften Umzug gültig. Details: 1 docs/hasa_1.2.0-sharing.2.md.
+Anleitung aktualisiert, sharing.1 als historisch gekennzeichnet.
+
+**Prüfung:** Neue echte PHP/MariaDB-Integration und Browserprüfung des durch PHP
+erzeugten Formulars bei 1200/390 Pixel, gemeinsame Regression vor main prüfen.
+Sämtliche Änderungen über GitHub-App sichern und exakt zurücklesen.
+
+**Abschluss sharing.2:** Programmcommit ab96beb4893db5191ca563e06b15a722f5d75e03 vollständig
+geprüft: https://github.com/KurtV731/hasa/actions/runs/39631135900 .
+49 neue PHP/MariaDB-Prüfungen und tatsächliches PHP-Formular bei 1200/390 Pixel
+bestanden, ebenso bisherige Browser-, PHP-Syntax-, Ereignis-/Auth-/Suchprüfungen.
+Sieben Programm-/Testdateien am geprüften Commit exakt zurückgelesen.
+Dokumentationsabschluss übernimmt unveränderten geprüften Programmcode nach main.
+Produktiver Upload und einmalige Einrichtung durch Kurt stehen noch aus.

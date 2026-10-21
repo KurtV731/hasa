@@ -41,6 +41,14 @@ Vollständige Installationsdatei:
 Die Datei ist absichtlich als `.txt` abgelegt. Ihr vollständiger Inhalt wird in
 Tampermonkey als neues Userscript eingefügt und gespeichert.
 
+## Vereinfachte Datenfreigabe
+
+[sharing.2 – eine gemeinsame Freigabe](1%20docs/hasa_1.2.0-sharing.2.md):
+einmal Empfänger und Sondenoption auswählen, für alle eigenen Erfassungen.
+Galaxieauswahl und sichtbare Rundennummer auf der Freigabeseite entfallen.
+Serverupdate und einmalige Einrichtung erforderlich; kein neues Userscript.
+Alte Einzelregeln bleiben erhalten, jeder Player speichert einmal die neue Auswahl.
+
 ## Aktuelle Anleitung
 
 [Benutzeranleitung für HASA 1.2 / Alpha 36](1%20docs/hasa_1.2_benutzeranleitung.md)

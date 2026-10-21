@@ -216,8 +216,9 @@ beachte seinen Beobachtungszeitpunkt.
 
 ## 9. Meine Datenfreigaben
 
-Über **Meine Datenfreigaben** legst du für jede Galaxie fest, wer deine eigenen
-Erfassungen sehen darf. Die angebotenen Gruppen sind:
+Über **Meine Datenfreigaben** legst du einmal fest, wer deine eigenen
+Erfassungen sehen darf. Die Auswahl gilt gemeinsam für alle Galaxien und auch
+für künftig erfasste Systeme. Die angebotenen Gruppen sind:
 
 | Auswahl | Bedeutung |
 |---|---|
@@ -229,8 +230,8 @@ Erfassungen sehen darf. Die angebotenen Gruppen sind:
 Danach **Freigabe speichern** wählen. Sondenberichte und Messwerte benötigen
 zusätzlich das Häkchen **Auch meine Sondenberichte und Messwerte freigeben**.
 
-Der Austausch ist gegenseitig: Für fremde Daten müsst ihr einander in derselben
-Galaxie freigeben, und du musst dort selbst Daten beigetragen haben. Für fremde
+Der Austausch ist gegenseitig: Für fremde Daten müsst ihr einander
+freigeben, und du musst selbst Daten beigetragen haben. Für fremde
 Sondenberichte müssen beide Seiten auch die Berichte freigeben.
 Ein sichtbarer Galaxienname allein gibt keine privaten fremden Daten frei.
 
@@ -238,9 +239,14 @@ Ohne bestätigte Allianz kannst du Mitspieler einzeln auswählen.
 Ein erfasster Allianzname im Spiel ersetzt die Kontobestätigung nicht.
 Benutzerverwaltung und Root besitzen kein automatisches Leserecht auf private Daten.
 
-**Beispiel:** Styl und Charon möchten ihre Daten einer Galaxie austauschen.
-Beide wählen dort einander aus, speichern und haben eigene Daten beigetragen.
+**Beispiel:** Styl und Charon möchten ihre Daten austauschen.
+Beide wählen einander aus, speichern und haben eigene Daten beigetragen.
+Eine zusätzliche Auswahl je Galaxie ist nicht nötig.
 Sollen Messwerte mitkommen, setzen beide zusätzlich das Berichte-Häkchen.
+
+Serverumstellung sharing.2: Jeder Player wählt seine gemeinsame Freigabe einmal
+neu. Die bisherigen Einzeleinstellungen bleiben gespeichert, werden jedoch nicht
+automatisch ausgeweitet. Bis zum Speichern bleiben die eigenen Daten privat.
 
 ## 10. Nachrichtenhaken, ASFI und Sonden
 
@@ -304,7 +310,7 @@ Produktionswert kommt weiter aus Horizon; HASA rechnet ihn nicht pauschal mit 24
 | Falsche Version | Vollständigen aktuellen Code im vorhandenen Skript speichern; doppelte HASA-Skripte ausschließen. |
 | CMD-Aktualisierung bricht ab | Fehlermeldung festhalten. Testspieler können stattdessen die vollständige Datei manuell übernehmen. |
 | Serverdaten fehlen | HASA-Anmeldung, erster Passwortwechsel, API-Schlüssel und Tooltip der Statuspunkte. |
-| Fremde Daten fehlen | Beidseitige Freigabe in derselben Galaxie, eigene Beiträge und gegebenenfalls beidseitige Berichtsfreigabe. |
+| Fremde Daten fehlen | Beidseitige gemeinsame Freigabe, eigene Beiträge und gegebenenfalls beidseitige Berichtsfreigabe. |
 | Forschung oder Gebäude falsch | Betreffende Spielseite und richtigen Planeten öffnen; laufenden Auftrag mit angeben. |
 | Planer springt oder klappt zu | Angezeigte HASA-Version und genaue Klickfolge melden; in Alpha 32 soll die Position erhalten bleiben. |
 | Kein grüner Nachrichtenhaken | Noch keine passende dauerhafte Serverbestätigung; nicht als gesichert behandeln. |
