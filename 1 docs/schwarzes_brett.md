@@ -2961,3 +2961,41 @@ vollständige Browserprüfung über CI bestanden.
 unter hasa.li. Zusätzliche Berechtigungsabfrage erschien in Edge, nicht in Firefox.
 Dauerhafte Speicherung einer neuen Beobachtung auf neuem Host weiterhin nicht
 ausdrücklich bestätigt; nicht erneut vorhandene Daten/Anmeldung prüfen lassen.
+
+
+## 2026-10-22 – Kurt an CE HASA – Motivationsvideo: nur einzelnen Löschknopf sperren
+
+**Präzisierung während Umsetzung:** Keine Sperre der Sammellöschung unten.
+Wer dort gemeinsam löscht, darf die Videomeldung weiterhin mitlöschen.
+Direkt an Motivationsvideo verfügbar soll statt des einzelnen Löschsymbols
+ein Gesperrt-Schild erscheinen. Spam/Checkboxen/Abspielen bleiben unverändert.
+Die zuvor erwogene umfassende Löschsperre wird ausdrücklich NICHT übernommen.
+
+**In Alpha39 vorbereitet:** Sichtbarer Systembericht mit exaktem Betreff und
+passender Nachrichtenkennung erhält am einzelnen Löschlink ein ⛔-Schild samt
+Tooltip zur weiterhin möglichen Sammellöschung. Derselbe Schutz funktioniert
+an der Übersicht und am geöffneten Bericht. Capture-Handler verhindert auch
+versehentlichen Aufruf des ausgeblendeten Einzelknopfes vor dessen Spielhandler.
+Keine Formulareingriffe, keine Checkboxänderung, keine automatische Spielaktion.
+Nachrichtenwechsel/AJAX berücksichtigt, beim Ausschalten vollständig reversibel.
+Sichtbare Videomeldung ist auch ohne HASA-Serveranmeldung geschützt. Private
+Nachricht gleichen Namens, abgespielte/verschlampte Meldung werden nicht gesperrt.
+Kein angenommener Ablauf oder anderer Videostart hebt den Schutz auf.
+
+**Quellbefund:** Früherer privater Originalquelltext mv.txt erneut vollständig
+gelesen; er belegt delete/toSpam/respond getrennt und ReportForm bulk_delete.
+Original, Sitzungstoken und wechselnde Spiel-/Abspiellinks bleiben privat.
+Tests nutzen einen synthetischen, tokenfreien Tabellennachbau.
+Grüner Haken bedeutet Speicherung der Nachrichtendaten, keinen nutzbaren
+Videobackup oder Startnachweis. Abgelöschtes Video ist damit nicht wiederherstellbar.
+Ablaufwarnung separat offen; nicht in diesem Auftrag nebenbei eingebaut.
+
+**Abschluss:** Programmcommit 5992262a2edfe63c9a5fc48fff948e70fd76a606 im
+bestehenden Alpha39-Vorbereitungsbranch. Gesamtprüfung erfolgreich:
+https://github.com/KurtV731/hasa/actions/runs/39843434453 .
+40 Register-/Browsergruppen (sechs neue Schutzgruppen), 35 Live-Gruppen,
+34 Ereignis-MariaDB-Prüfungen und tatsächliche Journalansicht bei 1200/390 Pixel
+sowie bestehende PHP-/Browser-/Auth-/Sharing-/Wartungsprüfungen bestanden.
+Vier geänderte Dateien exakt zurückgelesen. Detaildokument aktualisiert.
+Main übernimmt nur Dokumentation; Alpha38-Download unverändert und Schutz noch
+nicht im produktiven Spiel installiert. Keine Server-/Websiteaktion durch CE.

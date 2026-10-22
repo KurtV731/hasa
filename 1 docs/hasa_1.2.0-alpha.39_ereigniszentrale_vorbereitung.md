@@ -1,8 +1,8 @@
 # Alpha39 – Events/Scans als gemeinsame Einstiegsseite
 
 Stand: 22.10.2026. Getestete Vorbereitung im Branch feature/alpha39-ereigniszentrale-20261022.
-Programmcommit: f4e795428cfbee2d460a2b1587d51f4b1089cc6c.
-Gesamtprüfung erfolgreich: https://github.com/KurtV731/hasa/actions/runs/39841155579 .
+Programmcommit: 5992262a2edfe63c9a5fc48fff948e70fd76a606.
+Gesamtprüfung erfolgreich: https://github.com/KurtV731/hasa/actions/runs/39843434453 .
 Die veröffentlichte Downloadfassung auf main bleibt bis zur gesonderten Freigabe Alpha38.
 
 ## Bedienung
@@ -72,7 +72,48 @@ Prüfung erfolgt im GitHub-CI. Neue Fälle prüfen Werkzeugzeile/Navigation,
 Zähler über 30 Tage und mehrere Seiten, Zeitgrenzen, Sommerzeit, fehlende Daten,
 fremde Konten/Runden, Root, SQL-Sonderzeichen und HTML-Maskierung.
 Die tatsächlichen PHP/MariaDB-generierten Listen werden im Browser bei 1200
-und 390 Pixel geprüft. Alle Prüfungen bestanden: 34 Register-Browsergruppen, 35 Live-Gruppen,
+und 390 Pixel geprüft. Alle Prüfungen bestanden: 40 Register-Browsergruppen, 35 Live-Gruppen,
 34 Ereignis-MariaDB-Prüfungen, Journalansicht bei 1200/390 Pixel und übrige
 Browser-/PHP-/MariaDB-Regression. Neun Programm-/Testdateien am geprüften
 Commit exakt zurückgelesen. Weitere Details siehe Schwarzes Brett.
+
+
+## Ergänzung: einzelner Löschschutz für verfügbare Motivationsvideos
+
+Kurt hat den Umfang ausdrücklich eingegrenzt: Direkt in der Nachrichtenzeile und
+am geöffneten Bericht ersetzt ein ⛔-Schild nur den einzelnen Löschknopf für
+Motivationsvideo verfügbar. Der Abspiel-Link wird nicht verändert. Spam,
+Auswahlkästchen und insbesondere die Sammellöschung unten bleiben unverändert:
+Wer dort gemeinsam löscht, kann die Videomeldung weiterhin mitlöschen.
+Eine Warnung vor Ablauf ist ein separater offener Wunsch, nicht Teil dieses Schutzes.
+
+Die ältere private Quelle mv.txt belegt getrennte Aktionen view, delete,
+toSpam und respond sowie das ReportForm mit bulk_delete. Verwendet wird nur
+die Struktur; keine Originaldatei, Sitzungstoken, wechselnden Spielparameter
+oder realen Startlinks werden im Repository gespeichert. Prüfungen verwenden
+einen synthetischen, tokenfreien Tabellennachbau.
+
+Der Schutz verlangt einen sichtbaren echten Systembericht mit dem exakten
+Betreff Motivationsvideo verfügbar und den zur selben Nachricht gehörenden
+Löschlink. Persönliche Nachrichten mit ähnlich lautendem Betreff werden nicht
+gesperrt. Die ursprüngliche Löschfunktion bleibt reversibel erhalten und wird
+beim Ausschalten von HASA wieder sichtbar. Ein Klick auf den versteckten
+Einzellink wird zusätzlich vor dem ursprünglichen Handler abgefangen.
+Keine Interaktion mit dem Sammelformular und kein Aufruf einer Spielaktion.
+
+AJAX-Nachrichtenwechsel und gleichartige Spielunterfenster werden berücksichtigt.
+Der Schutz benötigt für eine sichtbare Spielmeldung keine HASA-Serveranmeldung.
+Eine gespeicherte Startmeldung eines anderen Videos oder eine geschätzte
+14-Tage-Frist hebt ihn nicht auf. Ändert das Spiel den Betreff, endet der Schutz.
+Er kann weder gelöschte Spielmeldungen wiederherstellen noch einen alten
+Abspiel-Link reaktivieren und gilt nur bei laufendem HASA.
+
+Der grüne Nachrichtenhaken bestätigt weiterhin die dauerhafte Speicherung der
+jeweiligen Meldungsdaten; er bestätigt weder den Videostart noch eine Sicherung
+des nutzbaren Videos. Alpha38 erhält diesen Schutz nicht nachträglich.
+
+Die abschließende Gesamtprüfung am oben genannten Programmcommit ist bestanden.
+Sechs zusätzliche Browsergruppen prüfen genau den Einzellöschschutz, unveränderte
+Sammellöschung/Checkboxen, Abspielen/Spam, fremde Nachrichtentypen, AJAX, fehlende
+Anmeldung, Betreffwechsel und vollständiges Entfernen des Schutzes beim Ausschalten.
+Alle vier hier geänderten Programm-/Testdateien wurden am Commit exakt zurückgelesen.
