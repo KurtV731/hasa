@@ -1,6 +1,6 @@
 # HASA – Schwarzes Brett
 
-Stand: 21.10.2026
+Stand: 22.10.2026
 
 Dieses Dokument ist die verbindliche gemeinsame Übergabe- und Verwaltungsstelle für die
 HASA-Entwicklung. Vor jeder HASA-Arbeit wird es vollständig gelesen. Entscheidungen,
@@ -2738,3 +2738,25 @@ falls nur die Übersicht erfasst wurde, den betreffenden Bericht einmal öffnen.
 Für diese Userscriptkorrektur kein Serverupdate und keine Migration nötig.
 Keine Spielaktionen, produktiven Uploads oder privaten Originale veröffentlicht.
 Stabile Veröffentlichung bleibt 1.1 Final; dies ist noch keine offizielle 1.2 Final.
+
+
+## 2026-10-22 – Kurt an CE HASA – vollständige Wiki-Kolonisationszeiten
+
+**Quelle ergänzt:** Kurt liefert den vollständigen Wiki-Auszug mit allen zehn
+Schiffstypen. SCOL 3h, GRCO 4h, CCOL 7h, FCOL 30min, LRCO 9h, ICOL 24h,
+GCOL 4h, ASCS 8h, LACS 20h, IACS 72h. Die bisher fehlenden Zeiten sind damit
+als Wiki-Angaben belegt; kein eigener erfolgreicher Live-Abruf behauptet.
+
+**Umsetzung vorbereitet:** Branch feature/kolonisationszeiten-wiki-20261022,
+Programmcommit 65e4753ad8ee9f27480c502ddfac567007939832. Alle zehn Tooltips nennen Zeit und Wiki;
+Bau/Flug weiterhin zusätzlich. Keine neue Planerberechnung. Alpha37-Archive und
+Download auf main unverändert. Bei nächstem Bündel echte Versionsnummer erhöhen
+und aktuelle .user.js/.txt/neues Archiv identisch halten. Quellen-/Umsetzungsnotiz:
+1 docs/werkstatt/kolonisationsschiffe_tooltips.md.
+
+**Prüfung abgeschlossen:** https://github.com/KurtV731/hasa/actions/runs/39738137602 .
+Alle zehn Werte, drei tatsächliche Tooltipstellen und bestehende Browser-/PHP-/
+MariaDB-Prüfungen bestanden. Drei Programm-/Testdateien am Commit exakt
+zurückgelesen. Vorbereitung gesichert, keine neue alleinige Alpha-Veröffentlichung,
+keine produktiven Uploads oder Spielaktionen. Charons Fehlersuche ruht nach Kurts
+Mitteilung zunächst; eventuell gemeinsamer Termin vor Ort, kein Automatismus.

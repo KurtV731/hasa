@@ -1,18 +1,43 @@
 # Kolonisationsschiffe: Besiedelungsdauer im Tooltip
 
-Stand: 21.10.2026. Im gemeinsamen HASA-1.2-Update Alpha37 veröffentlicht.
+Stand: 22.10.2026.
 
-## Quelle und gesicherte Angabe
+## Veröffentlichter Stand und Vorbereitung
 
-Kurts Discord-Ausschnitt vom 19.10.2026 enthält die Antwort „Scol 3h“
-auf die Frage nach Besiedelungszeiten. Das ist eine Community-Angabe,
-noch kein eigener Nachweis aus dem Spiel. Kein privates Bild wird veröffentlicht.
+Alpha37 zeigt bei SCOL noch drei Stunden als Community-Angabe und bei den
+anderen neun Typen „noch nicht belegt“. Kurt hat am 22.10.2026 den vollständigen
+Wiki-Auszug geliefert. Diese Lücke ist damit in der Quelle geschlossen.
 
-Der dort genannte Link
-https://wiki.goetterheimat.de/index.php?title=Kolonisationsschiffe
-war bei den Abrufen am 19.10.2026 nicht erreichbar (auch direkter Abruf: HTTP 503).
-Die Wiki-Tabelle wurde deshalb nicht als gelesen oder bestätigt ausgegeben.
-Weitere Schiffszeiten sind offen und werden nicht aus SCOL abgeleitet.
+Alle zehn Zeiten sind im Branch feature/kolonisationszeiten-wiki-20261022
+für das nächste gemeinsame Update umgesetzt. Der Download auf main bleibt
+bis zur gebündelten Veröffentlichung unverändert Alpha37. Bei Integration
+Version erhöhen, beide aktuellen Skriptdateien und neues Archiv identisch pflegen.
+
+## Quelle und Zeiten
+
+Quelle: von Kurt am 22.10.2026 vollständig übermittelter Wiki-Auszug „Typen“
+der Kolonisationsschiffe. Dieser Befund beruht auf dem übermittelten Inhalt;
+kein eigener erfolgreicher Live-Abruf des Wikis behauptet.
+
+[Kolonisationsschiffe im Wiki](http://wiki.goetterheimat.de/index.php?title=Kolonisationsschiffe)
+und [Schiffswerft-Abbildung](http://wiki.horiversum.org/images/kolonisation/schiffswerft_spezialschiffe.png).
+
+| Typ | Kolonisationszeit |
+|---|---|
+| SCOL | 3 Stunden |
+| GRCO | 4 Stunden |
+| CCOL | 7 Stunden |
+| FCOL | 30 Minuten |
+| LRCO | 9 Stunden |
+| ICOL | 24 Stunden |
+| GCOL | 4 Stunden |
+| ASCS | 8 Stunden |
+| LACS | 20 Stunden |
+| IACS | 72 Stunden |
+
+Früherer Stand: Wiki am 19.10.2026 nicht erreichbar (direkt HTTP 503).
+Deshalb waren die anderen Zeiten damals zu Recht offen; der neue vollständige
+Auszug ersetzt jetzt die frühere vorläufige SCOL-Quelle.
 
 ## Umsetzung
 
@@ -20,25 +45,19 @@ Native Hover-Tooltips im bestehenden HASA-Forschungsplaner:
 Schiffsauswahl, gewähltes Ziel und anklickbare Voraussetzungen.
 Der vorhandene Hinweis „Als Zwischenziel übernehmen“ bleibt erhalten.
 
-SCOL: Besiedelungsdauer 3 Stunden, als Community-Angabe gekennzeichnet.
-Bau- und Flugzeit kommen gesondert hinzu. Keine Änderung an Zeitberechnungen.
-Für die zehn im STAN-Katalog vorhandenen Kolonisationsschiff-IDs
-SCOL, GRCO, CCOL, FCOL, LRCO, ICOL, GCOL, ASCS, LACS, IACS gibt es die
-Zuordnung; bei unbelegter Dauer erscheint „noch nicht belegt“.
-Andere Objekte erhalten keine Kolonisationsangabe. Exakte ID plus Typ ship;
-keine unsichere Zuordnung über Namensbestandteile.
+„Besiedelungsdauer: [Zeit] (laut Wiki).“
+Bau- und Flugzeit kommen zusätzlich hinzu. Keine Änderung der Planerzeitrechnung.
+Zuordnung ausschließlich über die genaue Schiffs-ID und Typ ship; andere Objekte
+erhalten keine Kolonisationsangabe. Tonnenangaben sind keine Zeitfaktoren.
 
-## Prüfung und Integration
+## Prüfung und Übergabe
 
-JavaScript-Syntax und Browserprüfung der tatsächlichen Renderfunktionen bestanden:
-alle drei Tooltipstellen, Herkunftshinweis, Trennung der Zeiten, unbekannte Dauer,
-ID-/Typ-Abgrenzung, Erhalt aller Auswahlobjekte und des Zwischenzielhinweises.
-Regressionstest: 5 tools/test_hasa_colony_tooltips.cjs, zusätzlich in CI.
+Programmcommit: 65e4753ad8ee9f27480c502ddfac567007939832.
+Gesamtprüfung: https://github.com/KurtV731/hasa/actions/runs/39738137602 .
 
-Vorbereitung im Branch feature/kolonisations-tooltips-20261019; mit Alpha37
-zusammen mit der Ereigniskorrektur übernommen. Archiv und beide aktuellen
-Skriptdateien sind identisch, Versionsnummer und Laufzeitanzeige erhöht.
-Keine Spielaktionen, keine Server-/Website-Uploads, keine offizielle 1.2-Freigabe.
-
-Geprüfter Programmcommit: a7e0d5fc2509f6d8fdf5ed91cd401a84dd38b814.
-Gesamtprüfung erfolgreich: https://github.com/KurtV731/hasa/actions/runs/39246024911 .
+Regressionstest 5 tools/test_hasa_colony_tooltips.cjs prüft sämtliche zehn
+Zeiten, Wiki-Herkunft, alle drei tatsächlichen Tooltipstellen, Typ-/ID-Abgrenzung,
+Erhalt der Auswahlobjekte und des Zwischenzielhinweises.
+Gesamtprüfung erfolgreich abgeschlossen. Vorbereitung ins nächste Bündel übernehmen;
+keine eigene Alpha
+nur für diese Ergänzung. Keine produktiven Uploads oder Spielaktionen.
