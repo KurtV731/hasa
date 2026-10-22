@@ -3041,3 +3041,29 @@ bei schmaler/breiter Anzeige vorbereitet. Ergebnis nachreichen.
 
 Main erhält nur diese Dokumentation, Download bleibt Alpha38.
 Keine produktive Server-/Websiteaktion oder Spielaktion durch CE.
+
+
+## 2026-10-22 – Kurt an CE HASA – Killtec-Punkt 2 verbindlich für 1.3
+
+**Releaseentscheidung:** Lager-voll-Prognose nicht mehr für die Veröffentlichung
+1.2 einbauen. Als wichtiger Wunsch in 1.3 aufnehmen, jetzt nur fachlich festhalten.
+Ziel: Beim Überfahren der Ressource Restzeit und voraussichtliche Uhrzeit bis
+Lager voll anzeigen; daraus erkennen, wann man sich um einen Lagerausbau kümmern
+muss. Keine automatische Bauaktion.
+
+Kurts Bildschirm zeigt Produktion & Co. > Gebäudestatus, Produktionsklasse Lager.
+Die Gesamtkapazität entsteht aus mehreren Gebäuden, nicht allein der Lagerstufe:
+Metallmine, Kristallmine, Raffinerie, Lager und Hauptquartier tragen bei.
+Angezeigte Summen im Beispiel: E-Lager 27135, M-Lager 10400, T-Lager 6956.
+Separate Safe-Zeile: E 1835, M 261, T 198. Safe nicht ohne belegte Semantik
+zusätzlich zur Gesamtkapazität addieren. Screenshot privat, kein Original hochladen.
+
+Spätere Umsetzung braucht aktuelle sichtbare Kapazitätssumme, Vorrat und wirksame
+Nettoproduktion desselben Planeten. Zeitlich begrenztes Motivationsvideo und
+bekannte Ereignisänderungen zeitabschnittsweise berücksichtigen, keine volle
+Restzeit mit einem bald endenden Bonus hochrechnen. Bei nicht positiver
+Nettoproduktion keinen erfundenen Fülltermin ausgeben. Unbekannte Zuflüsse,
+Ausgaben und Produktionsänderungen begrenzen jede Prognose; als solche anzeigen.
+Quelltext dieser Ansicht bei Umsetzung analysieren, heute keine weitere
+Untersuchung, kein Prognosecode, kein zusätzlicher Versionssprung.
+Persönliche Prognose bleibt gemäß neuer Datenschutzregel privat.
