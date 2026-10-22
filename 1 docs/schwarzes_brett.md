@@ -2796,3 +2796,38 @@ Vier Programm-/Vorlagendateien am Commit exakt zurückgelesen. Parserprüfung is
 kein realer WinSCP-/Hostingtest. Dokumentation/README aktualisiert und vor main
 zurücklesen. Tatsächlicher Upload, DB-Import, Ziel-Anmeldung und Umschaltung offen;
 benötigt private neue Verbindung und Ziel-Datenbank. Keine Passwörter in GitHub.
+
+
+## 2026-10-22 – Kurt an CE HASA – Umzugstest und PHP-Sicherheitsprüfung
+
+**Manueller Umzug durch Kurt bestätigt:** Neue DB d048a999, FTP-Verbindung
+HASA-li zum neuen Hosting, PHP-Ziel /hasa.li/api/. Private config.php angepasst
+und hochgeladen. health.php mit Datenbank ok, PHP 8.5.12-nmm1. Vollständigen
+Export kd239663db1.sql.gz in neue DB importiert: phpMyAdmin meldet Erfolg mit
+107 Abfragen, 19 HASA-Tabellen sichtbar. Anmeldung UND erwartete Datenanzeige
+laut Kurt tadellos geprüft. Nicht wieder zur bereits bestandenen Sichtprüfung
+auffordern. Dies bestätigt die Kopie; exakter finaler Bestandsabgleich und
+Schreibstopp/Umschaltung bleiben gesondert zu koordinieren. Alte Downloadfassung
+spricht noch alten Server an; neue Serveradresse noch nicht veröffentlicht.
+
+**Aktueller Sicherheitsauftrag vor Umschaltung:** Deutschlandfunkmeldung zu PHP
+nachgeschlagen. PHP veröffentlichte am 21.10.2026 Korrekturen für
+CVE-2026-109618 und CVE-2026-109619. Offizielle Quelle:
+https://www.php.net/archive/2026.php ; CERT-EU:
+https://cert.europa.eu/publications/security-advisories/2026-018 .
+Korrigierte Zweige: 8.5.12, 8.4.27, 8.3.36, 8.2.35.
+
+Am 22.10.2026 beide öffentlich vorhandenen health.php-Endpunkte direkt per HTTPS
+nur lesend abgerufen: https://hasa.li/api/health.php meldet 8.5.12-nmm1,
+https://serkal.de/hasa/health.php meldet 8.2.35; beide HTTP 200, ok=true,
+database=ok. Damit melden die tatsächlich für HASA verwendeten Laufzeiten
+korrigierte Versionsstände. Keine Aussage über alle Server/Versionen von ALL-INKL,
+keine unabhängige Prüfung der Hoster-Binärdateien oder des Updatezeitpunkts.
+
+**Abgrenzung Hintertür:** Keine Dateiintegritäts-/Forensikprüfung erfolgt.
+Gesunder health.php-Aufruf und gepatchte Version schließen frühere Kompromittierung
+nicht aus. Benötigt: vollständiger privater Webspace-Dateiabzug einschließlich
+versteckter Konfiguration und Verzeichnisse, vertrauenswürdiger Sollbestand,
+Web-/PHP-/FTP-Protokolle und Hosterbefund. Unerwartete Dateien/Änderungen und
+Protokollhinweise untersuchen; weder pauschale Entwarnung noch Befall behaupten.
+Keine Angriffsversuche oder Exploits ausführen, keine privaten Serverdaten in GitHub.
