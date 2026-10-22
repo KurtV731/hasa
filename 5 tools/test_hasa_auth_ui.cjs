@@ -26,8 +26,8 @@ assert.match(source,/\/\/ @updateURL\s+https:\/\/raw\.githubusercontent\.com\/Ku
  await page.route('https://horiversum.org/**',r=>r.fulfill({contentType:'text/html',body:'<body></body>'}));
  await page.goto('https://horiversum.org/game/main/main.php');
  await page.evaluate(({auth,returns})=>{
-  window.calls=[];window.reply={ok:true,authenticated:false};window.fail=false;window.active=true;window.openCount=0;window.focusCount=0;window.renders=0;window.writes=0;window.block=false;
-  window.GM_xmlhttpRequest=o=>{calls.push({url:o.url,partition:o.cookiePartition,anonymous:o.anonymous,credentials:o.withCredentials});queueMicrotask(()=>fail?o.onerror():o.onload({status:200,responseText:JSON.stringify(reply)}));};
+  window.calls=[];window.reply={ok:true,authenticated:false};window.fail=false;window.httpStatus=200;window.active=true;window.openCount=0;window.focusCount=0;window.renders=0;window.writes=0;window.block=false;
+  window.GM_xmlhttpRequest=o=>{calls.push({url:o.url,partition:o.cookiePartition,anonymous:o.anonymous,credentials:o.withCredentials});queueMicrotask(()=>fail?o.onerror():o.onload({status:httpStatus,responseText:JSON.stringify(reply)}));};
   window.open=()=>{openCount++;if(block)return null;return window.child={closed:false,focus(){focusCount++;}};};
   const fn=new Function(`const HASA_AUTH_STATUS_URL='https://hasa.li/api/auth-status.php';const HASA_LOGIN_URL='https://hasa.li/api/login.php';function istHasaFuerSitzungAktiv(){return window.active;}function galascannerApiSchluessel(){return 'synthetic';}function baueBox(){window.renders++;}function verarbeiteGalascannerWarteschlange(){window.writes++;}function verarbeitePrdrUebertragung(){}function setInterval(){return 42;}\n`+auth+returns+`\nreturn {state:HAA_SERVER_AUTH,refresh:aktualisiereHasaServerAnmeldung,request:hasaJsonRequest,open:oeffneHasaAnmeldung,back:pruefeHasaAnmeldungNachRueckkehr,install:installiereHasaAnmeldungspruefung,ready:hasaServerSchreibbereit,hint:()=>HAA_ANMELDEHINWEIS};`);
   window.api=fn();
@@ -37,6 +37,14 @@ assert.match(source,/\/\/ @updateURL\s+https:\/\/raw\.githubusercontent\.com\/Ku
  await test('partition is not applied to unrelated public TechTree requests',async()=>{await page.evaluate(()=>api.request({url:'https://techtree.kommandobasis.eu/objects'}));assert.equal(await page.evaluate(()=>calls.at(-1).partition),undefined);});
  await test('successful status supplies account and CSRF without local secrets',async()=>{await page.evaluate(async()=>{reply={ok:true,authenticated:true,user:{id:71,player_name:'Synthetic',is_user_admin:false},csrf:'synthetic-csrf'};await api.back(true);});assert.equal(await page.evaluate(()=>api.state.userId),71);assert.equal(await page.evaluate(()=>api.ready()),true);assert.match(await page.evaluate(()=>api.hint()),/Angemeldet als Synthetic/);});
  await test('network interruption does not erase confirmed session',async()=>{await page.evaluate(async()=>{fail=true;await api.refresh(true);});assert.equal(await page.evaluate(()=>api.state.authenticated),true);assert.match(await page.evaluate(()=>api.state.error),/Netzwerkfehler/);});
+ await test('maintenance 503 retains known account and CSRF and does not authenticate a new account',async()=>{
+  await page.evaluate(async()=>{fail=false;httpStatus=503;reply={ok:false,error:'maintenance',message:'HASA wird gerade umgezogen.'};await api.refresh(true);});
+  assert.equal(await page.evaluate(()=>api.state.userId),71);
+  assert.equal(await page.evaluate(()=>api.state.csrf),'synthetic-csrf');
+  assert.equal(await page.evaluate(()=>api.state.authenticated),true);
+  assert.match(await page.evaluate(()=>api.state.error),/umgezogen/);
+  await page.evaluate(()=>{httpStatus=200;});
+ });
  await test('server confirmed logout clears account and CSRF',async()=>{await page.evaluate(async()=>{fail=false;reply={ok:true,authenticated:false};await api.back(true);});assert.equal(await page.evaluate(()=>api.state.userId),null);assert.equal(await page.evaluate(()=>api.state.csrf),null);assert.match(await page.evaluate(()=>api.hint()),/gleichen Browser/);});
  await test('repeat login click focuses live child without another tab',async()=>{await page.evaluate(()=>{api.open();api.open();});assert.equal(await page.evaluate(()=>openCount),1);assert.equal(await page.evaluate(()=>focusCount),2);assert.equal(await page.evaluate(()=>child.opener),null);});
  await test('closed login child may be reopened',async()=>{await page.evaluate(()=>{child.closed=true;api.open();});assert.equal(await page.evaluate(()=>openCount),2);});

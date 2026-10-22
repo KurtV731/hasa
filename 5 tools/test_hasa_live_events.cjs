@@ -15,6 +15,7 @@ const moduleSource=source.slice(source.indexOf('    // Alpha28: Rohmeldungen'),s
   const laden=(k,d)=>store.has(k)?structuredClone(store.get(k)):d,speichern=(k,v)=>store.set(k,structuredClone(v));
   const request=async options=>{const p=JSON.parse(options.data);requests.push({url:options.url,payload:p});
    if(control.mode==='error')throw new Error('network_failure');
+   if(control.mode==='maintenance'){const e=new Error('HASA wird gerade umgezogen.');e.code='maintenance';e.status=503;throw e;}
    return {ok:true,stored:{durable:control.mode!=='not-durable',owner_user_id:control.mode==='wrong-owner'?8:7,round:8,message_id:p.message_id,sample_id:p.sample_id}};
   };
   const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -35,6 +36,16 @@ const moduleSource=source.slice(source.indexOf('    // Alpha28: Rohmeldungen'),s
  await test('network failure produces no check or durable receipt',async()=>{
   await page.evaluate(async()=>{live.control.keyReady=true;live.control.mode='error';await live.api.flush();live.control.keyReady=false;});
   assert.equal(await page.locator('.haa-stored-mark').count(),0);assert.ok(!await page.evaluate(()=>live.store.get(live.api.eventsKey)[0].serverStoredAt));
+ });
+ await test('maintenance response preserves pending report for later delivery and never marks it stored',async()=>{
+  const before=await page.evaluate(()=>live.store.get(live.api.eventsKey));
+  await page.evaluate(async()=>{live.control.keyReady=true;live.control.mode='maintenance';await live.api.flush();live.control.keyReady=false;});
+  const after=await page.evaluate(()=>live.store.get(live.api.eventsKey));
+  assert.equal(after.length,before.length);
+  assert.equal(after[0].messageId,before[0].messageId);
+  assert.deepEqual(after[0].observations,before[0].observations);
+  assert.ok(!after[0].serverStoredAt);
+  assert.equal(await page.locator('.haa-stored-mark').count(),0);
  });
  await test('wrong owner and non-durable acknowledgements rejected',async()=>{
   for(const mode of ['wrong-owner','not-durable']){await page.evaluate(async mode=>{live.control.keyReady=true;live.control.mode=mode;await live.api.flush();live.control.keyReady=false;},mode);assert.equal(await page.locator('.haa-stored-mark').count(),0);}
