@@ -2760,3 +2760,39 @@ MariaDB-Prüfungen bestanden. Drei Programm-/Testdateien am Commit exakt
 zurückgelesen. Vorbereitung gesichert, keine neue alleinige Alpha-Veröffentlichung,
 keine produktiven Uploads oder Spielaktionen. Charons Fehlersuche ruht nach Kurts
 Mitteilung zunächst; eventuell gemeinsamer Termin vor Ort, kein Automatismus.
+
+
+## 2026-10-22 – Kurt an CE HASA / Website-Chatty – hasa.li bereit, Dienste umziehen
+
+**Aktueller Auftrag:** HASA-API und DB dürfen unabhängig vom noch nicht erfolgten
+SerKal-Umzug eingerichtet werden. Reine öffentliche Website beim Website-Chatty.
+CE reserviert https://hasa.li/api/ für bestehende PHP-Werkzeuge und API; Website-
+Routing darf diesen Pfad nicht überdecken. Keine Abhängigkeit vom SerKal-Termin.
+
+**Befund:** Direkter HTTPS-Abruf mit Zertifikatsprüfung: Startseite HTTP 200,
+/api/health.php und /hasa/health.php HTTP 404. In dieser Arbeitsumgebung keine
+bereitgestellte Hosting-/DB-Verbindung oder private WinSCP-Einstellung vorhanden.
+Keine Datenbank oder produktiven Dateien bereits übertragen.
+
+**Vorbereitung umgesetzt:** HASA-Serverupdate-hasa-li.bat und neues Profil im
+bestehenden PowerShell-Helfer. Eigene private server-update-hasa-li.json;
+standardmäßiger alter Uploadweg bleibt funktionsgleich. Neue neutrale private
+Konfigurationsvorlage in 3 server/tools/config-hasa-li.example.php.
+Vor Ort neue WinSCP-Verbindung und realen api-Zielordner einrichten.
+Kein Datenbankimport oder automatisches Löschen durch den Helfer.
+
+**Verbindlicher Durchführungsplan:** 1 docs/hasa_umzug_hasa_li.md.
+Eigene leere Ziel-DB, private vollständige HASA-Sicherung, Struktur/Daten/IDs/
+Hashes/Rechte vollständig übernehmen, exakte Bestandsprüfung. Keine Runden-
+Migration als Umzugswerkzeug. Vor endgültigem Export alte Schreibwege technisch
+sperren, keine parallelen Schreibbestände. Neue Domain erfordert neue Anmeldung.
+Erst nach Zieltest neues Userscript mit API-URLs, @connect, Cookiepartition und
+passender Versionsnummer veröffentlichen; zehn Wiki-Zeiten dabei bündeln.
+Bestehende Downloadfassung Alpha37 jetzt noch nicht auf leere Ziel-API umbiegen.
+
+**Prüfung:** Programmcommit 1987af3426b5c7a4198b0fb0b29feff92e7335ac.
+Windows PowerShell Parser erfolgreich: https://github.com/KurtV731/hasa/actions/runs/39738956396 .
+Vier Programm-/Vorlagendateien am Commit exakt zurückgelesen. Parserprüfung ist
+kein realer WinSCP-/Hostingtest. Dokumentation/README aktualisiert und vor main
+zurücklesen. Tatsächlicher Upload, DB-Import, Ziel-Anmeldung und Umschaltung offen;
+benötigt private neue Verbindung und Ziel-Datenbank. Keine Passwörter in GitHub.

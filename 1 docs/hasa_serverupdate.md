@@ -20,3 +20,17 @@ Anschließend genügt jeweils ein Doppelklick:
 Es werden keine Serverdateien gelöscht und keine Datenbankmigrationen ausgeführt. Falls ein späterer Auftrag eine Migration verlangt, muss diese nach dessen Installationsanleitung gesondert erfolgen. Tampermonkey-Skripte werden ebenfalls nicht installiert.
 
 Die Windows-/WinSCP-Ausführung muss beim ersten Einsatz vor Ort geprüft werden; die Entwicklungsumgebung bietet weder Windows PowerShell noch eine Verbindung zum Produktivserver.
+
+
+## Neues Hosting hasa.li ab 22.10.2026
+
+Für das neue Ziel separat HASA-Serverupdate-hasa-li.bat verwenden.
+Dieser Weg verwendet ein eigenes Profil unter
+%LOCALAPPDATA%\HASA\server-update-hasa-li.json und übernimmt keine alte Verbindung.
+Der Server-Zielordner muss https://hasa.li/api/ entsprechen und bereits vorhanden
+sein. Neue WinSCP-Verbindung und tatsächlichen Ordner prüfen.
+Die alte BAT bleibt für das bestehende Hosting gültig.
+
+[Umzugsanleitung](hasa_umzug_hasa_li.md): neue private Konfiguration, vollständige
+Datenübernahme und Zielprüfung gehen der endgültigen Userscript-Umschaltung voraus.
+Der Uploadhelfer kopiert keine Datenbank und richtet keine neue Datenbank ein.

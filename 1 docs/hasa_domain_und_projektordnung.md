@@ -13,8 +13,8 @@ zugehörigen HASA-Webwerkzeuge. Öffentliche HASA-Links sollen zur eigenen Domai
 führen und nicht dauerhaft unter SerKal versteckt bleiben.
 SerKal bleibt ein eigenes Projekt. GitHub KurtV731/hasa bleibt die Quellverwaltung.
 
-Diese Entscheidung ist noch keine erfolgte Umschaltung. Das derzeit veröffentlichte
-Alpha36 verwendet weiter serkal.de/hasa. Die eigene Domain ist kein Beleg dafür,
+Diese Entscheidung ist noch keine erfolgte Umschaltung. Die derzeit veröffentlichte
+Alpha37 verwendet weiter serkal.de/hasa. Die eigene Domain ist kein Beleg dafür,
 dass dort bereits PHP, Datenbank, HTTPS und Anmeldung eingerichtet sind.
 Der geprüfte GitHub-Userscript-Updateweg bleibt bis zur bewussten Entscheidung
 über den künftigen Downloadweg erhalten; kein vorzeitiger Austausch der Header.
@@ -76,3 +76,17 @@ kein Zugriff auf Kurts lokale Festplatte, kein DNS-/Hosting-/Serverupload,
 kein Datenbankumzug und keine Nachricht an andere Personen ausgeführt.
 Die offizielle Version 1.2 sowie das vorbereitete Kolonisations-Tooltip-Bündel
 bleiben eigene offene Arbeiten. Charons Leistungsbericht ist weiterhin zu untersuchen.
+
+
+## Konkretisierung vom 22.10.2026
+
+Kurt bestätigt: hasa.li steht bereit; HASA-API und Datenbank können unabhängig
+vom SerKal-Umzug eingerichtet werden. Websitegestaltung übernimmt der Website-
+Chatty. Für ihn ist /api/ als eigener Bereich der HASA-Dienste reserviert.
+Startseite direkt über HTTPS erreichbar (200), API-health.php noch 404.
+
+[Durchführungsplan mit eigenem Uploadprofil](hasa_umzug_hasa_li.md) beschreibt
+die Zielpfade, Datenübernahme, Prüfung und späteren Userscriptwechsel.
+HASA-Serverupdate-hasa-li.bat verwendet eine eigene private WinSCP-Zuordnung;
+die vorhandene alte Serverzuordnung wird dafür nicht wiederverwendet.
+Produktive Verbindung, Datenimport und Umschaltung sind noch nicht erfolgt.

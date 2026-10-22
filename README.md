@@ -13,6 +13,11 @@ Kurt legt das lokale Projekt unter **PPD\HASA** ab; die Unterorganisation
 übernimmt der CE HASA. Die veröffentlichte Fassung nutzt derzeit weiterhin
 die bisherigen Serveradressen. Der Umzug ist noch nicht produktiv vollzogen.
 
+[Technischer Umzug nach hasa.li](1%20docs/hasa_umzug_hasa_li.md): API und
+Datenbank werden unabhängig vom SerKal-Umzug vorbereitet; Website beim Website-Chatty.
+Eigener Uploadhelfer: `HASA-Serverupdate-hasa-li.bat`, getrenntes privates Profil.
+Die Downloadfassung verwendet bis zur Zielprüfung weiterhin die alten API-Adressen.
+
 [Zielstruktur und geordneter Umzug](1%20docs/hasa_domain_und_projektordnung.md)
 beschreiben die Trennung von SerKal, vorhandene Abhängigkeiten und den Erhalt
 der Daten und funktionierenden Installation.
