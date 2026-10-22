@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         HASA – Horizon Ascension Assistant
 // @namespace    horiversum.hasa
-// @version      1.2.0-alpha.38
+// @version      1.2.0-alpha.39
 // @charset      UTF-8
 // @updateURL    https://raw.githubusercontent.com/KurtV731/hasa/main/2%20src/current/HASA-AKTUELL.user.js
 // @downloadURL  https://raw.githubusercontent.com/KurtV731/hasa/main/2%20src/current/HASA-AKTUELL.user.js
@@ -214,8 +214,8 @@
         'PHYSICS', 'PSYCHOLOGY', 'NUCLEARPHYSICS', 'SOLARENERGYTECH'
     ]);
 
-    const HASA_VERSION = '1.2.0 Alpha 38';
-    const HASA_BUILD_LABEL = '1.2.0-alpha38-hasa-li-2026-10-22';
+    const HASA_VERSION = '1.2.0 Alpha 39';
+    const HASA_BUILD_LABEL = '1.2.0-alpha39-ereigniszentrale-2026-10-22';
     const HASA_RUNDE = 8;
     const HASA_RUNDE_SCHLUESSEL = 'runde8';
     // Die MariaDB und sämtliche Schreibendpunkte trennen Runde 7 und 8 jetzt
@@ -1878,9 +1878,10 @@
     }
 
     function verbindeGalascannerButtons() {
-        const asfi=document.getElementById('haa-asfi-liste'),guild=document.getElementById('haa-gildensitzungen');
-        if(asfi)asfi.onclick=function(){window.open(HASA_EVENT_LIST+'?view=asfi&round='+HASA_RUNDE,'_blank','noopener');};
-        if(guild)guild.onclick=function(){window.open(HASA_EVENT_LIST+'?view=guild&round='+HASA_RUNDE,'_blank','noopener');};
+        [['haa-events-scans','hub'],['haa-ressourcen','production'],['haa-kampfbericht','combat']].forEach(function(eintrag){
+            const button=document.getElementById(eintrag[0]);
+            if(button)button.onclick=function(){window.open(HASA_EVENT_LIST+'?view='+eintrag[1]+'&round='+HASA_RUNDE,'_blank','noopener');};
+        });
         const datenbank = document.getElementById('haa-galascan-datenbank');
         if (datenbank) {
             datenbank.onclick = function () {
@@ -1984,8 +1985,9 @@
                 : '')
             + '<button id="haa-galascan-datenbank" type="button" '
             + 'style="flex:0 0 auto;font-size:11px;font-weight:bold;cursor:pointer;">Galaxiedatenbank</button>'
-            + '<button id="haa-asfi-liste" type="button" style="flex:0 0 auto;font-size:11px;cursor:pointer;">ASFI-Liste</button>'
-            + '<button id="haa-gildensitzungen" type="button" style="flex:0 0 auto;font-size:11px;cursor:pointer;">Gildensitzungen</button>'
+            + '<button id="haa-events-scans" type="button" style="flex:0 0 auto;font-size:11px;cursor:pointer;">Events/Scans</button>'
+            + '<button id="haa-ressourcen" type="button" style="flex:0 0 auto;font-size:11px;cursor:pointer;">Ressourcen</button>'
+            + '<button id="haa-kampfbericht" type="button" style="flex:0 0 auto;font-size:11px;cursor:pointer;">Kampfbericht</button>'
             + (HAA_SERVER_AUTH.authenticated && HAA_SERVER_AUTH.isUserAdmin
                 ? '<button id="haa-galascan-benutzerverwaltung" type="button" '
                     + 'style="flex:0 0 auto;font-size:11px;font-weight:bold;cursor:pointer;">Zur Benutzerverwaltung</button>'
@@ -6982,6 +6984,7 @@ return box;
     window.addEventListener('load', starteSicher);
     setTimeout(starteSicher, 800);
 })();
+
 
 
 

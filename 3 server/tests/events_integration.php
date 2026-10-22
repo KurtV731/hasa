@@ -57,4 +57,42 @@ try{hasaStoreProduction($pdo,$one,array_replace($sample,['rates'=>['metal'=>'814
 $pdo->exec('UPDATE hasa_users SET active=0 WHERE id='.(int)$two['id']);
 conflict(fn()=>hasaStoreEvent($pdo,$two,array_replace($event,['expected_user_id'=>(int)$two['id']])),'account_changed');
 check((int)$pdo->query('SELECT COUNT(*) FROM hasa_event_reports')->fetchColumn()===2,'journal history retained after state changes');
+require_once $api.'/auth.php';
+$clock=new DateTimeImmutable('2026-10-22 12:00:00',new DateTimeZone('UTC'));
+$window=hasaJournalWindow($clock);
+check($window===['20260922140000','20261022140000'],'30 calendar days use Berlin game clock');
+check(hasaJournalWindow(new DateTimeImmutable('2026-11-01 12:00:00',new DateTimeZone('UTC')))===['20261002130000','20261101130000'],'30 day window handles DST as calendar days in game zone');
+$subject='Motivationsvideo abgespielt';
+$insert=$pdo->prepare('INSERT INTO hasa_event_reports(owner_user_id,round_number,message_id,subject,system_event,reported_game_time,reported_order,captured_at,details_text,identity_hash) VALUES (?,?,?,?,?,?,?,?,?,?)');
+for($i=0;$i<31;$i++){
+    $order=$i===0?$window[0]:($i===1?$window[1]:($i===28?'20260922135959':($i===29?'20261022140001':($i===30?null:'20261021140000'))));
+    $dt=$order===null?null:DateTimeImmutable::createFromFormat('!YmdHis',$order,new DateTimeZone('Europe/Berlin'))->format('d.m.Y H:i:s');
+    $insert->execute([(int)$one['id'],8,'journal-'.$i,$subject,1,$dt,$order,$now,$i===0?null:'<script>private detail</script>',hash('sha256','journal-'.$i)]);
+}
+// Same subject from another account, another round or a personal message must not leak.
+foreach([[(int)$two['id'],8,1],[(int)$one['id'],7,1],[(int)$one['id'],8,0]] as $i=>$scope){
+    $insert->execute([$scope[0],$scope[1],'foreign-'.$i,$subject,$scope[2],'21.10.2026 14:00:00','20261021140000',$now,'Foreign-only secret',hash('sha256','foreign-'.$i)]);
+}
+$unsafe='<img src=x onerror=alert(1)>';
+$insert->execute([(int)$one['id'],8,'unsafe-title',$unsafe,1,'21.10.2026 14:00:00','20261021140000',$now,'Safe text',hash('sha256','unsafe-title')]);
+$summary=hasaJournalSummary($pdo,$one,8,$window);
+check((int)$summary[$subject]['total']===31 && (int)$summary[$subject]['recent']===28 && (int)$summary[$subject]['undated']===1,'lifetime counter, 30 day bounds, unknown and future times remain distinct');
+check((int)$summary['Motivationsvideo verfügbar']['total']===0,'video availability is separate from actual start and zero lists remain reachable');
+$rows=hasaJournalRows($pdo,$one,8,$subject,$window,0);
+check(count($rows)===26 && $rows[0]['reported_game_time']==='22.10.2026 14:00:00','journal returns chronological first page plus one continuation row');
+$next=hasaJournalRows($pdo,$one,8,$subject,$window,25);
+check(count($next)===3 && $next[2]['reported_game_time']==='22.09.2026 14:00:00','pagination preserves exact lower boundary without loss');
+check(count(hasaJournalRows($pdo,$one,8,"' OR 1=1 --",$window,0))===0,'subject filter is parameterized');
+check((int)(hasaJournalSummary($pdo,$rootUser,8,$window)[$subject]['total'])===0,'root gains no implicit access to private journal');
+$hub=hasaJournalHubHtml($summary,8);
+$body=hasaJournalEventHtml($subject,$summary,$rows,8,0);
+$last=hasaJournalEventHtml($subject,$summary,$next,8,25);
+check(!str_contains($hub,'<img') && str_contains($hub,'&lt;img') && !str_contains($body,'<script>') && str_contains($body,'&lt;script&gt;'),'titles and original report text are escaped');
+check(!str_contains($body,'Foreign-only secret') && str_contains($body,'Gesamt: 31') && str_contains($body,'Weitere Meldungen'),'rendered journal uses own account scope and uncapped counter');
+check(str_contains($last,'Nur Übersichtsdaten gespeichert') && str_contains($body,'ohne Ereignisdatum'),'missing full text and undated reports are clearly labelled');
+$empty=hasaJournalEventHtml('Motivationsvideo verfügbar',$summary,[],8,0);
+check(str_contains($empty,'Gesamt: 0') && str_contains($empty,'Keine datierten Meldungen'),'empty event page is honest about zero history');
+$fixture='<!doctype html><html lang="de"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>:root{color-scheme:dark;font:19px/1.5 system-ui;background:#111827;color:#f3f4f6}body{max-width:620px;margin:3rem auto;padding:1rem}h1{font-size:1.5rem}h1,h2,p{overflow-wrap:anywhere}a{color:#93c5fd}</style><body><section id="hub">'.$hub.'</section><section id="journal">'.$body.'</section></body></html>';
+file_put_contents($api.'/journal-fixture.html',$fixture);
 echo $n.' MariaDB checks passed'.PHP_EOL;
+

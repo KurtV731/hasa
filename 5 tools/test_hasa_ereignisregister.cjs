@@ -224,17 +224,32 @@ const helpers = source.slice(source.indexOf('    function prdrNormalisiereText')
         await full.goto('https://horiversum.org/game/main/main.php');
         await full.evaluate(instrumented);
         await full.locator('#haa-hauptschalter-an').click();
-        await full.waitForSelector('#haa-asfi-liste',{state:'attached'});
+        await full.waitForSelector('#haa-events-scans',{state:'attached'});
         assert.equal(await full.locator('#haa-box').locator('details.haa-accordion').count(),3);
         assert.equal(await full.locator('details[data-haa-bereich="ascension"]').count(),0);
         assert.equal(await full.evaluate(()=>__hasaTest.list().length),1);
-        assert.match(await full.locator('#haa-box').innerText(),/Alpha 38/);
+        assert.match(await full.locator('#haa-box').innerText(),/Alpha 39/);
         const layout = await full.evaluate(() => {
             const bar = document.querySelector('#haa-werkzeuge');
             const first = document.querySelector('details.haa-accordion');
-            return {outside: !bar.closest('details'), before: !!(bar.compareDocumentPosition(first) & Node.DOCUMENT_POSITION_FOLLOWING), count: document.querySelectorAll('#haa-asfi-liste').length};
+            return {outside: !bar.closest('details'), before: !!(bar.compareDocumentPosition(first) & Node.DOCUMENT_POSITION_FOLLOWING), count: document.querySelectorAll('#haa-events-scans').length};
         });
         assert.deepEqual(layout,{outside:true,before:true,count:1});
+    });
+    await test('Alpha39 toolbar groups lists and routes three categories to hasa.li', async () => {
+        assert.equal(await full.locator('#haa-asfi-liste, #haa-gildensitzungen').count(),0);
+        for (const [id,label] of [['haa-events-scans','Events/Scans'],['haa-ressourcen','Ressourcen'],['haa-kampfbericht','Kampfbericht']]) {
+            assert.equal(await full.locator('#'+id).innerText(),label);
+        }
+        const calls=await full.evaluate(()=>{
+            const calls=[];window.open=(url,target,features)=>{calls.push({url,target,features});return null;};
+            ['haa-events-scans','haa-ressourcen','haa-kampfbericht'].forEach(id=>document.getElementById(id).click());
+            return calls;
+        });
+        assert.deepEqual(calls.map(c=>c.url),['hub','production','combat'].map(view=>'https://hasa.li/api/events.php?view='+view+'&round=8'));
+        assert.ok(calls.every(c=>c.target==='_blank' && c.features==='noopener'));
+        assert.equal(await full.locator('#haa-galascan-datenbank').count(),1);
+        assert.equal(await full.locator('#haa-galascan-benutzerverwaltung').count(),0);
     });
     await test('full Userscript writes native IndexedDB and synchronous fallback', async () => {
         await full.waitForFunction(async ()=>{
@@ -244,12 +259,12 @@ const helpers = source.slice(source.indexOf('    function prdrNormalisiereText')
         assert.equal(await full.evaluate(()=>JSON.parse(localStorage.getItem('gm:'+__hasaTest.key)).length),1);
     });
     await test('browser reload preserves register, same message never double-counts', async () => {
-        await full.reload();await full.evaluate(instrumented);await full.waitForSelector('#haa-asfi-liste',{state:'attached'});
+        await full.reload();await full.evaluate(instrumented);await full.waitForSelector('#haa-events-scans',{state:'attached'});
         assert.equal(await full.evaluate(()=>__hasaTest.list().length),1);
     });
     await test('recovery merges newer fallback with older IndexedDB', async () => {
         await full.evaluate(()=>{const v=JSON.parse(localStorage.getItem('gm:'+__hasaTest.key));v.push({...v[0],id:'8:7:message:902',messageId:'902',eventType:'Polsprung',observations:[{kind:'overview',rawText:'Polsprung',capturedAt:new Date().toISOString()}]});localStorage.setItem('gm:'+__hasaTest.key,JSON.stringify(v));});
-        await full.reload();await full.evaluate(instrumented);await full.waitForSelector('#haa-asfi-liste',{state:'attached'});
+        await full.reload();await full.evaluate(instrumented);await full.waitForSelector('#haa-events-scans',{state:'attached'});
         assert.equal(await full.evaluate(()=>__hasaTest.list().length),2);
     });
     await test('full ASFI native database persistence and reload', async()=>{
@@ -258,7 +273,7 @@ const helpers = source.slice(source.indexOf('    function prdrNormalisiereText')
         await full.waitForFunction(()=>__hasaTest.asfi().length===1);
         await full.waitForFunction(async()=>{const db=await new Promise(resolve=>{const a=indexedDB.open('hasa_lokale_daten_v1',1);a.onsuccess=()=>resolve(a.result);});const row=await new Promise(resolve=>{const a=db.transaction('werte').objectStore('werte').get(__hasaTest.asfiKey);a.onsuccess=()=>resolve(a.result);});db.close();return row&&row.wert.length===1;});
         assert.equal(await full.evaluate(()=>JSON.parse(localStorage.getItem('gm:'+__hasaTest.asfiKey))[0].current.type),'ASFI');
-        await full.reload();await full.evaluate(instrumented);await full.waitForSelector('#haa-asfi-liste',{state:'attached'});
+        await full.reload();await full.evaluate(instrumented);await full.waitForSelector('#haa-events-scans',{state:'attached'});
         assert.equal(await full.evaluate(()=>__hasaTest.asfi()[0].current.type),'ASFI');
     });
     await test('compact real UI at 390px, original text readable, stop/restart', async () => {
@@ -268,13 +283,14 @@ const helpers = source.slice(source.indexOf('    function prdrNormalisiereText')
         const bounds=await full.locator('#haa-box').boundingBox();assert.ok(bounds.x>=0 && bounds.x+bounds.width<=391);
         await full.screenshot({path:process.env.HASA_TEST_SCREENSHOT || require('os').tmpdir()+'/hasa-ereignisregister-test.png'});
         await full.locator('#haa-hauptschalter-aus').click();await full.waitForSelector('#haa-hauptschalter-an');
-        await full.locator('#haa-hauptschalter-an').click();await full.waitForSelector('#haa-asfi-liste',{state:'attached'});
+        await full.locator('#haa-hauptschalter-an').click();await full.waitForSelector('#haa-events-scans',{state:'attached'});
         assert.equal(await full.evaluate(()=>__hasaTest.list().length),3);
     });
     assert.deepEqual(errors,[]);
     await browser.close();
     console.log(passed+' browser regression groups passed; catalog '+66+' titles covered.');
 })().catch(e => {console.error(e);process.exit(1);});
+
 
 
 

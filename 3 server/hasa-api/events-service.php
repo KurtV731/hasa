@@ -1,6 +1,85 @@
 <?php
 declare(strict_types=1);
 
+// Eigene bestätigte Systemmeldungen; Zähler unabhängig vom 30-Tage-Ausschnitt.
+function hasaJournalWindow(?DateTimeImmutable $now = null): array
+{
+    $now = ($now ?? new DateTimeImmutable('now', new DateTimeZone('UTC')))->setTimezone(new DateTimeZone('Europe/Berlin'));
+    return [$now->modify('-30 days')->format('YmdHis'), $now->format('YmdHis')];
+}
+
+function hasaJournalSummary(PDO $pdo, array $user, int $round, array $window): array
+{
+    $q=$pdo->prepare('SELECT subject COLLATE utf8mb4_bin AS subject,COUNT(*) AS total,
+        SUM(CASE WHEN reported_order>=? AND reported_order<=? THEN 1 ELSE 0 END) AS recent,
+        SUM(CASE WHEN reported_order IS NULL THEN 1 ELSE 0 END) AS undated
+        FROM hasa_event_reports WHERE owner_user_id=? AND round_number=? AND system_event=1
+        GROUP BY subject COLLATE utf8mb4_bin ORDER BY subject COLLATE utf8mb4_bin');
+    $q->execute([$window[0],$window[1],(int)$user['id'],$round]);
+    $items=[];
+    foreach($q->fetchAll() as $r)$items[$r['subject']]=$r;
+    // Vorbereitete Video-Listen bleiben auch vor der ersten gespeicherten Meldung erreichbar.
+    foreach(['Motivationsvideo verfügbar','Motivationsvideo abgespielt','Motivationsvideo verschlampt','Treffen des Gildenvorstandes'] as $subject){
+        if(!isset($items[$subject]))$items[$subject]=['subject'=>$subject,'total'=>0,'recent'=>0,'undated'=>0];
+    }
+    ksort($items,SORT_STRING);
+    return $items;
+}
+
+function hasaJournalRows(PDO $pdo, array $user, int $round, string $subject, array $window, int $offset): array
+{
+    if($offset<0 || $offset>1000000)throw new InvalidArgumentException('invalid_offset');
+    $q=$pdo->prepare('SELECT subject,reported_game_time,planet_name,galaxy_number,system_number,orbit_position,details_text
+        FROM hasa_event_reports WHERE owner_user_id=? AND round_number=? AND system_event=1
+        AND subject COLLATE utf8mb4_bin=? AND reported_order>=? AND reported_order<=?
+        ORDER BY reported_order DESC,id DESC LIMIT 26 OFFSET '.(int)$offset);
+    $q->execute([(int)$user['id'],$round,$subject,$window[0],$window[1]]);
+    return $q->fetchAll();
+}
+
+function hasaJournalUrl(int $round, string $subject, int $offset=0): string
+{
+    return 'events.php?'.http_build_query(['view'=>'event','round'=>$round,'subject'=>$subject,'offset'=>$offset],'','&',PHP_QUERY_RFC3986);
+}
+
+function hasaJournalHubHtml(array $summary, int $round): string
+{
+    $total=array_sum(array_column($summary,'total'));
+    $html='<h1>Events/Scans <small>· Gesamt: '.number_format($total,0,',','.').'</small></h1>'
+        .'<p>Deine gespeicherten Systemmeldungen. Jeder Ereignistyp zeigt die letzten 30 Tage mit Datum und seinen Gesamtzähler seit Beginn deiner Aufzeichnungen in dieser Spielrunde.</p>'
+        .'<h2>Events</h2><div class="hasa-event-buttons" style="display:flex;flex-wrap:wrap;gap:.65rem">';
+    foreach($summary as $r){
+        $label=$r['subject']==='Treffen des Gildenvorstandes'?'Gildensitzungen':$r['subject'];
+        $html.='<a class="hasa-event-button" style="display:block;border:1px solid #64748b;border-radius:.4rem;padding:.65rem;text-decoration:none;overflow-wrap:anywhere" href="'.hasaAuthEscape(hasaJournalUrl($round,$r['subject'])).'">'
+            .hasaAuthEscape($label).' <strong>· '.number_format((int)$r['total'],0,',','.').'</strong><br><small>Letzte 30 Tage: '.(int)$r['recent'].'</small></a>';
+    }
+    return $html.'</div><h2>Scans</h2><p><a href="events.php?view=asfi&amp;round='.$round.'">Aktuelle ASFI-Liste</a> · '
+        .'<a href="galaxy.php?round='.$round.'">Gespeicherte Systeme und Sondenberichte</a></p>'
+        .'<p class="muted">Die ASFI-Liste zeigt den aktuellen sichtbaren Bestand. Ereigniszähler zählen gespeicherte Meldungen, keine aktuellen Felder. Verfügbarkeit eines Videos bedeutet nicht, dass es gestartet wurde.</p>';
+}
+
+function hasaJournalEventHtml(string $subject, array $summary, array $rows, int $round, int $offset): string
+{
+    $s=$summary[$subject]??['total'=>0,'recent'=>0,'undated'=>0];
+    $more=count($rows)>25;$rows=array_slice($rows,0,25);
+    $html='<h1>'.hasaAuthEscape($subject).' <small>· Gesamt: '.number_format((int)$s['total'],0,',','.').'</small></h1>'
+        .'<p>Letzte 30 Tage: <strong>'.(int)$s['recent'].'</strong>. Gesamtzähler: seit Beginn deiner gespeicherten Aufzeichnungen in dieser Spielrunde. Datum und Uhrzeit: Spielzeit (Europe/Berlin).</p>';
+    if((int)$s['undated'])$html.='<p>'.(int)$s['undated'].' gespeicherte Meldung(en) ohne Ereignisdatum sind im Gesamtzähler enthalten, aber keinem 30-Tage-Zeitraum zugeordnet.</p>';
+    if(!$rows)$html.='<p>Keine datierten Meldungen dieses Ereignisses in den letzten 30 Tagen gespeichert.</p>';
+    foreach($rows as $r){
+        $position=$r['galaxy_number']!==null?$r['galaxy_number'].':'.$r['system_number'].':'.$r['orbit_position']:'Position unbekannt';
+        $html.='<article style="border-top:1px solid #64748b;padding:.8rem 0"><h2 style="font-size:1.1rem">'.hasaAuthEscape($r['reported_game_time']).'</h2>'
+            .'<p>'.hasaAuthEscape(($r['planet_name']?:'Planet unbekannt').' · '.$position).'</p>';
+        $html.=$r['details_text']!==null && trim($r['details_text'])!==''
+            ?'<div style="white-space:pre-wrap;overflow-wrap:anywhere">'.hasaAuthEscape($r['details_text']).'</div>'
+            :'<p class="muted">Nur Übersichtsdaten gespeichert; vollständiger Berichtstext noch nicht erfasst.</p>';
+        $html.='</article>';
+    }
+    if($offset)$html.='<p><a href="'.hasaAuthEscape(hasaJournalUrl($round,$subject,max(0,$offset-25))).'">Zurück</a></p>';
+    if($more)$html.='<p><a href="'.hasaAuthEscape(hasaJournalUrl($round,$subject,$offset+25)).'">Weitere Meldungen</a></p>';
+    return $html;
+}
+
 function hasaEventSchemaSql(): array
 {
     return [
@@ -178,3 +257,4 @@ function hasaStoreProduction(PDO $pdo, array $user, array $input): array
         return ['sample_id'=>$sample,'sample_db_id'=>$id,'owner_user_id'=>(int)$user['id'],'round'=>$round,'durable'=>true];
     }catch(Throwable$e){if($pdo->inTransaction())$pdo->rollBack();throw$e;}
 }
+

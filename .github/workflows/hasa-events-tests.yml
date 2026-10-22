@@ -72,6 +72,8 @@ jobs:
           php '3 server/tests/system_search_integration.php'
           php '3 server/tests/sharing_global_integration.php'
           HASA_TEST_SHARING_HTML="$test_api/sharing-global-fixture.html" node '5 tools/test_hasa_sharing_ui.cjs'
+          HASA_TEST_JOURNAL_HTML="$test_api/journal-fixture.html" node '5 tools/test_hasa_journal_ui.cjs'
+
 
 
 

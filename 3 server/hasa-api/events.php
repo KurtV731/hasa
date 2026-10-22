@@ -9,8 +9,22 @@ $pdo=hasaPdo();
 if(!hasaEventsAvailable($pdo)){
     hasaAuthPage('Ereignislisten','<h1>Ereignislisten</h1><p>Die einmalige Einrichtung fehlt noch.</p>'.((int)($user['can_manage_user_admins']??0)?'<p><a href="events-install.php">Ereignislisten einrichten</a></p>':'<p>Bitte die Benutzerleitung um Einrichtung bitten.</p>'));exit;
 }
-$round=hasaRound($_GET['round']??null);$view=in_array($_GET['view']??'', ['asfi','guild','production'],true)?$_GET['view']:'asfi';
+$round=hasaRound($_GET['round']??null);$view=in_array($_GET['view']??'', ['hub','event','asfi','guild','production','combat'],true)?$_GET['view']:'hub';
 $offset=filter_var($_GET['offset']??0,FILTER_VALIDATE_INT);if($offset===false||$offset<0||$offset>1000000)hasaAuthError('Ungültige Seite.',400);
+$navigation='<nav aria-label="HASA Bereiche"><p><a href="galaxy.php?round='.$round.'">Galaxiedatenbank</a> · <a href="events.php?view=hub&amp;round='.$round.'">Events/Scans</a> · <a href="events.php?view=production&amp;round='.$round.'">Ressourcen</a> · <a href="events.php?view=combat&amp;round='.$round.'">Kampfbericht</a></p></nav>';
+if(in_array($view,['hub','event','guild','combat'],true)){
+    if($view==='combat'){
+        hasaAuthPage('Kampfbericht',$navigation.'<h1>Kampfbericht</h1><p>Dieser Bereich ist vorbereitet. Eine Kampfberichtsauswertung ist noch nicht verfügbar.</p>');exit;
+    }
+    $window=hasaJournalWindow();$summary=hasaJournalSummary($pdo,$user,$round,$window);
+    if($view==='hub'){
+        hasaAuthPage('Events/Scans',$navigation.hasaJournalHubHtml($summary,$round));exit;
+    }
+    $subject=$view==='guild'?'Treffen des Gildenvorstandes':($_GET['subject']??'');
+    if(!is_string($subject)||trim($subject)===''||mb_strlen($subject,'UTF-8')>240)hasaAuthError('Ungültiger Ereignistyp.',400);
+    $rows=hasaJournalRows($pdo,$user,$round,$subject,$window,$offset);
+    hasaAuthPage($subject,$navigation.hasaJournalEventHtml($subject,$summary,$rows,$round,$offset));exit;
+}
 $rows=[];$headers=[];$title='';
 if($view==='asfi'){
     $title='Aktuelle ASFI-Liste';$headers=['Position','Name / Herkunft','Stand','Letzter Nachweis'];
@@ -39,7 +53,7 @@ if($view==='asfi'){
     $q=$pdo->prepare('SELECT planet_name,galaxy_number,system_number,orbit_position,sampled_at,metal_per_hour,mineral_per_hour,fuel_per_hour FROM hasa_production_samples WHERE owner_user_id=? AND round_number=? ORDER BY sampled_at DESC,id DESC LIMIT 101 OFFSET '.(int)$offset);$q->execute([(int)$user['id'],$round]);foreach($q->fetchAll()as$r)$rows[]=[$r['planet_name']?:'–',$r['galaxy_number'].':'.$r['system_number'].':'.$r['orbit_position'],$r['sampled_at'],$r['metal_per_hour'],$r['mineral_per_hour'],$r['fuel_per_hour']];
 }
 $more=count($rows)>100;$rows=array_slice($rows,0,100);
-$html='<h1>'.hasaAuthEscape($title).'</h1><p><a href="events.php?view=asfi&amp;round='.$round.'">ASFIs</a> · <a href="events.php?view=guild&amp;round='.$round.'">Gildensitzungen</a> · <a href="events.php?view=production&amp;round='.$round.'">Produktion</a> · <a href="galaxy.php?round='.$round.'">Galaxiedatenbank</a></p><div style="overflow:auto"><table style="border-collapse:collapse;width:100%"><thead><tr>';
+$html=$navigation.'<h1>'.hasaAuthEscape($title).'</h1><div style="overflow:auto"><table style="border-collapse:collapse;width:100%"><thead><tr>';
 foreach($headers as$h)$html.='<th style="text-align:left;padding:.5rem">'.hasaAuthEscape($h).'</th>';$html.='</tr></thead><tbody>';
 foreach($rows as$row){$html.='<tr>';foreach($row as$value)$html.='<td style="padding:.5rem;border-top:1px solid #475569">'.hasaAuthEscape((string)$value).'</td>';$html.='</tr>';}
 if(!$rows)$html.='<tr><td colspan="'.count($headers).'">Noch keine passenden Einträge gespeichert.</td></tr>';
@@ -49,3 +63,4 @@ if($more)$html.='<p><a href="events.php?view='.$view.'&amp;round='.$round.'&amp;
 if($view==='asfi')$html.='<p class="muted">Eigene und nach deinen Freigaben sichtbare Funde. Fehlende Sicht entfernt kein Feld. Alte Nachweise werden nach ungefähr 14 Tagen als prüfbedürftig markiert.</p>';
 if($view==='asfi' && count($rawRows)>=1000)$html.='<p class="muted">Diese Ansicht berücksichtigt die ersten 1000 sichtbaren Positionsnachweise.</p>';
 hasaAuthPage($title,$html);
+
