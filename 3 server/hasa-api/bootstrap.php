@@ -189,3 +189,14 @@ set_exception_handler(static function (Throwable $error): never {
     }
     hasaJson($result, 500);
 });
+
+// Wartung vor jedem Endpunkt, jeder Anmeldung und jedem Datenbankzugriff.
+// Nur die lokale Serverdatei aktiviert dies; niemals per URL/Benutzereingabe.
+if (is_file(__DIR__ . '/maintenance.flag')) {
+    header('Retry-After: 300');
+    hasaJson([
+        'ok' => false,
+        'error' => 'maintenance',
+        'message' => 'HASA wird gerade umgezogen. Bitte nach der Wartung aktualisieren und neu anmelden.',
+    ], 503);
+}

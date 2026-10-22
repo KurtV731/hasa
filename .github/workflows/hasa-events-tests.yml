@@ -6,6 +6,7 @@ on:
       - '2 src/current/HASA-AKTUELL.user.js'
       - '3 server/hasa-api/**'
       - '3 server/tests/events_integration.php'
+      - '3 server/tests/maintenance_integration.py'
       - '3 server/tests/initial_password_integration.php'
       - '3 server/tests/system_search_integration.php'
       - '3 server/tests/sharing_global_integration.php'
@@ -44,6 +45,7 @@ jobs:
         run: |
           cmp '2 src/current/HASA-AKTUELL.user.js.txt' '2 src/current/HASA-AKTUELL.user.js'
           find '3 server/hasa-api' -name '*.php' -print0 | xargs -0 -n1 php -l
+          python3 '3 server/tests/maintenance_integration.py'
           node '5 tools/test_hasa_ereignisregister.cjs'
           node '5 tools/test_hasa_live_events.cjs'
           node '5 tools/test_hasa_web_ui.cjs'
