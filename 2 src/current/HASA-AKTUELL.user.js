@@ -4453,13 +4453,22 @@ return box;
     function kolonisationsTooltip(objekt) {
         if (!objekt || objekt.type !== 'ship') return '';
         const id = String(objekt.id || '').trim().toUpperCase();
-        const ids = ['SCOL', 'GRCO', 'CCOL', 'FCOL', 'LRCO', 'ICOL', 'GCOL', 'ASCS', 'LACS', 'IACS'];
-        if (!ids.includes(id)) return '';
-        if (id === 'SCOL') {
-            return 'Besiedelungsdauer: 3 Stunden (Community-Angabe vom 19.10.2026; noch nicht im Spiel geprüft).\n'
-                + 'Bau- und Flugzeit kommen zusätzlich hinzu.';
-        }
-        return 'Besiedelungsdauer: noch nicht belegt.\nBau- und Flugzeit werden getrennt betrachtet.';
+        // Wiki-Tabelle von Kurt am 22.10.2026 übermittelt; reine Kolonisationszeit.
+        const dauer = {
+            SCOL: '3 Stunden',
+            GRCO: '4 Stunden',
+            CCOL: '7 Stunden',
+            FCOL: '30 Minuten',
+            LRCO: '9 Stunden',
+            ICOL: '24 Stunden',
+            GCOL: '4 Stunden',
+            ASCS: '8 Stunden',
+            LACS: '20 Stunden',
+            IACS: '72 Stunden'
+        };
+        if (!Object.prototype.hasOwnProperty.call(dauer, id)) return '';
+        return 'Besiedelungsdauer: ' + dauer[id] + ' (laut Wiki).\n'
+            + 'Bau- und Flugzeit kommen zusätzlich hinzu.';
     }
 
     function baueStanNavigationHtml() {
