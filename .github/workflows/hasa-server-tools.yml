@@ -1,0 +1,29 @@
+name: HASA server update helper syntax
+on:
+  push:
+    paths:
+      - '3 server/tools/server-update.ps1'
+      - '3 server/tools/config-hasa-li.example.php'
+      - 'HASA-Serverupdate*.bat'
+      - '.github/workflows/hasa-server-tools.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  syntax:
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse helper with Windows PowerShell
+        shell: powershell
+        run: |
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Join-Path $pwd '3 server/tools/server-update.ps1'),
+            [ref]$tokens, [ref]$errors) | Out-Null
+          if ($errors.Count) {
+            $errors | ForEach-Object { Write-Error $_.Message }
+            exit 1
+          }
+          Write-Host 'Windows PowerShell syntax passed. No upload or private connection used.'

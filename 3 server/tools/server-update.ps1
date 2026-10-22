@@ -1,7 +1,12 @@
 # HASA: Git Pull und Upload in einem Aufruf. Keine Zugangsdaten im Repository.
+param(
+    [ValidateSet('bestehend', 'hasa-li')]
+    [string]$Profile = 'bestehend'
+)
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
-$privateSettings = Join-Path $env:LOCALAPPDATA 'HASA\server-update.json'
+$settingsName = if ($Profile -eq 'hasa-li') { 'server-update-hasa-li.json' } else { 'server-update.json' }
+$privateSettings = Join-Path (Join-Path $env:LOCALAPPDATA 'HASA') $settingsName
 $tempScript = $null
 function Quote-WinSCP([string]$value) {
     if ($value -match '[\r\n]') { throw 'Zeilenumbrueche sind in Verbindung oder Pfad nicht erlaubt.' }
@@ -20,9 +25,17 @@ try {
     if (Test-Path $privateSettings) {
         $settings = Get-Content -LiteralPath $privateSettings -Raw | ConvertFrom-Json
     } else {
-        Write-Host 'Einmalige Einrichtung: Verwende deine bereits gespeicherte HASA-Verbindung in WinSCP.'
+        if ($Profile -eq 'hasa-li') {
+            Write-Host 'Neues Ziel hasa.li: eigene gespeicherte WinSCP-Verbindung zum neuen Hosting verwenden.' -ForegroundColor Yellow
+            Write-Host 'Der Zielordner muss https://hasa.li/api/ entsprechen. Die bisherige SerKal-Verbindung wird nicht uebernommen.'
+        } else {
+            Write-Host 'Einmalige Einrichtung: Verwende deine bereits gespeicherte HASA-Verbindung in WinSCP.'
+        }
         $site = (Read-Host 'Exakter Name der gespeicherten WinSCP-Verbindung').Trim()
-        Write-Host 'Zielordner wie in WinSCP: beim eingeschraenkten HASA-FTP-Konto normalerweise /; bei einem allgemeinen Konto /hasa/.'
+        if ($Profile -ne 'hasa-li') {
+            Write-Host 'Zielordner wie in WinSCP: beim eingeschraenkten HASA-FTP-Konto normalerweise /; bei einem allgemeinen Konto /hasa/.'
+        }
+        Write-Host 'Den tatsaechlichen Serverpfad aus WinSCP verwenden; ein Webpfad ist nicht automatisch ein Serverpfad.'
         $remote = (Read-Host 'Zielordner fuer die HASA-PHP-Dateien').Trim()
         $settings = [pscustomobject]@{ site = $site; remote = $remote }
     }
@@ -31,6 +44,7 @@ try {
     $siteArg = Quote-WinSCP $settings.site
     $remoteArg = Quote-WinSCP ($settings.remote.TrimEnd('/') + '/')
     $sourceArg = Quote-WinSCP (Join-Path $repo '3 server\hasa-api\*')
+    Write-Host ('Uploadprofil: ' + $Profile + ' | WinSCP-Verbindung: ' + $settings.site + ' | Zielordner: ' + $settings.remote)
     Write-Host 'Hole den aktuellen Stand von GitHub ...'
     & git.exe -C $repo pull --ff-only
     if ($LASTEXITCODE -ne 0) { throw 'Git Pull fehlgeschlagen. Es wurde nichts hochgeladen.' }
