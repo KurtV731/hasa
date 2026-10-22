@@ -2999,3 +2999,45 @@ sowie bestehende PHP-/Browser-/Auth-/Sharing-/Wartungsprüfungen bestanden.
 Vier geänderte Dateien exakt zurückgelesen. Detaildokument aktualisiert.
 Main übernimmt nur Dokumentation; Alpha38-Download unverändert und Schutz noch
 nicht im produktiven Spiel installiert. Keine Server-/Websiteaktion durch CE.
+
+
+## 2026-10-22 – Kurt an CE HASA – Killtec-Punkte 1 und 3 / Analysen immer privat
+
+**Verbindliche Erweiterung Alpha39:** Erinnerung an verfügbare Motivationsvideos
+gehört in die .39. Zusätzlich auf Anfrage aus der DB laufende Ereignisse
+rekonstruieren und nach Planeten sortieren. Sämtliche persönlichen Analysen
+bleiben privat, unabhängig von Galaxie-/Sondenfreigaben und Root-/Allianzrolle.
+
+**Vorbereitung umgesetzt:** Programmcommit 254dcd705a17c357b2fac796c162ad8a623d025c
+im bestehenden Alpha39-Branch. Erinnerung unter Werkzeugzeile mit Planet,
+Restzeit aus Kurts Angabe 14 Tage, Warnung innerhalb der letzten 24 Stunden.
+Nach Frist kein erfundenes Ende, sondern Prüfhinweis. Abgespielt/verschlampt
+reduziert offene Meldungen nur für denselben Planeten; mehrere Videos und
+unbekannte Zuordnung nicht durch ein pauschales Löschen aller Erinnerungen
+verdecken. Replay zählt nicht doppelt, andere Konten/Runden bleiben draußen.
+Nur lokales erfasstes Register dieses Browsers; kein stiller Server-Nachladeweg.
+Nachrichtenlink öffnet normale Übersicht, niemals einen gespeicherten Startlink.
+
+Neue DB-Ansicht events.php?view=active rekonstruiert eigene Produktionswirkungen,
+bestätigte Metallminen-Wassereinbrüche/Reparaturen und gestartete Videos aus
+der gesamten gespeicherten Zeitfolge. 30-Tage-Filter hier ausdrücklich nicht
+verwenden. Zeitpunkt des Aufrufs, Beginn/Ende bzw. Ende nicht gemeldet anzeigen.
+Video endet nach einer Stunde, übrige Wirkungen bleiben. Weitere Ereignistypen
+erst nach belegten Zustandsregeln, keine unklaren Zeiten/Positionen als sicher
+aktiv ausgeben. Nach Planetenkoordinaten numerisch gruppieren/sortieren.
+Serverfilter ausschließlich angemeldete Konto-ID/Runde; Freigaben erweitern ihn
+nicht. Eigene Ereigniszähler und Produktionsanalysen ebenfalls privat.
+Normale ausdrücklich freigegebene Galaxie-/Sondenansichten bleiben getrennt.
+
+**Prüfstatus:** Acht geänderte Programm-/Testdateien exakt zurückgelesen.
+Lokaler JS-Syntaxcheck und echte Erinnerungsberechnung für Frist, Replay,
+Abspielen, mehrere Videos, unbekannte Zeit und Kontentrennung bestanden.
+Gesamt-CI https://github.com/KurtV731/hasa/actions/runs/39846312217
+wartet derzeit beim Installieren der Testabhängigkeiten; Browser-/PHP-/MariaDB-
+Gesamtergebnis noch nicht als bestanden behaupten. Zusätzliche Fälle für
+sichtbaren Live-Hinweis, Ablauf, Server-Zeitordnung, alte Beginnmeldungen,
+Endgruppen, Root-/Konten-/Rundentrennung sowie echte private Planetenansicht
+bei schmaler/breiter Anzeige vorbereitet. Ergebnis nachreichen.
+
+Main erhält nur diese Dokumentation, Download bleibt Alpha38.
+Keine produktive Server-/Websiteaktion oder Spielaktion durch CE.

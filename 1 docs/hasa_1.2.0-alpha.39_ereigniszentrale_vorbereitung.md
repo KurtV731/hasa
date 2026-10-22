@@ -1,8 +1,8 @@
 # Alpha39 – Events/Scans als gemeinsame Einstiegsseite
 
 Stand: 22.10.2026. Getestete Vorbereitung im Branch feature/alpha39-ereigniszentrale-20261022.
-Programmcommit: 5992262a2edfe63c9a5fc48fff948e70fd76a606.
-Gesamtprüfung erfolgreich: https://github.com/KurtV731/hasa/actions/runs/39843434453 .
+Programmcommit: 254dcd705a17c357b2fac796c162ad8a623d025c.
+Gesamtprüfung erfolgreich: https://github.com/KurtV731/hasa/actions/runs/39846312217 .
 Die veröffentlichte Downloadfassung auf main bleibt bis zur gesonderten Freigabe Alpha38.
 
 ## Bedienung
@@ -85,7 +85,7 @@ am geöffneten Bericht ersetzt ein ⛔-Schild nur den einzelnen Löschknopf für
 Motivationsvideo verfügbar. Der Abspiel-Link wird nicht verändert. Spam,
 Auswahlkästchen und insbesondere die Sammellöschung unten bleiben unverändert:
 Wer dort gemeinsam löscht, kann die Videomeldung weiterhin mitlöschen.
-Eine Warnung vor Ablauf ist ein separater offener Wunsch, nicht Teil dieses Schutzes.
+Eine Warnung vor Ablauf ist eine eigene Ergänzung derselben Alpha39; siehe unten.
 
 Die ältere private Quelle mv.txt belegt getrennte Aktionen view, delete,
 toSpam und respond sowie das ReportForm mit bulk_delete. Verwendet wird nur
@@ -117,3 +117,69 @@ Sechs zusätzliche Browsergruppen prüfen genau den Einzellöschschutz, unverän
 Sammellöschung/Checkboxen, Abspielen/Spam, fremde Nachrichtentypen, AJAX, fehlende
 Anmeldung, Betreffwechsel und vollständiges Entfernen des Schutzes beim Ausschalten.
 Alle vier hier geänderten Programm-/Testdateien wurden am Commit exakt zurückgelesen.
+
+
+## Erinnerung an ungenutzte Motivationsvideos (Killtec, Punkt 1)
+
+Verbindlich für Alpha39 ergänzt. Ein kompakter Hinweis unter der Werkzeugzeile
+erinnert an erfasste verfügbare Videos mit Planet/Koordinate, Anzahl und Restzeit.
+In den letzten 24 Stunden wird der bevorstehende Ablauf hervorgehoben.
+Die 14-Tage-Frist stammt aus Kurts Spielangabe; Endzeit deshalb als voraussichtlich
+kennzeichnen. Nach Ablauf bleibt ein Prüfhinweis, bis eine passende Spielmeldung
+den Status klärt. Keine erfundene automatische Verschlampt-Meldung.
+
+Bestätigte abgespielt-/verschlampt-Meldungen reduzieren offene Videomeldungen
+nur beim gleichen Planeten, Konto und in derselben Runde. Mehrere offene Videos
+verschwinden nicht alle nach einem einzigen Start; ist die konkrete Zuordnung
+unklar, erscheint keine vermeintlich genaue verbleibende Frist.
+Replay derselben Nachrichtenkennung verlängert nichts und zählt nicht doppelt.
+Unbekannte Zeit/Position erhält einen Prüfhinweis, zukünftige Meldung startet
+keinen Hinweis. Ohne aktives, angemeldetes HASA keine persönliche Anzeige.
+Die Erinnerung basiert auf dem lokalen erfassten Register dieses Browsers;
+sie lädt keine vollständige Vorgeschichte aus der Server-DB nach.
+
+Nachrichten im Spiel öffnen führt nur zur normalen Nachrichtenansicht.
+Keine alten Abspiel-/Antwortlinks speichern oder benutzen, kein automatisches
+Abspielen. Hinweis wird nach Erfassung bzw. regulärer Prüfung aktualisiert.
+Kein Betriebssystem-Popup, E-Mail-Versand oder externer Erinnerungsdienst.
+
+## Laufende Events nach Planet (Killtec, Punkt 3)
+
+Unter Events/Scans neuer Einstieg Laufende Events nach Planet.
+Die Datenbankauswertung erfolgt auf Anfrage ausschließlich aus den gespeicherten
+Systemmeldungen des angemeldeten Kontos in der ausgewählten Spielrunde.
+Alle gespeicherten Beginn-/Endmeldungen berücksichtigen, nicht nur 30 Tage.
+Nach Planetenkoordinaten numerisch gruppieren/sortieren und Zeitpunkt des Aufrufs
+anzeigen. Jede Wirkung nennt bestätigten Beginn und bekanntes Ende bzw.
+Ende nicht gemeldet. Endmeldungen schließen jeweils nur ihre Wirkungsgruppe.
+
+Erste fachlich belegte Umsetzung: Produktionssteigerungen für Metall, Mineral,
+Treibstoff; ausdrücklich gemeldete Produktionssenkungen/Normalisierung;
+Metallminen-Wassereinbruch und eindeutig bestätigte Reparatur als eigene Gruppe;
+bestätigtes Motivationsvideo eine Stunde ab Spielzeit.
+Ein verfügbares Video ist noch keine laufende Produktionswirkung.
+Nach Ablauf des Videos bleiben andere aktive Produktionswirkungen sichtbar.
+Bloßer Wassereinbruchs-/Reparaturtitel ohne passenden Volltext ist kein
+vollständiger Beginn-/Endnachweis. Zukünftige, ungültige oder doppeldeutige
+Spielzeiten werden nicht als sicher laufend ausgewertet.
+
+Weitere Ereignistypen benötigen belastbare Start-/End-/Laufzeitregeln und werden
+nicht allein wegen eines alten Titels als aktiv ausgegeben.
+Fehlende erfasste Endmeldungen können den rekonstruierten Stand veralten lassen;
+die Liste wird ausdrücklich als Auswertung gespeicherter Daten gekennzeichnet.
+
+## Verbindliche Privatsphäre
+
+Sämtliche persönlichen Ereignisanalysen, Erinnerungen, Zähler und
+Produktionsauswertungen bleiben je Konto getrennt. Galaxie-/Sondenfreigaben,
+Allianzmitgliedschaft oder Root-Rolle verleihen keinen Zugriff auf fremde
+private Auswertungen. Der angemeldete Benutzer wird serverseitig bestimmt;
+kein Benutzerparameter erweitert den Datenumfang.
+Das ändert nicht die bereits ausdrücklich freigegebenen Galaxie-/Sondendaten
+und deren normale Karten-/Bestandsansicht.
+
+
+Aktueller Prüfstatus dieser Erweiterung: Gesamt-CI 39846312217 noch in Arbeit
+bei der Installation der Testabhängigkeiten. Lokale Syntax-/Erinnerungsberechnung
+bestanden. Frühere bestandene CI-Läufe betreffen den Stand ohne diese Erweiterung;
+sie ersetzen die ausstehende neue Gesamtprüfung nicht.
