@@ -515,7 +515,7 @@
         originalKinder.forEach(function (node, index) {
             if (!ereignisIstSpieltext(node, true)) kopieKinder[index].remove();
         });
-        kopie.querySelectorAll('script,style,noscript,template,#haa-box,.haa-stored-mark,input,select,textarea,[hidden],[aria-hidden="true"]').forEach(function (node) { node.remove(); });
+        kopie.querySelectorAll('script,style,noscript,template,#haa-box,.haa-stored-mark,.haa-video-lock,input,select,textarea,[hidden],[aria-hidden="true"]').forEach(function (node) { node.remove(); });
         kopie.querySelectorAll('br,p,div,li,tr,td,th,h1,h2,h3,h4,section,article').forEach(function (node) {
             node.prepend(element.ownerDocument.createTextNode('\n'));
             node.append(element.ownerDocument.createTextNode('\n'));
@@ -651,6 +651,7 @@
     function scanneHasaEreignisDokument(doc, besucht) {
         if (!doc || !doc.body || besucht.has(doc)) return;
         besucht.add(doc);
+        schuetzeHasaMotivationsvideos(doc);
         const adresse = ereignisNachrichtenUrl(doc.location.href, window.location.href);
         const echterBericht = ereignisScannerBenutzer() && erfasseGeoeffnetenHasaBericht(doc);
         if (echterBericht) { /* tatsächlichen Berichtscope bereits erfasst */ }
@@ -706,6 +707,12 @@
         for (const [frame, handler] of HAA_EREIGNIS_FRAMES) {
             if (!frame.isConnected) { frame.removeEventListener('load', handler); HAA_EREIGNIS_FRAMES.delete(frame); }
         }
+        for (const doc of Array.from(HAA_VIDEO_SCHUTZ.keys())) {
+            try {
+                if (doc !== document && (!doc.defaultView || !doc.defaultView.frameElement || !doc.defaultView.frameElement.isConnected
+                    || doc.defaultView.frameElement.contentDocument !== doc)) stoppeHasaVideoSchutz(doc);
+            } catch (_) { stoppeHasaVideoSchutz(doc); }
+        }
         scanneHasaEreignisDokument(document, new Set());
         (laden(STORAGE_EREIGNIS_REGISTER, []) || []).forEach(function(e){
             if(e && ['Wassereinbruch in Metallmine','Wassereinbruch repariert'].includes(e.subject))hasaProductionEvent(e);
@@ -730,6 +737,7 @@
     }
 
     function stoppeHasaEreignisScanner() {
+        Array.from(HAA_VIDEO_SCHUTZ.keys()).forEach(stoppeHasaVideoSchutz);
         HAA_EREIGNIS_DOKUMENTE.forEach(function (observer) { observer.disconnect(); });
         HAA_EREIGNIS_DOKUMENTE.clear();
         HAA_EREIGNIS_FRAMES.forEach(function (handler, frame) { frame.removeEventListener('load', handler); });
@@ -1024,6 +1032,74 @@
             HAA_EVENT_SYNC_BUSY = false;
             markiereHasaGespeicherteBerichte();
         }
+    }
+
+    // Alpha39: Nur den einzelnen Löschknopf verfügbarer Videos schützen.
+    // Sammellöschung, Spam und Abspielen bleiben ausdrückliche Spielentscheidungen.
+    const HAA_VIDEO_SCHUTZ = new Map();
+
+    function hasaVideoLoeschLink(link, doc, messageId) {
+        try {
+            const url=new URL(link.getAttribute('href')||'',doc.location.href);
+            const basis=new URL(doc.location.href);
+            return url.origin===basis.origin && url.pathname===basis.pathname
+                && url.searchParams.get('cmd')==='message' && url.searchParams.get('action')==='delete'
+                && url.searchParams.get('message_id')===messageId;
+        } catch(_){return false;}
+    }
+
+    function stoppeHasaVideoSchutz(doc) {
+        const state=HAA_VIDEO_SCHUTZ.get(doc);if(!state)return;
+        state.observer.disconnect();
+        doc.removeEventListener('click',state.guard,true);doc.removeEventListener('auxclick',state.guard,true);
+        state.links.forEach(function(mark,link){mark.lock.remove();link.style.display=mark.display;});
+        HAA_VIDEO_SCHUTZ.delete(doc);
+    }
+
+    function aktualisiereHasaVideoSchutz(doc, state) {
+        const links=new Set();
+        doc.querySelectorAll('td a.MessageReportEvent[href]').forEach(function(link){
+            if(!ereignisIstSpieltext(link,false))return;
+            const meta=ereignisZeilenMeta(link);
+            if(meta.subject!=='Motivationsvideo verfügbar' || !meta.systemEvent)return;
+            const address=ereignisNachrichtenUrl(link.getAttribute('href'),doc.location.href);
+            const row=link.closest('tr');if(!address || !row)return;
+            const actions=row.cells[3];if(!actions)return;
+            actions.querySelectorAll('a[href]').forEach(function(actionLink){
+                if(!hasaVideoLoeschLink(actionLink,doc,address.messageId))return;
+                links.add(actionLink);
+                if(!state.links.has(actionLink)){
+                    const lock=doc.createElement('span');lock.className='haa-video-lock';lock.textContent='⛔';
+                    lock.setAttribute('role','img');lock.setAttribute('aria-label','Motivationsvideo: einzelnes Löschen gesperrt');
+                    lock.title='Motivationsvideo verfügbar – einzelnes Löschen gesperrt. Die Sammellöschung unten bleibt möglich.';
+                    lock.style.cssText='display:inline-block;width:19px;line-height:21px;text-align:center;vertical-align:middle;cursor:help;';
+                    state.links.set(actionLink,{lock:lock,display:actionLink.style.display});
+                    actionLink.before(lock);actionLink.style.display='none';
+                }
+            });
+        });
+        state.links.forEach(function(mark,link){if(!links.has(link)){mark.lock.remove();link.style.display=mark.display;state.links.delete(link);}});
+    }
+
+    function schuetzeHasaMotivationsvideos(doc) {
+        if(!istHasaFuerSitzungAktiv() || !doc?.body)return;
+        let state=HAA_VIDEO_SCHUTZ.get(doc);
+        if(!state){
+            state={links:new Map()};
+            state.guard=function(event){
+                if(!istHasaFuerSitzungAktiv())return;
+                aktualisiereHasaVideoSchutz(doc,state);
+                const target=event.target?.nodeType===1?event.target:event.target?.parentElement;
+                const link=target?.closest('a[href]');
+                if(!link || !state.links.has(link))return;
+                event.preventDefault();event.stopImmediatePropagation();
+            };
+            state.observer=new MutationObserver(function(){if(istHasaFuerSitzungAktiv())aktualisiereHasaVideoSchutz(doc,state);});
+            state.observer.observe(doc.body,{subtree:true,childList:true,characterData:true});
+            doc.addEventListener('click',state.guard,true);doc.addEventListener('auxclick',state.guard,true);
+            HAA_VIDEO_SCHUTZ.set(doc,state);
+        }
+        aktualisiereHasaVideoSchutz(doc,state);
     }
 
     function markiereHasaGespeicherteBerichte() {

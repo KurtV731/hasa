@@ -28,6 +28,7 @@ const helpers = source.slice(source.indexOf('    function prdrNormalisiereText')
         const exports = new Function('HAA_SERVER_AUTH','HASA_RUNDE','HASA_RUNDE_SCHLUESSEL','istHasaFuerSitzungAktiv','laden','speichern','esc', 'function hasaServerSchreibbereit(){return false;} function behandleHasaServerAuthFehler(){} function galascannerApiSchluessel(){return \"\";} '+helpers + moduleSource + `
             return {catalog:HASA_EREIGNIS_KATALOG, classify:erkenneHasaEreignis, record:registriereHasaEreignis,
                 scan:pruefeHasaEreignisse, stop:stoppeHasaEreignisScanner, install:installiereHasaEreignisScanner,
+                protect:schuetzeHasaMotivationsvideos, unprotect:stoppeHasaVideoSchutz,
                 scanNode:scanneHasaEreignisKnoten, url:ereignisNachrichtenUrl, html:baueHasaEreignisRegisterHtml,
                 merge:vereinigeHasaEreignisRegister, raw:ereignisOriginaltext, key:STORAGE_EREIGNIS_REGISTER,
                 observers:HAA_EREIGNIS_DOKUMENTE, asfiKey:STORAGE_ASFI_LISTE,
@@ -208,6 +209,56 @@ const helpers = source.slice(source.indexOf('    function prdrNormalisiereText')
             });
         }
     }
+    // Synthetischer, tokenfreier Nachbau der in mv.txt bestätigten Nachrichtentabelle.
+    const videoRow=(id,title='Motivationsvideo verfügbar',system=true)=>`<tr>
+      <td class="MessageTableCellLeft">17.10.2026 15:38:10</td><td class="MessageTableCell">Handelszentrum<div>Testplanet (1:2:3)</div></td>
+      <td class="MessageTableCell"><a class="${system?'MessageReportEvent':''}" href="main.php?cmd=message&action=view&message_id=${id}">${title}</a></td>
+      <td class="MessageTableCell"><a id="spam-${id}" href="main.php?cmd=message&action=toSpam&filter_type=BSTAV" onclick="actions.push('spam');return false;">Spam</a>
+      <a id="delete-${id}" href="main.php?cmd=message&action=delete&message_id=${id}" onclick="actions.push('delete');return false;"><img alt="Nachricht löschen"></a>
+      <input id="check-${id}" type="checkbox" checked></td></tr>`;
+    const videoFixture=`<div class="MessageContainer"><form id="videos" action="main.php" method="post" onsubmit="actions.push('bulk');return false;">
+      <input type="hidden" name="cmd" value="message"><input type="hidden" name="action" value="bulk_delete"><table>${videoRow('v1')}${videoRow('v2','Motivationsvideo abgespielt')}${videoRow('v3','Motivationsvideo verfügbar',false)}</table>
+      <a id="play" class="MessageReportResponse" href="main.php?cmd=message&action=respond&message_id=v1&option_id=0" onclick="actions.push('play');return false;">Video abspielen</a>
+      <button id="bulk" type="submit">Ausgewählte löschen</button></form></div>`;
+    await test('available video gets a prohibition sign only at its individual delete control',async()=>{
+      await page.evaluate(html=>{test.exports.stop();test.setActive(true);window.actions=[];document.body.innerHTML=html;test.exports.protect(document);},videoFixture);
+      assert.equal(await page.locator('.haa-video-lock').count(),1);
+      assert.equal(await page.locator('#delete-v1').isVisible(),false);
+      assert.equal(await page.locator('#delete-v2').isVisible(),true);
+      assert.equal(await page.locator('#delete-v3').isVisible(),true);
+      assert.match(await page.locator('.haa-video-lock').getAttribute('title'),/Sammellöschung unten bleibt möglich/);
+    });
+    await test('individual delete is blocked before original handler even for programmatic click',async()=>{
+      const blocked=await page.evaluate(()=>{const a=document.querySelector('#delete-v1');const e=new MouseEvent('click',{bubbles:true,cancelable:true});return !a.dispatchEvent(e);});
+      assert.equal(blocked,true);assert.deepEqual(await page.evaluate(()=>actions),[]);
+    });
+    await test('bulk deletion and checkbox remain unchanged by explicit user preference',async()=>{
+      assert.equal(await page.locator('#check-v1').isDisabled(),false);
+      assert.equal(await page.locator('#check-v1').isChecked(),true);
+      await page.locator('#bulk').click();
+      await page.evaluate(()=>document.querySelector('#videos').requestSubmit());
+      assert.deepEqual(await page.evaluate(()=>actions),['bulk','bulk']);
+    });
+    await test('playing, spam and other individual deletions remain normal game controls',async()=>{
+      await page.locator('#play').click();await page.locator('#spam-v1').click();await page.locator('#delete-v2').click();await page.locator('#delete-v3').click();
+      assert.deepEqual(await page.evaluate(()=>actions),['bulk','bulk','play','spam','delete','delete']);
+    });
+    await test('new AJAX rows are protected without login or duplicate signs',async()=>{
+      await page.evaluate(row=>{test.auth.authenticated=false;document.querySelector('#videos table').insertAdjacentHTML('beforeend',row);},videoRow('v4'));
+      await page.waitForFunction(()=>document.querySelectorAll('.haa-video-lock').length===2);
+      await page.evaluate(()=>{test.exports.protect(document);test.exports.protect(document);});
+      assert.equal(await page.locator('.haa-video-lock').count(),2);
+      assert.equal(await page.locator('#delete-v4').isVisible(),false);
+      await page.evaluate(()=>{test.auth.authenticated=true;});
+    });
+    await test('only changed game subject or stopping HASA restores original individual control',async()=>{
+      await page.evaluate(()=>{document.querySelector('a[href*="action=view"][href*="message_id=v1"]').textContent='Motivationsvideo verschlampt';});
+      await page.waitForFunction(()=>document.querySelectorAll('.haa-video-lock').length===1);
+      assert.equal(await page.locator('#delete-v1').isVisible(),true);
+      await page.evaluate(()=>test.exports.stop());
+      assert.equal(await page.locator('.haa-video-lock').count(),0);
+      assert.equal(await page.locator('#delete-v4').isVisible(),true);
+    });
     const full = await browser.newPage({viewport:{width:1100,height:900}});
     full.on('pageerror', e=>errors.push(e.message));
     await full.route('**/*',route=>route.fulfill({contentType:'text/html; charset=utf-8',body:`<!doctype html><meta charset="utf-8"><body style="background:#171717;color:#eee"><table><tr><td>12.10.2026 18:40:00</td><td><a href="?cmd=message&action=view&message_id=901">Meteoriteneinschlag</a></td></tr></table></body>`}));
