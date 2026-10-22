@@ -34,6 +34,7 @@ const code = source.slice(start, end);
             document.body.innerHTML=api.render();
             return {
                 scol:api.tooltip(selected),
+                all:Object.fromEntries(['SCOL','GRCO','CCOL','FCOL','LRCO','ICOL','GCOL','ASCS','LACS','IACS'].map(id=>[id,api.tooltip({id,type:'ship'})])),
                 other:api.tooltip(objects[1]),
                 foreign:api.tooltip(objects[2]),
                 wrongType:api.tooltip({id:'SCOL',type:'research'}),
@@ -49,16 +50,21 @@ const code = source.slice(start, end);
             };
         }, code);
         assert.match(result.scol,/Besiedelungsdauer: 3 Stunden/);
-        assert.match(result.scol,/Community-Angabe.*noch nicht im Spiel geprüft/);
+        assert.match(result.scol,/laut Wiki/);
+        const expected={SCOL:'3 Stunden',GRCO:'4 Stunden',CCOL:'7 Stunden',FCOL:'30 Minuten',LRCO:'9 Stunden',ICOL:'24 Stunden',GCOL:'4 Stunden',ASCS:'8 Stunden',LACS:'20 Stunden',IACS:'72 Stunden'};
+        for(const [id,duration] of Object.entries(expected)) {
+            assert.equal(result.all[id],'Besiedelungsdauer: '+duration+' (laut Wiki).\nBau- und Flugzeit kommen zusätzlich hinzu.',id);
+            assert.doesNotMatch(result.all[id],/noch nicht belegt|Community-Angabe/);
+        }
         assert.match(result.scol,/Bau- und Flugzeit kommen zusätzlich/);
         assert.equal(result.lower,result.scol);
         for(const key of ['foreign','wrongType','suffix','missing','ordinary']) assert.equal(result[key],'',key);
         assert.equal(result.option,result.scol);
         assert.equal(result.chosen,result.scol);
         assert.equal(result.req,'Als Zwischenziel übernehmen\n'+result.scol);
-        assert.match(result.other,/noch nicht belegt/);
+        assert.match(result.other,/Besiedelungsdauer: 4 Stunden \(laut Wiki\)/);
         assert.equal(result.unknown,result.other);
         assert.equal(result.count,4,'selection retains all objects');
-        console.log('PASS settlement provenance, exact identity/type, unknown duration, three actual planner tooltip locations and existing action hint');
+        console.log('PASS all ten Wiki durations, exact identity/type, three actual planner tooltip locations and existing action hint');
     } finally { await browser.close(); }
 })().catch(e=>{console.error(e);process.exitCode=1;});

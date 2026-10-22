@@ -10,24 +10,25 @@ HASA informiert, analysiert und erinnert. HASA spielt nicht selbst.
 
 Ziel ist die eigenständige HASA-Webpräsenz unter **https://hasa.li**.
 Kurt legt das lokale Projekt unter **PPD\HASA** ab; die Unterorganisation
-übernimmt der CE HASA. Die veröffentlichte Fassung nutzt derzeit weiterhin
-die bisherigen Serveradressen. Der Umzug ist noch nicht produktiv vollzogen.
+übernimmt der CE HASA. Alpha38 verwendet die API und Webwerkzeuge unter
+https://hasa.li/api/. Der finale Datenimport ist bestätigt; der erste neue
+Übertragungstest aus dem aktualisierten Spielbrowser steht noch aus.
 
 [Technischer Umzug nach hasa.li](1%20docs/hasa_umzug_hasa_li.md): API und
 Datenbank werden unabhängig vom SerKal-Umzug vorbereitet; Website beim Website-Chatty.
 Eigener Uploadhelfer: `HASA-Serverupdate-hasa-li.bat`, getrenntes privates Profil.
-Die Downloadfassung verwendet bis zur Zielprüfung weiterhin die alten API-Adressen.
+Die Downloadfassung Alpha38 verwendet nun die neue API-Adresse.
 
 [Zielstruktur und geordneter Umzug](1%20docs/hasa_domain_und_projektordnung.md)
 beschreiben die Trennung von SerKal, vorhandene Abhängigkeiten und den Erhalt
 der Daten und funktionierenden Installation.
 
-## Umschaltung nach hasa.li vorbereiten
+## Umschaltung nach hasa.li
 
 [Schrittfolge für die Wartung](1%20docs/hasa_umschaltung_alpha38.md):
-Zielkopie und Anmeldung bereits von Kurt geprüft. Wartungssperre auf dem alten
-Server und Alpha38 auf dem neuen Host sind vorbereitet; vor Freigabe braucht es
-den letzten Datenabgleich. Aktueller automatischer Download bleibt Alpha37.
+Anmeldung und Datenanzeige von Kurt geprüft, finaler Import erfolgreich.
+Alle 19 Tabellen und ihre angezeigten Zeilenzahlen stimmen überein. Der alte
+Server bleibt gesperrt. Aktueller automatischer Download: Alpha38.
 Künftiger Mailabsender: `kp.vogelsaenger@hasa.li`; Postfach noch separat einzurichten.
 
 ## HASA auf dem PC aktualisieren
@@ -64,7 +65,7 @@ Alte Einzelregeln bleiben erhalten, jeder Player speichert einmal die neue Auswa
 
 ## Aktuelle Anleitung
 
-[Benutzeranleitung für HASA 1.2 / Alpha 37](1%20docs/hasa_1.2_benutzeranleitung.md)
+[Benutzeranleitung für HASA 1.2 / Alpha 38](1%20docs/hasa_1.2_benutzeranleitung.md)
 
 Für neue Testspieler: Installation, Aktualisierung, Anmeldung, Freigaben,
 Forschungsplanung, Nachrichtenhaken und Ressourcenfarben in einer Anleitung.
@@ -104,11 +105,17 @@ mit Alpha35 eingerichtet und bleibt in neueren Fassungen erhalten.
 
 ## Aktuelle Entwicklungsreihe
 
-**HASA 1.2.0 Alpha 37 – Metallminen-Ereignisse und Koloschiff-Tooltips**
+**HASA 1.2.0 Alpha 38 – hasa.li und vollständige Wiki-Besiedelungszeiten**
 
 - Aktueller vollständiger Code: `2 src/current/HASA-AKTUELL.user.js.txt`
-- Identische Archivfassung: `2 src/current/hasa_1.2.0-alpha.37_ereignisse-kolos.user.js.txt`
+- Identische Archivfassung: `2 src/current/hasa_1.2.0-alpha.38_hasa-li.user.js.txt`
 - Anleitung und Grenzen der Videoerkennung: `1 docs/hasa_1.2.0-alpha.33_motivationsvideo.md`
+
+Alpha38 stellt alle HASA-Serverwege auf https://hasa.li/api/ um. Nach dem Update
+Horizon neu laden, eine angefragte Berechtigung für hasa.li erlauben und dort mit
+dem bisherigen Konto anmelden. Lokale Daten bleiben erhalten. Alle zehn Wiki-
+Besiedelungszeiten sind enthalten; Bau und Flug kommen zusätzlich hinzu.
+[Alpha38: Änderungen und Umstieg](1%20docs/hasa_1.2.0-alpha.38_hasa-li_vorbereitung.md).
 
 Alpha37 erkennt bestätigte Wassereinbrüche und Reparaturen der Metallmine,
 wertet gespeicherte vollständige Berichte erneut aus und bewahrt andere Wirkungen.

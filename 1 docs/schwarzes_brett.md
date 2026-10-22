@@ -121,11 +121,11 @@ eine neue Runde wird durch eine eigene Rundenkennung getrennt.
 
 - stabile Veröffentlichung: HASA 1.1 Final;
 - aktive Entwicklungsreihe: HASA 1.2;
-- aktueller Teststand: HASA 1.2.0 Alpha 37;
+- aktueller Teststand: HASA 1.2.0 Alpha 38;
 - fester Aktualisierungspfad:
   `2 src/current/HASA-AKTUELL.user.js.txt`;
 - archivierte Alpha-37-Datei:
-  `2 src/current/hasa_1.2.0-alpha.37_ereignisse-kolos.user.js.txt`.
+  `2 src/current/hasa_1.2.0-alpha.38_hasa-li.user.js.txt`.
 
 Aktueller Stand: Alpha37 ergänzt die bestätigte Metallminen-Wassereinbruch-/Reparaturerkennung einschließlich gespeicherter Berichte und Kolonisationsschiff-Tooltips. sharing.2 vereinfacht separat die serverseitige Freigabe; produktive Einrichtung durch Kurt bleibt erforderlich. Alpha36 sichert Mausbedienung gegen verlorene Freigabe, Fenster-/Tabwechsel und Fensterneuaufbau ab. Charons zusätzliche Anzeige außerhalb des Spiels und Anmeldeproblem sind nicht als gelöst bestätigt. Alpha35 korrigiert Anmeldereiter und Statusprüfung, benennt die Web-Cookiepartition ausdrücklich und liefert auth.4 mit fester Tagesgrenze. Konkreter Charon-Praxistest steht aus. Die erweiterte Benutzerverwaltung bleibt offen. Alpha34 verhindert Umbrüche innerhalb der Ressourcenrate. Enthalten: Alpha33 erkennt bestätigte Motivationsvideo-Startberichte und markiert Ressourcen für eine Stunde ab Nachrichtenzeit kräftig grün; danach übrige Ereignisfarben. Alpha32-Korrekturen für Forschungsstand, Menü, Scrollposition und Zwischenzielnavigation bleiben erhalten. Web12/Servergrundlage unverändert. Einzelheiten siehe Übergabe vom 18.10.2026.
 
@@ -2874,3 +2874,43 @@ Detailliert: 1 docs/hasa_umschaltung_alpha38.md.
 finaler Import und Freigabe noch nicht ausgeführt. Bestehende von Kurt bestätigte
 Ziel-Anmeldung/Datenanzeige gilt weiterhin als bestanden. Keine erneute Abfrage
 dieser bereits bestätigten Sichtprüfung verlangen.
+
+
+## 2026-10-22 – CE HASA – finaler Import bestätigt / Alpha38 freigegeben
+
+Kurt hat maintenance.flag auf dem alten INWX-API-Host angelegt. Sein Screenshot
+von serkal.de/hasa/health.php bestätigt ok=false, error=maintenance und den
+Wartungstext. Eigener Direktabruf in dieser Sitzung lief in Timeout; keine eigene
+HTTP-Statusmessung behaupten. Die alte Sperre bleibt erhalten.
+
+Frischer Quellexport nach Schreibstopp mit DROP TABLE und ohne CREATE DATABASE/USE.
+Kurt führte den finalen Import auf dem neuen Hosting durch. Ein erster Versuch
+brach mit Fehler 1451 ab; anschließend erfolgreicher vollständiger Import laut
+phpMyAdmin: 128 Abfragen, Datei kd239663db1(2).sql.gz. Importoption zur
+Fremdschlüsselprüfung beim Wiederholen besprochen. Keine SQL-Fehler ignoriert.
+
+Beide von Kurt gezeigten Strukturübersichten enthalten dieselben 19 Tabellen und
+identische angezeigte Zeilenzahlen je Tabelle: alliances 0, asfi_positions 8,
+data_recipients 8, data_sharing 3, event_reports 51, galaxies 5,
+galaxy_discoveries 10, galaxy_permissions 0, login_limits 2, meta 7,
+planets 1066, production_samples 133, prospection_measurements 130,
+prospection_reports 10, round_recipients 5, round_sharing 2, systems 151,
+system_observations 338, users 4 (jeweils Präfix hasa_). Gesamt jeweils 1933.
+Dies ist ein Vergleich der phpMyAdmin-Anzeige; das gesonderte COUNT-SQL wurde
+nicht ausgeführt, kein vollständiger Inhalts-/Hashvergleich oder eigenständiger
+Produktions-DB-Zugriff erfolgt. Anmeldung und Datenanzeige am neuen Ziel hatte
+Kurt bereits tadellos bestätigt. Alte DB und private Sicherungen erhalten.
+
+Alpha38 übernimmt unverändert die sieben geprüften Programm-/Testdateien aus
+Commit e66f380c983c946489b532344d74a65cdbdcd0b0, CI 39771975082 erfolgreich.
+Alle weiteren Programmdateien auf main stimmen mit dem geprüften Releasebaum
+überein; neuere Dokumentation und Wartungswerkzeuge bleiben erhalten.
+Aktuelle .user.js, .txt und Alpha38-Archiv identisch. Neun URL-Konstanten,
+Cookiepartition und @connect nun hasa.li; zehn Wiki-Kolonisationszeiten enthalten.
+
+Nächster Praxisschritt: bestehendes Userscript auf Alpha38 aktualisieren,
+Websiteberechtigung hasa.li bestätigen, Horizon neu laden, HASA einschalten und
+auf hasa.li mit bisherigem Konto anmelden. Danach echte neue Übertragung aus
+dem Spielbrowser und dauerhafte Speicherung auf neuem Host bestätigen.
+Dieser abschließende Übertragungstest ist noch offen. Kein produktiver Upload,
+keine Spielaktion oder Mail durch CE; offizielle stabile Version bleibt 1.1 Final.

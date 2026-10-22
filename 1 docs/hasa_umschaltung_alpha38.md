@@ -1,9 +1,12 @@
 # HASA nach hasa.li: konkrete Umschaltung
 
 Stand: 22.10.2026. Ziel-API, neue Datenbank d048a999, Anmeldung und Datenanzeige
-wurden von Kurt bereits erfolgreich getestet. Aktueller Download: Alpha37 auf
-altem Server. Alpha38 ist im Releasezweig geprüft vorzubereiten und noch nicht
-über den automatischen main-Updateweg zu verteilen.
+wurden von Kurt bereits erfolgreich getestet. Finaler Import erfolgreich mit
+128 Abfragen; beide Strukturübersichten stimmen für alle 19 Tabellen und deren
+angezeigte Zeilenzahlen überein (1933 insgesamt). Kein gesonderter vollständiger
+Inhaltsvergleich durchgeführt. Alpha38 ist über main freigegeben; abschließender
+neuer Übertragungstest aus dem aktualisierten Spielbrowser noch offen.
+Die folgenden Abschnitte bewahren die Durchführungsschritte als Runbook.
 
 ## Was bereits vorbereitet ist
 
@@ -71,6 +74,10 @@ Die neue DB d048a999 vor dem Ersetzen ebenfalls privat exportieren (Rückfallsic
 In phpMyAdmin beim NEUEN Hosting prüfen, dass tatsächlich d048a999 ausgewählt ist.
 Dorthin den endgültigen Quellexport importieren. Nicht in kd239663db1 importieren.
 Der Import ersetzt ausschließlich die vorhandene Ziel-Testkopie.
+Falls Fehler 1451 beim Ersetzen auftritt: Auf der Importseite die Option
+Fremdschlüsselüberprüfung aktivieren ausschalten und denselben vollständigen
+Dump mit DROP TABLE erneut importieren. Erfolg erst nach vollständigem Durchlauf
+bestätigen; nicht nur einzelne fehlerhafte Anweisungen überspringen.
 Niemals einen Dump im öffentlich erreichbaren Webspace ablegen.
 
 Danach Tabellenvollständigkeit, exakte Zeilenzahlen mit dem Vergleichs-SQL,

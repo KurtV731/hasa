@@ -1,6 +1,6 @@
 # HASA – Benutzeranleitung für die Testversion
 
-Stand: 21.10.2026 · HASA 1.2.0 Alpha 37 · Spielrunde 8
+Stand: 22.10.2026 · HASA 1.2.0 Alpha 38 · Spielrunde 8
 
 Diese Anleitung richtet sich an die eingeladenen Testspieler. Die stabile
 Veröffentlichung HASA 1.1 hat einen anderen Funktionsstand.
@@ -42,7 +42,7 @@ Ein Update ersetzt den Code im **vorhandenen** Tampermonkey-Skript:
 2. Im Tampermonkey-Dashboard das vorhandene HASA-Skript öffnen.
 3. Einmal in den Codetext klicken, dann **Strg+A**, **Strg+V**.
 4. Speichern und Horizon neu laden.
-5. Im HASA-Kopf die Versionsnummer kontrollieren: derzeit **1.2.0 Alpha 36**.
+5. Im HASA-Kopf die Versionsnummer kontrollieren: derzeit **1.2.0 Alpha 38**.
 
 Kein zweites HASA daneben anlegen und für ein normales Update keine gespeicherten
 Daten löschen.
@@ -83,6 +83,15 @@ Das betrifft ausschließlich das Userscript. Serverupdates bleiben Kurts Aufgabe
 Bereits früher per Kopieren installierte Fassungen ohne Updateadresse müssen
 einmal mit der hier verlinkten Fassung aktualisiert werden.
 
+### Umstieg auf hasa.li mit Alpha38
+
+Die bestehende Installation über den festen GitHub-Link aktualisieren. Falls
+Tampermonkey eine neue Websiteberechtigung für hasa.li anfragt, diese bestätigen.
+Horizon neu laden und HASA einschalten. Auf der neuen Domain erneut mit dem
+bisherigen HASA-Konto und persönlichen Passwort anmelden. Kein neues Konto,
+kein Startpasswort-Reset und keine Löschung lokaler Daten erforderlich.
+Der alte Server bleibt während und nach dem Umzug im Wartungsmodus.
+
 ## 3. HASA-Anmeldung und erste Einrichtung
 
 Die HASA-Anmeldung ist von der Anmeldung im Spiel Horizon getrennt.
@@ -90,7 +99,7 @@ Die HASA-Anmeldung ist von der Anmeldung im Spiel Horizon getrennt.
 1. Dein HASA-Konto und ein Startpasswort erhältst du von der HASA-Verwaltung.
    Eine Selbstregistrierung gibt es nicht.
 2. In der HASA-Werkzeugzeile **Anmelden** wählen oder
-   [HASA-Anmeldung](https://serkal.de/hasa/login.php) öffnen.
+   [HASA-Anmeldung](https://hasa.li/api/login.php) öffnen.
 3. Mit deinem dafür angelegten Spielernamen und dem Startpasswort anmelden.
 4. Den vorgeschriebenen ersten Passwortwechsel abschließen.
 5. Zu Horizon zurückkehren und bei Bedarf die Seite neu laden.
@@ -355,10 +364,11 @@ Bei künftigen Updates deren Änderungshinweise zusätzlich beachten.
 
 
 
-### Besiedelungsdauer im Forschungsplaner seit Alpha37
+### Besiedelungsdauer im Forschungsplaner seit Alpha38
 
 Bei Kolonisationsschiffen zeigen Auswahl, gewähltes Ziel und Voraussetzungen einen
-Tooltip zur Besiedelungsdauer. SCOL: drei Stunden laut Community-Angabe vom
-19.10.2026, noch nicht im Spiel bestätigt. Bei anderen Schiffen ohne gesicherte
-Angabe steht „noch nicht belegt“. Bau- und Flugzeit kommen zusätzlich hinzu;
+Tooltip zur Besiedelungsdauer laut dem von Kurt übermittelten Wiki-Auszug:
+SCOL 3 Stunden, GRCO 4 Stunden, CCOL 7 Stunden, FCOL 30 Minuten,
+LRCO 9 Stunden, ICOL 24 Stunden, GCOL 4 Stunden, ASCS 8 Stunden,
+LACS 20 Stunden und IACS 72 Stunden. Bau- und Flugzeit kommen zusätzlich hinzu;
 die Planerberechnungen werden dadurch nicht verändert.
