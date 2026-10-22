@@ -22,6 +22,14 @@ Die Downloadfassung verwendet bis zur Zielprüfung weiterhin die alten API-Adres
 beschreiben die Trennung von SerKal, vorhandene Abhängigkeiten und den Erhalt
 der Daten und funktionierenden Installation.
 
+## Umschaltung nach hasa.li vorbereiten
+
+[Schrittfolge für die Wartung](1%20docs/hasa_umschaltung_alpha38.md):
+Zielkopie und Anmeldung bereits von Kurt geprüft. Wartungssperre auf dem alten
+Server und Alpha38 auf dem neuen Host sind vorbereitet; vor Freigabe braucht es
+den letzten Datenabgleich. Aktueller automatischer Download bleibt Alpha37.
+Künftiger Mailabsender: `kp.vogelsaenger@hasa.li`; Postfach noch separat einzurichten.
+
 ## HASA auf dem PC aktualisieren
 
 Im Hauptordner des lokal geklonten Repositorys liegt:

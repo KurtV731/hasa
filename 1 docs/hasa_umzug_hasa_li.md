@@ -136,3 +136,12 @@ Programmcommit: 1987af3426b5c7a4198b0fb0b29feff92e7335ac.
 Windows-PowerShell-Syntaxprüfung: https://github.com/KurtV731/hasa/actions/runs/39738956396 .
 Vorlagen und Profile sind vorbereitet; realer WinSCP-Upload, PHP-/DB-Import,
 Ziel-Anmeldung und finale Umschaltung sind noch offen.
+
+
+## Aktueller Schritt: geprüfte Kopie zur finalen Umschaltung bringen
+
+Kurt hat Import (19 Tabellen, 107 Abfragen), Anmeldung und Datenanzeige inzwischen
+bestätigt. Die Kopie wird erst nach dem letzten Abgleich zum Schreibziel.
+Die [konkrete Reihenfolge](hasa_umschaltung_alpha38.md) beschreibt alte Wartungssperre,
+finalen Export/Import und die anschließende Freigabe von Alpha38.
+Bis dahin bleibt der automatische Userscript-Download Alpha37 auf dem alten Host.

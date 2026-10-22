@@ -90,3 +90,11 @@ die Zielpfade, Datenübernahme, Prüfung und späteren Userscriptwechsel.
 HASA-Serverupdate-hasa-li.bat verwendet eine eigene private WinSCP-Zuordnung;
 die vorhandene alte Serverzuordnung wird dafür nicht wiederverwendet.
 Produktive Verbindung, Datenimport und Umschaltung sind noch nicht erfolgt.
+
+
+## Wartungsmails
+
+Kurt legt am 22.10.2026 den künftigen Absender ausdrücklich fest:
+**kp.vogelsaenger@hasa.li**. Kein info-Absender. Postfach/SMTP-Einrichtung und
+Mailversand sind damit noch nicht durchgeführt. Für den aktuellen Umzug die zwei
+aktiven Tester über Kurts vorhandenen Kontaktweg informieren.

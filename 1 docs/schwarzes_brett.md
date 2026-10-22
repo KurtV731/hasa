@@ -2831,3 +2831,46 @@ versteckter Konfiguration und Verzeichnisse, vertrauenswürdiger Sollbestand,
 Web-/PHP-/FTP-Protokolle und Hosterbefund. Unerwartete Dateien/Änderungen und
 Protokollhinweise untersuchen; weder pauschale Entwarnung noch Befall behaupten.
 Keine Angriffsversuche oder Exploits ausführen, keine privaten Serverdaten in GitHub.
+
+
+## 2026-10-22 – Kurt an CE HASA – Umschaltung vorbereiten / Wartungsmails
+
+**Auftrag:** Vorbereitungen ausführen, anschließend konkrete Schritte für Kurt.
+Zwei aktive Tester. Noch keine Wartung oder Serverabschaltung behaupten.
+Künftiger Mailabsender ausdrücklich kp.vogelsaenger@hasa.li, kein info-Absender.
+Postfach/SMTP/Automatik noch nicht eingerichtet; keine Nachricht versendet.
+
+**Fertig vorbereitet:** Reversible maintenance.flag im alten API-Ordner blockiert
+über bootstrap.php alle tatsächlichen Web-Endpunkte vor Konfiguration/DB, HTTP 503
+und maintenance; CLI-Adminzugriff bleibt im Web 404. Ohne Datei normaler Betrieb.
+Helfer-Bibliotheken ohne ausführbare Endpunktaktion sind nicht als öffentliche
+Schreibendpunkte behandelt. Alte laufende Requests vor finalem Export auslaufen
+lassen; keine direkte DB-Aktion während des Abgleichs. Flag bleibt auf altem Host
+nach erfolgreichem Wechsel, kein POST-Redirect. Bestandsvergleich-SQL für 19 Tabellen
+nur lesend bereitgestellt; reine Anzahlgleichheit ist kein vollständiger Datenbeweis.
+
+**Geprüfte Wartungsgrundlage auf main:** 6f95bb754728d276a050f3a9af0e77584a0618ec.
+Gesamtprüfung: https://github.com/KurtV731/hasa/actions/runs/39771870193 .
+42 neue echte HTTP-Fälle, bisherige Browser-/PHP-/MariaDB-Prüfungen bestanden.
+Der Hauptdownload bleibt Alpha37 auf dem bisherigen Host. Kein Produktivupload.
+
+**Alpha38 im Releasezweig:** release/alpha38-hasa-li-20261022,
+Programmcommit e66f380c983c946489b532344d74a65cdbdcd0b0.
+https://github.com/KurtV731/hasa/actions/runs/39771975082 erfolgreich:
+42 HTTP-Wartungsfälle, 33 Registergruppen, 35 Live-Gruppen, 14 Auth-UI-Prüfungen,
+alle zehn Wiki-Zeiten, tatsächliche URL-Konstanten, Cookiepartition, PHP-/MariaDB-
+Regression. Lokale unerledigte Berichte bleiben bei 503 erhalten, kein falscher
+Speicherhaken. Alle Programmdateien vor Übernahme exakt zurücklesen.
+
+**Jetzt Kurt:** Tester und eigenes HASA pausieren, alten Server über bisherigen
+HASA-Serverupdate.bat auf neue bootstrap.php bringen, maintenance.flag NUR dort
+anlegen und Wartungsantwort bestätigen. Danach letzte private Sicherung/Export,
+Ziel-Testkopie sichern und in d048a999 ersetzen, abgleichen. Erst anschließend CE
+Alpha38 auf main freigeben lassen, Tester aktualisieren/neu anmelden und neue
+Übertragung bestätigen. Kein leeres Grundschema oder Runde-8-Migration importieren.
+Detailliert: 1 docs/hasa_umschaltung_alpha38.md.
+
+**Status:** Vorbereitungsarbeit abgeschlossen; tatsächlicher Schreibstopp,
+finaler Import und Freigabe noch nicht ausgeführt. Bestehende von Kurt bestätigte
+Ziel-Anmeldung/Datenanzeige gilt weiterhin als bestanden. Keine erneute Abfrage
+dieser bereits bestätigten Sichtprüfung verlangen.
