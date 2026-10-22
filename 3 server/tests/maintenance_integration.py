@@ -38,7 +38,7 @@ with tempfile.TemporaryDirectory(prefix="hasa-maintenance-") as folder:
                    "login.php","logout.php","password-change.php","settings.php",
                    "user-admin.php","sharing-install.php","events-install.php",
                    "galaxy.php","galaxy-read.php","galaxies.php","events.php",
-                   "filter-options.php","prospection-read.php","tools/user-admin.php"]
+                   "filter-options.php","prospection-read.php"]
         count=0
         for endpoint in endpoints:
             for method in ("GET","POST"):
@@ -49,6 +49,10 @@ with tempfile.TemporaryDirectory(prefix="hasa-maintenance-") as folder:
                 assert result["ok"] is False and result["error"]=="maintenance",(endpoint,method,result)
                 assert b"CONFIG_MUST_NOT_RUN" not in body
                 count+=1
+        for method in ("GET","POST"):
+            status,headers,body=request("tools/user-admin.php",method)
+            assert status==404 and b"CONFIG_MUST_NOT_RUN" not in body
+            count+=1
         status,headers,body=request("health.php","HEAD")
         assert status==503 and not body
         count+=1
