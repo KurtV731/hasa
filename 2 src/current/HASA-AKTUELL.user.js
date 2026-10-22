@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         HASA – Horizon Ascension Assistant
 // @namespace    horiversum.hasa
-// @version      1.2.0-alpha.37
+// @version      1.2.0-alpha.38
 // @charset      UTF-8
 // @updateURL    https://raw.githubusercontent.com/KurtV731/hasa/main/2%20src/current/HASA-AKTUELL.user.js
 // @downloadURL  https://raw.githubusercontent.com/KurtV731/hasa/main/2%20src/current/HASA-AKTUELL.user.js
@@ -11,11 +11,16 @@
 // @grant        GM_setValue
 // @grant        GM_xmlhttpRequest
 // @connect      techtree.kommandobasis.eu
-// @connect      serkal.de
+// @connect      hasa.li
 // @noframes
 // ==/UserScript==
 
 /*
+
+ Alpha38 (22.10.2026): HASA-Dienste auf hasa.li/api, passende Cookiepartition;
+ zehn Wiki-Besiedelungszeiten in den Kolonisationsschiff-Tooltips.
+
+ Alpha37 (21.10.2026): Metallminen-Wassereinbruch und Reparatur gezielt auswerten.
 
  Alpha36 (19.10.2026): Verschieben und Größenänderung enden auch bei\n verlorener Maustastenfreigabe, Fokusverlust und Fensterneuaufbau.\n\n Alpha35 (18.10.2026): Anmeldereiter wiederverwenden, Status direkt prüfen;
  gezielte Cookie-Partition und Schutz gegen Start auf HASA-Webseiten.
@@ -90,7 +95,7 @@
  - persönliche Forschungsstände bleiben weiterhin rundenspezifisch getrennt
 
  Neu in Alpha 20:
- - Tampermonkey erkennt die bestehende HASA-Anmeldung auf serkal.de
+ - Tampermonkey erkennt die bestehende HASA-Anmeldung auf hasa.li
  - der angemeldete Spielername wird statt eines fest eingebauten Namens übertragen
  - Galaxiesysteme und Sondenberichte werden ausschließlich in Runde 8 geschrieben
  - der CSRF-Schutz der Anmeldung wird bei jeder Schreibanfrage mitgeführt
@@ -209,8 +214,8 @@
         'PHYSICS', 'PSYCHOLOGY', 'NUCLEARPHYSICS', 'SOLARENERGYTECH'
     ]);
 
-    const HASA_VERSION = '1.2.0 Alpha 37';
-    const HASA_BUILD_LABEL = '1.2.0-alpha37-ereignisse-kolos-2026-10-21';
+    const HASA_VERSION = '1.2.0 Alpha 38';
+    const HASA_BUILD_LABEL = '1.2.0-alpha38-hasa-li-2026-10-22';
     const HASA_RUNDE = 8;
     const HASA_RUNDE_SCHLUESSEL = 'runde8';
     // Die MariaDB und sämtliche Schreibendpunkte trennen Runde 7 und 8 jetzt
@@ -218,12 +223,12 @@
     const HASA_RUNDE_SERVERUEBERTRAGUNG_AKTIV = true;
     const STORAGE_GALASCAN_LETZTER_STAND = 'hasa_galascan_letzter_stand_v1_' + HASA_RUNDE_SCHLUESSEL;
     const STORAGE_GALASCAN_API_KEY = 'hasa_galascan_api_key_v1';
-    const HASA_GALASCAN_API_URL = 'https://serkal.de/hasa/systems.php';
-    const HASA_PRDR_API_URL = 'https://serkal.de/hasa/prospection-reports.php';
-    const HASA_GALAXY_DB_URL = 'https://serkal.de/hasa/galaxy.php';
-    const HASA_USER_ADMIN_URL = 'https://serkal.de/hasa/user-admin.php';
-    const HASA_AUTH_STATUS_URL = 'https://serkal.de/hasa/auth-status.php';
-    const HASA_LOGIN_URL = 'https://serkal.de/hasa/login.php?next=galaxy.php%3Fround%3D8';
+    const HASA_GALASCAN_API_URL = 'https://hasa.li/api/systems.php';
+    const HASA_PRDR_API_URL = 'https://hasa.li/api/prospection-reports.php';
+    const HASA_GALAXY_DB_URL = 'https://hasa.li/api/galaxy.php';
+    const HASA_USER_ADMIN_URL = 'https://hasa.li/api/user-admin.php';
+    const HASA_AUTH_STATUS_URL = 'https://hasa.li/api/auth-status.php';
+    const HASA_LOGIN_URL = 'https://hasa.li/api/login.php?next=galaxy.php%3Fround%3D8';
     const STORAGE_PRDR_BERICHTE = 'hasa_prdr_berichte_v1_' + HASA_RUNDE_SCHLUESSEL;
     let galascannerServerStatus = null;
     let galascannerSendet = false;
@@ -262,8 +267,8 @@
                 anonymous: false,
                 withCredentials: true,
                 // HASA wurde als eigene Webseite angemeldet, nicht unter der Spielseite.
-                ...(new URL(options.url).origin === 'https://serkal.de'
-                    ? { cookiePartition: { topLevelSite: 'https://serkal.de' } } : {}),
+                ...(new URL(options.url).origin === 'https://hasa.li'
+                    ? { cookiePartition: { topLevelSite: 'https://hasa.li' } } : {}),
                 headers: options.headers || { 'Accept': 'application/json' },
                 data: options.data,
                 onload: function (response) {
@@ -924,9 +929,9 @@
     }
 
 
-    const HASA_EVENT_API = 'https://serkal.de/hasa/event-record.php';
-    const HASA_PRODUCTION_API = 'https://serkal.de/hasa/production-samples.php';
-    const HASA_EVENT_LIST = 'https://serkal.de/hasa/events.php';
+    const HASA_EVENT_API = 'https://hasa.li/api/event-record.php';
+    const HASA_PRODUCTION_API = 'https://hasa.li/api/production-samples.php';
+    const HASA_EVENT_LIST = 'https://hasa.li/api/events.php';
     const STORAGE_PRODUCTION_TRACKER = 'hasa_production_tracker_v1_' + HASA_RUNDE_SCHLUESSEL;
     const STORAGE_PRODUCTION_SAMPLES = 'hasa_production_samples_v1_' + HASA_RUNDE_SCHLUESSEL;
     let HAA_EVENT_SYNC_BUSY = false;
@@ -1831,7 +1836,7 @@
                 } else HAA_ANMELDEHINWEIS = 'Der Browser hat den Anmeldereiter blockiert. Bitte das Öffnen für diesen Klick erlauben.';
             }
         } catch (_) {
-            HAA_ANMELDEHINWEIS = 'Der Anmeldereiter ist nicht erreichbar. Bitte direkt https://serkal.de/hasa/login.php öffnen und danach den Anmeldestatus prüfen.';
+            HAA_ANMELDEHINWEIS = 'Der Anmeldereiter ist nicht erreichbar. Bitte direkt https://hasa.li/api/login.php öffnen und danach den Anmeldestatus prüfen.';
         }
         baueBox();
     }
@@ -4453,13 +4458,22 @@ return box;
     function kolonisationsTooltip(objekt) {
         if (!objekt || objekt.type !== 'ship') return '';
         const id = String(objekt.id || '').trim().toUpperCase();
-        const ids = ['SCOL', 'GRCO', 'CCOL', 'FCOL', 'LRCO', 'ICOL', 'GCOL', 'ASCS', 'LACS', 'IACS'];
-        if (!ids.includes(id)) return '';
-        if (id === 'SCOL') {
-            return 'Besiedelungsdauer: 3 Stunden (Community-Angabe vom 19.10.2026; noch nicht im Spiel geprüft).\n'
-                + 'Bau- und Flugzeit kommen zusätzlich hinzu.';
-        }
-        return 'Besiedelungsdauer: noch nicht belegt.\nBau- und Flugzeit werden getrennt betrachtet.';
+        // Wiki-Tabelle von Kurt am 22.10.2026 übermittelt; reine Kolonisationszeit.
+        const dauer = {
+            SCOL: '3 Stunden',
+            GRCO: '4 Stunden',
+            CCOL: '7 Stunden',
+            FCOL: '30 Minuten',
+            LRCO: '9 Stunden',
+            ICOL: '24 Stunden',
+            GCOL: '4 Stunden',
+            ASCS: '8 Stunden',
+            LACS: '20 Stunden',
+            IACS: '72 Stunden'
+        };
+        if (!Object.prototype.hasOwnProperty.call(dauer, id)) return '';
+        return 'Besiedelungsdauer: ' + dauer[id] + ' (laut Wiki).\n'
+            + 'Bau- und Flugzeit kommen zusätzlich hinzu.';
     }
 
     function baueStanNavigationHtml() {
