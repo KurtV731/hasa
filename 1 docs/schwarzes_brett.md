@@ -2914,3 +2914,50 @@ auf hasa.li mit bisherigem Konto anmelden. Danach echte neue Übertragung aus
 dem Spielbrowser und dauerhafte Speicherung auf neuem Host bestätigen.
 Dieser abschließende Übertragungstest ist noch offen. Kein produktiver Upload,
 keine Spielaktion oder Mail durch CE; offizielle stabile Version bleibt 1.1 Final.
+
+
+## 2026-10-22 – Kurt an CE HASA – Alpha39 vorbereiten: drei Sammelbereiche
+
+**Auftrag:** Galaxiedatenbank und berechtigte Benutzerverwaltung hervorgehoben
+erhalten. ASFI-Liste und Gildensitzungen nur aus der oberen Werkzeugzeile nehmen.
+Drei Hauptpunkte Events/Scans, Ressourcen, Kampfbericht. Zunächst Events/Scans
+anlegen; untergeordnete Ereignisbuttons, jeweils datierte letzte 30 Tage und
+Gesamtzähler seit Beginn der gespeicherten Aufzeichnungen.
+
+**Fertig vorbereitet:** Branch feature/alpha39-ereigniszentrale-20261022,
+Programmcommit f4e795428cfbee2d460a2b1587d51f4b1089cc6c.
+Alpha39-Metadaten, aktuelle .user.js/.txt und neues Archiv identisch im Branch.
+Main-Download bleibt Alpha38. Zwei PHP-Dateien erforderlich, keine Schemaänderung.
+Nach späterer Freigabe Serverupdate-hasa-li und Userscriptupdate; aktuell kein
+produktiver Upload und keine Spielaktion. Details:
+1 docs/hasa_1.2.0-alpha.39_ereigniszentrale_vorbereitung.md.
+
+Events/Scans baut die Buttons automatisch aus eigenen gespeicherten System-
+Betreffzeilen auf. Video verfügbar/abgespielt/verschlampt und Gildensitzungen
+auch mit Nullstand erreichbar. Videoverfügbarkeit startet keine Laufzeit.
+Detail: Ereigniszeit, Planet/Position und vorhandener Volltext; fehlender Volltext
+ausdrücklich gekennzeichnet. 25 Einträge pro Seite, Gesamt unabhängig von Fenster
+und Seitenlänge. 30 Kalendertage in Europe/Berlin; fehlende/future Ereigniszeiten
+nicht als vergangene Meldung ausgeben. Ohne Datum nur Gesamtzählung mit Hinweis.
+Gesamt umfasst das eigene Konto in der aktuellen Spielrunde, keine Rekonstruktion
+ungelesener/verlorener Vorgeschichte und keine Zusammenzählung fremder Konten.
+
+ASFI bleibt als aktuelle sichtbare Bestandsliste unter Scans, Systeme/Sonden über
+vorhandene Galaxiedatenbank. Ressourcen nutzt bestehende Produktionswerte.
+Kampfbericht als vorbereiteter, noch nicht verfügbarer Bereich gekennzeichnet.
+Kein Kampfsimulator, keine neue Videoerinnerung oder neue Sondenanalyse behaupten.
+
+**Prüfung bestanden:** https://github.com/KurtV731/hasa/actions/runs/39841155579 .
+34 Register-/Browsergruppen mit neuer Werkzeugnavigation, 35 Live-Gruppen,
+34 Ereignis-MariaDB-Prüfungen (zwölf neue), eigene/fremde Konten und Runden, Root,
+Zeitgrenzen/Sommerzeit, Pagination, leere Listen, SQL-Parameter und HTML-Maskierung.
+Echte PHP/MariaDB-generierte Journalansicht bei 1200/390 Pixel erfolgreich.
+42 Wartungsfälle und bestehende Auth-/Video-/Maus-/Sharing-/PHP-Prüfungen ebenfalls
+bestanden. Alle neun Programm-/Testdateien am geprüften Commit exakt zurückgelesen.
+Lokaler JS-Syntaxcheck bestanden; lokaler Browser mangels Binary nicht ausführbar,
+vollständige Browserprüfung über CI bestanden.
+
+**Alpha38-Praxisnachtrag:** Kurt bestätigt aktualisierte Browser und Datenbankanzeige
+unter hasa.li. Zusätzliche Berechtigungsabfrage erschien in Edge, nicht in Firefox.
+Dauerhafte Speicherung einer neuen Beobachtung auf neuem Host weiterhin nicht
+ausdrücklich bestätigt; nicht erneut vorhandene Daten/Anmeldung prüfen lassen.
