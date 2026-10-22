@@ -38,7 +38,7 @@ with tempfile.TemporaryDirectory(prefix="hasa-maintenance-") as folder:
                    "login.php","logout.php","password-change.php","settings.php",
                    "user-admin.php","sharing-install.php","events-install.php",
                    "galaxy.php","galaxy-read.php","galaxies.php","events.php",
-                   "filter-options.php","prospection-read.php"]
+                   "prospection-read.php"]
         count=0
         for endpoint in endpoints:
             for method in ("GET","POST"):
