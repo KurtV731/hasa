@@ -72,8 +72,8 @@ Prüfung erfolgt im GitHub-CI. Neue Fälle prüfen Werkzeugzeile/Navigation,
 Zähler über 30 Tage und mehrere Seiten, Zeitgrenzen, Sommerzeit, fehlende Daten,
 fremde Konten/Runden, Root, SQL-Sonderzeichen und HTML-Maskierung.
 Die tatsächlichen PHP/MariaDB-generierten Listen werden im Browser bei 1200
-und 390 Pixel geprüft. Alle Prüfungen bestanden: 40 Register-Browsergruppen, 35 Live-Gruppen,
-34 Ereignis-MariaDB-Prüfungen, Journalansicht bei 1200/390 Pixel und übrige
+und 390 Pixel geprüft. Alle Prüfungen bestanden: 48 Register-Browsergruppen, 35 Live-Gruppen,
+46 Ereignis-MariaDB-Prüfungen, Journalansicht bei 1200/390 Pixel und übrige
 Browser-/PHP-/MariaDB-Regression. Neun Programm-/Testdateien am geprüften
 Commit exakt zurückgelesen. Weitere Details siehe Schwarzes Brett.
 
@@ -179,7 +179,20 @@ Das ändert nicht die bereits ausdrücklich freigegebenen Galaxie-/Sondendaten
 und deren normale Karten-/Bestandsansicht.
 
 
-Aktueller Prüfstatus dieser Erweiterung: Gesamt-CI 39846312217 noch in Arbeit
-bei der Installation der Testabhängigkeiten. Lokale Syntax-/Erinnerungsberechnung
-bestanden. Frühere bestandene CI-Läufe betreffen den Stand ohne diese Erweiterung;
-sie ersetzen die ausstehende neue Gesamtprüfung nicht.
+## Abschließender Prüfstand
+
+Gesamtprüfung am Programmcommit 254dcd705a17c357b2fac796c162ad8a623d025c
+erfolgreich abgeschlossen: https://github.com/KurtV731/hasa/actions/runs/39846312217 .
+48 Register-/Browsergruppen, einschließlich acht neuer Erinnerungsgruppen und
+tatsächlicher Kopfzeilenanzeige nach Erfassung/Abspielen; 46 Ereignis-MariaDB-
+Prüfungen, einschließlich zwölf neuer Zeit-/Zustands-/Privatsphärenfälle.
+Echte PHP/MariaDB-generierte Planetenansicht bei 1200/390 Pixel und übrige
+Browser-/PHP-/Auth-/Video-/Sharing-/Wartungsregression ebenfalls bestanden.
+Acht geänderte Programm-/Testdateien am geprüften Commit exakt zurückgelesen.
+Die Wartephase bei Testabhängigkeiten ist damit abgeschlossen.
+
+Killtecs Punkt 2 (Lager-voll-Zeit als Tooltip) ist durch Kurts ausdrückliche
+Entscheidung auf Version 1.3 verschoben. Kein zusätzlicher Prognosecode in Alpha39
+oder für die Veröffentlichung 1.2. Die zusammengesetzte Kapazität und separate
+Safe-Zeile aus Kurts Screenshot sind im schwarzen Brett als spätere Grundlage
+festgehalten; keine private Originaldatei im Repository.
