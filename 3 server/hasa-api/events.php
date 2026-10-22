@@ -9,9 +9,13 @@ $pdo=hasaPdo();
 if(!hasaEventsAvailable($pdo)){
     hasaAuthPage('Ereignislisten','<h1>Ereignislisten</h1><p>Die einmalige Einrichtung fehlt noch.</p>'.((int)($user['can_manage_user_admins']??0)?'<p><a href="events-install.php">Ereignislisten einrichten</a></p>':'<p>Bitte die Benutzerleitung um Einrichtung bitten.</p>'));exit;
 }
-$round=hasaRound($_GET['round']??null);$view=in_array($_GET['view']??'', ['hub','event','asfi','guild','production','combat'],true)?$_GET['view']:'hub';
+$round=hasaRound($_GET['round']??null);$view=in_array($_GET['view']??'', ['hub','event','active','asfi','guild','production','combat'],true)?$_GET['view']:'hub';
 $offset=filter_var($_GET['offset']??0,FILTER_VALIDATE_INT);if($offset===false||$offset<0||$offset>1000000)hasaAuthError('Ungültige Seite.',400);
 $navigation='<nav aria-label="HASA Bereiche"><p><a href="galaxy.php?round='.$round.'">Galaxiedatenbank</a> · <a href="events.php?view=hub&amp;round='.$round.'">Events/Scans</a> · <a href="events.php?view=production&amp;round='.$round.'">Ressourcen</a> · <a href="events.php?view=combat&amp;round='.$round.'">Kampfbericht</a></p></nav>';
+if($view==='active'){
+    $now=new DateTimeImmutable('now',new DateTimeZone('UTC'));
+    hasaAuthPage('Laufende Events nach Planet',$navigation.hasaActiveEventsHtml(hasaActiveEvents($pdo,$user,$round,$now),$now));exit;
+}
 if(in_array($view,['hub','event','guild','combat'],true)){
     if($view==='combat'){
         hasaAuthPage('Kampfbericht',$navigation.'<h1>Kampfbericht</h1><p>Dieser Bereich ist vorbereitet. Eine Kampfberichtsauswertung ist noch nicht verfügbar.</p>');exit;

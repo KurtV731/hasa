@@ -29,6 +29,7 @@ const helpers = source.slice(source.indexOf('    function prdrNormalisiereText')
             return {catalog:HASA_EREIGNIS_KATALOG, classify:erkenneHasaEreignis, record:registriereHasaEreignis,
                 scan:pruefeHasaEreignisse, stop:stoppeHasaEreignisScanner, install:installiereHasaEreignisScanner,
                 protect:schuetzeHasaMotivationsvideos, unprotect:stoppeHasaVideoSchutz,
+                pendingVideos:hasaOffeneVideoMeldungen, remindHtml:baueHasaVideoErinnerungHtml,
                 scanNode:scanneHasaEreignisKnoten, url:ereignisNachrichtenUrl, html:baueHasaEreignisRegisterHtml,
                 merge:vereinigeHasaEreignisRegister, raw:ereignisOriginaltext, key:STORAGE_EREIGNIS_REGISTER,
                 observers:HAA_EREIGNIS_DOKUMENTE, asfiKey:STORAGE_ASFI_LISTE,
@@ -259,6 +260,45 @@ const helpers = source.slice(source.indexOf('    function prdrNormalisiereText')
       assert.equal(await page.locator('.haa-video-lock').count(),0);
       assert.equal(await page.locator('#delete-v4').isVisible(),true);
     });
+    const reminderNow=Date.UTC(2026,9,22,12);
+    const videoEvent=(id,subject,time,extra={})=>({id:'8:7:message:'+id,messageId:id,ownerId:'7',round:8,systemEvent:true,subject,
+      reportedTimeText:time,planetName:'Testplanet',position:{galaxy:1,system:2,orbit:3},observations:[],...extra});
+    const available=videoEvent('rem1','Motivationsvideo verfügbar','09.10.2026 14:00:00');
+    const played=videoEvent('rem2','Motivationsvideo abgespielt','22.10.2026 13:00:00');
+    const reminders=async events=>page.evaluate(({events,now})=>{test.store.set(test.exports.key,events);return{pending:test.exports.pendingVideos(now),html:test.exports.remindHtml(now)};},{events,now:reminderNow});
+    await test('video reminder includes planet, remaining time, 24 hour warning and only fresh inbox navigation',async()=>{
+      const r=await reminders([available]);assert.equal(r.pending.length,1);assert.match(r.html,/Baldiger Ablauf/);assert.match(r.html,/Testplanet/);assert.match(r.html,/23.10.2026/);
+      assert.match(r.html,/cmd=message/);assert.doesNotMatch(r.html,/action=respond|option_id|sourceUrl/);
+    });
+    await test('confirmed played and lost follow-ups settle only the same planet',async()=>{
+      assert.equal((await reminders([available,played])).pending.length,0);
+      assert.equal((await reminders([available,{...played,subject:'Motivationsvideo verschlampt'}])).pending.length,0);
+      assert.equal((await reminders([available,{...played,position:{galaxy:1,system:2,orbit:4}}])).pending.length,1);
+    });
+    await test('video reminders are scoped to account, round, system source and identified message',async()=>{
+      const r=await reminders([{...available,ownerId:'9'},{...available,round:7},{...available,systemEvent:false},{...available,messageId:null}]);
+      assert.equal(r.html,'');assert.equal(r.pending.length,0);
+    });
+    await test('replay does not duplicate or revive a settled reminder; newer availability does',async()=>{
+      assert.equal((await reminders([available,played,available])).pending.length,0);
+      const next={...available,messageId:'new-video',reportedTimeText:'22.10.2026 13:30:00'};
+      assert.equal((await reminders([available,played,next])).pending.length,1);
+    });
+    await test('several videos do not all disappear after one start or acquire an invented exact deadline',async()=>{
+      const second={...available,messageId:'second-video',reportedTimeText:'10.10.2026 14:00:00'};
+      const r=await reminders([available,second,played]);assert.equal(r.pending[0].pending.length,1);assert.equal(r.pending[0].uncertain,true);assert.match(r.html,/Zuordnung unklar/);assert.doesNotMatch(r.html,/voraussichtlich bis/);
+    });
+    await test('unknown dates and reached 14 day threshold remain reminders; future availability does not start one',async()=>{
+      const unknown=await reminders([{...available,reportedTimeText:null}]);assert.match(unknown.html,/Zeit oder Zuordnung unklar/);
+      const expired=await reminders([{...available,reportedTimeText:'08.10.2026 14:00:00'}]);assert.match(expired.html,/14-Tage-Frist erreicht/);assert.equal(expired.pending.length,1);
+      assert.equal((await reminders([{...available,reportedTimeText:'23.10.2026 14:00:00'}])).html,'');
+    });
+    await test('reminder escapes planet names and hides without an authenticated active HASA account',async()=>{
+      const r=await reminders([{...available,planetName:'<script>unsafe</script>'}]);assert.doesNotMatch(r.html,/<script>/);assert.match(r.html,/&lt;script&gt;/);
+      await page.evaluate(()=>{test.auth.authenticated=false;});assert.equal((await reminders([available])).html,'');
+      await page.evaluate(()=>{test.auth.authenticated=true;test.setActive(false);});assert.equal((await reminders([available])).html,'');
+      await page.evaluate(()=>{test.setActive(true);});
+    });
     const full = await browser.newPage({viewport:{width:1100,height:900}});
     full.on('pageerror', e=>errors.push(e.message));
     await full.route('**/*',route=>route.fulfill({contentType:'text/html; charset=utf-8',body:`<!doctype html><meta charset="utf-8"><body style="background:#171717;color:#eee"><table><tr><td>12.10.2026 18:40:00</td><td><a href="?cmd=message&action=view&message_id=901">Meteoriteneinschlag</a></td></tr></table></body>`}));
@@ -336,6 +376,13 @@ const helpers = source.slice(source.indexOf('    function prdrNormalisiereText')
         await full.locator('#haa-hauptschalter-aus').click();await full.waitForSelector('#haa-hauptschalter-an');
         await full.locator('#haa-hauptschalter-an').click();await full.waitForSelector('#haa-events-scans',{state:'attached'});
         assert.equal(await full.evaluate(()=>__hasaTest.list().length),3);
+    });
+    await test('real HASA header reminder updates after capture and disappears after confirmed play',async()=>{
+        await full.evaluate(()=>__hasaTest.record('Motivationsvideo verfügbar',{messageId:'header-video',kind:'overview',subject:'Motivationsvideo verfügbar',systemEvent:true,position:{galaxy:1,system:2,orbit:3},positionName:'Headerplanet',reportedTimeText:'22.10.2026 08:00:00'}));
+        await full.waitForSelector('#haa-video-erinnerung:not([hidden])');
+        assert.match(await full.locator('#haa-video-erinnerung').innerText(),/Headerplanet/);
+        await full.evaluate(()=>__hasaTest.record('Motivationsvideo abgespielt',{messageId:'header-play',kind:'overview',subject:'Motivationsvideo abgespielt',systemEvent:true,position:{galaxy:1,system:2,orbit:3},reportedTimeText:'22.10.2026 08:01:00'}));
+        await full.waitForFunction(()=>document.querySelector('#haa-video-erinnerung').hidden);
     });
     assert.deepEqual(errors,[]);
     await browser.close();

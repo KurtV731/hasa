@@ -18,6 +18,11 @@ assert.ok(fixture,'actual PHP/MariaDB fixture is required');
  assert.equal(await page.locator('#journal article').count(),25);
  assert.match(await page.locator('#journal h1').innerText(),/Gesamt: 31/);
  assert.equal(await page.locator('script,img').count(),0);
+ assert.equal(await page.locator('#hub a').filter({hasText:'Laufende Events nach Planet'}).count(),1);
+ assert.equal(await page.locator('#active section').count(),2);
+ assert.match(await page.locator('#active').innerText(),/Private Auswertung/);
+ assert.match(await page.locator('#active').innerText(),/Motivationsvideo läuft/);
+ assert.match(await page.locator('#active').innerText(),/Ende nicht gemeldet/);
  const next=page.locator('#journal a').filter({hasText:'Weitere Meldungen'});
  assert.equal(new URL(await next.getAttribute('href'),'https://hasa.test/').searchParams.get('offset'),'25');
  for(const width of [1200,390]){

@@ -1,6 +1,79 @@
 <?php
 declare(strict_types=1);
 
+// Laufzeit ausschließlich aus eigenen datierten Meldungen, nicht aus Fremdfreigaben.
+function hasaEventGameInstant(?string $raw): ?DateTimeImmutable
+{
+    if($raw===null)return null;
+    $zone=new DateTimeZone('Europe/Berlin');
+    $date=DateTimeImmutable::createFromFormat('!d.m.Y H:i:s',$raw,$zone);
+    if(!$date || $date->format('d.m.Y H:i:s')!==$raw || (int)$date->format('Y')<2020 || (int)$date->format('Y')>2100)return null;
+    // Die doppelte Stunde beim Herbstwechsel ist ohne Offset nicht beweisbar.
+    if($date->setTimestamp($date->getTimestamp()+3600)->format('d.m.Y H:i:s')===$raw || $date->setTimestamp($date->getTimestamp()-3600)->format('d.m.Y H:i:s')===$raw)return null;
+    return $date;
+}
+
+function hasaActiveEvents(PDO $pdo, array $user, int $round, ?DateTimeImmutable $now=null): array
+{
+    $now=$now??new DateTimeImmutable('now',new DateTimeZone('UTC'));
+    $q=$pdo->prepare('SELECT id,subject,details_text,reported_game_time,galaxy_number,system_number,orbit_position,planet_name FROM hasa_event_reports WHERE owner_user_id=? AND round_number=? AND system_event=1 ORDER BY reported_order ASC,id ASC');
+    $q->execute([(int)$user['id'],$round]);$planets=[];
+    while($r=$q->fetch()){
+        $at=hasaEventGameInstant($r['reported_game_time']);
+        if(!$at || $at>$now || $r['galaxy_number']===null || $r['system_number']===null || $r['orbit_position']===null)continue;
+        $position=[(int)$r['galaxy_number'],(int)$r['system_number'],(int)$r['orbit_position']];$key=implode(':',$position);
+        if(!isset($planets[$key]))$planets[$key]=['position'=>$position,'name'=>$r['planet_name']?:'Planet unbekannt','effects'=>[]];
+        if($r['planet_name'])$planets[$key]['name']=$r['planet_name'];
+        $subject=$r['subject'];$text=preg_replace('/\s+/u',' ',$r['details_text']??'');
+        $resource=null;$direction='positive';$end=false;$label='';$until=null;
+        if($subject==='Motivationsvideo abgespielt'){
+            $resource='all';$direction='video';$label='Motivationsvideo läuft';$until=$at->setTimestamp($at->getTimestamp()+3600);
+        }elseif(isset(['Reiche Metallvorkommen entdeckt'=>1,'Reiche Mineralvorkommen entdeckt'=>1,'Unterirdischer Treibstoffsee entdeckt'=>1][$subject])){
+            $resource=str_contains($subject,'Metall')?'metal':(str_contains($subject,'Mineral')?'mineral':'fuel');$label='Produktionssteigerung';
+        }elseif(preg_match('/(?:Metallvorkommen|Mineralvorkommen|Treibstoffsee).*(?:erschöpft|versiegt|beendet|vorbei|normalisiert)/iu',$subject)){
+            $resource=preg_match('/Metall/iu',$subject)?'metal':(preg_match('/Mineral/iu',$subject)?'mineral':'fuel');$end=true;
+        }elseif($subject==='Wassereinbruch in Metallmine' && str_contains($text,'Wassereinbruch in ihrer Metallmine') && str_contains($text,'Die Minenproduktion wird für unbestimmte Zeit herabgesetzt, um das Wasser abzupumpen.')){
+            $resource='metal';$direction='water';$label='Wassereinbruch: Metallproduktion gesenkt';
+        }elseif($subject==='Wassereinbruch repariert' && str_contains($text,'Die normale Arbeit in der Mine kann fortgesetzt werden.') && str_contains($text,'Der Wassereinbruch in der Metallmine') && !str_contains($text,'Der Wassereinbruch in der Mineralmine')){
+            $resource='metal';$direction='water';$end=true;
+        }else{
+            $effect=$subject.' '.$text;
+            $decrease=preg_match('/(?:Eisenerz|Metall|Mineral|Treibstoff)(?:produktion|förderung)\s+(?:ist\s+|wird\s+|wurde\s+)?(?:um\s+\d+(?:[,.]\d+)?\s*%\s+)?(?:verringert|gesenkt|reduziert)/iu',$effect,$down);
+            $recovered=preg_match('/(?:Eisenerz|Metall|Mineral|Treibstoff)(?:produktion|förderung)\s+(?:ist\s+|wird\s+)?(?:wieder\s+)?normal(?:isiert)?/iu',$effect,$up);
+            if($decrease && $recovered)continue; // Mehrdeutige Texte nicht als sicheren Zustand ausgeben.
+            if($decrease || $recovered){$match=$decrease?$down[0]:$up[0];$resource=preg_match('/Mineral/iu',$match)?'mineral':(preg_match('/Treibstoff/iu',$match)?'fuel':'metal');$direction='negative';$end=(bool)$recovered;$label='Produktionssenkung';}
+        }
+        if($resource===null)continue;
+        $effectKey=$resource.':'.$direction;
+        if($end)unset($planets[$key]['effects'][$effectKey]);
+        else $planets[$key]['effects'][$effectKey]=['subject'=>$subject,'label'=>$label,'resource'=>$resource,'since'=>$r['reported_game_time'],'until'=>$until,'at'=>$at];
+    }
+    foreach($planets as$key=>&$planet){
+        foreach($planet['effects'] as$effectKey=>$effect)if($effect['until']!==null && $effect['until']<=$now)unset($planet['effects'][$effectKey]);
+        if(!$planet['effects'])unset($planets[$key]);
+    }unset($planet);
+    $planets=array_values($planets);usort($planets,static fn($a,$b)=>$a['position']<=>$b['position']);return $planets;
+}
+
+function hasaActiveEventsHtml(array $planets, DateTimeImmutable $now): string
+{
+    $stamp=$now->setTimezone(new DateTimeZone('Europe/Berlin'))->format('d.m.Y H:i:s');
+    $html='<h1>Laufende Events nach Planet</h1><p>Private Auswertung · Stand: '.hasaAuthEscape($stamp).' (Europe/Berlin).</p>'
+        .'<p>Aus deinen gespeicherten Meldungen zum Zeitpunkt dieses Aufrufs rekonstruiert. Ausgewertet werden bisher Produktionswirkungen und gestartete Motivationsvideos. Weitere Ereignistypen folgen.</p>';
+    if(!$planets)$html.='<p>Keine laufende Wirkung aus den gespeicherten Meldungen nachweisbar.</p>';
+    $resources=['metal'=>'Eisenerz','mineral'=>'Minerale','fuel'=>'Treibstoff','all'=>'Alle Ressourcen'];
+    foreach($planets as$planet){
+        $html.='<section><h2>'.hasaAuthEscape($planet['name'].' ('.implode(':',$planet['position']).')').'</h2><ul>';
+        foreach($planet['effects'] as$effect){
+            $end=$effect['until']!==null?'Ende: '.$effect['until']->setTimezone(new DateTimeZone('Europe/Berlin'))->format('d.m.Y H:i:s'):'Ende nicht gemeldet';
+            $html.='<li><strong>'.hasaAuthEscape($effect['label']).'</strong> · '.hasaAuthEscape($resources[$effect['resource']]).'<br>'
+                .hasaAuthEscape($effect['subject']).'<br>Beginn: '.hasaAuthEscape($effect['since']).' · '.hasaAuthEscape($end).'</li>';
+        }
+        $html.='</ul></section>';
+    }
+    return $html.'<p class="muted">Fehlende Endmeldungen können den gespeicherten Stand veralten lassen. Unbekannte Zeit/Position oder unklare Wirkung wird nicht als sicher laufend ausgegeben. Verfügbarkeit eines Videos ist noch keine Produktionswirkung. Diese Analyse wird keinem Mitspieler freigegeben.</p>';
+}
+
 // Eigene bestätigte Systemmeldungen; Zähler unabhängig vom 30-Tage-Ausschnitt.
 function hasaJournalWindow(?DateTimeImmutable $now = null): array
 {
@@ -47,6 +120,7 @@ function hasaJournalHubHtml(array $summary, int $round): string
     $total=array_sum(array_column($summary,'total'));
     $html='<h1>Events/Scans <small>· Gesamt: '.number_format($total,0,',','.').'</small></h1>'
         .'<p>Deine gespeicherten Systemmeldungen. Jeder Ereignistyp zeigt die letzten 30 Tage mit Datum und seinen Gesamtzähler seit Beginn deiner Aufzeichnungen in dieser Spielrunde.</p>'
+        .'<p><a href="events.php?view=active&amp;round='.$round.'">Laufende Events nach Planet</a></p>'
         .'<h2>Events</h2><div class="hasa-event-buttons" style="display:flex;flex-wrap:wrap;gap:.65rem">';
     foreach($summary as $r){
         $label=$r['subject']==='Treffen des Gildenvorstandes'?'Gildensitzungen':$r['subject'];

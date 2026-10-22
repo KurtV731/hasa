@@ -775,6 +775,7 @@
     }
 
     function aktualisiereHasaEreignisAnzeige() {
+        aktualisiereHasaVideoErinnerung();
         const element = document.getElementById('haa-ereignis-register');
         if (!element) return;
         const html = baueHasaEreignisRegisterHtml();
@@ -1183,6 +1184,75 @@
             }
         }
         return {name:name,position:Array.from(distinct.values())[0],rates:rates,nodes:nodes,display:display};
+    }
+
+    // Erinnerungen aus gespeicherten Systemmeldungen; niemals ein Video selbst starten.
+    function hasaOffeneVideoMeldungen(now) {
+        now=Number.isFinite(now)?now:Date.now();
+        const owner=ereignisScannerBenutzer();if(!owner)return [];
+        const groups=new Map(),seen=new Set(),events=[];
+        for(const e of (laden(STORAGE_EREIGNIS_REGISTER,[])||[])){
+            if(!e || String(e.ownerId)!==owner || e.round!==HASA_RUNDE || !e.messageId || !e.systemEvent
+                || !['Motivationsvideo verfügbar','Motivationsvideo abgespielt','Motivationsvideo verschlampt'].includes(e.subject)
+                || seen.has(e.messageId))continue;
+            seen.add(e.messageId);
+            const at=hasaMotivationStartzeit(e.reportedTimeText);
+            if(at!==null && at>now)continue;
+            const p=e.position;
+            const valid=p && Number.isInteger(p.galaxy) && p.galaxy>=1 && p.galaxy<=255
+                && Number.isInteger(p.system) && p.system>=0 && p.system<=99999
+                && Number.isInteger(p.orbit) && p.orbit>=1 && p.orbit<=255;
+            if(e.subject!=='Motivationsvideo verfügbar' && (at===null || !valid))continue;
+            events.push({e:e,at:at,key:valid?p.galaxy+':'+p.system+':'+p.orbit:'unknown:'+e.messageId});
+        }
+        events.sort(function(a,b){return (a.at??Infinity)-(b.at??Infinity)
+            || (a.e.subject==='Motivationsvideo verfügbar'?0:1)-(b.e.subject==='Motivationsvideo verfügbar'?0:1);});
+        for(const item of events){
+            let group=groups.get(item.key);
+            if(item.e.subject==='Motivationsvideo verfügbar'){
+                if(!group){group={key:item.key,name:item.e.planetName||'Planet unbekannt',pending:[],uncertain:false};groups.set(item.key,group);}
+                group.pending.push(item);
+            }else if(group && group.pending.length){
+                // Bei mehreren Videos ist die konkrete Zuordnung und Frist unklar.
+                if(group.pending.length>1)group.uncertain=true;
+                group.pending.shift();
+                if(!group.pending.length)groups.delete(item.key);
+            }
+        }
+        return Array.from(groups.values());
+    }
+
+    function baueHasaVideoErinnerungHtml(now) {
+        now=Number.isFinite(now)?now:Date.now();
+        const groups=hasaOffeneVideoMeldungen(now);if(!groups.length)return '';
+        let html='<strong>▶ Erinnerung: Motivationsvideo verfügbar</strong>';
+        for(const group of groups){
+            const first=group.pending[0],unknown=first.at===null || group.key.startsWith('unknown:');
+            let text='';
+            if(unknown || group.uncertain)text='Zeit oder Zuordnung unklar – ursprüngliche Meldung im Spiel prüfen';
+            else{
+                // 14 Tage sind Kurts Spielangabe, kein automatisch bewiesenes Ende.
+                const end=first.at+14*86400000,left=end-now;
+                const date=new Intl.DateTimeFormat('de-DE',{timeZone:'Europe/Berlin',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(end));
+                if(left<=0)text='14-Tage-Frist erreicht – Status im Spiel prüfen';
+                else{
+                    const minutes=Math.max(1,Math.ceil(left/60000)),days=Math.floor(minutes/1440),hours=Math.floor(minutes%1440/60);
+                    text=(left<=86400000?'⚠ Baldiger Ablauf: ':'')+'noch '+(days?days+' T. ':'')+hours+' Std. '+minutes%60+' Min. · voraussichtlich bis '+date;
+                }
+            }
+            html+='<div style="margin-top:3px;color:'+(first.at!==null && !group.uncertain && first.at+14*86400000-now<=86400000?'#ff8585':'#ffdc85')+';">'
+                +esc(group.name)+(group.key.startsWith('unknown:')?'':' ('+esc(group.key)+')')
+                +' · '+group.pending.length+' offen gemeldet · '+esc(text)+'</div>';
+        }
+        return html+'<div style="margin-top:3px;"><a href="https://horiversum.org/game/main/main.php?cmd=message" style="color:#9dcbff;">Nachrichten im Spiel öffnen</a>'
+            +' · Zum Abspielen die ursprüngliche Meldung öffnen.</div>';
+    }
+
+    function aktualisiereHasaVideoErinnerung() {
+        const node=document.getElementById('haa-video-erinnerung');if(!node)return;
+        const html=baueHasaVideoErinnerungHtml();
+        node.hidden=!html;
+        if(node.dataset.inhalt!==html){node.dataset.inhalt=html;node.innerHTML=html;}
     }
 
     function hasaProductionKey(owner,position) { return HASA_RUNDE+':'+owner+':'+position.galaxy+':'+position.system+':'+position.orbit; }
@@ -2069,6 +2139,8 @@
                     + 'style="flex:0 0 auto;font-size:11px;font-weight:bold;cursor:pointer;">Zur Benutzerverwaltung</button>'
                 : '')
             + '</div>';
+        const videoErinnerung=baueHasaVideoErinnerungHtml();
+        html+='<div id="haa-video-erinnerung" role="status"'+(videoErinnerung?'':' hidden')+' style="font-size:12px;white-space:normal;overflow-wrap:anywhere;margin:4px 0 8px;padding:6px;border:1px solid #94752d;border-radius:4px;color:#ffdc85;">'+videoErinnerung+'</div>';
         if (HAA_ANMELDEHINWEIS) html += '<div id="haa-anmeldehinweis" role="status" style="font-size:11px;white-space:normal;margin:3px 0 6px;">' + esc(HAA_ANMELDEHINWEIS) + '</div>';
 
         return html;
