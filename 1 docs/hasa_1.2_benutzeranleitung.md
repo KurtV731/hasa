@@ -1,96 +1,90 @@
 # HASA – Benutzeranleitung für die Testversion
 
-Stand: 22.10.2026 · HASA 1.2.0 Alpha 38 · Spielrunde 8
+Stand: 22.10.2026 · HASA 1.2.0 Alpha 39 · Spielrunde 8
 
 Diese Anleitung richtet sich an die eingeladenen Testspieler. Die stabile
 Veröffentlichung HASA 1.1 hat einen anderen Funktionsstand.
 HASA ergänzt Horizon im PC-Browser, sammelt Informationen und gibt Hinweise.
 Die Entscheidungen und Spielaktionen führst du selbst aus.
 
+## Wegweiser
+
+Du musst nicht alles auf einmal einrichten. Für den Anfang genügen Installation,
+Einschalten und die Anmeldung mit deinem HASA-Konto. Die übrigen Kapitel kannst du
+dann aufrufen, wenn du die jeweilige Funktion brauchst.
+
+| Ich möchte … | Hier findest du es |
+|---|---|
+| HASA installieren oder aktualisieren | Kapitel 1 und 2 |
+| Mich anmelden oder die Anmeldung prüfen | Kapitel 3, Werkzeugzeile |
+| Fenster und Bereiche einstellen | Kapitel 4 |
+| Forschung und Bau überwachen | Kapitel 5 bis 7 |
+| Systeme und Sondenwerte ansehen | Kapitel 8 und 10, **Galaxiedatenbank** |
+| Meine Beobachtungen freigeben | Kapitel 9, **Meine Datenfreigaben** |
+| Vergangene Ereignisse nachlesen | Kapitel 10a, **Events/Scans** |
+| Aktuell laufende Wirkungen ansehen | Kapitel 10a, **Laufende Events nach Planet** |
+| Ein erhaltenes Video im Blick behalten | Kapitel 10b, Erinnerung unter der Werkzeugzeile |
+| Farben an Produktionswerten verstehen | Kapitel 11 |
+| Ein Problem eingrenzen | Kapitel 12 oder [Hilfe](hasa_hilfe.md) |
+
 ## 1. Neu dabei: Installation
 
-Du brauchst einen PC-Browser mit der Erweiterung
-[Tampermonkey](https://www.tampermonkey.net/) und den vollständigen aktuellen HASA-Code:
+Du brauchst einen PC-Browser mit der Erweiterung Tampermonkey und ein von Kurt
+angelegtes HASA-Konto.
 
-[Aktuellen HASA-Code auf GitHub öffnen](https://github.com/KurtV731/hasa/blob/main/2%20src/current/HASA-AKTUELL.user.js.txt)
+1. Tampermonkey über die [offizielle Seite](https://www.tampermonkey.net/) für deinen Browser installieren.
+2. [Aktuelles HASA öffnen](https://raw.githubusercontent.com/KurtV731/hasa/main/2%20src/current/HASA-AKTUELL.user.js).
+3. Im Tampermonkey-Dialog die Installation bestätigen.
+4. Horizon unter `https://horiversum.org/game/main/main.php` öffnen oder neu laden.
+5. HASA über den angebotenen Einschaltknopf aktivieren.
+6. Mit Kapitel 3 fortfahren.
 
-Auf GitHub gegebenenfalls **Raw** öffnen, damit du ausschließlich den Dateitext
-kopierst. Die Endung `.txt` ist beabsichtigt.
+Zeigt der Link lediglich Programmtext? Das ist noch keine Fehlfunktion. Öffne
+Tampermonkey → Übersicht → Hilfsmittel/Utilities → Von URL installieren/importieren
+und füge dort denselben Link ein. Die Bezeichnungen können je nach Sprache abweichen.
+Du brauchst weder ein GitHub-Konto noch Git auf deinem PC.
 
-1. Tampermonkey über die offizielle Seite für deinen Browser installieren.
-2. Den vollständigen HASA-Dateitext öffnen und kopieren.
-3. Im Tampermonkey-Dashboard einmal ein neues Userscript anlegen.
-4. In den Codebereich klicken und den Beispieltext vollständig durch HASA ersetzen.
-5. Speichern und prüfen, dass genau ein HASA-Skript aktiviert ist.
-6. Horizon unter `https://horiversum.org/game/main/main.php` neu laden.
-7. HASA über den angebotenen Einschaltknopf aktivieren.
-
-Bei Chrome-basierten Browsern kann eine zusätzliche Userscript-Freigabe erforderlich
-sein. Prüfe in der Erweiterungsverwaltung bei Tampermonkey **Userscripts zulassen**.
-Je nach Browser ist stattdessen der Entwicklermodus nötig. Die aktuelle
-[offizielle Tampermonkey-Hilfe](https://www.tampermonkey.net/faq.php?locale=de#Q209)
-beschreibt diesen Schritt. Das ist eine Browserberechtigung, kein HASA-Menüpunkt.
-
-Du brauchst als Testspieler keinen eigenen Webserver und kein Git-Repository.
-Eine vollständige aktuelle Datei vom HASA-Verantwortlichen reicht für die Installation.
+Bei Chrome-basierten Browsern kann Tampermonkey eine zusätzliche Browserfreigabe
+für Userscripts benötigen. Diese gehört zur Erweiterungsverwaltung, nicht zu HASA.
+Nutze bei Bedarf die [offizielle Tampermonkey-Hilfe](https://www.tampermonkey.net/faq.php?locale=de#Q209).
+Die Einstellung gilt je Browser und Profil.
 
 ## 2. Bereits dabei: Aktualisieren
 
-Ein Update ersetzt den Code im **vorhandenen** Tampermonkey-Skript:
+1. Tampermonkey öffnen und beim **vorhandenen HASA** **Nach Updates suchen** wählen.
+2. Eine angebotene Aktualisierung bestätigen.
+3. Horizon neu laden und HASA einschalten.
+4. Im HASA-Kopf die Version prüfen: **1.2.0 Alpha 39**.
 
-1. Den vollständigen neuen Code kopieren.
-2. Im Tampermonkey-Dashboard das vorhandene HASA-Skript öffnen.
-3. Einmal in den Codetext klicken, dann **Strg+A**, **Strg+V**.
-4. Speichern und Horizon neu laden.
-5. Im HASA-Kopf die Versionsnummer kontrollieren: derzeit **1.2.0 Alpha 38**.
+Wurde die Installation über den Dialog abgeschlossen, musst du keinen Editor öffnen
+und kein zusätzliches Strg+S drücken. Bei einer manuellen Änderung im Editor ist
+Speichern weiterhin nötig. Der Dialog kann bei gleicher Version melden, dass kein
+Update vorliegt. Das ist normal.
 
-Kein zweites HASA daneben anlegen und für ein normales Update keine gespeicherten
-Daten löschen.
+Tampermonkey prüft außerdem nach seiner eingestellten Updatehäufigkeit. Eine
+sofortige automatische Verteilung zu einer bestimmten Uhrzeit ist nicht zugesagt.
+Jeder Browser verwaltet seine eigene Installation: Firefox und Edge getrennt prüfen.
 
-Wer das HASA-Repository bereits lokal auf Windows hat, kann dort
-`HASA-AKTUALISIEREN.cmd` starten. Die Datei aktualisiert den lokalen Bestand und
-kopiert den vollständigen aktuellen Code in die Zwischenablage. Erst danach folgen
-die Schritte im Tampermonkey-Editor. Die CMD-Datei benötigt Git und ein vorhandenes
-lokales Repository; sie ersetzt den Tampermonkey-Code nicht selbst.
+### Wenn du bisher den Code von Hand übernommen hast
 
-**Von Alpha35 auf Alpha36:** In Tampermonkey nach Updates suchen, angebotene
-Aktualisierung bestätigen und Horizon neu laden. Kein Serverupdate, SQL-Import
-oder STAN-Neuimport für diese Mauskorrektur nötig. Für ältere Fassungen bleibt
-die einmalige auth.4-Serverinstallation aus Alpha35 relevant, falls noch offen.
+Öffne einmal den Installationslink aus Kapitel 1 und aktualisiere die vorhandene
+Installation. Damit erhält sie auch die feste GitHub-Updateadresse. Die Alternative
+bleibt möglich: vollständigen Code in den vorhandenen Editor einsetzen und speichern.
+Kurt kann dafür weiterhin `HASA-AKTUALISIEREN.cmd` im lokalen Repository benutzen.
+Für ein normales Update weder ein zweites HASA anlegen noch gespeicherte Daten löschen.
 
-Verschieben oder Vergrößern endet auch bei Fokus-/Tabwechsel und verlorener
-Maustastenfreigabe. Falls ein Fenster die Bedienung stört: HASA zunächst nur über
-den Schalter in der Tampermonkey-Übersicht deaktivieren und betroffene Seiten neu
-laden. Bei weiteren Problemen ein Bild des tatsächlichen Fensters mit sichtbarer
-Adresszeile und der installierten HASA-Version an Kurt geben. Nicht zuerst löschen.
+### Einmaliger Umstieg von älteren Fassungen auf hasa.li
 
-### Einfacher Weg für Tester: direkt von GitHub
+Eine von Tampermonkey angefragte Berechtigung für **hasa.li** bestätigen. Auf der
+neuen Domain mit dem bisherigen HASA-Konto und persönlichen Passwort anmelden.
+Ein neues Konto oder ein Passwortreset ist dafür nicht erforderlich.
 
-[HASA mit Tampermonkey installieren/aktualisieren](https://raw.githubusercontent.com/KurtV731/hasa/main/2%20src/current/HASA-AKTUELL.user.js)
+### Nur für Kurt: Serverteil von Alpha39
 
-Den Link einmal öffnen und im Tampermonkey-Dialog das vorhandene HASA aktualisieren.
-Falls nur Quelltext erscheint, denselben Link in Tampermonkey → Übersicht →
-Hilfsmittel/Utilities → Von URL installieren/importieren einfügen.
-Kein zweites aktives HASA-Skript anlegen und keine lokalen Daten löschen.
-
-Ab dieser Installation enthalten die Metadaten die feste Updatequelle.
-Tampermonkey sucht entsprechend seiner Update-Einstellung nach neueren Versionen;
-für sofortige Prüfung beim bestehenden HASA „Nach Updates suchen“ verwenden.
-Nach einem Update Horizon neu laden. Für neue Berechtigungen kann Tampermonkey
-eine Bestätigung verlangen. GitHub-Konto oder Git sind auf Tester-PCs nicht nötig.
-
-Das betrifft ausschließlich das Userscript. Serverupdates bleiben Kurts Aufgabe.
-Bereits früher per Kopieren installierte Fassungen ohne Updateadresse müssen
-einmal mit der hier verlinkten Fassung aktualisiert werden.
-
-### Umstieg auf hasa.li mit Alpha38
-
-Die bestehende Installation über den festen GitHub-Link aktualisieren. Falls
-Tampermonkey eine neue Websiteberechtigung für hasa.li anfragt, diese bestätigen.
-Horizon neu laden und HASA einschalten. Auf der neuen Domain erneut mit dem
-bisherigen HASA-Konto und persönlichen Passwort anmelden. Kein neues Konto,
-kein Startpasswort-Reset und keine Löschung lokaler Daten erforderlich.
-Der alte Server bleibt während und nach dem Umzug im Wartungsmodus.
+Vor dem Test zuerst **HASA-Serverupdate-hasa-li.bat** ausführen, damit die neuen
+Ereignisseiten unter hasa.li bereitstehen. Danach das Userscript aktualisieren.
+Für Alpha39 ist keine neue Datenbankmigration und kein erneuter Import erforderlich.
+Testspieler laden keine PHP-Dateien hoch. Der alte Server bleibt im Wartungsmodus.
 
 ## 3. HASA-Anmeldung und erste Einrichtung
 
@@ -269,17 +263,116 @@ zusätzliche Sicherung des Volltextes den Bericht öffnen und die Bestätigung a
 Beim Haken erklärt der Tooltip den gespeicherten Umfang. Soll der Volltext erhalten
 bleiben, die Nachricht nicht allein aufgrund eines Übersichtshakens löschen.
 
-**ASFI-Liste** zeigt bekannte Asteroidenfelder. Meldungen über zerbrochene Planeten
+Unter **Events/Scans** findest du die **ASFI-Liste**. Sie zeigt bekannte Asteroidenfelder. Meldungen über zerbrochene Planeten
 und tatsächliche Beobachtungen aktualisieren den Bestand. Besiedlung bedeutet nicht
 automatisch verschwunden. Ältere unbestätigte Felder können einen Prüfhinweis tragen;
-Alter allein löscht sie nicht. **Gildensitzungen** ist eine einfache Zeitliste.
+Alter allein löscht sie nicht. **Gildensitzungen** findest du ebenfalls unter **Events/Scans** als eigenes Ereignisjournal.
 
 Sondenberichte werden als einzelne Messungen gespeichert. Eine Markierung wie
 `★3` am Planeten nennt die lokal vorhandenen Berichte. Sondenwerte bleiben
 Messungen beziehungsweise Schätzungen mit Beobachtungszeit, keine garantierten
 exakten aktuellen Planetenwerte.
 
-## 11. Ressourcenfarben seit Alpha 32
+## 10a. Die neue Werkzeugzeile und Ereignisse
+
+Die Werkzeugzeile oberhalb von Ascension bietet folgende Einstiege:
+
+| Schaltfläche | Inhalt |
+|---|---|
+| **Galaxiedatenbank** | Gespeicherte Systeme, Planeten und zugängliche Sondenbeobachtungen |
+| **Zur Benutzerverwaltung** | Verwaltung für entsprechend berechtigte Konten; fehlt bei normalen Testkonten |
+| **Events/Scans** | Ereignisarten, Ereignisjournale, laufende Wirkungen und Scans |
+| **Ressourcen** | Deine gespeicherten Produktionsmessungen |
+| **Kampfbericht** | Vorbereiteter Bereich; eine Kampfauswertung ist noch nicht verfügbar |
+
+ASFI und Gildensitzungen haben ihre eigenen Knöpfe in der oberen Werkzeugzeile
+verloren. Ihre Inhalte findest du nun unter **Events/Scans**.
+
+### Ein Ereignisjournal lesen
+
+1. **Events/Scans** öffnen und gegebenenfalls anmelden.
+2. Die gewünschte Ereignisart wählen, zum Beispiel **Motivationsvideo verfügbar**.
+3. Datum, Planet und gespeicherten Text ansehen. Bei mehr Einträgen weiterblättern.
+
+Das Journal zeigt die vergangenen **30 Kalendertage nach Berliner Zeit**.
+Die Gesamtzahl in der Kopfzeile zählt die seit Aufzeichnungsbeginn gespeicherten
+Meldungen deines Kontos in der aktuellen Runde – auch ältere als 30 Tage.
+Sie zählt keine unbekannte Spielhistorie nachträglich hinzu. Einträge ohne
+verlässliche Zeitangabe können zum Gesamtzähler gehören, ohne in der datierten
+30-Tage-Liste zu erscheinen.
+
+Neu gespeicherte Betreffzeilen ergänzen die angebotenen Ereignisarten.
+Video verfügbar, abgespielt, verschlampt und Gildensitzungen werden auch ohne
+bisherige Treffer angeboten. Ein leerer Bereich ist deshalb nicht automatisch ein Fehler.
+
+HASA kann nur den tatsächlich gespeicherten Umfang zeigen. Wurde lediglich die
+Nachrichtenübersicht erfasst, ist das kein vollständiger Bericht. Für den Volltext
+die ursprüngliche Spielnachricht öffnen und ihre Speicherung abwarten.
+
+### Laufende Events nach Planet
+
+Unter **Events/Scans → Laufende Events nach Planet** erhältst du eine private
+Momentaufnahme deiner gespeicherten Produktionswirkungen, nach Planeten sortiert.
+Hier wird auch ältere Historie als 30 Tage berücksichtigt.
+
+Zunächst ausgewertet werden belegte Produktionssteigerungen und Senkungen,
+Wassereinbrüche samt bestätigter Reparatur sowie tatsächlich gestartete Videos.
+Ein angebotenes Video zählt nicht als laufende Produktionswirkung.
+Weitere Ereignisarten werden erst mit nachgewiesener Beginn-/Enderkennung ergänzt.
+
+Eine gemeldete Endzeit beendet die passende Wirkung. Fehlt eine Endmeldung, kann
+**Ende nicht gemeldet** stehen; das ist keine Zusage, dass die Wirkung im Spiel
+noch besteht. Die Video-Stunde wird anhand der Startzeit zum Zeitpunkt der Abfrage
+geprüft. Ungenaue Zuordnungen oder mehrdeutige Zeiten werden nicht als gesicherte
+aktive Wirkung ausgegeben.
+
+**Diese Auswertungen bleiben privat.** Galaxiefreigaben geben anderen Spielern
+keinen Zugriff auf dein Ereignisjournal, deine Produktionsanalyse oder deine Liste
+laufender Wirkungen. Die gesonderte ASFI-/Beobachtungsansicht behält ihre bisherigen
+Sichtbarkeitsregeln.
+
+## 10b. Motivationsvideo: Erinnerung und Schutz vor Einzel-Löschung
+
+### Bekommen ist noch nicht gestartet
+
+Sobald HASA eine passende Verfügbarkeitsmeldung für dein Konto erfasst hat,
+erscheint unter der Werkzeugzeile eine Erinnerung. Sie nennt den Planeten und,
+soweit eindeutig bekannt, die voraussichtliche verbleibende Frist.
+
+Die Frist von **14 Tagen** stammt aus Kurts Spielangabe. Sie wird als
+**voraussichtlich** bezeichnet und ist kein vom Server bestätigter Ablaufzeitpunkt.
+In den letzten 24 Stunden erscheint **Baldiger Ablauf**.
+Nach der Frist bleibt ein Hinweis zur Prüfung im Spiel stehen. HASA erfindet
+keine Meldung, dass das Video tatsächlich verfallen sei.
+
+Die Erinnerung verwendet den in diesem Browser erfassten lokalen Bestand.
+Ein neuer Browser lädt dafür nicht automatisch sämtliche früheren
+Servermeldungen nach. Ohne passende Anmeldung wird die private Erinnerung
+nicht angezeigt. Fehlende oder unklare Daten ergeben keine erfundene Restlaufzeit.
+Bei mehreren Angeboten kann die Anzahl feststehen, während die genaue Frist
+des verbleibenden Videos nicht sicher zugeordnet werden kann.
+
+Ein bestätigtes Abspielen oder Verschlampen wird beim passenden Planeten
+berücksichtigt. Wiederholtes Lesen startet die Frist nicht neu.
+Der Link zur Nachrichtenseite öffnet den normalen Posteingang. Starte das Video
+dort selbst über die aktuelle Spielnachricht.
+
+### Das gesperrte Löschsymbol
+
+Bei einer echten Systemmeldung **Motivationsvideo verfügbar** ersetzt HASA das
+einzelne Löschsymbol durch **⛔**. Das gilt in der Nachrichtenliste und im geöffneten
+Bericht. Du kannst das Video weiterhin normal starten.
+
+**Die Sammellöschung unten bleibt absichtlich bedienbar**, ebenso die
+Auswahlkästchen und die Spam-Funktion. Der Schutz verhindert deshalb nicht jede
+mögliche Entfernung der Nachricht. In Horizon kannst du mit **Löschen aller Berichte
+anzeigen** selbst steuern, ob der Sammelknopf sichtbar ist.
+
+Ist HASA ausgeschaltet, greift dieser Schutz nicht. Eine gespeicherte Nachricht
+mit grünem Haken ist kein Ersatz für die Spielnachricht und ihren aktuellen
+Startlink. Ein gelöschtes Video lässt sich daraus nicht wiederherstellen.
+
+## 11. Ressourcenfarben
 
 HASA liest die Stundenproduktion des gerade sichtbaren Planeten ungefähr alle
 15 Minuten. Andere Planeten werden dafür nicht selbstständig besucht.
@@ -354,6 +447,9 @@ werden nicht automatisch als gemeinschaftliche Daten veröffentlicht.
 
 ## 14. Weiterführende Hinweise
 
+- [Hilfe: Wo finde ich was?](hasa_hilfe.md)
+- [Alpha39: Änderungen und Testschritte](hasa_1.2.0-alpha.39_ereigniszentrale.md)
+
 - [Änderungen und Grenzen von Alpha 33](hasa_1.2.0-alpha.33_motivationsvideo.md)
 - [Vorheriges Update Alpha 32](hasa_1.2.0-alpha.32_testerrunde.md)
 - [Historische Anleitung für HASA 1.1](hasa_1.1_benutzeranleitung.md)
@@ -372,3 +468,15 @@ SCOL 3 Stunden, GRCO 4 Stunden, CCOL 7 Stunden, FCOL 30 Minuten,
 LRCO 9 Stunden, ICOL 24 Stunden, GCOL 4 Stunden, ASCS 8 Stunden,
 LACS 20 Stunden und IACS 72 Stunden. Bau- und Flugzeit kommen zusätzlich hinzu;
 die Planerberechnungen werden dadurch nicht verändert.
+
+## 15. Wünsche und nächste Schritte
+
+Die Vorhersage **Wann wird mein Lager voll?** ist für Version 1.3 vorgemerkt und
+in Alpha39 noch nicht enthalten. Auch eine automatische Anfangsstrategie und
+ein Kampfsimulator sind weiterhin Zukunftsthemen.
+
+Anleitung, kurze Hilfe und eine Möglichkeit für eigene Vorschläge sollen in die
+Website integriert werden. Die öffentlichen Seiten und ein Vorschlagsformular
+sind mit dem Website-Verantwortlichen abzustimmen; diese Anleitung behauptet
+keinen bereits erreichbaren Menüpunkt dafür. Bis dahin Wünsche an Kurt geben.
+Nenne dabei möglichst, was du erreichen möchtest und wo dir heute etwas fehlt.

@@ -28,6 +28,8 @@ const helpers = source.slice(source.indexOf('    function prdrNormalisiereText')
         const exports = new Function('HAA_SERVER_AUTH','HASA_RUNDE','HASA_RUNDE_SCHLUESSEL','istHasaFuerSitzungAktiv','laden','speichern','esc', 'function hasaServerSchreibbereit(){return false;} function behandleHasaServerAuthFehler(){} function galascannerApiSchluessel(){return \"\";} '+helpers + moduleSource + `
             return {catalog:HASA_EREIGNIS_KATALOG, classify:erkenneHasaEreignis, record:registriereHasaEreignis,
                 scan:pruefeHasaEreignisse, stop:stoppeHasaEreignisScanner, install:installiereHasaEreignisScanner,
+                protect:schuetzeHasaMotivationsvideos, unprotect:stoppeHasaVideoSchutz,
+                pendingVideos:hasaOffeneVideoMeldungen, remindHtml:baueHasaVideoErinnerungHtml,
                 scanNode:scanneHasaEreignisKnoten, url:ereignisNachrichtenUrl, html:baueHasaEreignisRegisterHtml,
                 merge:vereinigeHasaEreignisRegister, raw:ereignisOriginaltext, key:STORAGE_EREIGNIS_REGISTER,
                 observers:HAA_EREIGNIS_DOKUMENTE, asfiKey:STORAGE_ASFI_LISTE,
@@ -208,6 +210,95 @@ const helpers = source.slice(source.indexOf('    function prdrNormalisiereText')
             });
         }
     }
+    // Synthetischer, tokenfreier Nachbau der in mv.txt bestätigten Nachrichtentabelle.
+    const videoRow=(id,title='Motivationsvideo verfügbar',system=true)=>`<tr>
+      <td class="MessageTableCellLeft">17.10.2026 15:38:10</td><td class="MessageTableCell">Handelszentrum<div>Testplanet (1:2:3)</div></td>
+      <td class="MessageTableCell"><a class="${system?'MessageReportEvent':''}" href="main.php?cmd=message&action=view&message_id=${id}">${title}</a></td>
+      <td class="MessageTableCell"><a id="spam-${id}" href="main.php?cmd=message&action=toSpam&filter_type=BSTAV" onclick="actions.push('spam');return false;">Spam</a>
+      <a id="delete-${id}" href="main.php?cmd=message&action=delete&message_id=${id}" onclick="actions.push('delete');return false;"><img alt="Nachricht löschen"></a>
+      <input id="check-${id}" type="checkbox" checked></td></tr>`;
+    const videoFixture=`<div class="MessageContainer"><form id="videos" action="main.php" method="post" onsubmit="actions.push('bulk');return false;">
+      <input type="hidden" name="cmd" value="message"><input type="hidden" name="action" value="bulk_delete"><table>${videoRow('v1')}${videoRow('v2','Motivationsvideo abgespielt')}${videoRow('v3','Motivationsvideo verfügbar',false)}</table>
+      <a id="play" class="MessageReportResponse" href="main.php?cmd=message&action=respond&message_id=v1&option_id=0" onclick="actions.push('play');return false;">Video abspielen</a>
+      <button id="bulk" type="submit">Ausgewählte löschen</button></form></div>`;
+    await test('available video gets a prohibition sign only at its individual delete control',async()=>{
+      await page.evaluate(html=>{test.exports.stop();test.setActive(true);window.actions=[];document.body.innerHTML=html;test.exports.protect(document);},videoFixture);
+      assert.equal(await page.locator('.haa-video-lock').count(),1);
+      assert.equal(await page.locator('#delete-v1').isVisible(),false);
+      assert.equal(await page.locator('#delete-v2').isVisible(),true);
+      assert.equal(await page.locator('#delete-v3').isVisible(),true);
+      assert.match(await page.locator('.haa-video-lock').getAttribute('title'),/Sammellöschung unten bleibt möglich/);
+    });
+    await test('individual delete is blocked before original handler even for programmatic click',async()=>{
+      const blocked=await page.evaluate(()=>{const a=document.querySelector('#delete-v1');const e=new MouseEvent('click',{bubbles:true,cancelable:true});return !a.dispatchEvent(e);});
+      assert.equal(blocked,true);assert.deepEqual(await page.evaluate(()=>actions),[]);
+    });
+    await test('bulk deletion and checkbox remain unchanged by explicit user preference',async()=>{
+      assert.equal(await page.locator('#check-v1').isDisabled(),false);
+      assert.equal(await page.locator('#check-v1').isChecked(),true);
+      await page.locator('#bulk').click();
+      await page.evaluate(()=>document.querySelector('#videos').requestSubmit());
+      assert.deepEqual(await page.evaluate(()=>actions),['bulk','bulk']);
+    });
+    await test('playing, spam and other individual deletions remain normal game controls',async()=>{
+      await page.locator('#play').click();await page.locator('#spam-v1').click();await page.locator('#delete-v2').click();await page.locator('#delete-v3').click();
+      assert.deepEqual(await page.evaluate(()=>actions),['bulk','bulk','play','spam','delete','delete']);
+    });
+    await test('new AJAX rows are protected without login or duplicate signs',async()=>{
+      await page.evaluate(row=>{test.auth.authenticated=false;document.querySelector('#videos table').insertAdjacentHTML('beforeend',row);},videoRow('v4'));
+      await page.waitForFunction(()=>document.querySelectorAll('.haa-video-lock').length===2);
+      await page.evaluate(()=>{test.exports.protect(document);test.exports.protect(document);});
+      assert.equal(await page.locator('.haa-video-lock').count(),2);
+      assert.equal(await page.locator('#delete-v4').isVisible(),false);
+      await page.evaluate(()=>{test.auth.authenticated=true;});
+    });
+    await test('only changed game subject or stopping HASA restores original individual control',async()=>{
+      await page.evaluate(()=>{document.querySelector('a[href*="action=view"][href*="message_id=v1"]').textContent='Motivationsvideo verschlampt';});
+      await page.waitForFunction(()=>document.querySelectorAll('.haa-video-lock').length===1);
+      assert.equal(await page.locator('#delete-v1').isVisible(),true);
+      await page.evaluate(()=>test.exports.stop());
+      assert.equal(await page.locator('.haa-video-lock').count(),0);
+      assert.equal(await page.locator('#delete-v4').isVisible(),true);
+    });
+    const reminderNow=Date.UTC(2026,9,22,12);
+    const videoEvent=(id,subject,time,extra={})=>({id:'8:7:message:'+id,messageId:id,ownerId:'7',round:8,systemEvent:true,subject,
+      reportedTimeText:time,planetName:'Testplanet',position:{galaxy:1,system:2,orbit:3},observations:[],...extra});
+    const available=videoEvent('rem1','Motivationsvideo verfügbar','09.10.2026 14:00:00');
+    const played=videoEvent('rem2','Motivationsvideo abgespielt','22.10.2026 13:00:00');
+    const reminders=async events=>page.evaluate(({events,now})=>{test.store.set(test.exports.key,events);return{pending:test.exports.pendingVideos(now),html:test.exports.remindHtml(now)};},{events,now:reminderNow});
+    await test('video reminder includes planet, remaining time, 24 hour warning and only fresh inbox navigation',async()=>{
+      const r=await reminders([available]);assert.equal(r.pending.length,1);assert.match(r.html,/Baldiger Ablauf/);assert.match(r.html,/Testplanet/);assert.match(r.html,/23.10.2026/);
+      assert.match(r.html,/cmd=message/);assert.doesNotMatch(r.html,/action=respond|option_id|sourceUrl/);
+    });
+    await test('confirmed played and lost follow-ups settle only the same planet',async()=>{
+      assert.equal((await reminders([available,played])).pending.length,0);
+      assert.equal((await reminders([available,{...played,subject:'Motivationsvideo verschlampt'}])).pending.length,0);
+      assert.equal((await reminders([available,{...played,position:{galaxy:1,system:2,orbit:4}}])).pending.length,1);
+    });
+    await test('video reminders are scoped to account, round, system source and identified message',async()=>{
+      const r=await reminders([{...available,ownerId:'9'},{...available,round:7},{...available,systemEvent:false},{...available,messageId:null}]);
+      assert.equal(r.html,'');assert.equal(r.pending.length,0);
+    });
+    await test('replay does not duplicate or revive a settled reminder; newer availability does',async()=>{
+      assert.equal((await reminders([available,played,available])).pending.length,0);
+      const next={...available,messageId:'new-video',reportedTimeText:'22.10.2026 13:30:00'};
+      assert.equal((await reminders([available,played,next])).pending.length,1);
+    });
+    await test('several videos do not all disappear after one start or acquire an invented exact deadline',async()=>{
+      const second={...available,messageId:'second-video',reportedTimeText:'10.10.2026 14:00:00'};
+      const r=await reminders([available,second,played]);assert.equal(r.pending[0].pending.length,1);assert.equal(r.pending[0].uncertain,true);assert.match(r.html,/Zuordnung unklar/);assert.doesNotMatch(r.html,/voraussichtlich bis/);
+    });
+    await test('unknown dates and reached 14 day threshold remain reminders; future availability does not start one',async()=>{
+      const unknown=await reminders([{...available,reportedTimeText:null}]);assert.match(unknown.html,/Zeit oder Zuordnung unklar/);
+      const expired=await reminders([{...available,reportedTimeText:'08.10.2026 14:00:00'}]);assert.match(expired.html,/14-Tage-Frist erreicht/);assert.equal(expired.pending.length,1);
+      assert.equal((await reminders([{...available,reportedTimeText:'23.10.2026 14:00:00'}])).html,'');
+    });
+    await test('reminder escapes planet names and hides without an authenticated active HASA account',async()=>{
+      const r=await reminders([{...available,planetName:'<script>unsafe</script>'}]);assert.doesNotMatch(r.html,/<script>/);assert.match(r.html,/&lt;script&gt;/);
+      await page.evaluate(()=>{test.auth.authenticated=false;});assert.equal((await reminders([available])).html,'');
+      await page.evaluate(()=>{test.auth.authenticated=true;test.setActive(false);});assert.equal((await reminders([available])).html,'');
+      await page.evaluate(()=>{test.setActive(true);});
+    });
     const full = await browser.newPage({viewport:{width:1100,height:900}});
     full.on('pageerror', e=>errors.push(e.message));
     await full.route('**/*',route=>route.fulfill({contentType:'text/html; charset=utf-8',body:`<!doctype html><meta charset="utf-8"><body style="background:#171717;color:#eee"><table><tr><td>12.10.2026 18:40:00</td><td><a href="?cmd=message&action=view&message_id=901">Meteoriteneinschlag</a></td></tr></table></body>`}));
@@ -224,17 +315,32 @@ const helpers = source.slice(source.indexOf('    function prdrNormalisiereText')
         await full.goto('https://horiversum.org/game/main/main.php');
         await full.evaluate(instrumented);
         await full.locator('#haa-hauptschalter-an').click();
-        await full.waitForSelector('#haa-asfi-liste',{state:'attached'});
+        await full.waitForSelector('#haa-events-scans',{state:'attached'});
         assert.equal(await full.locator('#haa-box').locator('details.haa-accordion').count(),3);
         assert.equal(await full.locator('details[data-haa-bereich="ascension"]').count(),0);
         assert.equal(await full.evaluate(()=>__hasaTest.list().length),1);
-        assert.match(await full.locator('#haa-box').innerText(),/Alpha 38/);
+        assert.match(await full.locator('#haa-box').innerText(),/Alpha 39/);
         const layout = await full.evaluate(() => {
             const bar = document.querySelector('#haa-werkzeuge');
             const first = document.querySelector('details.haa-accordion');
-            return {outside: !bar.closest('details'), before: !!(bar.compareDocumentPosition(first) & Node.DOCUMENT_POSITION_FOLLOWING), count: document.querySelectorAll('#haa-asfi-liste').length};
+            return {outside: !bar.closest('details'), before: !!(bar.compareDocumentPosition(first) & Node.DOCUMENT_POSITION_FOLLOWING), count: document.querySelectorAll('#haa-events-scans').length};
         });
         assert.deepEqual(layout,{outside:true,before:true,count:1});
+    });
+    await test('Alpha39 toolbar groups lists and routes three categories to hasa.li', async () => {
+        assert.equal(await full.locator('#haa-asfi-liste, #haa-gildensitzungen').count(),0);
+        for (const [id,label] of [['haa-events-scans','Events/Scans'],['haa-ressourcen','Ressourcen'],['haa-kampfbericht','Kampfbericht']]) {
+            assert.equal(await full.locator('#'+id).innerText(),label);
+        }
+        const calls=await full.evaluate(()=>{
+            const calls=[];window.open=(url,target,features)=>{calls.push({url,target,features});return null;};
+            ['haa-events-scans','haa-ressourcen','haa-kampfbericht'].forEach(id=>document.getElementById(id).click());
+            return calls;
+        });
+        assert.deepEqual(calls.map(c=>c.url),['hub','production','combat'].map(view=>'https://hasa.li/api/events.php?view='+view+'&round=8'));
+        assert.ok(calls.every(c=>c.target==='_blank' && c.features==='noopener'));
+        assert.equal(await full.locator('#haa-galascan-datenbank').count(),1);
+        assert.equal(await full.locator('#haa-galascan-benutzerverwaltung').count(),0);
     });
     await test('full Userscript writes native IndexedDB and synchronous fallback', async () => {
         await full.waitForFunction(async ()=>{
@@ -244,12 +350,12 @@ const helpers = source.slice(source.indexOf('    function prdrNormalisiereText')
         assert.equal(await full.evaluate(()=>JSON.parse(localStorage.getItem('gm:'+__hasaTest.key)).length),1);
     });
     await test('browser reload preserves register, same message never double-counts', async () => {
-        await full.reload();await full.evaluate(instrumented);await full.waitForSelector('#haa-asfi-liste',{state:'attached'});
+        await full.reload();await full.evaluate(instrumented);await full.waitForSelector('#haa-events-scans',{state:'attached'});
         assert.equal(await full.evaluate(()=>__hasaTest.list().length),1);
     });
     await test('recovery merges newer fallback with older IndexedDB', async () => {
         await full.evaluate(()=>{const v=JSON.parse(localStorage.getItem('gm:'+__hasaTest.key));v.push({...v[0],id:'8:7:message:902',messageId:'902',eventType:'Polsprung',observations:[{kind:'overview',rawText:'Polsprung',capturedAt:new Date().toISOString()}]});localStorage.setItem('gm:'+__hasaTest.key,JSON.stringify(v));});
-        await full.reload();await full.evaluate(instrumented);await full.waitForSelector('#haa-asfi-liste',{state:'attached'});
+        await full.reload();await full.evaluate(instrumented);await full.waitForSelector('#haa-events-scans',{state:'attached'});
         assert.equal(await full.evaluate(()=>__hasaTest.list().length),2);
     });
     await test('full ASFI native database persistence and reload', async()=>{
@@ -258,7 +364,7 @@ const helpers = source.slice(source.indexOf('    function prdrNormalisiereText')
         await full.waitForFunction(()=>__hasaTest.asfi().length===1);
         await full.waitForFunction(async()=>{const db=await new Promise(resolve=>{const a=indexedDB.open('hasa_lokale_daten_v1',1);a.onsuccess=()=>resolve(a.result);});const row=await new Promise(resolve=>{const a=db.transaction('werte').objectStore('werte').get(__hasaTest.asfiKey);a.onsuccess=()=>resolve(a.result);});db.close();return row&&row.wert.length===1;});
         assert.equal(await full.evaluate(()=>JSON.parse(localStorage.getItem('gm:'+__hasaTest.asfiKey))[0].current.type),'ASFI');
-        await full.reload();await full.evaluate(instrumented);await full.waitForSelector('#haa-asfi-liste',{state:'attached'});
+        await full.reload();await full.evaluate(instrumented);await full.waitForSelector('#haa-events-scans',{state:'attached'});
         assert.equal(await full.evaluate(()=>__hasaTest.asfi()[0].current.type),'ASFI');
     });
     await test('compact real UI at 390px, original text readable, stop/restart', async () => {
@@ -268,13 +374,21 @@ const helpers = source.slice(source.indexOf('    function prdrNormalisiereText')
         const bounds=await full.locator('#haa-box').boundingBox();assert.ok(bounds.x>=0 && bounds.x+bounds.width<=391);
         await full.screenshot({path:process.env.HASA_TEST_SCREENSHOT || require('os').tmpdir()+'/hasa-ereignisregister-test.png'});
         await full.locator('#haa-hauptschalter-aus').click();await full.waitForSelector('#haa-hauptschalter-an');
-        await full.locator('#haa-hauptschalter-an').click();await full.waitForSelector('#haa-asfi-liste',{state:'attached'});
+        await full.locator('#haa-hauptschalter-an').click();await full.waitForSelector('#haa-events-scans',{state:'attached'});
         assert.equal(await full.evaluate(()=>__hasaTest.list().length),3);
+    });
+    await test('real HASA header reminder updates after capture and disappears after confirmed play',async()=>{
+        await full.evaluate(()=>__hasaTest.record('Motivationsvideo verfügbar',{messageId:'header-video',kind:'overview',subject:'Motivationsvideo verfügbar',systemEvent:true,position:{galaxy:1,system:2,orbit:3},positionName:'Headerplanet',reportedTimeText:'22.10.2026 08:00:00'}));
+        await full.waitForSelector('#haa-video-erinnerung:not([hidden])');
+        assert.match(await full.locator('#haa-video-erinnerung').innerText(),/Headerplanet/);
+        await full.evaluate(()=>__hasaTest.record('Motivationsvideo abgespielt',{messageId:'header-play',kind:'overview',subject:'Motivationsvideo abgespielt',systemEvent:true,position:{galaxy:1,system:2,orbit:3},reportedTimeText:'22.10.2026 08:01:00'}));
+        await full.waitForFunction(()=>document.querySelector('#haa-video-erinnerung').hidden);
     });
     assert.deepEqual(errors,[]);
     await browser.close();
     console.log(passed+' browser regression groups passed; catalog '+66+' titles covered.');
 })().catch(e => {console.error(e);process.exit(1);});
+
 
 
 

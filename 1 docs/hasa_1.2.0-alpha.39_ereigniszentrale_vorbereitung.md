@@ -1,9 +1,15 @@
+> **Freigegeben am 22.10.2026:** Alpha39 ist aktueller main-Teststand.
+> [Releasehinweise](hasa_1.2.0-alpha.39_ereigniszentrale.md),
+> [Bedienungsanleitung](hasa_1.2_benutzeranleitung.md), [Hilfe](hasa_hilfe.md).
+> Die folgenden Einträge bleiben als Entwicklungsprotokoll erhalten.
+> Frühere Aussagen „main bleibt Alpha38“ beschreiben den damaligen Zwischenstand.
+
 # Alpha39 – Events/Scans als gemeinsame Einstiegsseite
 
 Stand: 22.10.2026. Getestete Vorbereitung im Branch feature/alpha39-ereigniszentrale-20261022.
 Programmcommit: 254dcd705a17c357b2fac796c162ad8a623d025c.
 Gesamtprüfung erfolgreich: https://github.com/KurtV731/hasa/actions/runs/39846312217 .
-Die veröffentlichte Downloadfassung auf main bleibt bis zur gesonderten Freigabe Alpha38.
+Die Freigabe auf main erfolgte anschließend auf Kurts ausdrücklichen Auftrag.
 
 ## Bedienung
 

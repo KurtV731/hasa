@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         HASA – Horizon Ascension Assistant
 // @namespace    horiversum.hasa
-// @version      1.2.0-alpha.38
+// @version      1.2.0-alpha.39
 // @charset      UTF-8
 // @updateURL    https://raw.githubusercontent.com/KurtV731/hasa/main/2%20src/current/HASA-AKTUELL.user.js
 // @downloadURL  https://raw.githubusercontent.com/KurtV731/hasa/main/2%20src/current/HASA-AKTUELL.user.js
@@ -214,8 +214,8 @@
         'PHYSICS', 'PSYCHOLOGY', 'NUCLEARPHYSICS', 'SOLARENERGYTECH'
     ]);
 
-    const HASA_VERSION = '1.2.0 Alpha 38';
-    const HASA_BUILD_LABEL = '1.2.0-alpha38-hasa-li-2026-10-22';
+    const HASA_VERSION = '1.2.0 Alpha 39';
+    const HASA_BUILD_LABEL = '1.2.0-alpha39-ereigniszentrale-2026-10-22';
     const HASA_RUNDE = 8;
     const HASA_RUNDE_SCHLUESSEL = 'runde8';
     // Die MariaDB und sämtliche Schreibendpunkte trennen Runde 7 und 8 jetzt
@@ -515,7 +515,7 @@
         originalKinder.forEach(function (node, index) {
             if (!ereignisIstSpieltext(node, true)) kopieKinder[index].remove();
         });
-        kopie.querySelectorAll('script,style,noscript,template,#haa-box,.haa-stored-mark,input,select,textarea,[hidden],[aria-hidden="true"]').forEach(function (node) { node.remove(); });
+        kopie.querySelectorAll('script,style,noscript,template,#haa-box,.haa-stored-mark,.haa-video-lock,input,select,textarea,[hidden],[aria-hidden="true"]').forEach(function (node) { node.remove(); });
         kopie.querySelectorAll('br,p,div,li,tr,td,th,h1,h2,h3,h4,section,article').forEach(function (node) {
             node.prepend(element.ownerDocument.createTextNode('\n'));
             node.append(element.ownerDocument.createTextNode('\n'));
@@ -651,6 +651,7 @@
     function scanneHasaEreignisDokument(doc, besucht) {
         if (!doc || !doc.body || besucht.has(doc)) return;
         besucht.add(doc);
+        schuetzeHasaMotivationsvideos(doc);
         const adresse = ereignisNachrichtenUrl(doc.location.href, window.location.href);
         const echterBericht = ereignisScannerBenutzer() && erfasseGeoeffnetenHasaBericht(doc);
         if (echterBericht) { /* tatsächlichen Berichtscope bereits erfasst */ }
@@ -706,6 +707,12 @@
         for (const [frame, handler] of HAA_EREIGNIS_FRAMES) {
             if (!frame.isConnected) { frame.removeEventListener('load', handler); HAA_EREIGNIS_FRAMES.delete(frame); }
         }
+        for (const doc of Array.from(HAA_VIDEO_SCHUTZ.keys())) {
+            try {
+                if (doc !== document && (!doc.defaultView || !doc.defaultView.frameElement || !doc.defaultView.frameElement.isConnected
+                    || doc.defaultView.frameElement.contentDocument !== doc)) stoppeHasaVideoSchutz(doc);
+            } catch (_) { stoppeHasaVideoSchutz(doc); }
+        }
         scanneHasaEreignisDokument(document, new Set());
         (laden(STORAGE_EREIGNIS_REGISTER, []) || []).forEach(function(e){
             if(e && ['Wassereinbruch in Metallmine','Wassereinbruch repariert'].includes(e.subject))hasaProductionEvent(e);
@@ -730,6 +737,7 @@
     }
 
     function stoppeHasaEreignisScanner() {
+        Array.from(HAA_VIDEO_SCHUTZ.keys()).forEach(stoppeHasaVideoSchutz);
         HAA_EREIGNIS_DOKUMENTE.forEach(function (observer) { observer.disconnect(); });
         HAA_EREIGNIS_DOKUMENTE.clear();
         HAA_EREIGNIS_FRAMES.forEach(function (handler, frame) { frame.removeEventListener('load', handler); });
@@ -767,6 +775,7 @@
     }
 
     function aktualisiereHasaEreignisAnzeige() {
+        aktualisiereHasaVideoErinnerung();
         const element = document.getElementById('haa-ereignis-register');
         if (!element) return;
         const html = baueHasaEreignisRegisterHtml();
@@ -1026,6 +1035,74 @@
         }
     }
 
+    // Alpha39: Nur den einzelnen Löschknopf verfügbarer Videos schützen.
+    // Sammellöschung, Spam und Abspielen bleiben ausdrückliche Spielentscheidungen.
+    const HAA_VIDEO_SCHUTZ = new Map();
+
+    function hasaVideoLoeschLink(link, doc, messageId) {
+        try {
+            const url=new URL(link.getAttribute('href')||'',doc.location.href);
+            const basis=new URL(doc.location.href);
+            return url.origin===basis.origin && url.pathname===basis.pathname
+                && url.searchParams.get('cmd')==='message' && url.searchParams.get('action')==='delete'
+                && url.searchParams.get('message_id')===messageId;
+        } catch(_){return false;}
+    }
+
+    function stoppeHasaVideoSchutz(doc) {
+        const state=HAA_VIDEO_SCHUTZ.get(doc);if(!state)return;
+        state.observer.disconnect();
+        doc.removeEventListener('click',state.guard,true);doc.removeEventListener('auxclick',state.guard,true);
+        state.links.forEach(function(mark,link){mark.lock.remove();link.style.display=mark.display;});
+        HAA_VIDEO_SCHUTZ.delete(doc);
+    }
+
+    function aktualisiereHasaVideoSchutz(doc, state) {
+        const links=new Set();
+        doc.querySelectorAll('td a.MessageReportEvent[href]').forEach(function(link){
+            if(!ereignisIstSpieltext(link,false))return;
+            const meta=ereignisZeilenMeta(link);
+            if(meta.subject!=='Motivationsvideo verfügbar' || !meta.systemEvent)return;
+            const address=ereignisNachrichtenUrl(link.getAttribute('href'),doc.location.href);
+            const row=link.closest('tr');if(!address || !row)return;
+            const actions=row.cells[3];if(!actions)return;
+            actions.querySelectorAll('a[href]').forEach(function(actionLink){
+                if(!hasaVideoLoeschLink(actionLink,doc,address.messageId))return;
+                links.add(actionLink);
+                if(!state.links.has(actionLink)){
+                    const lock=doc.createElement('span');lock.className='haa-video-lock';lock.textContent='⛔';
+                    lock.setAttribute('role','img');lock.setAttribute('aria-label','Motivationsvideo: einzelnes Löschen gesperrt');
+                    lock.title='Motivationsvideo verfügbar – einzelnes Löschen gesperrt. Die Sammellöschung unten bleibt möglich.';
+                    lock.style.cssText='display:inline-block;width:19px;line-height:21px;text-align:center;vertical-align:middle;cursor:help;';
+                    state.links.set(actionLink,{lock:lock,display:actionLink.style.display});
+                    actionLink.before(lock);actionLink.style.display='none';
+                }
+            });
+        });
+        state.links.forEach(function(mark,link){if(!links.has(link)){mark.lock.remove();link.style.display=mark.display;state.links.delete(link);}});
+    }
+
+    function schuetzeHasaMotivationsvideos(doc) {
+        if(!istHasaFuerSitzungAktiv() || !doc?.body)return;
+        let state=HAA_VIDEO_SCHUTZ.get(doc);
+        if(!state){
+            state={links:new Map()};
+            state.guard=function(event){
+                if(!istHasaFuerSitzungAktiv())return;
+                aktualisiereHasaVideoSchutz(doc,state);
+                const target=event.target?.nodeType===1?event.target:event.target?.parentElement;
+                const link=target?.closest('a[href]');
+                if(!link || !state.links.has(link))return;
+                event.preventDefault();event.stopImmediatePropagation();
+            };
+            state.observer=new MutationObserver(function(){if(istHasaFuerSitzungAktiv())aktualisiereHasaVideoSchutz(doc,state);});
+            state.observer.observe(doc.body,{subtree:true,childList:true,characterData:true});
+            doc.addEventListener('click',state.guard,true);doc.addEventListener('auxclick',state.guard,true);
+            HAA_VIDEO_SCHUTZ.set(doc,state);
+        }
+        aktualisiereHasaVideoSchutz(doc,state);
+    }
+
     function markiereHasaGespeicherteBerichte() {
         const owner = ereignisScannerBenutzer();
         const eligible = new Set();
@@ -1107,6 +1184,75 @@
             }
         }
         return {name:name,position:Array.from(distinct.values())[0],rates:rates,nodes:nodes,display:display};
+    }
+
+    // Erinnerungen aus gespeicherten Systemmeldungen; niemals ein Video selbst starten.
+    function hasaOffeneVideoMeldungen(now) {
+        now=Number.isFinite(now)?now:Date.now();
+        const owner=ereignisScannerBenutzer();if(!owner)return [];
+        const groups=new Map(),seen=new Set(),events=[];
+        for(const e of (laden(STORAGE_EREIGNIS_REGISTER,[])||[])){
+            if(!e || String(e.ownerId)!==owner || e.round!==HASA_RUNDE || !e.messageId || !e.systemEvent
+                || !['Motivationsvideo verfügbar','Motivationsvideo abgespielt','Motivationsvideo verschlampt'].includes(e.subject)
+                || seen.has(e.messageId))continue;
+            seen.add(e.messageId);
+            const at=hasaMotivationStartzeit(e.reportedTimeText);
+            if(at!==null && at>now)continue;
+            const p=e.position;
+            const valid=p && Number.isInteger(p.galaxy) && p.galaxy>=1 && p.galaxy<=255
+                && Number.isInteger(p.system) && p.system>=0 && p.system<=99999
+                && Number.isInteger(p.orbit) && p.orbit>=1 && p.orbit<=255;
+            if(e.subject!=='Motivationsvideo verfügbar' && (at===null || !valid))continue;
+            events.push({e:e,at:at,key:valid?p.galaxy+':'+p.system+':'+p.orbit:'unknown:'+e.messageId});
+        }
+        events.sort(function(a,b){return (a.at??Infinity)-(b.at??Infinity)
+            || (a.e.subject==='Motivationsvideo verfügbar'?0:1)-(b.e.subject==='Motivationsvideo verfügbar'?0:1);});
+        for(const item of events){
+            let group=groups.get(item.key);
+            if(item.e.subject==='Motivationsvideo verfügbar'){
+                if(!group){group={key:item.key,name:item.e.planetName||'Planet unbekannt',pending:[],uncertain:false};groups.set(item.key,group);}
+                group.pending.push(item);
+            }else if(group && group.pending.length){
+                // Bei mehreren Videos ist die konkrete Zuordnung und Frist unklar.
+                if(group.pending.length>1)group.uncertain=true;
+                group.pending.shift();
+                if(!group.pending.length)groups.delete(item.key);
+            }
+        }
+        return Array.from(groups.values());
+    }
+
+    function baueHasaVideoErinnerungHtml(now) {
+        now=Number.isFinite(now)?now:Date.now();
+        const groups=hasaOffeneVideoMeldungen(now);if(!groups.length)return '';
+        let html='<strong>▶ Erinnerung: Motivationsvideo verfügbar</strong>';
+        for(const group of groups){
+            const first=group.pending[0],unknown=first.at===null || group.key.startsWith('unknown:');
+            let text='';
+            if(unknown || group.uncertain)text='Zeit oder Zuordnung unklar – ursprüngliche Meldung im Spiel prüfen';
+            else{
+                // 14 Tage sind Kurts Spielangabe, kein automatisch bewiesenes Ende.
+                const end=first.at+14*86400000,left=end-now;
+                const date=new Intl.DateTimeFormat('de-DE',{timeZone:'Europe/Berlin',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(end));
+                if(left<=0)text='14-Tage-Frist erreicht – Status im Spiel prüfen';
+                else{
+                    const minutes=Math.max(1,Math.ceil(left/60000)),days=Math.floor(minutes/1440),hours=Math.floor(minutes%1440/60);
+                    text=(left<=86400000?'⚠ Baldiger Ablauf: ':'')+'noch '+(days?days+' T. ':'')+hours+' Std. '+minutes%60+' Min. · voraussichtlich bis '+date;
+                }
+            }
+            html+='<div style="margin-top:3px;color:'+(first.at!==null && !group.uncertain && first.at+14*86400000-now<=86400000?'#ff8585':'#ffdc85')+';">'
+                +esc(group.name)+(group.key.startsWith('unknown:')?'':' ('+esc(group.key)+')')
+                +' · '+group.pending.length+' offen gemeldet · '+esc(text)+'</div>';
+        }
+        return html+'<div style="margin-top:3px;"><a href="https://horiversum.org/game/main/main.php?cmd=message" style="color:#9dcbff;">Nachrichten im Spiel öffnen</a>'
+            +' · Zum Abspielen die ursprüngliche Meldung öffnen.</div>';
+    }
+
+    function aktualisiereHasaVideoErinnerung() {
+        const node=document.getElementById('haa-video-erinnerung');if(!node)return;
+        const html=baueHasaVideoErinnerungHtml();
+        node.hidden=!html;
+        if(node.dataset.inhalt!==html){node.dataset.inhalt=html;node.innerHTML=html;}
     }
 
     function hasaProductionKey(owner,position) { return HASA_RUNDE+':'+owner+':'+position.galaxy+':'+position.system+':'+position.orbit; }
@@ -1878,9 +2024,10 @@
     }
 
     function verbindeGalascannerButtons() {
-        const asfi=document.getElementById('haa-asfi-liste'),guild=document.getElementById('haa-gildensitzungen');
-        if(asfi)asfi.onclick=function(){window.open(HASA_EVENT_LIST+'?view=asfi&round='+HASA_RUNDE,'_blank','noopener');};
-        if(guild)guild.onclick=function(){window.open(HASA_EVENT_LIST+'?view=guild&round='+HASA_RUNDE,'_blank','noopener');};
+        [['haa-events-scans','hub'],['haa-ressourcen','production'],['haa-kampfbericht','combat']].forEach(function(eintrag){
+            const button=document.getElementById(eintrag[0]);
+            if(button)button.onclick=function(){window.open(HASA_EVENT_LIST+'?view='+eintrag[1]+'&round='+HASA_RUNDE,'_blank','noopener');};
+        });
         const datenbank = document.getElementById('haa-galascan-datenbank');
         if (datenbank) {
             datenbank.onclick = function () {
@@ -1984,13 +2131,16 @@
                 : '')
             + '<button id="haa-galascan-datenbank" type="button" '
             + 'style="flex:0 0 auto;font-size:11px;font-weight:bold;cursor:pointer;">Galaxiedatenbank</button>'
-            + '<button id="haa-asfi-liste" type="button" style="flex:0 0 auto;font-size:11px;cursor:pointer;">ASFI-Liste</button>'
-            + '<button id="haa-gildensitzungen" type="button" style="flex:0 0 auto;font-size:11px;cursor:pointer;">Gildensitzungen</button>'
+            + '<button id="haa-events-scans" type="button" style="flex:0 0 auto;font-size:11px;cursor:pointer;">Events/Scans</button>'
+            + '<button id="haa-ressourcen" type="button" style="flex:0 0 auto;font-size:11px;cursor:pointer;">Ressourcen</button>'
+            + '<button id="haa-kampfbericht" type="button" style="flex:0 0 auto;font-size:11px;cursor:pointer;">Kampfbericht</button>'
             + (HAA_SERVER_AUTH.authenticated && HAA_SERVER_AUTH.isUserAdmin
                 ? '<button id="haa-galascan-benutzerverwaltung" type="button" '
                     + 'style="flex:0 0 auto;font-size:11px;font-weight:bold;cursor:pointer;">Zur Benutzerverwaltung</button>'
                 : '')
             + '</div>';
+        const videoErinnerung=baueHasaVideoErinnerungHtml();
+        html+='<div id="haa-video-erinnerung" role="status"'+(videoErinnerung?'':' hidden')+' style="font-size:12px;white-space:normal;overflow-wrap:anywhere;margin:4px 0 8px;padding:6px;border:1px solid #94752d;border-radius:4px;color:#ffdc85;">'+videoErinnerung+'</div>';
         if (HAA_ANMELDEHINWEIS) html += '<div id="haa-anmeldehinweis" role="status" style="font-size:11px;white-space:normal;margin:3px 0 6px;">' + esc(HAA_ANMELDEHINWEIS) + '</div>';
 
         return html;
@@ -6982,6 +7132,7 @@ return box;
     window.addEventListener('load', starteSicher);
     setTimeout(starteSicher, 800);
 })();
+
 
 
 

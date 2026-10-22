@@ -1,6 +1,159 @@
 <?php
 declare(strict_types=1);
 
+// Laufzeit ausschließlich aus eigenen datierten Meldungen, nicht aus Fremdfreigaben.
+function hasaEventGameInstant(?string $raw): ?DateTimeImmutable
+{
+    if($raw===null)return null;
+    $zone=new DateTimeZone('Europe/Berlin');
+    $date=DateTimeImmutable::createFromFormat('!d.m.Y H:i:s',$raw,$zone);
+    if(!$date || $date->format('d.m.Y H:i:s')!==$raw || (int)$date->format('Y')<2020 || (int)$date->format('Y')>2100)return null;
+    // Die doppelte Stunde beim Herbstwechsel ist ohne Offset nicht beweisbar.
+    if($date->setTimestamp($date->getTimestamp()+3600)->format('d.m.Y H:i:s')===$raw || $date->setTimestamp($date->getTimestamp()-3600)->format('d.m.Y H:i:s')===$raw)return null;
+    return $date;
+}
+
+function hasaActiveEvents(PDO $pdo, array $user, int $round, ?DateTimeImmutable $now=null): array
+{
+    $now=$now??new DateTimeImmutable('now',new DateTimeZone('UTC'));
+    $q=$pdo->prepare('SELECT id,subject,details_text,reported_game_time,galaxy_number,system_number,orbit_position,planet_name FROM hasa_event_reports WHERE owner_user_id=? AND round_number=? AND system_event=1 ORDER BY reported_order ASC,id ASC');
+    $q->execute([(int)$user['id'],$round]);$planets=[];
+    while($r=$q->fetch()){
+        $at=hasaEventGameInstant($r['reported_game_time']);
+        if(!$at || $at>$now || $r['galaxy_number']===null || $r['system_number']===null || $r['orbit_position']===null)continue;
+        $position=[(int)$r['galaxy_number'],(int)$r['system_number'],(int)$r['orbit_position']];$key=implode(':',$position);
+        if(!isset($planets[$key]))$planets[$key]=['position'=>$position,'name'=>$r['planet_name']?:'Planet unbekannt','effects'=>[]];
+        if($r['planet_name'])$planets[$key]['name']=$r['planet_name'];
+        $subject=$r['subject'];$text=preg_replace('/\s+/u',' ',$r['details_text']??'');
+        $resource=null;$direction='positive';$end=false;$label='';$until=null;
+        if($subject==='Motivationsvideo abgespielt'){
+            $resource='all';$direction='video';$label='Motivationsvideo läuft';$until=$at->setTimestamp($at->getTimestamp()+3600);
+        }elseif(isset(['Reiche Metallvorkommen entdeckt'=>1,'Reiche Mineralvorkommen entdeckt'=>1,'Unterirdischer Treibstoffsee entdeckt'=>1][$subject])){
+            $resource=str_contains($subject,'Metall')?'metal':(str_contains($subject,'Mineral')?'mineral':'fuel');$label='Produktionssteigerung';
+        }elseif(preg_match('/(?:Metallvorkommen|Mineralvorkommen|Treibstoffsee).*(?:erschöpft|versiegt|beendet|vorbei|normalisiert)/iu',$subject)){
+            $resource=preg_match('/Metall/iu',$subject)?'metal':(preg_match('/Mineral/iu',$subject)?'mineral':'fuel');$end=true;
+        }elseif($subject==='Wassereinbruch in Metallmine' && str_contains($text,'Wassereinbruch in ihrer Metallmine') && str_contains($text,'Die Minenproduktion wird für unbestimmte Zeit herabgesetzt, um das Wasser abzupumpen.')){
+            $resource='metal';$direction='water';$label='Wassereinbruch: Metallproduktion gesenkt';
+        }elseif($subject==='Wassereinbruch repariert' && str_contains($text,'Die normale Arbeit in der Mine kann fortgesetzt werden.') && str_contains($text,'Der Wassereinbruch in der Metallmine') && !str_contains($text,'Der Wassereinbruch in der Mineralmine')){
+            $resource='metal';$direction='water';$end=true;
+        }else{
+            $effect=$subject.' '.$text;
+            $decrease=preg_match('/(?:Eisenerz|Metall|Mineral|Treibstoff)(?:produktion|förderung)\s+(?:ist\s+|wird\s+|wurde\s+)?(?:um\s+\d+(?:[,.]\d+)?\s*%\s+)?(?:verringert|gesenkt|reduziert)/iu',$effect,$down);
+            $recovered=preg_match('/(?:Eisenerz|Metall|Mineral|Treibstoff)(?:produktion|förderung)\s+(?:ist\s+|wird\s+)?(?:wieder\s+)?normal(?:isiert)?/iu',$effect,$up);
+            if($decrease && $recovered)continue; // Mehrdeutige Texte nicht als sicheren Zustand ausgeben.
+            if($decrease || $recovered){$match=$decrease?$down[0]:$up[0];$resource=preg_match('/Mineral/iu',$match)?'mineral':(preg_match('/Treibstoff/iu',$match)?'fuel':'metal');$direction='negative';$end=(bool)$recovered;$label='Produktionssenkung';}
+        }
+        if($resource===null)continue;
+        $effectKey=$resource.':'.$direction;
+        if($end)unset($planets[$key]['effects'][$effectKey]);
+        else $planets[$key]['effects'][$effectKey]=['subject'=>$subject,'label'=>$label,'resource'=>$resource,'since'=>$r['reported_game_time'],'until'=>$until,'at'=>$at];
+    }
+    foreach($planets as$key=>&$planet){
+        foreach($planet['effects'] as$effectKey=>$effect)if($effect['until']!==null && $effect['until']<=$now)unset($planet['effects'][$effectKey]);
+        if(!$planet['effects'])unset($planets[$key]);
+    }unset($planet);
+    $planets=array_values($planets);usort($planets,static fn($a,$b)=>$a['position']<=>$b['position']);return $planets;
+}
+
+function hasaActiveEventsHtml(array $planets, DateTimeImmutable $now): string
+{
+    $stamp=$now->setTimezone(new DateTimeZone('Europe/Berlin'))->format('d.m.Y H:i:s');
+    $html='<h1>Laufende Events nach Planet</h1><p>Private Auswertung · Stand: '.hasaAuthEscape($stamp).' (Europe/Berlin).</p>'
+        .'<p>Aus deinen gespeicherten Meldungen zum Zeitpunkt dieses Aufrufs rekonstruiert. Ausgewertet werden bisher Produktionswirkungen und gestartete Motivationsvideos. Weitere Ereignistypen folgen.</p>';
+    if(!$planets)$html.='<p>Keine laufende Wirkung aus den gespeicherten Meldungen nachweisbar.</p>';
+    $resources=['metal'=>'Eisenerz','mineral'=>'Minerale','fuel'=>'Treibstoff','all'=>'Alle Ressourcen'];
+    foreach($planets as$planet){
+        $html.='<section><h2>'.hasaAuthEscape($planet['name'].' ('.implode(':',$planet['position']).')').'</h2><ul>';
+        foreach($planet['effects'] as$effect){
+            $end=$effect['until']!==null?'Ende: '.$effect['until']->setTimezone(new DateTimeZone('Europe/Berlin'))->format('d.m.Y H:i:s'):'Ende nicht gemeldet';
+            $html.='<li><strong>'.hasaAuthEscape($effect['label']).'</strong> · '.hasaAuthEscape($resources[$effect['resource']]).'<br>'
+                .hasaAuthEscape($effect['subject']).'<br>Beginn: '.hasaAuthEscape($effect['since']).' · '.hasaAuthEscape($end).'</li>';
+        }
+        $html.='</ul></section>';
+    }
+    return $html.'<p class="muted">Fehlende Endmeldungen können den gespeicherten Stand veralten lassen. Unbekannte Zeit/Position oder unklare Wirkung wird nicht als sicher laufend ausgegeben. Verfügbarkeit eines Videos ist noch keine Produktionswirkung. Diese Analyse wird keinem Mitspieler freigegeben.</p>';
+}
+
+// Eigene bestätigte Systemmeldungen; Zähler unabhängig vom 30-Tage-Ausschnitt.
+function hasaJournalWindow(?DateTimeImmutable $now = null): array
+{
+    $now = ($now ?? new DateTimeImmutable('now', new DateTimeZone('UTC')))->setTimezone(new DateTimeZone('Europe/Berlin'));
+    return [$now->modify('-30 days')->format('YmdHis'), $now->format('YmdHis')];
+}
+
+function hasaJournalSummary(PDO $pdo, array $user, int $round, array $window): array
+{
+    $q=$pdo->prepare('SELECT subject COLLATE utf8mb4_bin AS subject,COUNT(*) AS total,
+        SUM(CASE WHEN reported_order>=? AND reported_order<=? THEN 1 ELSE 0 END) AS recent,
+        SUM(CASE WHEN reported_order IS NULL THEN 1 ELSE 0 END) AS undated
+        FROM hasa_event_reports WHERE owner_user_id=? AND round_number=? AND system_event=1
+        GROUP BY subject COLLATE utf8mb4_bin ORDER BY subject COLLATE utf8mb4_bin');
+    $q->execute([$window[0],$window[1],(int)$user['id'],$round]);
+    $items=[];
+    foreach($q->fetchAll() as $r)$items[$r['subject']]=$r;
+    // Vorbereitete Video-Listen bleiben auch vor der ersten gespeicherten Meldung erreichbar.
+    foreach(['Motivationsvideo verfügbar','Motivationsvideo abgespielt','Motivationsvideo verschlampt','Treffen des Gildenvorstandes'] as $subject){
+        if(!isset($items[$subject]))$items[$subject]=['subject'=>$subject,'total'=>0,'recent'=>0,'undated'=>0];
+    }
+    ksort($items,SORT_STRING);
+    return $items;
+}
+
+function hasaJournalRows(PDO $pdo, array $user, int $round, string $subject, array $window, int $offset): array
+{
+    if($offset<0 || $offset>1000000)throw new InvalidArgumentException('invalid_offset');
+    $q=$pdo->prepare('SELECT subject,reported_game_time,planet_name,galaxy_number,system_number,orbit_position,details_text
+        FROM hasa_event_reports WHERE owner_user_id=? AND round_number=? AND system_event=1
+        AND subject COLLATE utf8mb4_bin=? AND reported_order>=? AND reported_order<=?
+        ORDER BY reported_order DESC,id DESC LIMIT 26 OFFSET '.(int)$offset);
+    $q->execute([(int)$user['id'],$round,$subject,$window[0],$window[1]]);
+    return $q->fetchAll();
+}
+
+function hasaJournalUrl(int $round, string $subject, int $offset=0): string
+{
+    return 'events.php?'.http_build_query(['view'=>'event','round'=>$round,'subject'=>$subject,'offset'=>$offset],'','&',PHP_QUERY_RFC3986);
+}
+
+function hasaJournalHubHtml(array $summary, int $round): string
+{
+    $total=array_sum(array_column($summary,'total'));
+    $html='<h1>Events/Scans <small>· Gesamt: '.number_format($total,0,',','.').'</small></h1>'
+        .'<p>Deine gespeicherten Systemmeldungen. Jeder Ereignistyp zeigt die letzten 30 Tage mit Datum und seinen Gesamtzähler seit Beginn deiner Aufzeichnungen in dieser Spielrunde.</p>'
+        .'<p><a href="events.php?view=active&amp;round='.$round.'">Laufende Events nach Planet</a></p>'
+        .'<h2>Events</h2><div class="hasa-event-buttons" style="display:flex;flex-wrap:wrap;gap:.65rem">';
+    foreach($summary as $r){
+        $label=$r['subject']==='Treffen des Gildenvorstandes'?'Gildensitzungen':$r['subject'];
+        $html.='<a class="hasa-event-button" style="display:block;border:1px solid #64748b;border-radius:.4rem;padding:.65rem;text-decoration:none;overflow-wrap:anywhere" href="'.hasaAuthEscape(hasaJournalUrl($round,$r['subject'])).'">'
+            .hasaAuthEscape($label).' <strong>· '.number_format((int)$r['total'],0,',','.').'</strong><br><small>Letzte 30 Tage: '.(int)$r['recent'].'</small></a>';
+    }
+    return $html.'</div><h2>Scans</h2><p><a href="events.php?view=asfi&amp;round='.$round.'">Aktuelle ASFI-Liste</a> · '
+        .'<a href="galaxy.php?round='.$round.'">Gespeicherte Systeme und Sondenberichte</a></p>'
+        .'<p class="muted">Die ASFI-Liste zeigt den aktuellen sichtbaren Bestand. Ereigniszähler zählen gespeicherte Meldungen, keine aktuellen Felder. Verfügbarkeit eines Videos bedeutet nicht, dass es gestartet wurde.</p>';
+}
+
+function hasaJournalEventHtml(string $subject, array $summary, array $rows, int $round, int $offset): string
+{
+    $s=$summary[$subject]??['total'=>0,'recent'=>0,'undated'=>0];
+    $more=count($rows)>25;$rows=array_slice($rows,0,25);
+    $html='<h1>'.hasaAuthEscape($subject).' <small>· Gesamt: '.number_format((int)$s['total'],0,',','.').'</small></h1>'
+        .'<p>Letzte 30 Tage: <strong>'.(int)$s['recent'].'</strong>. Gesamtzähler: seit Beginn deiner gespeicherten Aufzeichnungen in dieser Spielrunde. Datum und Uhrzeit: Spielzeit (Europe/Berlin).</p>';
+    if((int)$s['undated'])$html.='<p>'.(int)$s['undated'].' gespeicherte Meldung(en) ohne Ereignisdatum sind im Gesamtzähler enthalten, aber keinem 30-Tage-Zeitraum zugeordnet.</p>';
+    if(!$rows)$html.='<p>Keine datierten Meldungen dieses Ereignisses in den letzten 30 Tagen gespeichert.</p>';
+    foreach($rows as $r){
+        $position=$r['galaxy_number']!==null?$r['galaxy_number'].':'.$r['system_number'].':'.$r['orbit_position']:'Position unbekannt';
+        $html.='<article style="border-top:1px solid #64748b;padding:.8rem 0"><h2 style="font-size:1.1rem">'.hasaAuthEscape($r['reported_game_time']).'</h2>'
+            .'<p>'.hasaAuthEscape(($r['planet_name']?:'Planet unbekannt').' · '.$position).'</p>';
+        $html.=$r['details_text']!==null && trim($r['details_text'])!==''
+            ?'<div style="white-space:pre-wrap;overflow-wrap:anywhere">'.hasaAuthEscape($r['details_text']).'</div>'
+            :'<p class="muted">Nur Übersichtsdaten gespeichert; vollständiger Berichtstext noch nicht erfasst.</p>';
+        $html.='</article>';
+    }
+    if($offset)$html.='<p><a href="'.hasaAuthEscape(hasaJournalUrl($round,$subject,max(0,$offset-25))).'">Zurück</a></p>';
+    if($more)$html.='<p><a href="'.hasaAuthEscape(hasaJournalUrl($round,$subject,$offset+25)).'">Weitere Meldungen</a></p>';
+    return $html;
+}
+
 function hasaEventSchemaSql(): array
 {
     return [
@@ -178,3 +331,4 @@ function hasaStoreProduction(PDO $pdo, array $user, array $input): array
         return ['sample_id'=>$sample,'sample_db_id'=>$id,'owner_user_id'=>(int)$user['id'],'round'=>$round,'durable'=>true];
     }catch(Throwable$e){if($pdo->inTransaction())$pdo->rollBack();throw$e;}
 }
+

@@ -121,13 +121,13 @@ eine neue Runde wird durch eine eigene Rundenkennung getrennt.
 
 - stabile Veröffentlichung: HASA 1.1 Final;
 - aktive Entwicklungsreihe: HASA 1.2;
-- aktueller Teststand: HASA 1.2.0 Alpha 38;
+- aktueller Teststand: HASA 1.2.0 Alpha 39;
 - fester Aktualisierungspfad:
   `2 src/current/HASA-AKTUELL.user.js.txt`;
-- archivierte Alpha-37-Datei:
-  `2 src/current/hasa_1.2.0-alpha.38_hasa-li.user.js.txt`.
+- archivierte Alpha-39-Datei:
+  `2 src/current/hasa_1.2.0-alpha.39_ereigniszentrale.user.js.txt`.
 
-Aktueller Stand: Alpha37 ergänzt die bestätigte Metallminen-Wassereinbruch-/Reparaturerkennung einschließlich gespeicherter Berichte und Kolonisationsschiff-Tooltips. sharing.2 vereinfacht separat die serverseitige Freigabe; produktive Einrichtung durch Kurt bleibt erforderlich. Alpha36 sichert Mausbedienung gegen verlorene Freigabe, Fenster-/Tabwechsel und Fensterneuaufbau ab. Charons zusätzliche Anzeige außerhalb des Spiels und Anmeldeproblem sind nicht als gelöst bestätigt. Alpha35 korrigiert Anmeldereiter und Statusprüfung, benennt die Web-Cookiepartition ausdrücklich und liefert auth.4 mit fester Tagesgrenze. Konkreter Charon-Praxistest steht aus. Die erweiterte Benutzerverwaltung bleibt offen. Alpha34 verhindert Umbrüche innerhalb der Ressourcenrate. Enthalten: Alpha33 erkennt bestätigte Motivationsvideo-Startberichte und markiert Ressourcen für eine Stunde ab Nachrichtenzeit kräftig grün; danach übrige Ereignisfarben. Alpha32-Korrekturen für Forschungsstand, Menü, Scrollposition und Zwischenzielnavigation bleiben erhalten. Web12/Servergrundlage unverändert. Einzelheiten siehe Übergabe vom 18.10.2026.
+Aktueller Stand: Alpha39 ist als Testfassung auf main freigegeben: Ereigniszentrale, private laufende Wirkungen, Video-Erinnerung und Einzel-Löschschutz. Anleitung/Hilfe sind aktualisiert. Serverupload durch Kurt steht für den Praxistest noch aus; siehe Freigabe am Dokumentende. Alpha38 führte die HASA-Wege nach hasa.li. Alpha37 ergänzt die bestätigte Metallminen-Wassereinbruch-/Reparaturerkennung einschließlich gespeicherter Berichte und Kolonisationsschiff-Tooltips. sharing.2 vereinfacht separat die serverseitige Freigabe; produktive Einrichtung durch Kurt bleibt erforderlich. Alpha36 sichert Mausbedienung gegen verlorene Freigabe, Fenster-/Tabwechsel und Fensterneuaufbau ab. Charons zusätzliche Anzeige außerhalb des Spiels und Anmeldeproblem sind nicht als gelöst bestätigt. Alpha35 korrigiert Anmeldereiter und Statusprüfung, benennt die Web-Cookiepartition ausdrücklich und liefert auth.4 mit fester Tagesgrenze. Konkreter Charon-Praxistest steht aus. Die erweiterte Benutzerverwaltung bleibt offen. Alpha34 verhindert Umbrüche innerhalb der Ressourcenrate. Enthalten: Alpha33 erkennt bestätigte Motivationsvideo-Startberichte und markiert Ressourcen für eine Stunde ab Nachrichtenzeit kräftig grün; danach übrige Ereignisfarben. Alpha32-Korrekturen für Forschungsstand, Menü, Scrollposition und Zwischenzielnavigation bleiben erhalten. Web12/Servergrundlage unverändert. Einzelheiten siehe Übergabe vom 18.10.2026.
 
 Historischer Zwischenstand Alpha12:
 
@@ -3085,3 +3085,55 @@ Erinnerung (Punkt 1) und belegbar rekonstruierbare laufende Ereignisse nach Plan
 Die ausdrücklich auf 1.3 verschobene Lager-voll-Prognose (Punkt 2) bleibt draußen.
 Vorbereitung bleibt im Featurezweig, main-Download Alpha38 unverändert.
 Keine produktiven Uploads, Spielaktionen oder Nachrichten durch CE.
+
+
+## 22.10.2026 – CE HASA an Kurt und Website-Chatty: Alpha39 freigeben, Hilfe und Website abstimmen
+
+**Status:** Kurts ausdrücklicher Auftrag zur Veröffentlichung umgesetzt: Alpha39
+als aktueller main-Teststand bereitgestellt. Keine offizielle 1.2-Finalfreigabe.
+Dieser Commit enthält den nachweislich bestandenen Programmstand
+254dcd705a17c357b2fac796c162ad8a623d025c, CI39846312217 success.
+Alle neun übernommenen Programm-/Test-/Workflow-Blobs sind identisch zum geprüften
+Commit. Neu hinzu kommt nur abschließende Dokumentation. Commitkennung ergibt
+sich aus der Git-Historie dieses Eintrags.
+
+**Enthalten:** Events/Scans mit datierten 30-Tage-Journalen und Gesamtzähler,
+Ressourcen, vorbereiteter Kampfbereich, eigene laufende Produktionswirkungen
+sortiert nach Planet, Video-Erinnerung (lokal erfasste Angebote, voraussichtliche
+14 Tage nach Kurts Angabe), Schutz der einzelnen Video-Löschaktion durch ⛔.
+Sammellöschung/Checkboxen/Spam/Start bleiben gemäß Kurts Korrektur unverändert.
+Alle persönlichen Analysen bleiben privat. Lagerfüll-Prognose bleibt 1.3.
+
+**Ausführung durch Kurt:** zuerst HASA-Serverupdate-hasa-li.bat, danach
+Tampermonkey-Update auf Alpha39 und Horizon neu laden. Keine SQL-Migration.
+Keine produktiven Uploads durch CE HASA erfolgt. Alter Server bleibt gesperrt.
+
+**Benutzerunterlagen:** 1 docs/hasa_1.2_benutzeranleitung.md neu gegliedert und
+aktualisiert; 1 docs/hasa_hilfe.md als aufgabenbezogene Hilfe; Releasehinweise
+1 docs/hasa_1.2.0-alpha.39_ereigniszentrale.md. Website-Chatty darf diese
+fachlichen Inhalte für öffentliche Hilfeseiten übernehmen und im eigenen
+Website-Layout darstellen. Private Spielauswertungen gehören nicht dorthin.
+
+### Übergabe zur Abstimmung am 23.10.2026
+
+Kurt testet Alpha39 und wünscht parallel die Abstimmung zur Arbeitsteilung an hasa.li.
+
+Vorgeschlagene Zuständigkeit:
+- CE HASA: Userscript, /api/-Werkzeuge, Datenbank-/Rechteverhalten und fachlicher
+  Inhalt der Bedienungsanleitung/Hilfe; neue Produktwünsche im HASA-Brett festhalten.
+- Website-Chatty: öffentliche Website, Layout, Navigation und Einbindung von
+  Anleitung/Hilfe sowie ein verständlicher Bereich für eigene Nutzervorschläge.
+- Kurt: Veröffentlichung auf dem produktiven Hosting und Produktentscheidungen.
+
+**Bitte an Website-Chatty:** hier mit Repository/Dateipfaden der Website,
+gewünschten Navigationspunkten und übernommenem Bereich antworten.
+Mögliche Routen /anleitung/, /hilfe/ und /vorschlaege/ sind Vorschläge,
+keine als live bestätigten Seiten. Für ein Vorschlagsformular erst Ablage,
+Bearbeitung und Sichtbarkeit abstimmen; keine automatischen öffentlichen
+Spielerdaten, keine ungefragten Mailversendungen. Künftiger gewünschter
+Mailabsender bleibt kp.vogelsaenger@hasa.li, Einrichtung nicht als erledigt darstellen.
+
+Die Abstimmung erfolgt über dieses gemeinsame Brett. Ein direkter Zugriff auf
+den anderen Chat ist nicht vorhanden; eine bloße Übergabe ist noch keine
+bestätigte Vereinbarung. Bestehende öffentliche Root-Dateien werden von CE HASA
+nicht ungefragt überschrieben.
