@@ -150,6 +150,8 @@ $svg=hasaProductionChart($days,'metal','Eisenerz','#67e8f9',[],$clock);
 check(str_contains($svg,'<svg') && str_contains($svg,'1.250') && str_contains($svg,'2.400'),'graph includes exact mean and extrema in tooltip');
 $put('breakthrough-history','Technologischer Durchbruch','22.10.2026 13:15:00','Forschung: Flottentechnik Stufe 1');
 check(str_contains(hasaPersonalHistoryHtml($pdo,$one,8,'breakthroughs',$clock),'Flottentechnik'),'own breakthrough appears in dedicated list');
+$negativeChart=hasaProductionChart(['2026-10-22'=>['count'=>1,'fuel'=>['mean'=>-5,'min'=>-5,'max'=>-5]]],'fuel','Treibstoff','#fbbf24',[],$clock);
+check(str_contains($negativeChart,'cy="190"') && str_contains($negativeChart,'-5'),'negative net production stays inside graph scale');
 foreach([$two,$rootUser] as $viewer){
  $private=hasaPersonalHistoryHtml($pdo,$viewer,8,'breakthroughs',$clock);
  check(!str_contains($private,'Flottentechnik'),'private history has no implicit foreign/admin access');

@@ -97,14 +97,14 @@ function hasaProductionChart(array $days, string $key, string $label, string $co
 {
     $first=$now->setTimezone(new DateTimeZone('Europe/Berlin'))->setTime(0,0)->modify('-29 days');$dates=[];
     for($i=0;$i<30;$i++)$dates[]=$first->modify('+'.$i.' days')->format('Y-m-d');
-    $max=1.;foreach($days as $day=>$r)if(in_array($day,$dates,true))$max=max($max,$r[$key]['max']);
+    $min=0.;$max=0.;foreach($days as $day=>$r)if(in_array($day,$dates,true)){$max=max($max,$r[$key]['max']);$min=min($min,$r[$key]['min']);}if($max===$min)$max=$min+1.;$range=$max-$min;
     $html='<figure style="margin:1.5rem 0"><figcaption><strong>'.hasaAuthEscape($label).'</strong> · Produktion pro Stunde</figcaption><svg role="img" aria-label="'.hasaAuthEscape($label).' Tagesdurchschnitt, kleinster und größter Messwert" viewBox="0 0 760 235" style="display:block;width:100%;background:#172033;border-radius:8px"><title>'.hasaAuthEscape($label).' · letzte 30 Tage</title>';
-    for($i=0;$i<=4;$i++){$y=190-$i*40;$v=$max*$i/4;$html.='<path d="M68 '.$y.'H740" stroke="#35465f"/><text x="62" y="'.($y+4).'" text-anchor="end" fill="#cbd5e1" font-size="11">'.number_format($v,0,',','.').'</text>';}
+    for($i=0;$i<=4;$i++){$y=190-$i*40;$v=$min+$range*$i/4;$html.='<path d="M68 '.$y.'H740" stroke="#35465f"/><text x="62" y="'.($y+4).'" text-anchor="end" fill="#cbd5e1" font-size="11">'.number_format($v,0,',','.').'</text>';}
     $path='';$connected=false;
     foreach($dates as $i=>$day){$x=68+$i*23.;
         foreach($markers[$day]??[] as $marker){$isVideo=$marker['subject']==='Motivationsvideo abgespielt';$html.='<path d="M'.$x.' 22V190" stroke="'.($isVideo?'#00ff55':'#eab308').'" opacity=".5" stroke-dasharray="4 4"><title>'.hasaAuthEscape($marker['subject'].' · '.$marker['reported_game_time']).'</title></path>';}
         if($i%5===0 || $i===29)$html.='<text x="'.$x.'" y="215" fill="#cbd5e1" text-anchor="middle" font-size="11">'.substr($day,8,2).'.'.substr($day,5,2).'.</text>';
-        if(!isset($days[$day])){$connected=false;continue;}$r=$days[$day][$key];$y=190-$r['mean']/$max*160;$minY=190-$r['min']/$max*160;$maxY=190-$r['max']/$max*160;
+        if(!isset($days[$day])){$connected=false;continue;}$r=$days[$day][$key];$y=190-($r['mean']-$min)/$range*160;$minY=190-($r['min']-$min)/$range*160;$maxY=190-($r['max']-$min)/$range*160;
         $path.=($connected?' L':' M').$x.' '.$y;$connected=true;
         $tip=$day.' · Durchschnitt '.number_format($r['mean'],1,',','.').'/h · min '.number_format($r['min'],1,',','.').'/h · max '.number_format($r['max'],1,',','.').'/h · '.$days[$day]['count'].' Messungen';
         $html.='<g><title>'.hasaAuthEscape($tip).'</title><path d="M'.$x.' '.$minY.'V'.$maxY.'" stroke="'.$color.'" stroke-width="3" opacity=".55"/><circle cx="'.$x.'" cy="'.$y.'" r="4" fill="'.$color.'"/></g>';
