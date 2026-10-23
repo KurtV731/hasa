@@ -1,10 +1,10 @@
 ﻿// ==UserScript==
 // @name         HASA – Horizon Ascension Assistant
 // @namespace    horiversum.hasa
-// @version      1.2.0-alpha.39a
+// @version      1.2.0-alpha.40
 // @charset      UTF-8
-// @updateURL    none
-// @downloadURL  none
+// @updateURL    https://raw.githubusercontent.com/KurtV731/hasa/main/2%20src/current/HASA-AKTUELL.user.js
+// @downloadURL  https://raw.githubusercontent.com/KurtV731/hasa/main/2%20src/current/HASA-AKTUELL.user.js
 // @description  Horizon-Assistent mit kompakter Galaxiescanner-Anzeige und aktiver lokaler IndexedDB
 // @match        https://horiversum.org/game/main/main.php*
 // @grant        GM_getValue
@@ -58,7 +58,7 @@
 ==========================================================
  HASA – Horizon Ascension Assistant
 
- Version : 1.2.0 Alpha 39a
+ Version : 1.2.0 Alpha 40
  Status  : Anmeldestatus, Tages-Sitzung und vorhandene Spielassistenten
  Build   : 2026-10-19
 
@@ -217,8 +217,8 @@
         'PHYSICS', 'PSYCHOLOGY', 'NUCLEARPHYSICS', 'SOLARENERGYTECH'
     ]);
 
-    const HASA_VERSION = '1.2.0 Alpha 39a';
-    const HASA_BUILD_LABEL = '1.2.0-alpha39a-private-vorabfassung-2026-10-23';
+    const HASA_VERSION = '1.2.0 Alpha 40';
+    const HASA_BUILD_LABEL = '1.2.0-alpha40-techtree-2026-10-23';
     const HASA_RUNDE = 8;
     const HASA_RUNDE_SCHLUESSEL = 'runde8';
     // Die MariaDB und sämtliche Schreibendpunkte trennen Runde 7 und 8 jetzt
@@ -4856,7 +4856,7 @@ return box;
         html += '<details class="haa-accordion" data-haa-bereich="' + esc(id) + '" ' + (offen ? 'open' : '') + ' ';
         html += 'style="margin-top:6px;border:1px solid #555;border-radius:4px;background:#191612;min-height:0;">';
         html += '<summary style="padding:7px 8px;cursor:pointer;color:#FFD27C;font-weight:bold;';
-        html += 'list-style-position:inside;user-select:none;">' + titel + '</summary>';
+        html += 'list-style-position:inside;user-select:none;">' + titel + (id === 'techtree' ? ' <button id="haa-techtree-extern" type="button" style="float:right;cursor:pointer;" title="TechTree in eigenem Fenster öffnen">TechTree ↗</button>' : '') + '</summary>';
         html += '<div class="haa-bereich-inhalt" data-haa-scroll-bereich="' + esc(id) + '" ';
         html += 'style="padding:0 8px 8px 8px;min-height:0;overflow-y:auto;overflow-x:auto;">' + inhaltHtml + '</div>';
         html += '</details>';
@@ -4966,7 +4966,23 @@ return box;
         setTimeout(update, 250);
     }
 
+    function oeffneExternenTechTree(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        const breite = Math.round(window.screen.availWidth * 0.65);
+        const hoehe = Math.round(window.screen.availHeight * 0.65);
+        const links = Math.round((window.screen.availLeft || 0) + (window.screen.availWidth - breite) / 2);
+        const oben = Math.round((window.screen.availTop || 0) + (window.screen.availHeight - hoehe) / 2);
+        const fenster = window.open('https://techtree.kommandobasis.eu/', 'HASA_TechTree',
+            'popup=yes,resizable=yes,scrollbars=yes,width=' + breite + ',height=' + hoehe + ',left=' + links + ',top=' + oben);
+        if (fenster) { fenster.opener = null; fenster.focus(); }
+        else { window.alert('Bitte Pop-ups für Horizon erlauben und anschließend noch einmal auf TechTree klicken.'); }
+    }
+
     function verbindeHasaUiButtons(neuAufbauen) {
+        const techTreeButton = document.getElementById('haa-techtree-extern');
+        if (techTreeButton) techTreeButton.onclick = oeffneExternenTechTree;
+
         const ausButton = document.getElementById('haa-hauptschalter-aus');
         if (ausButton) ausButton.onclick = deaktiviereHasaFuerSitzung;
 

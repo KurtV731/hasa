@@ -86,9 +86,5 @@ jobs:
           [void][System.Management.Automation.Language.Parser]::ParseFile((Join-Path $env:GITHUB_WORKSPACE 'server-update-39a.ps1'), [ref]$null, [ref]$parseErrors)
           if ($parseErrors.Count) { $parseErrors | ForEach-Object { Write-Error $_ }; exit 1 }
       - name: Build isolated 39a package
-        run: python3 '5 tools/build_hasa_39a.py'
-      - uses: actions/upload-artifact@v4
-        with:
-          name: HASA-39a-testpaket
-          path: delivery39a/
-          if-no-files-found: error
+        run: node '5 tools/test_hasa_techtree_window.cjs'
+

@@ -1,0 +1,26 @@
+name: HASA 40 release check
+on:
+  push:
+    paths:
+      - '2 src/**'
+      - '5 tools/test_hasa_techtree_window.cjs'
+      - '.github/workflows/hasa-40-release-check.yml'
+  workflow_dispatch:
+jobs:
+  release-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check '2 src/current/HASA-AKTUELL.user.js'
+      - run: node '5 tools/test_hasa_techtree_window.cjs'
+      - run: node --check '2 src/channels/stable/HASA.user.js'
+      - run: cd '2 src/releases/1.2.0' && sha256sum -c SHA256SUMS.txt
+      - name: Check website uploader syntax
+        shell: pwsh
+        run: |
+          $errors = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile((Join-Path $env:GITHUB_WORKSPACE '6 website/HASA-1.2-Hochladen.ps1'), [ref]$null, [ref]$errors)
+          if ($errors.Count) { $errors | ForEach-Object { Write-Error $_ }; exit 1 }
