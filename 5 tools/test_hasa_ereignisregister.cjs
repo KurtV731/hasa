@@ -319,7 +319,7 @@ const helpers = source.slice(source.indexOf('    function prdrNormalisiereText')
         assert.equal(await full.locator('#haa-box').locator('details.haa-accordion').count(),3);
         assert.equal(await full.locator('details[data-haa-bereich="ascension"]').count(),0);
         assert.equal(await full.evaluate(()=>__hasaTest.list().length),1);
-        assert.match(await full.locator('#haa-box').innerText(),/Alpha 39/);
+        assert.ok((await full.locator('#haa-box').innerText()).includes(source.match(/const HASA_VERSION = '([^']+)'/)[1]));
         const layout = await full.evaluate(() => {
             const bar = document.querySelector('#haa-werkzeuge');
             const first = document.querySelector('details.haa-accordion');
@@ -388,6 +388,7 @@ const helpers = source.slice(source.indexOf('    function prdrNormalisiereText')
     await browser.close();
     console.log(passed+' browser regression groups passed; catalog '+66+' titles covered.');
 })().catch(e => {console.error(e);process.exit(1);});
+
 
 
 
