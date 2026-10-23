@@ -18,7 +18,12 @@ for(const [name,endpoint] of Object.entries(expectedEndpoints)) {
 assert.match(source,/\/\/ @connect\s+hasa\.li/);
 assert.doesNotMatch(source,/serkal\.de/);
 assert.match(source,/\/\/ @match\s+https:\/\/horiversum\.org\/game\/main\/main\.php\*/);
-assert.match(source,/\/\/ @updateURL\s+https:\/\/raw\.githubusercontent\.com\/KurtV731\/hasa\/main\//);
+if (/^\/\/ @version\s+1\.2\.0-alpha\.39a\s*$/m.test(source)) {
+ assert.match(source,/^\/\/ @updateURL\s+none\s*$/m);
+ assert.match(source,/^\/\/ @downloadURL\s+none\s*$/m);
+} else {
+ assert.match(source,/\/\/ @updateURL\s+https:\/\/raw\.githubusercontent\.com\/KurtV731\/hasa\/main\//);
+}
 
 (async()=>{
  const browser=await chromium.launch(process.env.HASA_TEST_BROWSER?{headless:true,executablePath:process.env.HASA_TEST_BROWSER,args:['--no-sandbox','--single-process','--no-zygote','--disable-webgl','--disable-gpu','--disable-software-rasterizer','--use-gl=disabled']}:{headless:true});
@@ -70,3 +75,4 @@ assert.match(source,/\/\/ @updateURL\s+https:\/\/raw\.githubusercontent\.com\/Ku
  });
  assert.deepEqual(errors,[]);await browser.close();console.log(n+' authentication UI checks passed');
 })().catch(e=>{console.error(e);process.exit(1);});
+
