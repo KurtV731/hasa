@@ -1,10 +1,10 @@
 ﻿// ==UserScript==
 // @name         HASA – Horizon Ascension Assistant
 // @namespace    horiversum.hasa
-// @version      1.2.0-alpha.39
+// @version      1.2.0-alpha.39a
 // @charset      UTF-8
-// @updateURL    https://raw.githubusercontent.com/KurtV731/hasa/main/2%20src/current/HASA-AKTUELL.user.js
-// @downloadURL  https://raw.githubusercontent.com/KurtV731/hasa/main/2%20src/current/HASA-AKTUELL.user.js
+// @updateURL    none
+// @downloadURL  none
 // @description  Horizon-Assistent mit kompakter Galaxiescanner-Anzeige und aktiver lokaler IndexedDB
 // @match        https://horiversum.org/game/main/main.php*
 // @grant        GM_getValue
@@ -16,6 +16,9 @@
 // ==/UserScript==
 
 /*
+ Alpha39a (23.10.2026): Manuelle Vorabfassung zur Abnahme. Gebäudestufe 0,
+ sichtbare Video-Restzeit, vollständige Scrollbereiche. Server: private
+ Video-/Durchbruchlisten und Ressourcenverlauf. Keine automatische Aktualisierung.
 
  Alpha38 (22.10.2026): HASA-Dienste auf hasa.li/api, passende Cookiepartition;
  zehn Wiki-Besiedelungszeiten in den Kolonisationsschiff-Tooltips.
@@ -55,7 +58,7 @@
 ==========================================================
  HASA – Horizon Ascension Assistant
 
- Version : 1.2.0 Alpha 36
+ Version : 1.2.0 Alpha 39a
  Status  : Anmeldestatus, Tages-Sitzung und vorhandene Spielassistenten
  Build   : 2026-10-19
 
@@ -174,7 +177,7 @@
  - Bereitschaftsmodus für einen schnellen Horizon-Start
 
  Idee & Konzept:
-   Kurt
+   Styl
 
  Programmierung:
    ChatGPT
@@ -214,8 +217,8 @@
         'PHYSICS', 'PSYCHOLOGY', 'NUCLEARPHYSICS', 'SOLARENERGYTECH'
     ]);
 
-    const HASA_VERSION = '1.2.0 Alpha 39';
-    const HASA_BUILD_LABEL = '1.2.0-alpha39-ereigniszentrale-2026-10-22';
+    const HASA_VERSION = '1.2.0 Alpha 39a';
+    const HASA_BUILD_LABEL = '1.2.0-alpha39a-private-vorabfassung-2026-10-23';
     const HASA_RUNDE = 8;
     const HASA_RUNDE_SCHLUESSEL = 'runde8';
     // Die MariaDB und sämtliche Schreibendpunkte trennen Runde 7 und 8 jetzt
@@ -1224,8 +1227,17 @@
 
     function baueHasaVideoErinnerungHtml(now) {
         now=Number.isFinite(now)?now:Date.now();
-        const groups=hasaOffeneVideoMeldungen(now);if(!groups.length)return '';
-        let html='<strong>▶ Erinnerung: Motivationsvideo verfügbar</strong>';
+        const groups=hasaOffeneVideoMeldungen(now);
+        const owner=ereignisScannerBenutzer();
+        let html='';
+        for(const [key,state] of Object.entries(laden(STORAGE_PRODUCTION_TRACKER,{})||{})){
+            if(!owner || !key.startsWith(HASA_RUNDE+':'+owner+':') || !hasaMotivationAktiv(state))continue;
+            const minutes=Math.max(1,Math.ceil((state.motivation.endsAt-now)/60000));
+            const end=new Intl.DateTimeFormat('de-DE',{timeZone:'Europe/Berlin',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(state.motivation.endsAt));
+            html+='<div data-haa-video-live style="color:#00ff55;font-weight:bold;">▶ Motivationsvideo läuft · '+esc(key.split(':').slice(2).join(':'))+' · noch '+minutes+' Min. · bis '+esc(end)+' Uhr (Spielzeit)</div>';
+        }
+        if(!groups.length)return html;
+        html+='<strong>▶ Erinnerung: Motivationsvideo verfügbar</strong>';
         for(const group of groups){
             const first=group.pending[0],unknown=first.at===null || group.key.startsWith('unknown:');
             let text='';
@@ -1397,6 +1409,7 @@
                 +' · Prozentwert ist ein Messvergleich, keine bestätigte Ereignisstärke';
         }
         for(const node of HAA_RATE_MARKS)if(!node.isConnected)HAA_RATE_MARKS.delete(node);
+        aktualisiereHasaVideoErinnerung();
     }
 
     function installiereHasaLiveDaten() {
@@ -4854,7 +4867,8 @@ return box;
         Array.from(document.querySelectorAll('#haa-box details.haa-accordion')).forEach(function (details) {
             details.style.display = details.open ? 'flex' : 'block';
             details.style.flexDirection = details.open ? 'column' : '';
-            details.style.flex = details.open ? '1 1 auto' : '0 0 auto';
+            details.style.flex = '0 0 auto';
+            if(!details.open)details.style.height='';
             details.style.overflow = details.open ? 'hidden' : '';
             const inhalt = details.querySelector('.haa-bereich-inhalt');
             if (inhalt) inhalt.style.flex = details.open ? '1 1 auto' : '';
@@ -4871,19 +4885,30 @@ return box;
         const inhalt = details.querySelector('.haa-bereich-inhalt');
         if (!inhalt) return;
 
-        const boxRect = box.getBoundingClientRect();
-        const inhaltRect = inhalt.getBoundingClientRect();
-        const verfuegbar = Math.max(80, Math.floor(boxRect.bottom - inhaltRect.top - 10));
-        inhalt.style.height = verfuegbar + 'px';
-        inhalt.style.maxHeight = verfuegbar + 'px';
-        inhalt.style.overflowY = 'auto';
-        inhalt.style.boxSizing = 'border-box';
-
-        const rahmen = inhalt.closest('.haa-scroll-rahmen');
-        if (rahmen) {
-            rahmen.style.height = verfuegbar + 'px';
-            rahmen.style.maxHeight = verfuegbar + 'px';
+        // Nicht die ganze Resthöhe beanspruchen: geschlossene Bereiche darunter
+        // und der Inhaltswrapper von <details> müssen im Fenster bleiben.
+        const summary=details.querySelector('summary');
+        const summaryBottom=summary.getBoundingClientRect().bottom;
+        let reserve=12;
+        for(let next=details.nextElementSibling;next;next=next.nextElementSibling){
+            if(next.classList.contains('haa-resize-griff'))continue;
+            const style=getComputedStyle(next);
+            if(style.display!=='none')reserve+=next.getBoundingClientRect().height
+                +(parseFloat(style.marginTop)||0)+(parseFloat(style.marginBottom)||0);
         }
+        const available=Math.max(0,Math.floor(Math.min(box.getBoundingClientRect().bottom,window.innerHeight)-summaryBottom-reserve));
+        details.style.flex='0 0 auto';
+        details.style.height=(summaryBottom-details.getBoundingClientRect().top+available)+'px';
+        const rahmen=inhalt.closest('.haa-scroll-rahmen');
+        const target=rahmen||inhalt;
+        target.style.height=available+'px';
+        target.style.maxHeight=available+'px';
+        target.style.flex='0 0 auto';
+        inhalt.style.height=available+'px';
+        inhalt.style.maxHeight=available+'px';
+        inhalt.style.overflowY='auto';
+        inhalt.style.boxSizing='border-box';
+        inhalt.dispatchEvent(new Event('hasa-layout'));
     }
 
     function installierePlanScrollHinweise(inhalt) {
@@ -4935,6 +4960,7 @@ return box;
         buttons.left.onclick = function () { inhalt.scrollBy({ left: -Math.max(160, inhalt.clientWidth * 0.6), behavior: 'smooth' }); };
         buttons.right.onclick = function () { inhalt.scrollBy({ left: Math.max(160, inhalt.clientWidth * 0.6), behavior: 'smooth' }); };
         inhalt.addEventListener('scroll', update, { passive: true });
+        inhalt.addEventListener('hasa-layout', update);
         window.addEventListener('resize', update, { passive: true });
         setTimeout(update, 0);
         setTimeout(update, 250);
@@ -4988,7 +5014,7 @@ return box;
             const gespeichert = scrollStaende && Number(scrollStaende[bereich]);
             // Erst den endgültigen Scrollcontainer samt Pfeilrahmen und Höhe
             // herstellen. Das spätere Umhängen setzt sonst scrollTop wieder auf 0.
-            if (bereich === 'techtree') installierePlanScrollHinweise(inhalt);
+            installierePlanScrollHinweise(inhalt);
             aktualisiereInnenhoehe();
             if (Number.isFinite(gespeichert) && gespeichert > 0) {
                 inhalt.scrollTop = gespeichert;
@@ -7145,6 +7171,7 @@ return box;
     window.addEventListener('load', starteSicher);
     setTimeout(starteSicher, 800);
 })();
+
 
 
 

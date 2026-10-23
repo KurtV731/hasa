@@ -128,5 +128,38 @@ check(!str_contains($activeHtml,'<img') && str_contains($activeHtml,'&lt;img') &
 check(str_contains(hasaActiveEventsHtml([],$clock),'Keine laufende Wirkung'),'empty analysis does not claim complete absence of game effects');
 $fixture='<!doctype html><html lang="de"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>:root{color-scheme:dark;font:19px/1.5 system-ui;background:#111827;color:#f3f4f6}body{max-width:620px;margin:3rem auto;padding:1rem}h1{font-size:1.5rem}h1,h2,p{overflow-wrap:anywhere}a{color:#93c5fd}</style><body><section id="hub">'.$hub.'</section><section id="journal">'.$body.'</section><div id="active">'.$activeHtml.'</div></body></html>';
 file_put_contents($api.'/journal-fixture.html',$fixture);
+
+require_once $api.'/event-views.php';
+check(hasaBreakthroughResult('Forschung: Flottentechnik Stufe 1')===['Flottentechnik',1],'breakthrough reads explicit name and reached level');
+check(hasaBreakthroughResult('"Habitation" wurde auf Stufe 10')===['Habitation',10],'quoted research result recognized');
+check(hasaBreakthroughResult('Bonus: 1000 Metall')===[null,null],'resource amount is not a research level');
+check(hasaBreakthroughResult('Forschung: Physik Stufe 2; Forschung: Energietechnik Stufe 3')===[null,null],'ambiguous research report is not guessed');
+$videoEvent=static fn($id,$subject,$time)=>['id'=>$id,'message_id'=>'history-'.$id,'subject'=>$subject,'reported_game_time'=>$time,'reported_order'=>hasaEventTimeOrder($time),'planet_name'=>'Private planet','galaxy_number'=>1,'system_number'=>2,'orbit_position'=>3,'details_text'=>null];
+$vh=hasaVideoHistory([$videoEvent(1,'Motivationsvideo verfügbar','22.10.2026 12:00:00'),$videoEvent(2,'Motivationsvideo abgespielt','22.10.2026 13:30:00')],$clock);
+check(count($vh)===1 && $vh[0]['used']==='22.10.2026 13:30:00','single open video paired with actual use');
+$vh=hasaVideoHistory([$videoEvent(1,'Motivationsvideo verfügbar','22.10.2026 12:00:00'),$videoEvent(2,'Motivationsvideo verfügbar','22.10.2026 12:05:00'),$videoEvent(3,'Motivationsvideo abgespielt','22.10.2026 13:30:00')],$clock);
+check(count($vh)===3 && count(array_filter($vh,static fn($r)=>$r['uncertain']))===3,'multiple videos do not invent identity association');
+$vh=hasaVideoHistory([$videoEvent(1,'Motivationsvideo verfügbar','01.09.2026 12:00:00')],$clock);
+check($vh[0]['wasted']===null,'old availability alone never proves wasted video');
+$days=hasaProductionDays([
+ ['sampled_at'=>'2026-10-21 22:30:00','metal_per_hour'=>100,'mineral_per_hour'=>10,'fuel_per_hour'=>1],
+ ['sampled_at'=>'2026-10-22 00:30:00','metal_per_hour'=>2400,'mineral_per_hour'=>240,'fuel_per_hour'=>24]
+]);
+check(count($days)===1 && $days['2026-10-22']['metal']['mean']===1250.0 && $days['2026-10-22']['metal']['max']===2400.0,'daily graph uses Berlin days and preserves video peak');
+$svg=hasaProductionChart($days,'metal','Eisenerz','#67e8f9',[],$clock);
+check(str_contains($svg,'<svg') && str_contains($svg,'1.250') && str_contains($svg,'2.400'),'graph includes exact mean and extrema in tooltip');
+$put('breakthrough-history','Technologischer Durchbruch','22.10.2026 13:15:00','Forschung: Flottentechnik Stufe 1');
+check(str_contains(hasaPersonalHistoryHtml($pdo,$one,8,'breakthroughs',$clock),'Flottentechnik'),'own breakthrough appears in dedicated list');
+foreach([$two,$rootUser] as $viewer){
+ $private=hasaPersonalHistoryHtml($pdo,$viewer,8,'breakthroughs',$clock);
+ check(!str_contains($private,'Flottentechnik'),'private history has no implicit foreign/admin access');
+}
+$ownView=hasaResourceHistoryHtml($pdo,$one,8,new DateTimeImmutable('now',new DateTimeZone('UTC')));
+check(substr_count($ownView,'<svg')===3,'three resource charts rendered for own measured planet');
+$foreignView=hasaResourceHistoryHtml($pdo,$rootUser,8,new DateTimeImmutable('now',new DateTimeZone('UTC')));
+check(!str_contains($foreignView,'<svg'),'resource chart does not use admin visibility');
+ob_start();hasaAuthPage('Ein Titel','<h1>Ein Titel</h1>',false);$singleHeading=ob_get_clean();
+check(substr_count($singleHeading,'<h1>')===1,'event page has exactly one heading');
 echo $n.' MariaDB checks passed'.PHP_EOL;
+
 

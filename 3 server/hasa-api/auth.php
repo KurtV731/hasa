@@ -33,7 +33,7 @@ function hasaAuthEscape(string $value): string
 {
     return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
-function hasaAuthPage(string $title, string $body): void
+function hasaAuthPage(string $title, string $body, bool $showHeading = true): void
 {
     $nonce = base64_encode(random_bytes(18));
     header('Content-Type: text/html; charset=utf-8');
@@ -42,7 +42,7 @@ function hasaAuthPage(string $title, string $body): void
     header('Referrer-Policy: no-referrer');
     header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-$nonce'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'");
     echo '<!doctype html><html lang="de"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HASA – ' . hasaAuthEscape($title) . '</title>';
-    echo '<style>:root{color-scheme:dark;font:19px/1.5 system-ui;background:#111827;color:#f3f4f6}body{max-width:620px;margin:3rem auto;padding:1rem}h1{font-size:1.5rem}form{padding:1.2rem;background:#1f2937;border-radius:.6rem}label{display:block;margin:.6rem 0}input{display:block;box-sizing:border-box;width:100%;font:inherit;padding:.5rem;background:#172033;color:#fff;border:1px solid #94a3b8;border-radius:.3rem}button,a{font:inherit}button{margin-top:.8rem;padding:.5rem 1rem;background:#2563eb;color:#fff;border:0;border-radius:.3rem;cursor:pointer}a{color:#bfdbfe}.error{color:#fecaca}input:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid #facc15;outline-offset:2px}.muted{color:#cbd5e1}.password-field{display:flex;align-items:center;gap:.4rem}.password-field input{flex:1;min-width:0}.password-toggle{flex:0 0 2.6rem;margin:0;padding:.5rem;background:#334155;border:1px solid #94a3b8}.password-toggle svg{display:block;width:1.4rem;height:1.4rem;margin:auto}.eye-slash{display:none}.password-toggle[aria-pressed=true] .eye-slash{display:block}</style><h1>' . hasaAuthEscape($title) . '</h1>' . $body;
+    echo '<style>:root{color-scheme:dark;font:19px/1.5 system-ui;background:#111827;color:#f3f4f6}body{max-width:620px;margin:3rem auto;padding:1rem}h1{font-size:1.5rem}form{padding:1.2rem;background:#1f2937;border-radius:.6rem}label{display:block;margin:.6rem 0}input{display:block;box-sizing:border-box;width:100%;font:inherit;padding:.5rem;background:#172033;color:#fff;border:1px solid #94a3b8;border-radius:.3rem}button,a{font:inherit}button{margin-top:.8rem;padding:.5rem 1rem;background:#2563eb;color:#fff;border:0;border-radius:.3rem;cursor:pointer}a{color:#bfdbfe}.error{color:#fecaca}input:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid #facc15;outline-offset:2px}.muted{color:#cbd5e1}.password-field{display:flex;align-items:center;gap:.4rem}.password-field input{flex:1;min-width:0}.password-toggle{flex:0 0 2.6rem;margin:0;padding:.5rem;background:#334155;border:1px solid #94a3b8}.password-toggle svg{display:block;width:1.4rem;height:1.4rem;margin:auto}.eye-slash{display:none}.password-toggle[aria-pressed=true] .eye-slash{display:block}</style>' . ($showHeading ? '<h1>' . hasaAuthEscape($title) . '</h1>' : '') . $body;
     echo <<<HTML
 <script nonce="$nonce">
 (()=>{
@@ -283,6 +283,7 @@ set_exception_handler(static function (Throwable $error): never {
     $json = in_array($script, ['auth-status.php','galaxy-read.php','prospection-read.php','systems.php','prospection-reports.php'], true);
     hasaAuthError('Die Funktion ist gerade nicht verfügbar. Bitte später erneut versuchen.', 503, $json);
 });
+
 
 
 

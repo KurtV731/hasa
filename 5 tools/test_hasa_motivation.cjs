@@ -84,7 +84,15 @@ const moduleSource=source.slice(source.indexOf('    // Alpha28: Rohmeldungen'),s
    await page.evaluate(()=>{video.clock('2026-10-18T11:01:54.980Z');video.api.paint();setTimeout(()=>video.clock('2026-10-18T11:01:55Z'),10);});
    await page.waitForFunction(()=>document.querySelector('[data-haa-rate="metal"]').style.color==='rgb(170, 170, 170)');
   });
+  await test('visible countdown uses confirmed end and vanishes on expiry',async()=>{
+   await page.setContent(header+'<div id="haa-video-erinnerung"></div>');
+   await page.evaluate(e=>{video.clock('2026-10-18T10:15:00Z');video.store.delete(video.api.key);video.store.delete(video.api.register);video.api.event(e);video.api.paint();},event);
+   assert.match(await page.locator('#haa-video-erinnerung').innerText(),/noch 47 Min.*bis 13:01/);
+   await page.evaluate(()=>{video.clock('2026-10-18T11:01:55Z');video.api.paint();});
+   assert.equal(await page.locator('[data-haa-video-live]').count(),0);
+  });
   await page.evaluate(()=>{video.api.stop();video.api.stopScan();});
   console.log(passed+' motivation checks passed');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
+

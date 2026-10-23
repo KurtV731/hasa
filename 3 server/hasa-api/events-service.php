@@ -121,6 +121,7 @@ function hasaJournalHubHtml(array $summary, int $round): string
     $html='<h1>Events/Scans <small>· Gesamt: '.number_format($total,0,',','.').'</small></h1>'
         .'<p>Deine gespeicherten Systemmeldungen. Jeder Ereignistyp zeigt die letzten 30 Tage mit Datum und seinen Gesamtzähler seit Beginn deiner Aufzeichnungen in dieser Spielrunde.</p>'
         .'<p><a href="events.php?view=active&amp;round='.$round.'">Laufende Events nach Planet</a></p>'
+        .'<p><a href="events.php?view=videos&amp;round='.$round.'">Motivationsvideos: Eingang und Verwendung</a> · <a href="events.php?view=breakthroughs&amp;round='.$round.'">Technologische Durchbrüche</a></p>'
         .'<h2>Events</h2><div class="hasa-event-buttons" style="display:flex;flex-wrap:wrap;gap:.65rem">';
     foreach($summary as $r){
         $label=$r['subject']==='Treffen des Gildenvorstandes'?'Gildensitzungen':$r['subject'];
@@ -331,4 +332,5 @@ function hasaStoreProduction(PDO $pdo, array $user, array $input): array
         return ['sample_id'=>$sample,'sample_db_id'=>$id,'owner_user_id'=>(int)$user['id'],'round'=>$round,'durable'=>true];
     }catch(Throwable$e){if($pdo->inTransaction())$pdo->rollBack();throw$e;}
 }
+
 

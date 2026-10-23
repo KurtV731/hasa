@@ -50,6 +50,35 @@ const moduleSource = source.slice(source.indexOf('    function baueAccordionBere
   await page.evaluate(()=>scrolling.render());
   await page.waitForTimeout(300);
   assert.equal(await page.locator('[data-haa-scroll-bereich="techtree"]').evaluate(e=>e.scrollTop),0,'intentional scrolling to top remains saved');
+  // The final row and the bottom/right controls must remain inside the box,
+  // also when closed accordion summaries follow the long active section.
+  await page.evaluate(()=>{
+   document.getElementById('haa-box').style.cssText='height:650px;width:560px;display:flex;flex-direction:column;overflow:hidden';
+   scrolling.render();
+  });
+  await page.waitForTimeout(300);
+  for(const height of [650,400,850]){
+   await page.evaluate(height=>{document.getElementById('haa-box').style.height=height+'px';window.dispatchEvent(new Event('resize'));},height);
+   // Use the same layout callback as resizing the actual HASA window.
+   await page.evaluate(()=>document.querySelector('#haa-box details[open]').dispatchEvent(new Event('toggle')));
+   await page.waitForTimeout(100);
+   const dimensions=await page.evaluate(()=>{
+    const b=document.querySelector('#haa-box'),c=document.querySelector('[data-haa-scroll-bereich="techtree"]'),host=c.parentElement.querySelector('.haa-scroll-hinweise');
+    const down=host.querySelector('[data-r="down"]'),right=host.querySelector('[data-r="right"]');
+    c.scrollTop=0;c.scrollLeft=0;c.dispatchEvent(new Event('scroll'));
+    const end=down.getBoundingClientRect().bottom;
+    const result={end,boxBottom:b.getBoundingClientRect().bottom,down:down.style.display,right:right.style.display};
+    c.scrollTop=c.scrollHeight;c.scrollLeft=c.scrollWidth;
+    result.remaining=c.scrollHeight-c.clientHeight-c.scrollTop;
+    return result;
+   });
+   assert.equal(dimensions.down,'inline-block','down arrow visible with remaining rows');
+   assert.equal(dimensions.right,'inline-block','right arrow visible with wide content');
+   assert.ok(dimensions.end<=dimensions.boxBottom+1,'bottom arrow stays inside HASA');
+   assert.ok(Math.abs(dimensions.remaining)<2,'last row can be scrolled fully into view');
+  }
+  console.log('PASS final row and both scroll arrows reachable at three window heights');
   console.log('PASS saved scroll survives wrapper insertion and research navigation');
  } finally {await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
+
