@@ -3978,7 +3978,9 @@ return box;
         koepfe.forEach(function (kopf) {
             if (!kopf || kopf.closest('#haa-box')) return;
             const name = leseTechTreeNameAusKopf(kopf);
-            let level = ermittleTechTreeStufeAusKopf(kopf, typ === 'research');
+            // Eigene Stufen nur aus dem jeweiligen Kopf lesen. Gebäude auf Stufe 0
+            // haben oft keinen Stufenmarker; Kosten und Nachbargebäude sind kein Ersatz.
+            let level = ermittleTechTreeStufeAusKopf(kopf, typ === 'research' || typ === 'building');
             const body = findeKoerperZeileZumKopf(kopf);
             // Horizon beschriftet einen laufenden Bau bereits mit der Zielstufe,
             // obwohl bis zum Ablauf des Timers nur die vorherige Stufe vorhanden ist.
@@ -3994,6 +3996,17 @@ return box;
                         return /^forschen$/i.test(beschriftung.trim());
                     });
                 if (hatForschen) level = 0;
+            }
+            if (typ === 'building' && !Number.isFinite(level) && body && !istLaufenderBau(kopf, body)) {
+                const titel = kopf.querySelector('b, strong') || kopf;
+                const interneKennung = String(titel.textContent || '').trim();
+                const hatBauen = Array.from(body.querySelectorAll('a, button, input[type="button"], input[type="submit"]'))
+                    .some(function (element) {
+                        return /^bauen$/i.test((element.tagName === 'INPUT' ? String(element.value || '') : text(element)).trim());
+                    });
+                // Horizon zeigt noch nicht gebaute Einträge als interne Kennung
+                // (z. B. infrastructure) mit Bauaktion. Das korrigiert auch Altwerte.
+                if (/^[a-z][a-z0-9_-]{1,39}$/.test(interneKennung) && hatBauen) level = 0;
             }
             if (typ === 'ship' && !Number.isFinite(level)) level = 1;
             if (!name || name === 'Bauauftrag' || !Number.isFinite(level)) return;
@@ -7132,6 +7145,7 @@ return box;
     window.addEventListener('load', starteSicher);
     setTimeout(starteSicher, 800);
 })();
+
 
 
 
