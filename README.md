@@ -2,7 +2,6 @@
 
 **Gemeinsame Kommunikation für alle Projekte:**
 [Schwarzes Brett in serkal_desktop](https://github.com/KurtV731/serkal_desktop/blob/main/1%20docs/schwarzes_brett.md).
-Das frühere HASA-Brett ist seit 23.10.2026 geschlossenes Entwicklungsarchiv.
 Neue Aufträge und Antworten ausschließlich im gemeinsamen Brett.
 
 HASA ist ein Tampermonkey-Userscript für das Browsergame Horizon. Es liest
@@ -324,6 +323,6 @@ Allianzen eine eigene HASA-Serverinstanz mit eigener Datenbank betreiben können
 Verbindliche Rollen, Arbeitsregeln und neue Übergaben stehen im
 [gemeinsamen Schwarzen Brett](https://github.com/KurtV731/serkal_desktop/blob/main/1%20docs/schwarzes_brett.md) für SerKal, HASA, Website,
 Installer und Umzug. Vor jeder Projektarbeit wird dort der aktuelle Stand gelesen.
-Das frühere Dokument `1 docs/schwarzes_brett.md` in diesem Repository bleibt
-als Entwicklungsarchiv erhalten und wird nicht weiter fortgeschrieben.
+Die frühere HASA-Brettfassung bleibt in der Git-Änderungshistorie nachvollziehbar;
+eine separate Brettdatei gehört nicht mehr zum aktuellen Projektstand.
 HASA-Fachunterlagen bleiben unter `1 docs`.
