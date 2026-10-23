@@ -1,5 +1,10 @@
 # HASA – Horizon Ascension Assistant
 
+**Gemeinsame Kommunikation für alle Projekte:**
+[Schwarzes Brett in serkal_desktop](https://github.com/KurtV731/serkal_desktop/blob/main/1%20docs/schwarzes_brett.md).
+Das frühere HASA-Brett ist seit 23.10.2026 geschlossenes Entwicklungsarchiv.
+Neue Aufträge und Antworten ausschließlich im gemeinsamen Brett.
+
 HASA ist ein Tampermonkey-Userscript für das Browsergame Horizon. Es liest
 sichtbare Spielinformationen aus, bereitet sie auf und unterstützt bei
 Ascension, Forschung, Bauüberwachung und Galaxieerfassung.
@@ -316,16 +321,9 @@ Allianzen eine eigene HASA-Serverinstanz mit eigener Datenbank betreiben können
 
 ## Projektorganisation
 
-Verbindliche Rollen, Arbeitsregeln, Architekturentscheidungen und Übergaben stehen in:
-
-`1 docs/schwarzes_brett.md`
-
-Vor jeder HASA-Arbeit wird dieses Dokument vollständig gelesen und nach einer
-Übergabe aktualisiert. CE HASA und HASA-Datenbank-/Web-Chatty arbeiten als
-gleichwertige Fachbereiche mit klar getrennten Dateien und gemeinsam abgestimmten
-Schnittstellen. Gemeinsam mit SerKal genutzte Ressourcen auf `serkal.de` werden
-zwischen CE HASA und CE SerKal abgestimmt.
-
-Weitere technische Hinweise stehen unter `1 docs`.
-
-
+Verbindliche Rollen, Arbeitsregeln und neue Übergaben stehen im
+[gemeinsamen Schwarzen Brett](https://github.com/KurtV731/serkal_desktop/blob/main/1%20docs/schwarzes_brett.md) für SerKal, HASA, Website,
+Installer und Umzug. Vor jeder Projektarbeit wird dort der aktuelle Stand gelesen.
+Das frühere Dokument `1 docs/schwarzes_brett.md` in diesem Repository bleibt
+als Entwicklungsarchiv erhalten und wird nicht weiter fortgeschrieben.
+HASA-Fachunterlagen bleiben unter `1 docs`.

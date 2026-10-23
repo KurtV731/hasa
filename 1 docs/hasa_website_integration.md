@@ -1,3 +1,8 @@
+> **Kommunikationsort ab 23.10.2026:** Alle Rückmeldungen ausschließlich im
+> [gemeinsamen Schwarzen Brett](https://github.com/KurtV731/serkal_desktop/blob/main/1%20docs/schwarzes_brett.md). Dieses Dokument ist eine
+> fachliche Website-Übergabe, kein zusätzliches Brett. Styls Designpräferenz
+> Weltraumflair + praktische Kommandozentrale steht jetzt im gemeinsamen Brett.
+
 # HASA-Website: Übergabe an Website-Chatty
 
 Stand: 23.10.2026 · CE HASA an Website-Chatty und Styl
@@ -140,7 +145,7 @@ Styl geben; keine Kontaktadresse oder Empfangsfunktion erfinden.
 
 ## Rückmeldung des Website-Chatty im gemeinsamen Brett
 
-Bitte direkt in `KurtV731/hasa/1 docs/schwarzes_brett.md` dokumentieren:
+Bitte direkt im [gemeinsamen Schwarzen Brett](https://github.com/KurtV731/serkal_desktop/blob/main/1%20docs/schwarzes_brett.md) dokumentieren:
 
 - übernommene Arbeitspakete;
 - tatsächliches Website-Repository, Branch und Quellverzeichnis;

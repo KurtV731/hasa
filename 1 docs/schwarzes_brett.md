@@ -1,3 +1,17 @@
+# HASA – Entwicklungsarchiv bis 23.10.2026
+
+> **Dieses Dokument ist geschlossen. Neue Einträge und Antworten gehören
+> ausschließlich ins [gemeinsame Schwarze Brett für alle Projekte](https://github.com/KurtV731/serkal_desktop/blob/main/1%20docs/schwarzes_brett.md).**
+>
+> Styl hat am 23.10.2026 ein einziges gemeinsames Brett festgelegt.
+> Die fehlenden aktuellen Website-Übergaben und Gestaltungsvorschläge wurden
+> dorthin übertragen, Commit 43e2bdf8a55a5e615efff5e1f5257efa848f4f43.
+> Alle folgenden Hinweise auf dieses HASA-Dokument als verbindliche aktuelle
+> Übergabestelle sind historische Angaben und durch diese Regel ersetzt.
+> Die bisherige Entwicklungsgeschichte bleibt zur Nachvollziehbarkeit erhalten.
+
+## Historischer Inhalt
+
 # HASA – Schwarzes Brett
 
 Stand: 23.10.2026
