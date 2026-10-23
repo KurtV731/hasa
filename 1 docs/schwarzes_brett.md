@@ -3180,3 +3180,49 @@ Schnittstellen/Serverdaten werden nicht ungefragt geändert.
 URLs kontrolliert; Querverweise zu vorhandenen Quelldateien geprüft. Programm,
 Schema und Produktivhosting unverändert. Commitkennung über Historie dieses
 Eintrags; nach Commit Dateien und main direkt über GitHub-App zurücklesen.
+
+
+## 23.10.2026 – Styl an Website-Chatty – Gestaltung der index.html für hasa.li
+
+**Auftrag:** Die folgenden drei Gestaltungsvorschläge am gemeinsamen Brett
+festhalten, damit Website-Chatty sie bei der öffentlichen HASA-Startseite
+berücksichtigt. Styl bevorzugt ausdrücklich die **Mischung aus 2 und 3**.
+
+| Vorschlag | Gestaltung | Wirkung |
+|---|---|---|
+| 1. Hell und freundlich | Heller Hintergrund, dunkelblaue Schrift, türkise Schaltflächen, dezente Planetenbahnen | Einladend, ruhig, besonders gut lesbar |
+| 2. Weltraumflair | Dunkles Blau, dezenter Sternenhintergrund, großer Planet, sparsame leuchtende Akzente | Sichtbarer Bezug zu Horizon |
+| 3. Praktische Kommandozentrale | Klare Navigation, kleine anschauliche HASA-Vorschau, direkte Einstiege für neue und bestehende Nutzer | Schnell verständlich und im Alltag hilfreich |
+
+### Von Styl bevorzugte Kombination: 2 + 3
+
+- Kopfbereich mit dunkler Weltraumatmosphäre, dezenter Planetengrafik und
+  eindeutigem HASA-Schriftzug. Keine unruhigen Animationen nötig.
+- Darunter ruhige, übersichtliche Inhaltsbereiche und gut lesbare große Schrift.
+  Die praktische Orientierung aus Variante 3 bestimmt den Aufbau.
+- Obere Navigation: **Installation · Anleitung · Hilfe · Vorschläge · Anmelden**;
+  Start über Logo beziehungsweise klaren Startlink erreichbar.
+- Kurze Vorstellung, zum Beispiel **„Mehr Überblick. Mehr Spiel.“** mit
+  **„Dein Assistent für Horizon.“** als Unterzeile.
+- Deutlich sichtbare Hauptaktion **„HASA installieren“**, daneben **„So funktioniert’s“**.
+- Hinweis auf **Firefox und Edge mit Tampermonkey**.
+- Drei kurze Funktionsbereiche: **Galaxiedatenbank**, **Forschungsplanung**,
+  **Ereignisse im Blick**.
+- Einfache getrennte Einstiege für **„Neu dabei?“** und **„Schon eingerichtet?“**.
+- Öffentliche Projektbezeichnung **Styl**; keine privaten Spielerdaten in Vorschauen.
+  Vorschauen bei Bedarf klar als Beispieldarstellung kennzeichnen.
+
+**Übergabe an Website-Chatty:** Dies ist die gewünschte Gestaltungsrichtung für
+die index.html, keine bereits gebaute oder veröffentlichte Webseite.
+Bitte mit der bestehenden [Website-Übergabe](hasa_website_integration.md)
+zusammenführen und die konkrete Umsetzung/Dateipfade hier zurückmelden.
+Navigation und tatsächliche Installationsversion müssen zusammenpassen;
+HASA 1.2 Final bleibt der geplante öffentliche Release.
+Die drei Bildskizzen wurden im Chat gezeigt; sie sind keine hier verfügbaren
+Repository-Dateien. Dieser Text enthält die vollständige gestalterische Vorgabe,
+ohne auf vorübergehende lokale Bildpfade angewiesen zu sein.
+
+**Status:** Präferenz dokumentiert, Umsetzung der öffentlichen Website beim
+Website-Chatty. Keine Änderung am Userscript, API, Server oder öffentlichen
+Root-Verzeichnis. Prüfung: bestehendes Brett unverändert erhalten, Eintrag
+angehängt und nach Commit über GitHub-App kontrolliert.
