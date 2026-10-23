@@ -1,6 +1,6 @@
 # HASA – Hilfe: Wo finde ich was?
 
-Stand: 22.10.2026 · Testversion 1.2.0 Alpha39
+Stand: 23.10.2026 · Testversion 1.2.0 Alpha39
 
 Du brauchst keine Programmierkenntnisse, um HASA zu benutzen.
 Wenn du gerade nicht weiterweißt, suche unten nach deiner Aufgabe.
@@ -14,7 +14,7 @@ HASA arbeitet auf dieser Spielseite. Ein neuer Browser oder ein anderes Profil
 hat eigene Erweiterungen und Einstellungen.
 
 Für die Einrichtung führt die Anleitung durch [Installation und Anmeldung](hasa_1.2_benutzeranleitung.md).
-Du erhältst dein Konto von Kurt; dein persönliches Passwort legst du beim ersten
+Du erhältst dein Konto von Styl; dein persönliches Passwort legst du beim ersten
 vorgeschriebenen Passwortwechsel fest. Das Horizon-Passwort wird dafür nicht benötigt.
 
 ## Die wichtigsten Wege
@@ -90,7 +90,7 @@ Eine Nachricht öffnen, wenn auch ihr vollständiger Text erfasst werden soll.
 Die Liste rekonstruiert belegte Wirkungen aus gespeicherten Meldungen. Anfangs
 unterstützt sie Produktionsereignisse und tatsächlich gestartete Videos.
 Eine fehlende Endmeldung kann eine Wirkung zu lange stehen lassen. Prüfe den
-angegebenen Beginn und lies die passende Endmeldung ein. Melde Kurt einen konkreten
+angegebenen Beginn und lies die passende Endmeldung ein. Melde Styl einen konkreten
 Fall mit Planet, Ereignis und erwartetem Ende.
 
 ### Ich habe ein Video, aber keine Erinnerung
@@ -108,7 +108,7 @@ Ein normaler Verwaltungszugang öffnet keine privaten fremden Daten.
 
 ### Die neue Ereignisseite fehlt nach dem Userscript-Update
 
-Der PHP-Serverteil muss ebenfalls aktualisiert sein. Das erledigt Kurt.
+Der PHP-Serverteil muss ebenfalls aktualisiert sein. Das erledigt Styl.
 Ein erneutes Installieren des Userscripts allein ergänzt keine Serverdateien.
 
 ### HASA oder die Anmeldung fehlt
@@ -128,7 +128,7 @@ Nach abgeschlossener Dialoginstallation ist kein zusätzliches Strg+S nötig.
 
 ## Einen Fehler oder Wunsch melden
 
-Schreibe Kurt kurz:
+Schreibe Styl kurz:
 1. Welche Version und welchen Browser benutzt du?
 2. Was hast du angeklickt?
 3. Was hast du erwartet und was ist stattdessen passiert?

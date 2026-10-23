@@ -7,11 +7,11 @@ Ganz in Ruhe, Schritt für Schritt
 
 Eine Anleitung für alle, die einfach spielen möchten und sich nicht erst mit Technik beschäftigen wollen.
 
-> Du musst nichts programmieren. Lies immer nur einen Schritt, führe ihn aus und gehe dann weiter. Wenn etwas anders aussieht: kurz anhalten und Kurt fragen. Du musst dich nicht durch unbekannte Meldungen durchklicken.
+> Du musst nichts programmieren. Lies immer nur einen Schritt, führe ihn aus und gehe dann weiter. Wenn etwas anders aussieht: kurz anhalten und Styl fragen. Du musst dich nicht durch unbekannte Meldungen durchklicken.
 
 ## Wofür ist diese Anleitung?
 
-Du nutzt HASA bereits und möchtest neue Versionen bekommen. Tampermonkey ist schon installiert. Für eine vollständige Ersteinrichtung wende dich bitte an Kurt.
+Du nutzt HASA bereits und möchtest neue Versionen bekommen. Tampermonkey ist schon installiert. Für eine vollständige Ersteinrichtung wende dich bitte an Styl.
 
 **HASA** ist der Helfer im Spiel. **Tampermonkey** verwaltet HASA im Browser und kann seine Updates abholen. **GitHub** ist hier nur die Adresse, von der die Programmdatei kommt. Du brauchst dort kein Konto.
 
@@ -77,7 +77,7 @@ Beispiel: Installiert und angeboten ist jeweils **Alpha35**. Du siehst **Neu-Ins
 
 **Abbrechen**: Hier abbrechen. Für eine gleiche Version ist keine Neuinstallation nötig.
 
-Wenn du die Updateadresse noch nie übernommen hast und nur diesen Dialog bekommst: frage Kurt. Die gleiche Versionsnummer allein zeigt nicht, ob die Updatequelle schon eingerichtet ist.
+Wenn du die Updateadresse noch nie übernommen hast und nur diesen Dialog bekommst: frage Styl. Die gleiche Versionsnummer allein zeigt nicht, ob die Updatequelle schon eingerichtet ist.
 
 ## Nach einem bestätigten Update
 
@@ -93,11 +93,11 @@ und kleine Stolpersteine
 
 ### Wenn automatische Updates eingeschaltet sind
 
-Tampermonkey prüft entsprechend seinen Einstellungen auf neuere Versionen und kann sie installieren. Das geschieht nicht unbedingt sofort, wenn Kurt ein Update ankündigt. Für manche Änderungen ist eine Bestätigung nötig.
+Tampermonkey prüft entsprechend seinen Einstellungen auf neuere Versionen und kann sie installieren. Das geschieht nicht unbedingt sofort, wenn Styl ein Update ankündigt. Für manche Änderungen ist eine Bestätigung nötig.
 
 ### Wenn du sofort nachsehen möchtest
 
-Öffne Tampermonkey und löse die Updateprüfung für HASA aus. Der Menüpunkt heißt je nach Ansicht etwa **Nach Updates suchen** oder **Auf Userscript-Updates prüfen**. Falls du ihn nicht findest, zeige Kurt die aktuelle Ansicht.
+Öffne Tampermonkey und löse die Updateprüfung für HASA aus. Der Menüpunkt heißt je nach Ansicht etwa **Nach Updates suchen** oder **Auf Userscript-Updates prüfen**. Falls du ihn nicht findest, zeige Styl die aktuelle Ansicht.
 
 Wird ein Update angeboten, bestätige die Aktualisierung. Lade danach Horizon neu. Der URL-Import von Seite 2 ist nach erfolgreicher Einrichtung nicht bei jedem Update nötig.
 
@@ -107,12 +107,12 @@ Das ist keine Fehlermeldung. Es gibt gerade keine höhere angebotene Version. Sc
 
 ### HASA fragt nach Anmeldung oder API-Schlüssel
 
-Das sind andere Schritte als das Programmupdate. Ein Update meldet dich nicht automatisch bei HASA an. Wenn eine Anmeldung trotz richtiger Daten immer wieder erscheint, melde das Kurt. Nicht wiederholt neu installieren.
+Das sind andere Schritte als das Programmupdate. Ein Update meldet dich nicht automatisch bei HASA an. Wenn eine Anmeldung trotz richtiger Daten immer wieder erscheint, melde das Styl. Nicht wiederholt neu installieren.
 
-### Was bleibt bei Kurt?
+### Was bleibt bei Styl?
 
-Serverupdates und Datenbankarbeiten erledigt Kurt. Du brauchst dafür keine zusätzlichen Programme und sollst keine Serverdateien hochladen.
+Serverupdates und Datenbankarbeiten erledigt Styl. Du brauchst dafür keine zusätzlichen Programme und sollst keine Serverdateien hochladen.
 
-> Wenn etwas unklar ist: Lass die Meldung offen und schicke Kurt ein Bildschirmfoto plus einen kurzen Satz, was du gerade angeklickt hast. Passwörter und API-Schlüssel bitte nicht mitsenden. Gemeinsam finden wir den nächsten Schritt.
+> Wenn etwas unklar ist: Lass die Meldung offen und schicke Styl ein Bildschirmfoto plus einen kurzen Satz, was du gerade angeklickt hast. Passwörter und API-Schlüssel bitte nicht mitsenden. Gemeinsam finden wir den nächsten Schritt.
 
 Merksatz: Einmal die Updatequelle übernehmen. Später Updates prüfen oder automatisch erhalten. Nach einer Aktualisierung Horizon neu laden.

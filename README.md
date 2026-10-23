@@ -9,7 +9,7 @@ HASA informiert, analysiert und erinnert. HASA spielt nicht selbst.
 ## Eigene Webpräsenz und Projektablage
 
 Ziel ist die eigenständige HASA-Webpräsenz unter **https://hasa.li**.
-Kurt legt das lokale Projekt unter **PPD\HASA** ab; die Unterorganisation
+Styl legt das lokale Projekt unter **PPD\HASA** ab; die Unterorganisation
 übernimmt der CE HASA. Alpha39 verwendet die API und Webwerkzeuge unter
 https://hasa.li/api/. Der finale Datenimport ist bestätigt; der erste neue
 Übertragungstest aus dem aktualisierten Spielbrowser steht noch aus.
@@ -26,7 +26,7 @@ der Daten und funktionierenden Installation.
 ## Umschaltung nach hasa.li
 
 [Schrittfolge für die Wartung](1%20docs/hasa_umschaltung_alpha38.md):
-Anmeldung und Datenanzeige von Kurt geprüft, finaler Import erfolgreich.
+Anmeldung und Datenanzeige von Styl geprüft, finaler Import erfolgreich.
 Alle 19 Tabellen und ihre angezeigten Zeilenzahlen stimmen überein. Der alte
 Server bleibt gesperrt. Aktueller automatischer Download: Alpha39.
 Künftiger Mailabsender: `kp.vogelsaenger@hasa.li`; Postfach noch separat einzurichten.
@@ -38,7 +38,7 @@ neue Einstiege Events/Scans, Ressourcen und Kampfbericht; eigene 30-Tage-Journal
 mit Gesamtzähler; private laufende Produktionswirkungen nach Planet; Video-Erinnerung
 und Sperre der einzelnen Video-Löschaktion. Sammellöschung bleibt möglich.
 
-**Kurt aktualisiert zuerst mit HASA-Serverupdate-hasa-li.bat den Serverteil,
+**Styl aktualisiert zuerst mit HASA-Serverupdate-hasa-li.bat den Serverteil,
 danach das vorhandene Tampermonkey-Skript.** Keine neue Datenbankmigration.
 
 [Hilfe: Wo finde ich was?](1%20docs/hasa_hilfe.md) ergänzt die ausführliche Anleitung.
@@ -107,7 +107,7 @@ Berechtigungsänderungen können eine Bestätigung verlangen. Keine Zusage eines
 sofortigen oder zu einer bestimmten Uhrzeit erfolgenden automatischen Updates.
 
 Der Link liefert immer den freigegebenen main-Stand. Updates benötigen kein
-GitHub-Konto oder Git auf dem Tester-PC. Serverupdates führt weiterhin Kurt aus;
+GitHub-Konto oder Git auf dem Tester-PC. Serverupdates führt weiterhin Styl aus;
 das Userscript verteilt weder PHP-Dateien noch Datenbankmigrationen.
 
 Die vorhandene .user.js.txt-Datei und HASA-AKTUALISIEREN.cmd bleiben gültig.
@@ -161,14 +161,14 @@ Alpha33 erkennt **Motivationsvideo abgespielt** als bestätigten Startbericht.
 Für den zugeordneten Planeten erscheinen die drei Ressourcen-Stundenraten eine
 Stunde ab Nachrichtenzeit besonders kräftig grün. Erneutes Einlesen verlängert
 die Stunde nicht. Nach Ablauf kehren die übrigen Ereignisfarben oder Grau zurück.
-Die durch Kurts Beispiel eingeordnete Spielzeit wird in Europe/Berlin interpretiert,
+Die durch Styls Beispiel eingeordnete Spielzeit wird in Europe/Berlin interpretiert,
 unabhängig von der Browserzeitzone. Eine reine Verfügbarkeitsmeldung genügt nicht.
 
 **Update von Alpha35 auf Alpha36:** In Tampermonkey nach Updates suchen,
 Aktualisierung bestätigen und Horizon neu laden. Nur das Userscript wird benötigt;
 kein erneuter Serverupload und kein SQL-/STAN-Import.
 Beim Wechsel von älteren Fassungen bleibt die einmalige auth.4-Serverinstallation
-aus Alpha35 erforderlich, falls Kurt sie noch nicht durchgeführt hat.
+aus Alpha35 erforderlich, falls Styl sie noch nicht durchgeführt hat.
 Alle bisherigen Korrekturen bleiben enthalten; Komfortverwaltung weiterhin offen.
 
 ## Historische Entwicklungsschritte

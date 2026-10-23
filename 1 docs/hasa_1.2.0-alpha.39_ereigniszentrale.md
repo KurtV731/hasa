@@ -11,12 +11,12 @@ Freigegebener Teststand vom 22.10.2026. Keine offizielle Finalversion 1.2.
 - Private Abfrage laufender, belegter Produktionswirkungen nach Planet, einschließlich
   gestarteter Videos. Verfügbarkeit allein zählt nicht als Start.
 - Erinnerung an lokal erfasste verfügbare Videos, voraussichtliche 14-Tage-Frist
-  nach Kurts Angabe und Hinweis in den letzten 24 Stunden.
+  nach Styls Angabe und Hinweis in den letzten 24 Stunden.
 - Einzelne Löschaktion an echten verfügbaren Video-Systemmeldungen durch ⛔ ersetzt.
   Sammellöschung, Auswahlkästchen, Spam und Start bleiben unverändert.
 - Neu gegliederte Bedienungsanleitung und aufgabenbezogene Hilfe.
 
-## Aktualisierung für Kurt
+## Aktualisierung für Styl
 
 1. **HASA-Serverupdate-hasa-li.bat** ausführen. Bei Ersteinrichtung die gespeicherte
    WinSCP-Verbindung **HASA-li** und das Verzeichnis **/hasa.li/api/** verwenden.

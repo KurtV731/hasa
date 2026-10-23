@@ -1,6 +1,6 @@
 # HASA – Schwarzes Brett
 
-Stand: 22.10.2026
+Stand: 23.10.2026
 
 Dieses Dokument ist die verbindliche gemeinsame Übergabe- und Verwaltungsstelle für die
 HASA-Entwicklung. Vor jeder HASA-Arbeit wird es vollständig gelesen. Entscheidungen,
@@ -3137,3 +3137,46 @@ Die Abstimmung erfolgt über dieses gemeinsame Brett. Ein direkter Zugriff auf
 den anderen Chat ist nicht vorhanden; eine bloße Übergabe ist noch keine
 bestätigte Vereinbarung. Bestehende öffentliche Root-Dateien werden von CE HASA
 nicht ungefragt überschrieben.
+
+
+## 23.10.2026 – CE HASA an Website-Chatty und Styl – Website-Einbindung konkret vorbereitet
+
+**Status:** Keine Antwort des Website-Chatty auf die Übergabe vom 22.10.2026
+im aktuellen HASA-Brett vorgefunden. Keine bestätigte Einigung oder Übernahme
+behaupten. Aktueller main beim Prüfen: 3074e7ebb157a4f97535b9b8697cae097ff8d33b,
+tatsächliche Userscriptkennung weiter 1.2.0-alpha.39.
+
+**Neue Produktentscheidung von Styl:** Der nächste Entwicklungsschritt „40“
+soll als HASA 1.2 Final öffentlich auf hasa.li angeboten werden.
+Dies ist der geplante nächste Release; keine Finaldatei/Websiteveröffentlichung
+in dieser Abstimmung erzeugt oder als bereits verfügbar dargestellt.
+Alle öffentlichen HASA-Texte verwenden Styl. Private Vornamen in der aktuellen
+Bedienungsanleitung, Hilfe, Updatehilfe, README und Alpha39-Releasehinweisen
+wurden entsprechend angepasst; technische URLs/Kontonamen unverändert.
+Historische Protokolle bleiben als solche erhalten.
+
+**Verifizierter Websitebefund:** KurtV731/serkal-pages, main
+91d0916dc517c994851789f084a3f55783b76f9e, enthält weiter up/hasa.html mit
+Alpha27, SerKal-Layout und alten Serverhinweisen. docs/website-umzug-audit-2026-10-21.md
+nennt HASA-Ausgliederung und getrennten Veröffentlichungsweg noch offen.
+Das ist ein Repositorybefund, kein Livecheck von hasa.li. Ein neues HASA-
+Website-Repository oder bestätigter Quell-/Uploadpfad wurde nicht vorgefunden.
+
+**Konkrete Übergabe:** [HASA-Website: Integration und Aufgaben](hasa_website_integration.md).
+CE HASA liefert Userscript, /api/, Datenbank/Rechte und fachliche Dokumentation.
+Website-Chatty übernimmt nach Rückmeldung öffentliche Seiten, Layout, Navigation,
+Einbindung der fachlichen Hilfe und Vorschlagsoberfläche. Styl entscheidet und
+führt den produktiven Hosting-Upload aus. Technische Vorschlagsverarbeitung nur
+mit abgestimmtem Empfangs-/Speicherweg; keine funktionierende Mailautomatik erfinden.
+
+Die neue Übergabe enthält Quellenmatrix, vorgeschlagene Navigation, Felder für
+Nutzervorschläge, Trennung öffentlicher Informationen/privater Werkzeuge und
+konkrete Abnahmeprüfungen. Routen sind Vorschläge, keine bestätigten Livepfade.
+Website-Chatty bitte hier tatsächliches Repo, Branch, Websitewurzel, Seitendateien,
+übernommene Pakete und Vorschlagsverarbeitung zurückmelden. Vorhandene technische
+Schnittstellen/Serverdaten werden nicht ungefragt geändert.
+
+**Prüfung:** Dokumentationsänderungen auf Personennamen und unveränderte externe
+URLs kontrolliert; Querverweise zu vorhandenen Quelldateien geprüft. Programm,
+Schema und Produktivhosting unverändert. Commitkennung über Historie dieses
+Eintrags; nach Commit Dateien und main direkt über GitHub-App zurücklesen.

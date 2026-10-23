@@ -1,6 +1,6 @@
 # HASA – Benutzeranleitung für die Testversion
 
-Stand: 22.10.2026 · HASA 1.2.0 Alpha 39 · Spielrunde 8
+Stand: 23.10.2026 · HASA 1.2.0 Alpha 39 · Spielrunde 8
 
 Diese Anleitung richtet sich an die eingeladenen Testspieler. Die stabile
 Veröffentlichung HASA 1.1 hat einen anderen Funktionsstand.
@@ -29,7 +29,7 @@ dann aufrufen, wenn du die jeweilige Funktion brauchst.
 
 ## 1. Neu dabei: Installation
 
-Du brauchst einen PC-Browser mit der Erweiterung Tampermonkey und ein von Kurt
+Du brauchst einen PC-Browser mit der Erweiterung Tampermonkey und ein von Styl
 angelegtes HASA-Konto.
 
 1. Tampermonkey über die [offizielle Seite](https://www.tampermonkey.net/) für deinen Browser installieren.
@@ -70,7 +70,7 @@ Jeder Browser verwaltet seine eigene Installation: Firefox und Edge getrennt pr�
 Öffne einmal den Installationslink aus Kapitel 1 und aktualisiere die vorhandene
 Installation. Damit erhält sie auch die feste GitHub-Updateadresse. Die Alternative
 bleibt möglich: vollständigen Code in den vorhandenen Editor einsetzen und speichern.
-Kurt kann dafür weiterhin `HASA-AKTUALISIEREN.cmd` im lokalen Repository benutzen.
+Styl kann dafür weiterhin `HASA-AKTUALISIEREN.cmd` im lokalen Repository benutzen.
 Für ein normales Update weder ein zweites HASA anlegen noch gespeicherte Daten löschen.
 
 ### Einmaliger Umstieg von älteren Fassungen auf hasa.li
@@ -79,7 +79,7 @@ Eine von Tampermonkey angefragte Berechtigung für **hasa.li** bestätigen. Auf 
 neuen Domain mit dem bisherigen HASA-Konto und persönlichen Passwort anmelden.
 Ein neues Konto oder ein Passwortreset ist dafür nicht erforderlich.
 
-### Nur für Kurt: Serverteil von Alpha39
+### Nur für Styl: Serverteil von Alpha39
 
 Vor dem Test zuerst **HASA-Serverupdate-hasa-li.bat** ausführen, damit die neuen
 Ereignisseiten unter hasa.li bereitstehen. Danach das Userscript aktualisieren.
@@ -98,8 +98,8 @@ Die HASA-Anmeldung ist von der Anmeldung im Spiel Horizon getrennt.
 4. Den vorgeschriebenen ersten Passwortwechsel abschließen.
 5. Zu Horizon zurückkehren und bei Bedarf die Seite neu laden.
 
-„Als Styl“ in älteren Betreiberhinweisen meint Kurts eigenes Playerkonto.
-Du meldest dich immer mit deinem eigenen Konto an.
+Mit **Styl** ist der HASA-Verantwortliche gemeint. Du meldest dich immer mit
+deinem eigenen Konto an.
 
 Wird in HASA zusätzlich **API-Schlüssel** angeboten, den vom Betreiber erhaltenen
 HASA-Schlüssel dort einmal eingeben. Für die Serverübertragung werden eine gültige
@@ -339,7 +339,7 @@ Sobald HASA eine passende Verfügbarkeitsmeldung für dein Konto erfasst hat,
 erscheint unter der Werkzeugzeile eine Erinnerung. Sie nennt den Planeten und,
 soweit eindeutig bekannt, die voraussichtliche verbleibende Frist.
 
-Die Frist von **14 Tagen** stammt aus Kurts Spielangabe. Sie wird als
+Die Frist von **14 Tagen** stammt aus Styls Spielangabe. Sie wird als
 **voraussichtlich** bezeichnet und ist kein vom Server bestätigter Ablaufzeitpunkt.
 In den letzten 24 Stunden erscheint **Baldiger Ablauf**.
 Nach der Frist bleibt ein Hinweis zur Prüfung im Spiel stehen. HASA erfindet
@@ -463,7 +463,7 @@ Bei künftigen Updates deren Änderungshinweise zusätzlich beachten.
 ### Besiedelungsdauer im Forschungsplaner seit Alpha38
 
 Bei Kolonisationsschiffen zeigen Auswahl, gewähltes Ziel und Voraussetzungen einen
-Tooltip zur Besiedelungsdauer laut dem von Kurt übermittelten Wiki-Auszug:
+Tooltip zur Besiedelungsdauer laut dem von Styl übermittelten Wiki-Auszug:
 SCOL 3 Stunden, GRCO 4 Stunden, CCOL 7 Stunden, FCOL 30 Minuten,
 LRCO 9 Stunden, ICOL 24 Stunden, GCOL 4 Stunden, ASCS 8 Stunden,
 LACS 20 Stunden und IACS 72 Stunden. Bau- und Flugzeit kommen zusätzlich hinzu;
@@ -478,5 +478,5 @@ ein Kampfsimulator sind weiterhin Zukunftsthemen.
 Anleitung, kurze Hilfe und eine Möglichkeit für eigene Vorschläge sollen in die
 Website integriert werden. Die öffentlichen Seiten und ein Vorschlagsformular
 sind mit dem Website-Verantwortlichen abzustimmen; diese Anleitung behauptet
-keinen bereits erreichbaren Menüpunkt dafür. Bis dahin Wünsche an Kurt geben.
+keinen bereits erreichbaren Menüpunkt dafür. Bis dahin Wünsche an Styl geben.
 Nenne dabei möglichst, was du erreichen möchtest und wo dir heute etwas fehlt.
