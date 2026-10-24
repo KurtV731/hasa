@@ -2,16 +2,16 @@ name: HASA events and production
 on:
   push:
     paths:
-      - '2 src/current/HASA-AKTUELL.user.js.txt'
-      - '2 src/current/HASA-AKTUELL.user.js'
-      - '3 server/hasa-api/**'
-      - '3 server/tests/events_integration.php'
-      - '3 server/tests/maintenance_integration.py'
-      - '3 server/tests/initial_password_integration.php'
-      - '3 server/tests/system_search_integration.php'
-      - '3 server/tests/sharing_global_integration.php'
-      - '4 database/hasa_1_2_0_sharing_global_migration.sql'
-      - '5 tools/test_hasa_*.cjs'
+      - '01 Entwicklung/Userscript/Aktuell/HASA-AKTUELL.user.js.txt'
+      - '01 Entwicklung/Userscript/Aktuell/HASA-AKTUELL.user.js'
+      - '02 Website/api/**'
+      - '01 Entwicklung/Tests/Server/events_integration.php'
+      - '01 Entwicklung/Tests/Server/maintenance_integration.py'
+      - '01 Entwicklung/Tests/Server/initial_password_integration.php'
+      - '01 Entwicklung/Tests/Server/system_search_integration.php'
+      - '01 Entwicklung/Tests/Server/sharing_global_integration.php'
+      - '01 Entwicklung/Datenbank/hasa_1_2_0_sharing_global_migration.sql'
+      - '01 Entwicklung/Tests/Browser/test_hasa_*.cjs'
       - '.github/workflows/hasa-events-tests.yml'
   workflow_dispatch:
 permissions:
@@ -43,48 +43,48 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Syntax and browser regression
         run: |
-          cmp '2 src/current/HASA-AKTUELL.user.js.txt' '2 src/current/HASA-AKTUELL.user.js'
-          find '3 server/hasa-api' -name '*.php' -print0 | xargs -0 -n1 php -l
-          python3 '3 server/tests/maintenance_integration.py'
-          node '5 tools/test_hasa_ereignisregister.cjs'
-          node '5 tools/test_hasa_live_events.cjs'
-          node '5 tools/test_hasa_web_ui.cjs'
-          node '5 tools/test_hasa_research.cjs'
-          node '5 tools/test_hasa_menu.cjs'
-          node '5 tools/test_hasa_scroll.cjs'
-          node '5 tools/test_hasa_motivation.cjs'
-          node '5 tools/test_hasa_auth_ui.cjs'
-          node '5 tools/test_hasa_drag.cjs'
-          node '5 tools/test_hasa_colony_tooltips.cjs'
+          cmp '01 Entwicklung/Userscript/Aktuell/HASA-AKTUELL.user.js.txt' '01 Entwicklung/Userscript/Aktuell/HASA-AKTUELL.user.js'
+          find '02 Website/api' -name '*.php' -print0 | xargs -0 -n1 php -l
+          python3 '01 Entwicklung/Tests/Server/maintenance_integration.py'
+          node '01 Entwicklung/Tests/Browser/test_hasa_ereignisregister.cjs'
+          node '01 Entwicklung/Tests/Browser/test_hasa_live_events.cjs'
+          node '01 Entwicklung/Tests/Browser/test_hasa_web_ui.cjs'
+          node '01 Entwicklung/Tests/Browser/test_hasa_research.cjs'
+          node '01 Entwicklung/Tests/Browser/test_hasa_menu.cjs'
+          node '01 Entwicklung/Tests/Browser/test_hasa_scroll.cjs'
+          node '01 Entwicklung/Tests/Browser/test_hasa_motivation.cjs'
+          node '01 Entwicklung/Tests/Browser/test_hasa_auth_ui.cjs'
+          node '01 Entwicklung/Tests/Browser/test_hasa_drag.cjs'
+          node '01 Entwicklung/Tests/Browser/test_hasa_colony_tooltips.cjs'
       - name: Disposable MariaDB integration
         env:
           MYSQL_PWD: disposable-ci-only
         run: |
           for file in hasa_1_2_0_schema.sql hasa_1_2_0_galaxies_migration.sql hasa_1_2_0_private_migration.sql hasa_1_2_0_useradmin_migration.sql hasa_1_2_0_sharing_migration.sql; do
-            mariadb --no-defaults --host=127.0.0.1 --protocol=TCP -uroot hasa_test_events < "4 database/$file"
+            mariadb --no-defaults --host=127.0.0.1 --protocol=TCP -uroot hasa_test_events < "01 Entwicklung/Datenbank/$file"
           done
           test_api=$(mktemp -d)
-          cp '3 server/hasa-api/'*.php "$test_api/"
+          cp '02 Website/api/'*.php "$test_api/"
           export HASA_TEST_API="$test_api"
           php -r 'file_put_contents(getenv("HASA_TEST_API")."/config.php", "<?php return ".var_export(["database"=>["host"=>"127.0.0.1","name"=>"hasa_test_events","user"=>"root","password"=>getenv("MYSQL_PWD")]],true).";");'
-          php '3 server/tests/events_integration.php'
-          php '3 server/tests/initial_password_integration.php'
-          php '3 server/tests/system_search_integration.php'
-          php '3 server/tests/sharing_global_integration.php'
-          HASA_TEST_SHARING_HTML="$test_api/sharing-global-fixture.html" node '5 tools/test_hasa_sharing_ui.cjs'
-          HASA_TEST_JOURNAL_HTML="$test_api/journal-fixture.html" node '5 tools/test_hasa_journal_ui.cjs'
+          php '01 Entwicklung/Tests/Server/events_integration.php'
+          php '01 Entwicklung/Tests/Server/initial_password_integration.php'
+          php '01 Entwicklung/Tests/Server/system_search_integration.php'
+          php '01 Entwicklung/Tests/Server/sharing_global_integration.php'
+          HASA_TEST_SHARING_HTML="$test_api/sharing-global-fixture.html" node '01 Entwicklung/Tests/Browser/test_hasa_sharing_ui.cjs'
+          HASA_TEST_JOURNAL_HTML="$test_api/journal-fixture.html" node '01 Entwicklung/Tests/Browser/test_hasa_journal_ui.cjs'
 
 
 
 
 
 
-      - name: Check 39a updater syntax
+      - name: Check server updater syntax
         shell: pwsh
         run: |
           $parseErrors = $null
-          [void][System.Management.Automation.Language.Parser]::ParseFile((Join-Path $env:GITHUB_WORKSPACE 'server-update-39a.ps1'), [ref]$null, [ref]$parseErrors)
+          [void][System.Management.Automation.Language.Parser]::ParseFile((Join-Path $env:GITHUB_WORKSPACE '05 Verwaltung/Werkzeuge/server-update.ps1'), [ref]$null, [ref]$parseErrors)
           if ($parseErrors.Count) { $parseErrors | ForEach-Object { Write-Error $_ }; exit 1 }
-      - name: Build isolated 39a package
-        run: node '5 tools/test_hasa_techtree_window.cjs'
+      - name: Check TechTree window
+        run: node '01 Entwicklung/Tests/Browser/test_hasa_techtree_window.cjs'
 

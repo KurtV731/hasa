@@ -1,0 +1,11 @@
+# HASA 1.2.0 Alpha 24 – STAN-XML trotz Serverwarnungen importieren
+
+Kurts Dateien vom 11.10.2026 wurden verglichen. statistic-20260927.xml ist gültig und liefert 339 Gebäude-/Forschungs-/Schiffs-/Verteidigungsobjekte. statistic-20261011.xml enthält einen gültigen statistic-Abschnitt mit 174 Objekten (105 Gebäude, 69 Forschungen), danach jedoch HTML-formatierte PHP-Notice/Warning-Meldungen. Die komplette Datei ist deshalb kein gültiges XML; Alpha23 lehnt sie ab. Schiffe und Verteidigungen sind in der neuen Datei leer. Geräte werden wie bisher nicht als Forschungsplanungsziele importiert.
+
+Alpha24 ignoriert ausschließlich erkannte PHP-Diagnoseblöcke nach dem abgeschlossenen statistic-Element und prüft anschließend den XML-Abschnitt erneut strikt mit DOMParser. Beschädigte XML-Struktur, unvollständige Dateien, fremde Nachspanninhalte und zusätzliche Dokumente werden weiterhin abgewiesen. Keine Änderungen innerhalb der XML-Daten, keine erfundenen Werte. Die Erfolgsmeldung nennt das Ignorieren angehängter STAN-Serverwarnungen.
+
+Beide Originaldateien müssen nicht von Hand bearbeitet werden. Import übernimmt den Dateidatenstand 20261011 und erhält den alten Bestand in der lokalen Versionshistorie. Persönliche Forschungs-/Gebäudestufen bleiben unverändert und werden nicht aus den allgemeinen Statistikzahlen übernommen. Fehlgeschlagene Importe ersetzen weder aktuellen Bestand noch Historie.
+
+Prüfungen: Node-Syntax erfolgreich. 22 Browserprüfungen mit Chromium-DOMParser und File.text, den beiden vollständigen echten XML-Dateien, reproduziertem Fehler im alten Parser, Objektzahlen/-typen, Dateidatum, Importspeicherung, Historie/Status, persönlichen Stufen und mehreren beschädigten/unerwarteten Dateien bestanden.
+
+Installation: HASA-AKTUALISIEREN.cmd in C:\ppd\hasa starten, vollständigen neuen Inhalt in das bestehende Tampermonkey-HASA einsetzen (Strg+A, Strg+V, speichern), Horizon neu laden und statistic-20261011.xml erneut auswählen. Alternativ vollständige Alpha24-Datei direkt einsetzen. Keine SQL-Migration, kein PHP-Upload. Alpha21/22/23-Reparaturen sind enthalten. Restpunkt: Kurts Import auf seinem tatsächlichen Gerät; Website-Testdownload durch Website-Chatty aktualisieren.

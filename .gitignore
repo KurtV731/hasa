@@ -1,0 +1,9 @@
+/02 Website/api/config.php
+/02 Website/api/maintenance.flag
+/05 Verwaltung/Privat/
+/06 Sicherungen/
+/07 Archiv/Lokale Altdateien/
+/04 Veroeffentlichung/Pakete/
+node_modules/
+__pycache__/
+*.pyc

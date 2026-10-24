@@ -1,0 +1,36 @@
+const fs=require('fs'),path=require('path'),assert=require('node:assert/strict');
+const {chromium}=require(require.resolve('playwright',{paths:[process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES||__dirname]}));
+const local=path.join(__dirname,'HASA-AKTUELL.user.js.txt');
+const source=fs.readFileSync(fs.existsSync(local)?local:path.join(__dirname,'../../Userscript/Aktuell/HASA-AKTUELL.user.js.txt'),'utf8');
+const actions=source.slice(source.indexOf('    function istDragSperrElement'),source.indexOf('    function grundBox'));
+const a=source.indexOf('    let HAA_DRAG_AKTIV = false;'),end='    let HAA_RESIZE_START_RECT = null;';
+const state=source.slice(a,source.indexOf(end,a)+end.length);
+(async()=>{
+ const browser=await chromium.launch(process.env.HASA_TEST_BROWSER?{headless:true,executablePath:process.env.HASA_TEST_BROWSER,args:['--no-sandbox','--single-process','--no-zygote','--disable-webgl','--disable-gpu','--disable-software-rasterizer','--use-gl=disabled']}:{headless:true});
+ const context=await browser.newContext();const page=await context.newPage({viewport:{width:1200,height:900}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.route('https://horiversum.org/**',r=>r.fulfill({contentType:'text/html',body:'<body></body>'}));await page.goto('https://horiversum.org/game/main/main.php');
+ await page.evaluate(({actions,state})=>{
+  window.saved=[];
+  window.api=new Function(`function px(n){return n+'px';}function snappeFensterPosition(b,x,y){return {left:x,top:y};}function begrenzeFensterPosition(b,x,y){return {left:x,top:y};}function setzeBoxPosition(b,x,y){b.style.left=px(x);b.style.top=px(y);}function aktualisiereInnenhoehe(){}function speichereFensterPosition(b){window.saved.push(['position',b.style.left,b.style.top]);}function speichereFensterGroesse(b){window.saved.push(['size',b.style.width,b.style.height]);}\n`+state+actions+`\nreturn {install(b){aktiviereHasaDrag(b);aktiviereHasaResize(b);},end:beendeHasaFensterInteraktion,flags(){return {drag:HAA_DRAG_AKTIV,resize:HAA_RESIZE_AKTIV};}};`)();
+ },{actions,state});
+ async function reset(){await page.mouse.up();await page.evaluate(()=>{api.end();document.body.innerHTML='<div id="haa-box" style="position:fixed;left:100px;top:100px;width:400px;height:300px;background:#eee"><p id="content" style="margin:30px">Synthetic content</p><button id="button" style="margin:30px">Action</button></div>';api.install(document.querySelector('#haa-box'));saved.length=0;});}
+ const rect=()=>page.locator('#haa-box').evaluate(b=>({left:b.offsetLeft,top:b.offsetTop,width:b.offsetWidth,height:b.offsetHeight}));
+ const flags=()=>page.evaluate(()=>api.flags());
+ const startDrag=async()=>{await page.mouse.move(210,220);await page.mouse.down();await page.mouse.move(240,240);assert.equal((await flags()).drag,true);};
+ const startResize=async()=>{await page.mouse.move(496,396);await page.mouse.down();await page.mouse.move(530,430);assert.equal((await flags()).resize,true);};
+ let n=0;async function test(name,fn){await reset();await fn();n++;console.log('PASS '+name);}
+ await test('ordinary mouse drag ends on mouseup and remains stationary',async()=>{await startDrag();const r=await rect();await page.mouse.up();await page.mouse.move(600,600);assert.deepEqual(await rect(),r);assert.deepEqual(await flags(),{drag:false,resize:false});});
+ await test('missed mouseup is recovered from buttons=0 before movement',async()=>{await startDrag();const r=await rect();await page.evaluate(()=>document.dispatchEvent(new MouseEvent('mousemove',{buttons:0,clientX:850,clientY:650,bubbles:true})));assert.deepEqual(await rect(),r);assert.equal((await flags()).drag,false);});
+ for(const event of ['blur','pagehide'])await test(event+' cancels drag without resuming on return',async()=>{await startDrag();const r=await rect();await page.evaluate(event=>window.dispatchEvent(new Event(event)),event);await page.mouse.move(700,650);assert.deepEqual(await rect(),r);assert.deepEqual(await flags(),{drag:false,resize:false});});
+ await test('leaving document cancels drag',async()=>{await startDrag();const r=await rect();await page.evaluate(()=>document.dispatchEvent(new MouseEvent('mouseleave')));await page.mouse.move(700,650);assert.deepEqual(await rect(),r);assert.equal((await flags()).drag,false);});
+ await test('hidden tab cancels drag',async()=>{await startDrag();await page.evaluate(()=>{Object.defineProperty(document,'visibilityState',{configurable:true,value:'hidden'});document.dispatchEvent(new Event('visibilitychange'));delete document.visibilityState;});assert.equal((await flags()).drag,false);});
+ await test('ordinary resize changes dimensions and ends on mouseup',async()=>{await startResize();const r=await rect();assert.ok(r.width>400&&r.height>300);await page.mouse.up();await page.mouse.move(700,700);assert.deepEqual(await rect(),r);assert.equal((await flags()).resize,false);});
+ await test('missed resize release does not change size when buttons=0',async()=>{await startResize();const r=await rect();await page.evaluate(()=>document.dispatchEvent(new MouseEvent('mousemove',{buttons:0,clientX:850,clientY:750,bubbles:true})));assert.deepEqual(await rect(),r);assert.equal((await flags()).resize,false);});
+ await test('blur also cancels resize',async()=>{await startResize();const r=await rect();await page.evaluate(()=>window.dispatchEvent(new Event('blur')));await page.mouse.move(800,700);assert.deepEqual(await rect(),r);assert.equal((await flags()).resize,false);});
+ await test('release is captured even when game handler stops bubbling',async()=>{await startDrag();await page.evaluate(()=>{const c=document.querySelector('#content');c.addEventListener('mouseup',e=>e.stopPropagation());c.dispatchEvent(new MouseEvent('mouseup',{button:0,buttons:0,bubbles:true}));});assert.equal((await flags()).drag,false);});
+ await test('resize start cancels stale drag rather than running both',async()=>{await startDrag();await page.evaluate(()=>document.querySelector('[data-richtung=se]').dispatchEvent(new MouseEvent('mousedown',{button:0,buttons:1,clientX:500,clientY:400,bubbles:true})));assert.deepEqual(await flags(),{drag:false,resize:true});});
+ await test('old detached element cannot start dragging a replacement',async()=>{await page.evaluate(()=>{const old=document.querySelector('#haa-box');const fresh=old.cloneNode(true);old.replaceWith(fresh);old.dispatchEvent(new MouseEvent('mousedown',{button:0,buttons:1,clientX:100,clientY:100,bubbles:true}));});assert.deepEqual(await flags(),{drag:false,resize:false});});
+ await test('detached box cancels active drag without overwriting saved position',async()=>{await startDrag();const count=await page.evaluate(()=>saved.length);await page.evaluate(()=>{const old=document.querySelector('#haa-box');old.replaceWith(old.cloneNode(true));});const r=await rect();await page.mouse.move(700,650);assert.deepEqual(await rect(),r);assert.equal((await flags()).drag,false);assert.equal(await page.evaluate(()=>saved.length),count);});
+ await test('interactive buttons do not start drag',async()=>{await page.locator('#button').click();assert.deepEqual(await flags(),{drag:false,resize:false});});
+ assert.deepEqual(errors,[]);await browser.close();console.log(n+' drag and resize checks passed');
+})().catch(e=>{console.error(e);process.exit(1);});

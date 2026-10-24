@@ -1,0 +1,18 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const source=fs.readFileSync(require('node:path').join(__dirname,'../../Userscript/Aktuell/HASA-AKTUELL.user.js'),'utf8');
+const helper=source.slice(source.indexOf('    function oeffneExternenTechTree('),source.indexOf('    function verbindeHasaUiButtons('));
+let args,focused=false,notice='',prevented=0;
+const win={opener:{},focus(){focused=true;}};
+const context={window:{screen:{availWidth:1920,availHeight:1080,availLeft:1920,availTop:0},open(...a){args=a;return win;},alert(s){notice=s;}}};
+vm.createContext(context);vm.runInContext(helper,context);
+const event={preventDefault(){prevented++;},stopPropagation(){prevented++;}};
+context.oeffneExternenTechTree(event);
+assert.equal(args[0],'https://techtree.kommandobasis.eu/');
+assert.match(args[2],/width=1248,height=702,left=2256,top=189$/);
+assert.equal(prevented,2);assert.equal(win.opener,null);assert.ok(focused);
+context.window.open=()=>null;context.oeffneExternenTechTree(event);assert.match(notice,/Pop-ups/);
+const accordion=source.slice(source.indexOf('    function baueAccordionBereichHtml('),source.indexOf('    function aktualisiereAccordionLayout('));
+vm.runInContext('const HAA_UI_AKTIVER_BEREICH="techtree";const esc=x=>x;'+accordion,context);
+assert.match(context.baueAccordionBereichHtml('techtree','Forschungsplanung',''),/Forschungsplanung.*haa-techtree-extern.*<\/summary>/);
+assert.doesNotMatch(context.baueAccordionBereichHtml('alarme','Alarme',''),/haa-techtree-extern/);
+console.log('TechTree popup: URL, 65% dimensions, centering, opener isolation, blocked popup and header placement passed.');

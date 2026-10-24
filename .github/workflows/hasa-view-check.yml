@@ -1,0 +1,28 @@
+name: HASA isolated view verification
+on:
+  push:
+    paths:
+      - '02 Website/api/event-views.php'
+      - '01 Entwicklung/Tests/Server/event_views_unit.php'
+      - '.github/workflows/hasa-view-check.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  view-check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify isolated PHP view logic
+        run: |
+          php -l '02 Website/api/event-views.php'
+          php '01 Entwicklung/Tests/Server/event_views_unit.php'
+      - name: Verify updater syntax
+        shell: pwsh
+        run: |
+          $parseErrors = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile((Join-Path $env:GITHUB_WORKSPACE '05 Verwaltung/Werkzeuge/server-update.ps1'), [ref]$null, [ref]$parseErrors)
+          if ($parseErrors.Count) { $parseErrors | ForEach-Object { Write-Error $_ }; exit 1 }
+      - name: Check TechTree window
+        run: node '01 Entwicklung/Tests/Browser/test_hasa_techtree_window.cjs'

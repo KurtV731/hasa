@@ -2,9 +2,10 @@ name: HASA server update helper syntax
 on:
   push:
     paths:
-      - '3 server/tools/server-update.ps1'
-      - '3 server/tools/config-hasa-li.example.php'
-      - 'HASA-Serverupdate*.bat'
+      - '05 Verwaltung/Werkzeuge/server-update.ps1'
+      - '05 Verwaltung/Vorlagen/config-hasa-li.example.php'
+      - '05 Verwaltung/**'
+      - '01 Entwicklung/Tests/test_folder_installer.ps1'
       - '.github/workflows/hasa-server-tools.yml'
   workflow_dispatch:
 permissions:
@@ -20,10 +21,21 @@ jobs:
           $tokens = $null
           $errors = $null
           [System.Management.Automation.Language.Parser]::ParseFile(
-            (Join-Path $pwd '3 server/tools/server-update.ps1'),
+            (Join-Path $pwd '05 Verwaltung/Werkzeuge/server-update.ps1'),
             [ref]$tokens, [ref]$errors) | Out-Null
           if ($errors.Count) {
             $errors | ForEach-Object { Write-Error $_.Message }
             exit 1
           }
           Write-Host 'Windows PowerShell syntax passed. No upload or private connection used.'
+      - name: Parse all management scripts
+        shell: powershell
+        run: |
+          Get-ChildItem '05 Verwaltung/Werkzeuge' -Filter *.ps1 | ForEach-Object {
+            $errors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$null, [ref]$errors)
+            if ($errors.Count) { throw ($errors | Out-String) }
+          }
+      - name: Exercise folder installation without uploads
+        shell: powershell
+        run: '& "01 Entwicklung/Tests/test_folder_installer.ps1"'
