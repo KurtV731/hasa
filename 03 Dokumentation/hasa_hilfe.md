@@ -1,6 +1,6 @@
 # HASA – Hilfe: Wo finde ich was?
 
-Stand: 23.10.2026 · Testversion 1.2.0 Alpha39
+Stand: 24.10.2026 · Öffentliche Version HASA 1.2.0
 
 Du brauchst keine Programmierkenntnisse, um HASA zu benutzen.
 Wenn du gerade nicht weiterweißt, suche unten nach deiner Aufgabe.
@@ -27,8 +27,11 @@ vorgeschriebenen Passwortwechsel fest. Das Horizon-Passwort wird dafür nicht be
 | Laufende Wirkungen vergleichen | **Events/Scans → Laufende Events nach Planet** |
 | ASFI ansehen | **Events/Scans** → ASFI-Liste |
 | Gildensitzungen nachlesen | **Events/Scans** → Gildensitzungen |
-| Produktionsmessungen ansehen | **Ressourcen** |
+| Produktionsverlauf ansehen | **Ressourcen** → eigenen Planeten und Verlaufsgrafiken ansehen |
+| Videos nachlesen | **Events/Scans → Motivationsvideos** |
+| Forschungsgeschenke nachlesen | **Events/Scans → Technologische Durchbrüche** |
 | Forschungsvoraussetzungen prüfen | Im HASA-Fenster **Forschungsplanung** öffnen → Ziel und Zielstufe auswählen |
+| Community-TechTree öffnen | **TechTree ↗** rechts in der Kopfzeile **Forschungsplanung** |
 | Ton für Alarme prüfen | **Alarme** → angebotene Tonfreigabe/Testton verwenden |
 | Anmeldung erneut prüfen | In der Werkzeugzeile **Anmeldestatus prüfen** |
 | Konten verwalten | **Zur Benutzerverwaltung**, nur mit Verwaltungsrecht |
@@ -70,6 +73,7 @@ gehört nicht zu diesem Versionsstand.
 - **Graue Produktion:** Keine erkannte laufende Produktionswirkung.
 - **Grüne Produktion:** Eine passende Steigerung wurde erkannt.
 - **Rote Produktion:** Eine bestätigte Senkung wurde erkannt.
+- **Restzeit eines gestarteten Videos:** Verbleibende Wirkung und Endzeit, wenn der Start eindeutig nachgewiesen ist.
 - **Besonders kräftig grüne, fette Produktion:** Ein bestätigtes Video läuft
   innerhalb seiner Stunde ab Nachrichtenzeit.
 
@@ -119,7 +123,24 @@ verwenden. Bei einer festhängenden Erweiterungsanzeige kann ein Browserneustart
 helfen; ein Neustart beweist jedoch keine bestimmte Fehlerursache.
 Für diese Prüfung keine gespeicherten Daten löschen.
 
+### Der TechTree-Knopf öffnet kein Fenster
+
+Pop-ups für die Horizon-Seite erlauben und **TechTree ↗** erneut anklicken.
+Die gewünschte Fenstergröße beträgt ungefähr 65 Prozent von Bildschirmbreite
+und -höhe; der Browser kann stattdessen einen Reiter öffnen.
+
+### Die Ressourcen-Grafik zeigt Lücken oder ungewöhnliche Tageswerte
+
+HASA zeigt die tatsächlich erfassten Messungen. Es besucht andere Planeten nicht
+selbstständig. Das Tagesmittel ist ein Messwertdurchschnitt und kein Tagesertrag.
+Die Lagerfüll-Prognose ist noch nicht enthalten.
+
 ## Aktualisieren, ohne im Editor zu arbeiten
+
+Der öffentliche Installationslink ist https://hasa.li/download/HASA-1.2.0.user.js.
+Für die öffentliche Version zeigt HASA **1.2.0**. Testfassungen besitzen zusätzlich
+eine Alpha-Kennung und gehören zum getrennten Testkanal.
+
 
 Tampermonkey → vorhandenes HASA → **Nach Updates suchen** → angebotene
 Aktualisierung bestätigen → Horizon neu laden.
@@ -133,9 +154,9 @@ Schreibe Styl kurz:
 2. Was hast du angeklickt?
 3. Was hast du erwartet und was ist stattdessen passiert?
 
-Bei einem Wunsch reicht zunächst eine Beschreibung deines Ziels. Ein
-Websitebereich für Hilfe und Vorschläge wird abgestimmt; ein fertiges
-Vorschlagsformular ist noch nicht Bestandteil von Alpha39.
+Bei einem Wunsch reicht zunächst eine Beschreibung deines Ziels. Der Bereich
+**Vorschläge** auf der Startseite kündigt den künftigen Übertragungsweg an.
+Ein fertiges Vorschlagsformular ist noch nicht vorhanden; bis dahin Styl ansprechen.
 Passwörter und Spiel-Sitzungsdaten gehören nicht in öffentliche Meldungen.
 
 ## Was kommt später?

@@ -1,9 +1,9 @@
-# HASA – Benutzeranleitung für die Testversion
+# HASA 1.2 – Benutzeranleitung
 
-Stand: 23.10.2026 · HASA 1.2.0 Alpha 39 · Spielrunde 8
+Stand: 24.10.2026 · Öffentliche Version HASA 1.2.0
 
-Diese Anleitung richtet sich an die eingeladenen Testspieler. Die stabile
-Veröffentlichung HASA 1.1 hat einen anderen Funktionsstand.
+Diese Anleitung begleitet die öffentliche Version HASA 1.2. Du kannst sie Schritt
+für Schritt lesen oder direkt zu der Funktion springen, die du gerade brauchst.
 HASA ergänzt Horizon im PC-Browser, sammelt Informationen und gibt Hinweise.
 Die Entscheidungen und Spielaktionen führst du selbst aus.
 
@@ -33,7 +33,7 @@ Du brauchst einen PC-Browser mit der Erweiterung Tampermonkey und ein von Styl
 angelegtes HASA-Konto.
 
 1. Tampermonkey über die [offizielle Seite](https://www.tampermonkey.net/) für deinen Browser installieren.
-2. [Aktuelles HASA öffnen](https://raw.githubusercontent.com/KurtV731/hasa/main/01%20Entwicklung/Userscript/Aktuell/HASA-AKTUELL.user.js).
+2. [Aktuelles HASA öffnen](https://hasa.li/download/HASA-1.2.0.user.js).
 3. Im Tampermonkey-Dialog die Installation bestätigen.
 4. Horizon unter `https://horiversum.org/game/main/main.php` öffnen oder neu laden.
 5. HASA über den angebotenen Einschaltknopf aktivieren.
@@ -54,7 +54,7 @@ Die Einstellung gilt je Browser und Profil.
 1. Tampermonkey öffnen und beim **vorhandenen HASA** **Nach Updates suchen** wählen.
 2. Eine angebotene Aktualisierung bestätigen.
 3. Horizon neu laden und HASA einschalten.
-4. Im HASA-Kopf die Version prüfen: **1.2.0 Alpha 39**.
+4. Im HASA-Kopf die Version prüfen: **1.2.0**.
 
 Wurde die Installation über den Dialog abgeschlossen, musst du keinen Editor öffnen
 und kein zusätzliches Strg+S drücken. Bei einer manuellen Änderung im Editor ist
@@ -70,7 +70,6 @@ Jeder Browser verwaltet seine eigene Installation: Firefox und Edge getrennt pr�
 Öffne einmal den Installationslink aus Kapitel 1 und aktualisiere die vorhandene
 Installation. Damit erhält sie auch die feste GitHub-Updateadresse. Die Alternative
 bleibt möglich: vollständigen Code in den vorhandenen Editor einsetzen und speichern.
-Styl kann dafür weiterhin `HASA-AKTUALISIEREN.cmd` im lokalen Repository benutzen.
 Für ein normales Update weder ein zweites HASA anlegen noch gespeicherte Daten löschen.
 
 ### Einmaliger Umstieg von älteren Fassungen auf hasa.li
@@ -78,13 +77,6 @@ Für ein normales Update weder ein zweites HASA anlegen noch gespeicherte Daten 
 Eine von Tampermonkey angefragte Berechtigung für **hasa.li** bestätigen. Auf der
 neuen Domain mit dem bisherigen HASA-Konto und persönlichen Passwort anmelden.
 Ein neues Konto oder ein Passwortreset ist dafür nicht erforderlich.
-
-### Nur für Styl: Serverteil von Alpha39
-
-Vor dem Test zuerst **HASA-Serverupdate-hasa-li.bat** ausführen, damit die neuen
-Ereignisseiten unter hasa.li bereitstehen. Danach das Userscript aktualisieren.
-Für Alpha39 ist keine neue Datenbankmigration und kein erneuter Import erforderlich.
-Testspieler laden keine PHP-Dateien hoch. Der alte Server bleibt im Wartungsmodus.
 
 ## 3. HASA-Anmeldung und erste Einrichtung
 
@@ -106,14 +98,14 @@ HASA-Schlüssel dort einmal eingeben. Für die Serverübertragung werden eine g�
 Anmeldung, abgeschlossener Passwortwechsel und der konfigurierte Schlüssel benötigt.
 Ein Schlüssel allein ersetzt die persönliche Anmeldung nicht.
 
-Ab Alpha35 verwendet ein weiterer Klick auf **Anmelden** den noch offenen
+Ein weiterer Klick auf **Anmelden** den noch offenen
 Anmeldereiter derselben Spielseite erneut. Bei Rückkehr ins Spiel wird die
 Anmeldung sofort geprüft. **Anmeldestatus prüfen** wiederholt die Prüfung ohne
 einen neuen Reiter. Wenn die Webanmeldung funktioniert, im Spiel aber keine
 Sitzung erkannt wird: denselben Browser und dasselbe Profil verwenden und den
 Cookiezugriff von Tampermonkey prüfen. Nicht wiederholt neue Passwörter vergeben.
 
-Serverfassung auth.4 setzt eine feste Höchstdauer von **24 Stunden ab Anmeldung**;
+Die Anmeldung hat eine feste Höchstdauer von **24 Stunden ab Anmeldung**;
 Aktivität verlängert diese Grenze nicht. Das Tagescookie kann Browserneustarts
 überstehen. Abmelden, Kontosperre, Reset, Rechteentzug, gelöschte Cookies oder
 früher gelöschte Sitzungsdaten beim Hosting können die Anmeldung vorher beenden.
@@ -145,13 +137,15 @@ benötigten Forschungs- und Gebäudeseiten in Horizon.
 
 Gebäudestände sind planetenbezogen, Forschungsstände gelten planetenübergreifend.
 Nicht angezeigte Einträge werden durch einen Seitenwechsel nicht pauschal gelöscht.
-Unbekannt bedeutet nicht Stufe 0.
+Unbekannt bedeutet nicht Stufe 0. Ein noch nicht ausgebautes Gebäude wird nur dann
+als Stufe 0 übernommen, wenn die zugehörige Spielseite dies eindeutig erkennen lässt.
+Kosten, interne Kennungen und Voraussetzungstabellen zählen nicht als Gebäudestufe.
 
 Nach einer Ascension die betreffenden Seiten erneut öffnen, damit tatsächlich
 angezeigte kleinere Stufen alte Werte ersetzen können. Ein bloß gespeicherter Wert
 ist kein Nachweis, dass die Stufe im neuen Durchlauf noch vorhanden ist.
 
-Alpha 32 übernimmt Forschungsstufen aus eindeutig beschrifteten Forschungsköpfen.
+HASA übernimmt Forschungsstufen aus eindeutig beschrifteten Forschungsköpfen.
 Stufen in Voraussetzungen und Kosten werden nicht als eigener Forschungsstand gelesen.
 Die allgemeine Frage, wie Horizon jede laufende Forschungs-Zielstufe darstellt,
 ist noch nicht abschließend abgesichert. Eine laufende Forschung deshalb bei
@@ -181,13 +175,21 @@ die neue Voraussetzungsliste dagegen oben. Die Forschungsdiagnose ist vorerst au
 Der Objektkatalog kann per STAN-XML importiert werden. Ohne Import nutzt HASA einen
 vorhandenen lokalen Rückfallbestand oder den Community-TechTree als Basis.
 Ältere zusätzlich bekannte Ziele können als historisch gekennzeichnet sein.
-Der Katalog liefert keine persönlichen Iststände. Bei einem gewöhnlichen
-Alpha-32-Update ist kein neuer XML-Import erforderlich.
+Der Katalog liefert keine persönlichen Iststände. Bei einem normalen Programmupdate ist nicht automatisch ein neuer XML-Import nötig.
 
 **Noch nicht enthalten:** persönliche Forschungs-Wunschliste, automatische
 Ausbaureihenfolge oder ein Rechner für die schnellste Anfangsstrategie.
 Ein begrenzter Strategieplaner für konkrete Anfangsziele ist in Vorbereitung der
 fachlichen Planung, noch keine benutzbare Funktion.
+
+### Den Community-TechTree öffnen
+
+Rechts in der Kopfzeile **Forschungsplanung** steht **TechTree ↗**. Ein Klick öffnet
+https://techtree.kommandobasis.eu/ direkt in einem eigenen Fenster. HASA bittet den
+Browser um ungefähr 65 Prozent der verfügbaren Bildschirmbreite und -höhe. Die
+tatsächliche Darstellung hängt vom Browser ab. Wird das Fenster blockiert, Pop-ups
+für die Horizon-Seite erlauben und erneut auf **TechTree ↗** klicken. Der Knopf
+ändert dein Planungsziel nicht und führt keine Spielaktion aus.
 
 ## 7. Bau- und Forschungsalarm
 
@@ -247,9 +249,9 @@ Beide wählen einander aus, speichern und haben eigene Daten beigetragen.
 Eine zusätzliche Auswahl je Galaxie ist nicht nötig.
 Sollen Messwerte mitkommen, setzen beide zusätzlich das Berichte-Häkchen.
 
-Serverumstellung sharing.2: Jeder Player wählt seine gemeinsame Freigabe einmal
-neu. Die bisherigen Einzeleinstellungen bleiben gespeichert, werden jedoch nicht
-automatisch ausgeweitet. Bis zum Speichern bleiben die eigenen Daten privat.
+Beim Umstieg von älteren Fassungen die gemeinsame Freigabe einmal prüfen und
+bewusst speichern. Frühere Einzelfreigaben werden nicht automatisch ausgeweitet.
+Bis zur neuen Auswahl bleiben die eigenen Daten privat.
 
 ## 10. Nachrichtenhaken, ASFI und Sonden
 
@@ -273,16 +275,16 @@ Sondenberichte werden als einzelne Messungen gespeichert. Eine Markierung wie
 Messungen beziehungsweise Schätzungen mit Beobachtungszeit, keine garantierten
 exakten aktuellen Planetenwerte.
 
-## 10a. Die neue Werkzeugzeile und Ereignisse
+## 10a. Werkzeugzeile und Ereignisse
 
 Die Werkzeugzeile oberhalb von Ascension bietet folgende Einstiege:
 
 | Schaltfläche | Inhalt |
 |---|---|
 | **Galaxiedatenbank** | Gespeicherte Systeme, Planeten und zugängliche Sondenbeobachtungen |
-| **Zur Benutzerverwaltung** | Verwaltung für entsprechend berechtigte Konten; fehlt bei normalen Testkonten |
+| **Zur Benutzerverwaltung** | Verwaltung für entsprechend berechtigte Konten; fehlt bei normalen Spielerkonten |
 | **Events/Scans** | Ereignisarten, Ereignisjournale, laufende Wirkungen und Scans |
-| **Ressourcen** | Deine gespeicherten Produktionsmessungen |
+| **Ressourcen** | Private Verlaufsgrafiken deiner Stundenproduktion |
 | **Kampfbericht** | Vorbereiteter Bereich; eine Kampfauswertung ist noch nicht verfügbar |
 
 ASFI und Gildensitzungen haben ihre eigenen Knöpfe in der oberen Werkzeugzeile
@@ -331,6 +333,21 @@ keinen Zugriff auf dein Ereignisjournal, deine Produktionsanalyse oder deine Lis
 laufender Wirkungen. Die gesonderte ASFI-/Beobachtungsansicht behält ihre bisherigen
 Sichtbarkeitsregeln.
 
+### Eigene Listen für Videos und technologische Durchbrüche
+
+Unter **Events/Scans → Motivationsvideos** siehst du die gespeicherten Nachweise:
+wann ein Video angeboten wurde, wann es verwendet wurde und ob ein ausdrücklicher
+Bericht das Verschlampen bestätigt. HASA ordnet Meldungen nur bei ausreichenden
+Nachweisen zu. Ein nach 14 Tagen möglicherweise abgelaufenes Angebot wird nicht
+allein deshalb als sicher verschlampt eingetragen.
+
+Unter **Events/Scans → Technologische Durchbrüche** findest du Datum, Forschung
+und erreichte Stufe, soweit der gespeicherte Bericht diese Angaben eindeutig enthält.
+Fehlende Angaben bleiben unbekannt. Für vollständige Informationen den Originalbericht
+im Spiel öffnen und seine Speicherung abwarten.
+
+Beide Listen bleiben privat; deine Galaxiefreigaben geben sie nicht an Mitspieler weiter.
+
 ## 10b. Motivationsvideo: Erinnerung und Schutz vor Einzel-Löschung
 
 ### Bekommen ist noch nicht gestartet
@@ -356,6 +373,14 @@ Ein bestätigtes Abspielen oder Verschlampen wird beim passenden Planeten
 berücksichtigt. Wiederholtes Lesen startet die Frist nicht neu.
 Der Link zur Nachrichtenseite öffnet den normalen Posteingang. Starte das Video
 dort selbst über die aktuelle Spielnachricht.
+
+### Verbleibende Wirkungszeit eines gestarteten Videos
+
+Nach einem eindeutig erkannten Start zeigt HASA die verbleibende Wirkungszeit
+und das zugehörige Ende an. Du musst dafür nicht immer wieder den Bericht öffnen.
+Die Wirkung dauert eine Stunde ab der nachgewiesenen Nachrichtenzeit; erneutes Lesen
+startet keine neue Stunde. Ist die Zeit oder Zuordnung nicht eindeutig, zeigt HASA
+keine erfundene genaue Restzeit. Die Anzeige wird nur aktualisiert, solange HASA läuft.
 
 ### Das gesperrte Löschsymbol
 
@@ -390,7 +415,7 @@ Bei gleichzeitig erkannten positiven und negativen Wirkungen hat Rot Vorrang.
 Während eines bestätigten Motivationsvideos hat dessen kräftig grüne Markierung
 Vorrang; nach Ablauf erscheinen die übrigen weiterhin geltenden Ereignisfarben.
 
-**Wassereinbruch in der Metallmine seit Alpha37:** Den Bericht einmal öffnen,
+**Wassereinbruch in der Metallmine:** Den Bericht einmal öffnen,
 damit HASA die bestätigte Produktionssenkung samt Planet und Nachrichtenzeit liest.
 Dann wird die Metall-Stundenrate rot. Der geöffnete Bericht „Wassereinbruch repariert“
 mit bestätigter normaler Arbeit in der Metallmine beendet genau diesen Malus.
@@ -412,21 +437,32 @@ Neuladen wird dieselbe gespeicherte Endzeit geprüft. Unvollständige oder zeitl
 mehrdeutige Meldungen lösen keine Videomarkierung aus. Der tatsächlich angezeigte
 Produktionswert kommt weiter aus Horizon; HASA rechnet ihn nicht pauschal mit 24 hoch.
 
+### Deinen Ressourcenverlauf ansehen
+
+Über **Ressourcen** öffnest du die privaten Verlaufsgrafiken deiner Stundenproduktion.
+Sie zeigen für den gewählten eigenen Planeten die letzten 30 Tage, getrennt nach
+Ressource, mit Tagesmittel, kleinsten und größten gemessenen Werten sowie erkannten
+Ereignissen. Auch negative Raten können angezeigt werden.
+
+Das Tagesmittel ist der Durchschnitt der vorhandenen Messungen, keine Berechnung
+des gesamten Tagesertrags. Messlücken bleiben Lücken. HASA besucht für die Grafik
+keine Planeten selbstständig. Die Werte beschreiben die beim Seitenbesuch erfasste
+Stundenproduktion, nicht deinen Lagerbestand und keine Lagerfüll-Prognose.
+
 ## 12. Wenn etwas nicht stimmt
 
 | Problem | Zuerst prüfen |
 |---|---|
 | HASA fehlt | Tampermonkey und Skript aktiviert, richtige Horizon-Seite, Browserfreigabe, dann neu laden. |
 | Falsche Version | Vollständigen aktuellen Code im vorhandenen Skript speichern; doppelte HASA-Skripte ausschließen. |
-| CMD-Aktualisierung bricht ab | Fehlermeldung festhalten. Testspieler können stattdessen die vollständige Datei manuell übernehmen. |
 | Serverdaten fehlen | HASA-Anmeldung, erster Passwortwechsel, API-Schlüssel und Tooltip der Statuspunkte. |
 | Fremde Daten fehlen | Beidseitige gemeinsame Freigabe, eigene Beiträge und gegebenenfalls beidseitige Berichtsfreigabe. |
 | Forschung oder Gebäude falsch | Betreffende Spielseite und richtigen Planeten öffnen; laufenden Auftrag mit angeben. |
-| Planer springt oder klappt zu | Angezeigte HASA-Version und genaue Klickfolge melden; in Alpha 32 soll die Position erhalten bleiben. |
+| Planer springt oder klappt zu | Angezeigte HASA-Version und genaue Klickfolge melden; beim Wechsel der Forschungsseite bleibt die Position normalerweise erhalten. |
 | Kein grüner Nachrichtenhaken | Noch keine passende dauerhafte Serverbestätigung; nicht als gesichert behandeln. |
 | Produktionsfarbe wirkt veraltet | Beginn-/Endmeldung und betroffenen Planeten nennen; fehlende Enderkennung ist möglich. |
 
-Für eine Testmeldung helfen: HASA-Version, Browser, Planet beziehungsweise
+Für eine Fehlermeldung helfen: HASA-Version, Browser, Planet beziehungsweise
 Koordinate soweit relevant, erwartetes und tatsächliches Verhalten sowie die
 Klickfolge. Screenshots können helfen. Bei angefordertem Seitenquelltext diesen
 privat übermitteln; er kann laufzeitbezogene Spielparameter enthalten.
@@ -447,20 +483,16 @@ werden nicht automatisch als gemeinschaftliche Daten veröffentlicht.
 
 ## 14. Weiterführende Hinweise
 
-- [Hilfe: Wo finde ich was?](hasa_hilfe.md)
-- [Alpha39: Änderungen und Testschritte](hasa_1.2.0-alpha.39_ereigniszentrale.md)
+- [Schnelle Hilfe: Wo finde ich was?](hasa_hilfe.md)
+- [Aktualisieren – ganz in Ruhe](hasa_updates_ganz_in_ruhe.md)
+- [HASA-Startseite](https://hasa.li/)
+- [HASA installieren](https://hasa.li/download/HASA-1.2.0.user.js)
 
-- [Änderungen und Grenzen von Alpha 33](hasa_1.2.0-alpha.33_motivationsvideo.md)
-- [Vorheriges Update Alpha 32](hasa_1.2.0-alpha.32_testerrunde.md)
-- [Historische Anleitung für HASA 1.1](hasa_1.1_benutzeranleitung.md)
-- [Projekt und aktueller Code](https://github.com/KurtV731/hasa)
+Die Anleitung beschreibt die öffentliche Version 1.2.0. Der getrennte Testkanal
+kann eine Alpha-Versionsnummer anzeigen und zusätzliche Änderungen enthalten.
+Für eine gewöhnliche Neuinstallation den öffentlichen Installationslink verwenden.
 
-Die Versionsnummer in dieser Anleitung bezeichnet ihren geprüften Stand.
-Bei künftigen Updates deren Änderungshinweise zusätzlich beachten.
-
-
-
-### Besiedelungsdauer im Forschungsplaner seit Alpha38
+### Besiedelungsdauer im Forschungsplaner
 
 Bei Kolonisationsschiffen zeigen Auswahl, gewähltes Ziel und Voraussetzungen einen
 Tooltip zur Besiedelungsdauer laut dem von Styl übermittelten Wiki-Auszug:
@@ -472,11 +504,10 @@ die Planerberechnungen werden dadurch nicht verändert.
 ## 15. Wünsche und nächste Schritte
 
 Die Vorhersage **Wann wird mein Lager voll?** ist für Version 1.3 vorgemerkt und
-in Alpha39 noch nicht enthalten. Auch eine automatische Anfangsstrategie und
+in HASA 1.2 noch nicht enthalten. Auch eine automatische Anfangsstrategie und
 ein Kampfsimulator sind weiterhin Zukunftsthemen.
 
-Anleitung, kurze Hilfe und eine Möglichkeit für eigene Vorschläge sollen in die
-Website integriert werden. Die öffentlichen Seiten und ein Vorschlagsformular
-sind mit dem Website-Verantwortlichen abzustimmen; diese Anleitung behauptet
-keinen bereits erreichbaren Menüpunkt dafür. Bis dahin Wünsche an Styl geben.
-Nenne dabei möglichst, was du erreichen möchtest und wo dir heute etwas fehlt.
+Auf der HASA-Startseite findest du den Bereich **Vorschläge**. Der eigene
+Übertragungsweg wird noch eingerichtet; ein funktionsfähiges Vorschlagsformular
+ist derzeit nicht zugesagt. Bis dahin Wünsche an Styl geben. Nenne möglichst,
+was du erreichen möchtest und wo dir heute etwas fehlt.
