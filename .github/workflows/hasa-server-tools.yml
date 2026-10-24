@@ -6,6 +6,7 @@ on:
       - '05 Verwaltung/Vorlagen/config-hasa-li.example.php'
       - '05 Verwaltung/**'
       - '01 Entwicklung/Tests/test_folder_installer.ps1'
+      - '01 Entwicklung/Tests/test_download_cleanup.ps1'
       - '.github/workflows/hasa-server-tools.yml'
   workflow_dispatch:
 permissions:
@@ -39,3 +40,6 @@ jobs:
       - name: Exercise folder installation without uploads
         shell: powershell
         run: '& "01 Entwicklung/Tests/test_folder_installer.ps1"'
+      - name: Verify download cleanup package guards without connections
+        shell: powershell
+        run: '& "01 Entwicklung/Tests/test_download_cleanup.ps1"'
