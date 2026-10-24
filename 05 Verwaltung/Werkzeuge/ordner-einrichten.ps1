@@ -33,13 +33,17 @@ foreach ($relative in @('02 Website/api/config.php','3 server/hasa-api/config.ph
  }
 }
 $backup = $null
+$oldMoved = $false
+$copyStarted = $false
 $stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm-ss-fff'
 try {
  New-Item -ItemType Directory -Path (Split-Path $destinationFull -Parent) -Force | Out-Null
  if (Test-Path -LiteralPath $destinationFull) {
   $backup = $destinationFull + '-vor-umstellung-' + $stamp
   Move-Item -LiteralPath $destinationFull -Destination $backup
+  $oldMoved = $true
  }
+ $copyStarted = $true
  Copy-Item -LiteralPath $source -Destination $destinationFull -Recurse -Force
  Check-Payload $destinationFull
  Write-Host ('Fertig: ' + $destinationFull) -ForegroundColor Green
@@ -47,9 +51,9 @@ try {
  Write-Host 'Ab jetzt HASA-START.cmd im neuen Ordner verwenden. Es wurde nichts hochgeladen.'
 } catch {
  $failure = $_
- if (Test-Path -LiteralPath $destinationFull) {
+ if ($copyStarted -and (Test-Path -LiteralPath $destinationFull)) {
   Move-Item -LiteralPath $destinationFull -Destination ($destinationFull + '-umstellung-fehlgeschlagen-' + $stamp)
  }
- if ($backup -and (Test-Path -LiteralPath $backup)) { Move-Item -LiteralPath $backup -Destination $destinationFull }
+ if ($oldMoved -and $backup -and (Test-Path -LiteralPath $backup)) { Move-Item -LiteralPath $backup -Destination $destinationFull }
  throw $failure
 }
