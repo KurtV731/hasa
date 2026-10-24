@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#081427">
+  <meta name="description" content="HASA 1.2 mit Tampermonkey Schritt
+für Schritt aktualisieren.">
+  <link rel="canonical" href="https://hasa.li/aktualisieren/">
+  <link rel="stylesheet" href="/assets/help.css">
+  <title>HASA aktualisieren · HASA</title>
+</head>
+<body>
+  <header class="site-header"><div class="wrap nav">
+    <a class="brand" href="/" aria-label="HASA Startseite"><span class="brand-mark">H</span><span>HASA<small>HORIZON ASCENSION ASSISTANT</small></span></a>
+    <button class="menu-button" id="menuButton" aria-expanded="false" aria-controls="navLinks">Menü</button>
+    <nav class="nav-links" id="navLinks" aria-label="Hauptnavigation"><a href="/">Start</a><a href="/anleitung/">Anleitung</a><a href="/hilfe/">Hilfe</a><a href="/aktualisieren/">Aktualisieren</a><a class="nav-install" href="/download/HASA-1.2.0.user.js">Installieren</a></nav>
+  </div></header>
+  <section class="hero"><div class="wrap"><span class="eyebrow">HASA 1.2 · Hilfe von Styl</span><h1>HASA
+aktualisieren – ganz in Ruhe</h1><p>Ein normaler Updateweg, der
+einmalige Wechsel und klare Hilfe, falls etwas anders
+aussieht.</p></div></section>
+  <main class="wrap page-grid">
+    <aside class="toc" aria-label="Inhaltsverzeichnis"><p class="toc-title">Auf dieser Seite</p><nav><ul>
+<li><a href="#hasa-aktualisieren--ganz-in-ruhe"
+id="toc-hasa-aktualisieren--ganz-in-ruhe">HASA aktualisieren – ganz in
+Ruhe</a>
+<ul>
+<li><a href="#welcher-weg-passt-zu-dir"
+id="toc-welcher-weg-passt-zu-dir">Welcher Weg passt zu dir?</a></li>
+<li><a href="#ein-normales-update" id="toc-ein-normales-update">Ein
+normales Update</a></li>
+<li><a href="#einmal-die-öffentliche-updatequelle-einrichten"
+id="toc-einmal-die-öffentliche-updatequelle-einrichten">Einmal die
+öffentliche Updatequelle einrichten</a></li>
+<li><a href="#automatische-prüfungen"
+id="toc-automatische-prüfungen">Automatische Prüfungen</a></li>
+<li><a href="#anmeldung-und-berechtigungen"
+id="toc-anmeldung-und-berechtigungen">Anmeldung und
+Berechtigungen</a></li>
+</ul></li>
+</ul></nav></aside>
+    <article class="article"><section
+id="hasa-aktualisieren--ganz-in-ruhe" class="level1">
+<h1>HASA aktualisieren – ganz in Ruhe</h1>
+<p>Stand: 24.10.2026 · Öffentliche Version HASA 1.2.0 · Firefox und
+Edge</p>
+<p>Du musst nichts programmieren. Lies einen Schritt, führe ihn aus und
+gehe dann weiter. Wenn etwas anders aussieht, halte kurz an und frage
+Styl. Du musst dich nicht durch unbekannte Meldungen durchklicken.</p>
+<section id="welcher-weg-passt-zu-dir" class="level2">
+<h2>Welcher Weg passt zu dir?</h2>
+<ul>
+<li><strong>HASA läuft bereits und bekommt Updates:</strong> direkt zu
+„Ein normales Update“.</li>
+<li><strong>Du hast den Code bisher von Hand eingefügt:</strong> einmal
+die öffentliche Updatequelle einrichten.</li>
+<li><strong>Du hast HASA noch nicht:</strong> beginne mit der <a
+href="/anleitung/">Benutzeranleitung</a>.</li>
+</ul>
+<p>HASA ist dein Helfer im Spiel. Tampermonkey verwaltet das Skript im
+Browser. Die Programmdatei und ihre Updateadresse sind öffentlich
+erreichbar. Du brauchst weder ein GitHub-Konto noch Git, WinSCP oder ein
+anderes Entwicklerprogramm.</p>
+</section>
+<section id="ein-normales-update" class="level2">
+<h2>Ein normales Update</h2>
+<ol type="1">
+<li>Öffne den Browser, in dem du Horizon spielst.</li>
+<li>Klicke auf das Tampermonkey-Symbol. Ist es nicht sichtbar, sieh im
+Erweiterungsmenü des Browsers nach.</li>
+<li>Wähle beim vorhandenen HASA <strong>Nach Updates suchen</strong>
+beziehungsweise <strong>Auf Userscript-Updates prüfen</strong>. Die
+Beschriftung kann etwas abweichen.</li>
+<li>Wird eine Aktualisierung angeboten, lies den Dialog und bestätige
+das Update.</li>
+<li>Gehe zu Horizon zurück und lade die Spielseite neu.</li>
+<li>Schalte HASA bei Bedarf ein und prüfe die Versionsanzeige.</li>
+</ol>
+<p>Für die öffentliche Fassung lautet die Versionsnummer derzeit
+<strong>1.2.0</strong>. Eine zusätzliche Alpha-Kennung bezeichnet den
+getrennten Testkanal. Firefox und Edge verwalten ihre Installationen
+unabhängig voneinander.</p>
+<section id="kein-update-verfügbar" class="level3">
+<h3>„Kein Update verfügbar“</h3>
+<p>Das ist keine Fehlermeldung. Es wird keine neuere Version angeboten.
+Schließe die Ansicht und spiele weiter. Eine erneute Installation ist
+dafür nicht nötig.</p>
+</section>
+<section id="muss-ich-strgs-drücken" class="level3">
+<h3>Muss ich Strg+S drücken?</h3>
+<p>Nach einem bestätigten Installations- oder Updatedialog nicht:
+Tampermonkey speichert das Skript selbst. Nur wenn du Programmtext
+direkt im Editor änderst, musst du dort speichern. Für normale Updates
+brauchst du den Editor nicht.</p>
+</section>
+</section>
+<section id="einmal-die-öffentliche-updatequelle-einrichten"
+class="level2">
+<h2>Einmal die öffentliche Updatequelle einrichten</h2>
+<p>Diesen Abschnitt brauchst du nur, wenn du den Code bislang manuell
+übernommen hast, deine Updatequelle fehlt oder Styl dich zum Wechsel auf
+die öffentliche Fassung auffordert.</p>
+<ol type="1">
+<li>Öffne im Spiel-Browser <a
+href="https://hasa.li/download/HASA-1.2.0.user.js">HASA 1.2 installieren
+oder aktualisieren</a>.</li>
+<li>Vergleiche im Tampermonkey-Dialog den Namen und die angebotene
+Version.</li>
+<li>Wird eine Aktualisierung des vorhandenen HASA angeboten, bestätige
+sie.</li>
+<li>Wenn der Dialog stattdessen vor dem Zurücksetzen aller Einstellungen
+warnt, halte an und frage Styl. Eine Neuinstallation derselben Version
+ist für ein gewöhnliches Update nicht erforderlich.</li>
+<li>Horizon neu laden und HASA einschalten.</li>
+</ol>
+<p>So erhält die öffentliche Fassung ihren stabilen Updatekanal. Die
+Updateadresse im Skript darf weiterhin zu GitHub führen; die
+Installation über hasa.li ist damit vereinbar. Nachfolgende Updates
+verwaltet Tampermonkey.</p>
+<section id="wenn-lediglich-programmtext-erscheint" class="level3">
+<h3>Wenn lediglich Programmtext erscheint</h3>
+<p>Das bedeutet nicht, dass du etwas falsch gemacht hast. Der Browser
+hat die Datei noch nicht an den Installationsdialog übergeben.</p>
+<ol type="1">
+<li><p>Tampermonkey → <strong>Übersicht</strong> öffnen.</p></li>
+<li><p>Zum Reiter <strong>Hilfsmittel</strong> beziehungsweise
+<strong>Utilities</strong> wechseln.</p></li>
+<li><p><strong>Von URL importieren</strong> beziehungsweise <strong>Von
+URL installieren</strong> suchen.</p></li>
+<li><p>Diese vollständige Adresse einfügen:</p>
+<p><code>https://hasa.li/download/HASA-1.2.0.user.js</code></p></li>
+<li><p>Den zugehörigen Installationsknopf anklicken. Danach den Dialog
+wie oben prüfen.</p></li>
+</ol>
+<p>In dieses Feld gehören nur die Adresse, kein Passwort und kein
+API-Schlüssel. Die Bereiche zum Exportieren, für ZIP-Dateien oder
+Cloud-Sicherungen werden für diesen Weg nicht benötigt.</p>
+</section>
+</section>
+<section id="automatische-prüfungen" class="level2">
+<h2>Automatische Prüfungen</h2>
+<p>Tampermonkey prüft entsprechend seiner eingestellten Updatehäufigkeit
+auf neue Versionen. Das geschieht nicht zwingend sofort nach einer
+Ankündigung. Für einzelne Updates kann eine Bestätigung nötig sein. Wer
+sofort prüfen möchte, verwendet den oben beschriebenen Menüpunkt.</p>
+<p>Eine private Vorabfassung mit ausdrücklich abgeschalteter
+Updateadresse bekommt dadurch noch keine automatischen Updates. Für den
+einmaligen Wechsel den mit Styl vereinbarten Installationslink
+verwenden. Öffentliche Fassung und Testkanal nicht versehentlich
+gegeneinander austauschen.</p>
+</section>
+<section id="anmeldung-und-berechtigungen" class="level2">
+<h2>Anmeldung und Berechtigungen</h2>
+<p>Ein Programmupdate und die persönliche HASA-Anmeldung sind getrennte
+Schritte. Wird eine Berechtigung für <strong>hasa.li</strong> angefragt,
+gehört sie zur HASA-Verbindung. Ein Update vergibt kein neues Konto und
+setzt dein Passwort nicht automatisch zurück.</p>
+<p>Funktioniert etwas nicht, notiere die Fehlermeldung und den zuletzt
+angeklickten Knopf. Ein Bildschirmfoto kann helfen. Passwörter,
+API-Schlüssel und Spiel-Sitzungsdaten gehören nicht in öffentliche
+Fehlermeldungen.</p>
+<p>Serverupdates und Datenbankarbeiten übernimmt die HASA-Verwaltung.
+Als normaler Nutzer brauchst du keine BAT-Dateien auszuführen und keine
+PHP-Dateien hochzuladen.</p>
+<p><a href="/anleitung/">Zur Benutzeranleitung</a> ·
+<a href="/hilfe/">Zur schnellen Hilfe</a></p>
+</section>
+</section><div class="page-tools"><a class="button" href="/">Zur Startseite</a><a class="button" href="/hilfe/">Schnelle Hilfe</a><a class="button" href="/aktualisieren/">Updatehilfe</a><a class="button primary" href="/download/HASA-1.2.0.user.js">HASA 1.2 installieren</a></div></article>
+  </main>
+  <footer class="footer"><div class="wrap footer-row"><a class="brand" href="/"><span class="brand-mark">H</span><span>HASA<small>HORIZON ASCENSION ASSISTANT</small></span></a><span>Anleitung und Hilfe von <strong>Styl</strong></span><small>Öffentliche Version 1.2.0</small></div></footer>
+  <script>const b=document.getElementById('menuButton'),n=document.getElementById('navLinks');b.addEventListener('click',()=>{const o=n.classList.toggle('open');b.setAttribute('aria-expanded',String(o))});n.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{n.classList.remove('open');b.setAttribute('aria-expanded','false')}));</script>
+</body>
+</html>
