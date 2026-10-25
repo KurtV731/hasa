@@ -17,13 +17,27 @@ function hasaWaterSubjects(): array
 {
     return ['Wassereinbruch in Metallmine','Wassereinbruch in Mineralmine','Wassereinbruch repariert','Wassereinbruch in Metallmine repariert','Wassereinbruch in Mineralmine repariert'];
 }
+function hasaCanonicalBreakthroughSubject(string $subject): ?string
+{
+    $compact=preg_replace('/[\s\x{00a0}]+/u','',mb_strtolower(trim($subject),'UTF-8'));
+    foreach(['Technologischer Durchbruch','Technischer Durchbruch','Technologische Durchbrüche','Technische Durchbrüche'] as $canonical)
+        if(str_replace(' ','',mb_strtolower($canonical,'UTF-8'))===$compact)return $canonical;
+    return null;
+}
 function hasaBreakthroughSubjects(): array
 {
-    return ['Technologischer Durchbruch','Technischer Durchbruch','Technologische Durchbrüche','Technische Durchbrüche'];
+    $canonical=['Technologischer Durchbruch','Technischer Durchbruch','Technologische Durchbrüche','Technische Durchbrüche'];
+    return array_merge($canonical,array_map(static fn($s)=>str_replace(' ','',$s),$canonical));
 }
 function hasaIsBreakthroughSubject(string $subject): bool
 {
-    return (bool)preg_match('/^Techn(?:olog)?isch(?:er|e) Durchbr(?:uch|üche)(?:\s*[:!–-].*)?$/u',trim($subject));
+    return hasaCanonicalBreakthroughSubject($subject)!==null || (bool)preg_match('/^Techn(?:olog)?isch(?:er|e)\s+Durchbr(?:uch|üche)(?:\s*[:!–-].*)?$/u',trim($subject));
+}
+// Recover old reports misclassified by the former CSS-only system flag.
+// A title alone is insufficient: require both characteristic sentences in the original body.
+function hasaJournalEvidenceSql(): string
+{
+    return "(system_event=1 OR (subject IN ('Technologischer Durchbruch','Technischer Durchbruch','Technologische Durchbrüche','Technische Durchbrüche','TechnologischerDurchbruch','TechnischerDurchbruch','TechnologischeDurchbrüche','TechnischeDurchbrüche') AND details_text REGEXP 'Ihren[[:space:]]+Forschern[[:space:]]+und[[:space:]]+Ingenieuren' AND details_text REGEXP 'technologischer[[:space:]]+Durchbruch[[:space:]]+gelungen'))";
 }
 function hasaIsVideoSubject(string $subject): bool
 {
@@ -137,7 +151,7 @@ function hasaJournalSummary(PDO $pdo, array $user, int $round, array $window): a
     $q=$pdo->prepare('SELECT subject COLLATE utf8mb4_bin AS subject,COUNT(*) AS total,
         SUM(CASE WHEN reported_order>=? AND reported_order<=? THEN 1 ELSE 0 END) AS recent,
         SUM(CASE WHEN reported_order IS NULL THEN 1 ELSE 0 END) AS undated
-        FROM hasa_event_reports WHERE owner_user_id=? AND round_number=? AND system_event=1
+        FROM hasa_event_reports WHERE owner_user_id=? AND round_number=? AND '.hasaJournalEvidenceSql().'
         GROUP BY subject COLLATE utf8mb4_bin ORDER BY subject COLLATE utf8mb4_bin');
     $q->execute([$window[0],$window[1],(int)$user['id'],$round]);
     $items=[];
@@ -340,6 +354,7 @@ function hasaStoreEvent(PDO $pdo, array $user, array $input): array
     if (!$message || !preg_match('/^[A-Za-z0-9_.:-]+$/D',$message)) throw new InvalidArgumentException('invalid_message_id');
     $subject=hasaEventText($input['subject'] ?? null,240);
     if (!$subject) throw new InvalidArgumentException('subject_required');
+    $subject=hasaCanonicalBreakthroughSubject($subject)??$subject;
     $type=hasaEventText($input['event_type'] ?? null,160); $position=hasaEventPosition($input['position'] ?? null);
     $time=hasaEventText($input['reported_time_text'] ?? null,40);$order=hasaEventTimeOrder($time);
     $name=hasaEventText($input['planet_name'] ?? null,160);$details=hasaEventText($input['details'] ?? null,60000);
@@ -348,11 +363,17 @@ function hasaStoreEvent(PDO $pdo, array $user, array $input): array
     $pdo->beginTransaction();
     try {
         hasaEventLockUser($pdo,$user);
-        $q=$pdo->prepare('SELECT id,identity_hash FROM hasa_event_reports WHERE owner_user_id=? AND round_number=? AND message_id=? FOR UPDATE');$q->execute([(int)$user['id'],$round,$message]);$old=$q->fetch();
-        if ($old && !hash_equals($old['identity_hash'],$identity)) throw new DomainException('message_identity_conflict');
+        $q=$pdo->prepare('SELECT id,identity_hash,subject,galaxy_number,system_number,orbit_position,reported_game_time FROM hasa_event_reports WHERE owner_user_id=? AND round_number=? AND message_id=? FOR UPDATE');$q->execute([(int)$user['id'],$round,$message]);$old=$q->fetch();
+        if ($old && !hash_equals($old['identity_hash'],$identity)) {
+            $canonical=hasaCanonicalBreakthroughSubject($old['subject']);
+            $oldPosition=$old['galaxy_number']===null?null:['galaxy'=>(int)$old['galaxy_number'],'system'=>(int)$old['system_number'],'orbit'=>(int)$old['orbit_position']];
+            if($canonical===null || $canonical!==$subject || $oldPosition!==$position || $old['reported_game_time']!==$time)
+                throw new DomainException('message_identity_conflict');
+        }
         if ($old) {
             $id=(int)$old['id'];
-            if ($details!==null || $type!==null) {$q=$pdo->prepare('UPDATE hasa_event_reports SET details_text=COALESCE(?,details_text),event_type=COALESCE(?,event_type) WHERE id=?');$q->execute([$details,$type,$id]);}
+            $q=$pdo->prepare('UPDATE hasa_event_reports SET details_text=COALESCE(?,details_text),event_type=COALESCE(?,event_type),system_event=GREATEST(system_event,?),subject=?,identity_hash=? WHERE id=?');
+            $q->execute([$details,$type,$systemEvent?1:0,$subject,$identity,$id]);
         } else {
             $q=$pdo->prepare('INSERT INTO hasa_event_reports(owner_user_id,round_number,message_id,subject,event_type,system_event,galaxy_number,system_number,orbit_position,planet_name,reported_game_time,reported_order,captured_at,details_text,identity_hash) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
             $q->execute([(int)$user['id'],$round,$message,$subject,$type,$systemEvent?1:0,$position['galaxy']??null,$position['system']??null,$position['orbit']??null,$name,$time,$order,$captured,$details,$identity]);$id=(int)$pdo->lastInsertId();

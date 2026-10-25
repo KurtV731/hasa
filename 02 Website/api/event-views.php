@@ -4,7 +4,7 @@ declare(strict_types=1);
 // These views deliberately never use alliance/public visibility or admin privileges.
 function hasaOwnHistoryRows(PDO $pdo, array $user, int $round, array $subjects): array
 {
-    $sql='SELECT id,message_id,subject,reported_game_time,reported_order,planet_name,galaxy_number,system_number,orbit_position,details_text FROM hasa_event_reports WHERE owner_user_id=? AND round_number=? AND system_event=1 AND (subject IN ('.implode(',',array_fill(0,count($subjects),'?')).') OR event_type IN ('.implode(',',array_fill(0,count($subjects),'?')).')) ORDER BY reported_order ASC,id ASC';
+    $sql='SELECT id,message_id,subject,reported_game_time,reported_order,planet_name,galaxy_number,system_number,orbit_position,details_text FROM hasa_event_reports WHERE owner_user_id=? AND round_number=? AND '.hasaJournalEvidenceSql().' AND (subject IN ('.implode(',',array_fill(0,count($subjects),'?')).') OR event_type IN ('.implode(',',array_fill(0,count($subjects),'?')).')) ORDER BY reported_order ASC,id ASC';
     $q=$pdo->prepare($sql);$q->execute(array_merge([(int)$user['id'],$round],$subjects,$subjects));return $q->fetchAll();
 }
 function hasaHistoryPosition(array $r): ?string

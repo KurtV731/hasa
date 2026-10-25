@@ -240,6 +240,27 @@ const moduleSource=source.slice(source.indexOf('    // Alpha28: Rohmeldungen'),s
   }
  });
 
+
+ await test('BR-separated research title and research sender work without event CSS class',async()=>{
+  const html=overview('research-br').replace('Planet zerbrochen','Technologischer<br>Durchbruch').replace('Raumüberwachung','Forschungszentrum').replace('MessageReportEvent','MessageReportResearch');
+  await page.setContent(html);
+  const result=await page.evaluate(()=>{live.api.scan();return live.store.get(live.api.eventsKey).find(e=>e.messageId==='research-br');});
+  assert.equal(result.subject,'Technologischer Durchbruch');assert.equal(result.eventType,'Technologischer Durchbruch');assert.equal(result.systemEvent,true);
+ });
+ await test('same stored observation is enriched when its system flag was previously false',async()=>{
+  const r=await page.evaluate(()=>{
+   const meta={kind:'overview',messageId:'old-system-flag',subject:'Technologischer Durchbruch',reportedTimeText:'13.10.2026 20:42:55',position:{galaxy:3,system:48,orbit:14},systemEvent:false};
+   live.api.record('Technologischer Durchbruch',meta);
+   const enriched=live.api.record('Technologischer Durchbruch',{...meta,systemEvent:true});
+   return {enriched,event:live.store.get(live.api.eventsKey).find(e=>e.messageId==='old-system-flag')};
+  });assert.equal(r.enriched,true);assert.equal(r.event.systemEvent,true);assert.equal(r.event.observations.length,1);
+ });
+ await test('player title alone does not identify a system research notice',async()=>{
+  const html=overview('private-research-title').replace('Planet zerbrochen','Technologischer<br>Durchbruch').replace('Raumüberwachung','Mitspieler').replace('MessageReportEvent','MessageReportPlayer');
+  await page.setContent(html);
+  const result=await page.evaluate(()=>{live.api.scan();return live.store.get(live.api.eventsKey).find(e=>e.messageId==='private-research-title');});
+  assert.equal(result.systemEvent,undefined);
+ });
  await test('missing breakthrough body is fetched through a read-only message link',async()=>{
   const html='<div class="MessageContainer">'+overview('auto-breakthrough').replace('Planet zerbrochen','Technologischer Durchbruch')+'<table><tr><td class="MessageTableCellLeft">Gebäude:<table><tr><td>SHIPYARD</td><td>2</td><td>Provisorische Raumschiffswerkstatt</td></tr></table>--- Forschungszentrum -- Test</td></tr></table></div>';
   await page.evaluate(html=>{window.breakthroughReads=[];window.fetch=async(url,options)=>{window.breakthroughReads.push({url,method:options.method,credentials:options.credentials});return {ok:true,text:async()=>html};};},html);

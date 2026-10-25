@@ -50,4 +50,9 @@ unit(hasaBreakthroughResult('Forschungen: HULLTECH 1 Schiffsrumpftechnik 1 ---')
 unit(hasaBreakthroughEntries('Nur ein unbekannter Bericht')===[],'unknown report retains original without invented entries');
 unit(hasaBreakthroughDetails("Original\n\n[HASA Zustandsvergleich]\nVergleich")===['Original','Vergleich'],'state comparison kept separate from original report');
 
+
+unit(hasaCanonicalBreakthroughSubject('TechnologischerDurchbruch')==='Technologischer Durchbruch','BR-joined subject resolves to canonical research title');
+unit(hasaCanonicalBreakthroughSubject("Technologischer\nDurchbruch")==='Technologischer Durchbruch','subject whitespace variants normalized');
+unit(hasaCanonicalBreakthroughSubject('Private Nachricht')===null,'unrelated title never canonicalized as breakthrough');
+
 echo $n.' isolated event-view checks passed'.PHP_EOL;

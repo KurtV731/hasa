@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         HASA – Horizon Ascension Assistant
 // @namespace    horiversum.hasa
-// @version      1.3.0-alpha.1
+// @version      1.3.0-alpha.2
 // @charset      UTF-8
 // @updateURL    https://raw.githubusercontent.com/KurtV731/hasa/dev-1.3-alpha1/01%20Entwicklung/Userscript/Aktuell/HASA-AKTUELL.user.js
 // @downloadURL  https://raw.githubusercontent.com/KurtV731/hasa/dev-1.3-alpha1/01%20Entwicklung/Userscript/Aktuell/HASA-AKTUELL.user.js
@@ -58,7 +58,7 @@
 ==========================================================
  HASA – Horizon Ascension Assistant
 
- Version : 1.3.0 Alpha 1
+ Version : 1.3.0 Alpha 2
  Status  : Anmeldestatus, Tages-Sitzung und vorhandene Spielassistenten
  Build   : 2026-10-19
 
@@ -217,8 +217,8 @@
         'PHYSICS', 'PSYCHOLOGY', 'NUCLEARPHYSICS', 'SOLARENERGYTECH'
     ]);
 
-    const HASA_VERSION = '1.3.0 Alpha 1';
-    const HASA_BUILD_LABEL = '1.3.0-alpha1-ereignisverlaeufe-2026-10-25';
+    const HASA_VERSION = '1.3.0 Alpha 2';
+    const HASA_BUILD_LABEL = '1.3.0-alpha2-durchbruch-erfassung-2026-10-25';
     const HASA_RUNDE = 8;
     const HASA_RUNDE_SCHLUESSEL = 'runde8';
     // Die MariaDB und sämtliche Schreibendpunkte trennen Runde 7 und 8 jetzt
@@ -438,9 +438,17 @@
         const ort = cells[1].querySelector('div') || cells[1];
         const ortText = ort ? prdrNormalisiereText(ort.textContent) : '';
         const name = ortText.replace(/\s*\(\s*\d+\s*:\s*\d+\s*:\s*\d+\s*\)\s*$/, '').trim();
-        return { subject: prdrNormalisiereText(link.textContent), position: ereignisPosition(ortText),
+        // textContent alone joins words across BR, e.g. TechnologischerDurchbruch.
+        const subject=prdrNormalisiereText(ereignisOriginaltext(link));
+        const position=ereignisPosition(ortText);
+        const senderNode=cells[1].cloneNode(true);
+        senderNode.querySelectorAll('div').forEach(node=>node.remove());
+        const sender=prdrNormalisiereText(ereignisOriginaltext(senderNode));
+        const researchNotice=/^Techn(?:ologischer|ischer|ologische|ische) Durchbr(?:uch|üche)$/i.test(subject)
+            && sender==='Forschungszentrum' && Boolean(position);
+        return { subject: subject, position: position,
             positionName: name || null, reportedTimeText: zeitText,
-            systemEvent: link.classList.contains('MessageReportEvent') };
+            systemEvent: link.classList.contains('MessageReportEvent') || researchNotice };
     }
 
     let HAA_DURCHBRUCH_ABRUF=false;
@@ -598,7 +606,7 @@
             }));
         });
         const neueMetadaten = Boolean(eintrag && ((meta.position && !eintrag.position)
-            || (meta.subject && !eintrag.subject) || (typ && typ!==eintrag.eventType)));
+            || (meta.subject && meta.subject!==eintrag.subject) || (meta.systemEvent && !eintrag.systemEvent) || (typ && typ!==eintrag.eventType)));
         if (eintrag && !neueMetadaten && eintrag.observations.some(function (s) {
             return s.kind === meta.kind && s.rawText === text;
         })) return false;

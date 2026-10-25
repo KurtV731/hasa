@@ -170,6 +170,31 @@ check(str_contains($waterHtml,'Minentyp') && str_contains($waterHtml,'Schäden')
 check(!str_contains(hasaWaterHistoryHtml($pdo,$rootUser,8,$clock),'Active planet'),'water history remains private even for root');
 ob_start();hasaAuthPage('Ein Titel','<h1>Ein Titel</h1>',false);$singleHeading=ob_get_clean();
 check(substr_count($singleHeading,'<h1>')===1,'event page has exactly one heading');
+
+// Regression: a previously saved research notice with flag 0 stayed invisible forever.
+$researchBase=array_replace($activeBase,['message_id'=>'repair-system-flag','subject'=>'Technologischer Durchbruch','event_type'=>'Technologischer Durchbruch','system_event'=>false,'reported_time_text'=>'22.10.2026 13:35:00']);
+$oldAck=hasaStoreEvent($pdo,$one,$researchBase);
+check((int)$pdo->query("SELECT system_event FROM hasa_event_reports WHERE message_id='repair-system-flag'")->fetchColumn()===0,'legacy research header reproduced with false system flag');
+$newAck=hasaStoreEvent($pdo,$one,array_replace($researchBase,['system_event'=>true]));
+check($oldAck['report_id']===$newAck['report_id'] && (int)$pdo->query("SELECT system_event FROM hasa_event_reports WHERE message_id='repair-system-flag'")->fetchColumn()===1,'existing research row promoted without duplicate');
+hasaStoreEvent($pdo,$one,$researchBase);
+check((int)$pdo->query("SELECT system_event FROM hasa_event_reports WHERE message_id='repair-system-flag'")->fetchColumn()===1,'later weak observation never demotes proven system flag');
+$legacy=array_replace($researchBase,['message_id'=>'legacy-joined-title','reported_time_text'=>'22.10.2026 13:36:00']);
+$legacyAck=hasaStoreEvent($pdo,$one,$legacy);
+$legacySubject='TechnologischerDurchbruch';$legacyHash=hash('sha256',json_encode([8,$legacy['message_id'],$legacySubject,$legacy['position'],$legacy['reported_time_text']],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES));
+$repair=$pdo->prepare('UPDATE hasa_event_reports SET subject=?,identity_hash=? WHERE id=?');$repair->execute([$legacySubject,$legacyHash,$legacyAck['report_id']]);
+$repairedAck=hasaStoreEvent($pdo,$one,array_replace($legacy,['system_event'=>true]));
+check($legacyAck['report_id']===$repairedAck['report_id'] && $pdo->query("SELECT subject FROM hasa_event_reports WHERE message_id='legacy-joined-title'")->fetchColumn()==='Technologischer Durchbruch','joined legacy title repaired without identity conflict or duplicate');
+conflict(fn()=>hasaStoreEvent($pdo,$one,array_replace($legacy,['position'=>['galaxy'=>1,'system'=>999,'orbit'=>3]])),'message_identity_conflict');
+$proof="Ihren Forschern und Ingenieuren auf Testplanet ist bei der Arbeit ein großer technologischer\nDurchbruch gelungen, der neue Gebäude, Einheiten oder Forschungen ermöglicht.\nGebäude:\nSHIPYARD\n2\nProvisorische Raumschiffswerkstatt\n---";
+$put('legacy-unflagged-body','Technologischer Durchbruch','22.10.2026 13:37:00',$proof,['system_event'=>false]);
+$recovered=hasaPersonalHistoryHtml($pdo,$one,8,'breakthroughs',$clock);
+check(str_contains($recovered,'Provisorische Raumschiffswerkstatt'),'old full research body recovered despite false CSS-derived flag');
+$beforeRecovery=hasaJournalSummary($pdo,$one,8,$window)['Technologischer Durchbruch']['total'];
+$put('private-same-research-title','Technologischer Durchbruch','22.10.2026 13:38:00','Unrelated private note',['system_event'=>false]);
+check(hasaJournalSummary($pdo,$one,8,$window)['Technologischer Durchbruch']['total']===$beforeRecovery,'unproven private title excluded from research counter');
+check(!str_contains(hasaPersonalHistoryHtml($pdo,$rootUser,8,'breakthroughs',$clock),'Provisorische Raumschiffswerkstatt'),'recovered reports still own-account only');
+
 echo $n.' MariaDB checks passed'.PHP_EOL;
 
 
