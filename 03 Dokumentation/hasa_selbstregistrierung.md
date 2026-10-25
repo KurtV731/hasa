@@ -37,6 +37,6 @@ Das Userscript muss für die neue Kontoanlage nicht ersetzt werden. Die vorhande
 
 ## Prüfungen
 
-Vorgesehen: vollständige bestehende Browser-/MariaDB-Regressionssuite; Diensttests für Bestätigung, Privatrechte, Rollen, bestehende Konten, konkurrierende Anfragen, Ablauf/Einmaligkeit, Passwortwiederherstellung und Verwaltungsgrenzen; echter lokaler PHP-HTTP-Ablauf mit isoliertem Sendmail-Postfach; Browserprüfung für Fragmentübernahme, Preview-Sicherheit und mobile Formulare; Wartungssperre auch für alle neuen öffentlichen Endpunkte. Prüfstand und geprüfter Commit werden im gemeinsamen schwarzen Brett dokumentiert.
+Automatisch geprüft: vollständige bestehende Browser-/MariaDB-Regressionssuite; Diensttests für Bestätigung, Privatrechte, Rollen, bestehende Konten, konkurrierende Anfragen, Ablauf/Einmaligkeit, Passwortwiederherstellung und Verwaltungsgrenzen; echter lokaler PHP-HTTP-Ablauf mit isoliertem Sendmail-Postfach; Browserprüfung für Fragmentübernahme, Preview-Sicherheit und mobile Formulare; Wartungssperre auch für alle neuen öffentlichen Endpunkte. Prüfstand und geprüfter Commit werden im gemeinsamen schwarzen Brett dokumentiert.
 
 Referenzen: OWASP Forgot Password Cheat Sheet (https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html), PHP mail()-Dokumentation (https://www.php.net/manual/de/function.mail.php).

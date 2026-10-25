@@ -52,7 +52,11 @@ if ($flash) {
 }
 $signupReady=hasaSignupAvailable($pdo);
 if($signupReady)$body.='<h2>Neue Spieler</h2><p>Neue Spieler legen ihr Konto und Passwort selbst an: <a href="register.php">Öffentliche Registrierung</a>. Nach der E-Mail-Bestätigung sind normale Spielerrechte automatisch freigeschaltet.</p>';
-else{
+if($signupReady && (int)$actor['can_manage_user_admins']){
+    $mailStats=$pdo->query("SELECT SUM(mail_status='accepted') AS accepted,SUM(mail_status='failed') AS failed FROM hasa_registrations WHERE created_at>=DATE_SUB(UTC_TIMESTAMP(),INTERVAL 1 DAY)")->fetch();
+    $body.='<p class="muted">Registrierungsmails der letzten 24 Stunden: '.(int)$mailStats['accepted'].' vom Maildienst angenommen, '.(int)$mailStats['failed'].' fehlgeschlagen. Die Annahme bestätigt noch nicht den Eingang im Postfach.</p>';
+}
+if(!$signupReady){
     if((int)$actor['can_manage_user_admins'])$body.='<h2>Selbstregistrierung einschalten</h2><p>Einmalig die zusätzlichen Tabellen einrichten. Bestehende Konten und Spieldaten bleiben erhalten.</p><form method="post">'.$hidden.'<input type="hidden" name="action" value="signup-install"><button>Öffentliche Registrierung einrichten</button></form>';
     $body .= '<h2>Player anlegen</h2><form method="post">' . $hidden . '<input type="hidden" name="action" value="create"><label>Ingame-Spielername<input name="player_name" maxlength="120" required autocomplete="off"></label><button>Player-Konto anlegen</button></form>';
 }

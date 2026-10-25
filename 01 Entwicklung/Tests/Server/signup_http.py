@@ -60,6 +60,16 @@ with tempfile.TemporaryDirectory(prefix='hasa-signup-http-') as tmp:
   status,h,body=request('/login.php');login_csrf=csrf(body)
   status,h,body=request('/login.php',{'csrf':login_csrf,'player_name':'HTTPNew','password':'Http-new-password-2026'})
   check(status==303,'replacement password works through actual login endpoint')
+  status,h,body=request('/user-admin.php');check(status==403,'normal self-registered player cannot open user management')
+  new_id=state['user']['id'];cookie=''
+  status,h,body=request('/login.php');lead_csrf=csrf(body)
+  status,h,body=request('/login.php',{'csrf':lead_csrf,'player_name':'SignupLead','password':'Lead-ci-password-2026'})
+  check(status==303,'existing user leadership still logs in normally')
+  status,h,body=request('/user-admin.php')
+  check(status==200 and 'Registrierungsmails der letzten 24 Stunden' in body and 'Passwortlink per E-Mail senden' in body and 'Neues Startpasswort vergeben' not in body,'user administration offers mail links and delivery diagnostics instead of start passwords')
+  admin_csrf=csrf(body);once=re.search(r'name="once" value="([a-f0-9]+)"',body).group(1)
+  status,h,body=request('/user-admin.php',{'csrf':admin_csrf,'once':once,'target_id':str(new_id),'action':'grant-admin'})
+  check(status==303,'leadership can promote a self-registered player through existing administration')
   log.flush();check(activation not in (root/'server.log').read_text() and reset not in (root/'server.log').read_text(),'fragment tokens do not appear in request URL logs')
   print(f'{checks} real signup/reset HTTP checks passed; no external messages sent')
  finally:

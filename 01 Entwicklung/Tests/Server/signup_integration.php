@@ -9,7 +9,8 @@ function signupCheck(bool $ok,string $text):void{global $n;if(!$ok)throw new Run
 function signupReject(callable $fn,string $text):void{try{$fn();}catch(RuntimeException|InvalidArgumentException){signupCheck(true,$text);return;}throw new RuntimeException($text);}
 function signupToken(array $m):string{return parse_url($m['link'],PHP_URL_FRAGMENT);}
 $pdo->exec("INSERT INTO hasa_users(player_name,password_hash,role,active,must_change_password,is_user_admin,can_manage_user_admins) VALUES('SignupLead',NULL,'root',1,0,1,1),('SignupAdmin',NULL,'player',1,0,1,0),('SignupOther',NULL,'player',1,0,0,0)");
-$lead=(int)$pdo->query("SELECT id FROM hasa_users WHERE player_name='SignupLead'")->fetchColumn();$admin=(int)$pdo->query("SELECT id FROM hasa_users WHERE player_name='SignupAdmin'")->fetchColumn();
+$lead=(int)$pdo->query("SELECT id FROM hasa_users WHERE player_name='SignupLead'")->fetchColumn();
+$pdo->prepare('UPDATE hasa_users SET password_hash=? WHERE id=?')->execute([hasaAuthHash('Lead-ci-password-2026'),$lead]);$admin=(int)$pdo->query("SELECT id FROM hasa_users WHERE player_name='SignupAdmin'")->fetchColumn();
 signupCheck(!hasaSignupAvailable($pdo),'signup schema initially absent');signupReject(fn()=>hasaSignupInstall($pdo,$admin),'delegate cannot install public registration');
 hasaSignupInstall($pdo,$lead);hasaSignupInstall($pdo,$lead);signupCheck(hasaSignupAvailable($pdo),'schema setup idempotent without changing accounts');
 $password='Public-test-pass-2026';$m=hasaSignupRequest($pdo,'SignupNew','new@example.test',$password,$password);$token=signupToken($m);
