@@ -55,6 +55,23 @@ function hasaAuthPage(string $title, string $body, bool $showHeading = true): vo
       document.querySelector('[data-onboarding-help]').hidden=true;
     }
   }
+  document.querySelectorAll('form[data-hasa-user-actions]').forEach(form=>{
+    const action=form.querySelector('[data-hasa-action]');
+    const email=form.querySelector('[data-hasa-email-fields]');
+    const deletion=form.querySelector('[data-hasa-delete-fields]');
+    const confirmation=form.querySelector('[name="delete_confirmation"]');
+    const submit=form.querySelector('[data-hasa-action-submit]');
+    const checkName=()=>{
+      if(confirmation)confirmation.setCustomValidity(action.value==='delete' && confirmation.value.trim()!==confirmation.dataset.expectedName?'Bitte den angezeigten Spielernamen genau eingeben.':'');
+    };
+    const update=()=>{
+      if(email){email.hidden=action.value!=='reset-password';email.disabled=email.hidden;}
+      if(deletion){deletion.hidden=action.value!=='delete';deletion.disabled=deletion.hidden;}
+      if(submit){submit.textContent=action.value==='delete'?'HASA-Konto endgültig löschen':'Gewählte Aktion ausführen';submit.style.background=action.value==='delete'?'#b91c1c':'';}
+      checkName();
+    };
+    action.addEventListener('change',update);confirmation?.addEventListener('input',checkName);update();
+  });
   document.querySelectorAll('input[type="password"]').forEach((input,index)=>{
     const label=input.closest('label');
     const name=label?.firstChild?.textContent.trim()||'Passwort';
@@ -292,6 +309,7 @@ set_exception_handler(static function (Throwable $error): never {
     $json = in_array($script, ['auth-status.php','galaxy-read.php','prospection-read.php','systems.php','prospection-reports.php'], true);
     hasaAuthError('Die Funktion ist gerade nicht verfügbar. Bitte später erneut versuchen.', 503, $json);
 });
+
 
 
 

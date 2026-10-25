@@ -21,7 +21,8 @@ if ($method === 'POST') {
         if($action==='signup-install'){hasaSignupInstall($pdo,(int)$user['id']);$flash=['message'=>'Öffentliche Registrierung eingerichtet. Neue Spieler können sich jetzt selbst registrieren.','name'=>''];}
         else{
             $email=is_string($_POST['email']??null)?$_POST['email']:'';
-            $flash=hasaUserAdminAction($pdo,(int)$user['id'],$action,$name,$id===false?0:(int)$id,$email);
+            $deleteConfirmation=is_string($_POST['delete_confirmation']??null)?$_POST['delete_confirmation']:'';
+            $flash=hasaUserAdminAction($pdo,(int)$user['id'],$action,$name,$id===false?0:(int)$id,$email,$deleteConfirmation);
             if(isset($flash['link']))$flash['mail_accepted']=hasaSignupSend($pdo,$flash);
         }
     }
@@ -66,14 +67,17 @@ if (!$rows) $body .= '<p>Noch keine Konten in deinem Verwaltungsbereich.</p>';
 foreach ($rows as $row) {
     $body .= '<details style="margin:1rem 0"><summary>' . hasaAuthEscape($row['player_name']) . ' · ' . ((int)$row['active'] ? 'aktiv' : 'gesperrt') . ((int)$row['is_user_admin'] ? ' · Benutzeradmin' : '') . ((int)$row['must_change_password'] ? ' · Passwortwechsel offen' : '') . '</summary>';
     if ((int)$row['id'] !== (int)$user['id']) {
-        $body .= '<form method="post">' . $hidden . '<input type="hidden" name="target_id" value="' . (int)$row['id'] . '"><label>Aktion<select name="action" required style="display:block;width:100%;font:inherit;padding:.5rem"><option value="">Bitte Aktion auswählen</option><option value="reset-password">' . ($signupReady?'Passwortlink per E-Mail senden':'Neues Startpasswort vergeben') . '</option><option value="' . ((int)$row['active'] ? 'block' : 'unblock') . '">' . ((int)$row['active'] ? 'Konto sperren' : 'Konto entsperren') . '</option>';
+        $body .= '<form method="post" data-hasa-user-actions>' . $hidden . '<input type="hidden" name="target_id" value="' . (int)$row['id'] . '"><label>Aktion<select name="action" data-hasa-action required style="display:block;width:100%;font:inherit;padding:.5rem"><option value="">Bitte Aktion auswählen</option><option value="reset-password">' . ($signupReady?'Passwortlink per E-Mail senden':'Neues Startpasswort vergeben') . '</option><option value="' . ((int)$row['active'] ? 'block' : 'unblock') . '">' . ((int)$row['active'] ? 'Konto sperren' : 'Konto entsperren') . '</option>';
         if ((int)$actor['can_manage_user_admins']) $body .= '<option value="' . ((int)$row['is_user_admin'] ? 'revoke-admin' : 'grant-admin') . '">' . ((int)$row['is_user_admin'] ? 'Benutzeradmin-Recht entziehen' : 'Benutzeradmin-Recht erteilen') . '</option>';
+        if(!(int)$row['is_user_admin'])$body.='<option value="delete">HASA-Konto endgültig löschen</option>';
         $body .= '</select></label>';
-        if($signupReady)$body.='<label>E-Mail für den Passwortlink<input type="email" name="email" maxlength="254" autocomplete="off" value="'.hasaAuthEscape($row['email']??'').'"></label><p class="muted">'.(!empty($row['email_verified'])?'E-Mail-Adresse bestätigt.':'Bei älteren Konten die mit dem Spieler vereinbarte E-Mail-Adresse eintragen.').' Für andere Aktionen kann das Feld leer bleiben.</p>';
-        $body.='<button>Gewählte Aktion ausführen</button></form>';
+        if($signupReady)$body.='<fieldset data-hasa-email-fields hidden disabled style="border:0;padding:0;margin:0"><label>E-Mail für den Passwortlink<input type="email" name="email" maxlength="254" autocomplete="off" required value="'.hasaAuthEscape($row['email']??'').'"></label><p class="muted">'.(!empty($row['email_verified'])?'E-Mail-Adresse bestätigt.':'Bei älteren Konten die mit dem Spieler vereinbarte E-Mail-Adresse eintragen.').'</p></fieldset>';
+        if(!(int)$row['is_user_admin'])$body.='<fieldset data-hasa-delete-fields hidden disabled style="border:0;padding:0;margin:0"><p class="error">Dieses HASA-Konto und seine eigenen auf dem Server gespeicherten Spielanalysen werden endgültig gelöscht.</p><label>Zum Bestätigen den Spielernamen '.hasaAuthEscape($row['player_name']).' eingeben<input name="delete_confirmation" autocomplete="off" required data-expected-name="'.hasaAuthEscape($row['player_name']).'"></label></fieldset>';
+        $body.='<button data-hasa-action-submit>Gewählte Aktion ausführen</button></form>';
     }
     $body .= '</details>';
 }
 $body .= '<p class="muted">' . HASA_USERADMIN_VERSION . ' · Benutzeradmins verwalten zunächst die von ihnen angelegten Konten. Allianzzuordnungen folgen gesondert.</p>';
 hasaAuthPage('Benutzerverwaltung', $body);
+
 

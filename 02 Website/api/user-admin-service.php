@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__ . '/signup-service.php';
-const HASA_USERADMIN_VERSION = '1.3.0-signup.1';
+const HASA_USERADMIN_VERSION = '1.3.0-useradmin.2';
 function hasaUserAdminActor(PDO $pdo, int $id, bool $lock = false): array
 {
     $q = $pdo->prepare('SELECT id, role, active, must_change_password, is_user_admin, can_manage_user_admins FROM hasa_users WHERE id = ?' . ($lock ? ' FOR UPDATE' : ''));
@@ -21,7 +21,7 @@ function hasaUserAdminList(PDO $pdo, array $actor): array
     }
     return $rows;
 }
-function hasaUserAdminAction(PDO $pdo, int $actorId, string $action, string $name, int $targetId, string $email = ''): array
+function hasaUserAdminAction(PDO $pdo, int $actorId, string $action, string $name, int $targetId, string $email = '', string $deleteConfirmation = ''): array
 {
     $pdo->beginTransaction();
     try {
@@ -35,14 +35,27 @@ function hasaUserAdminAction(PDO $pdo, int $actorId, string $action, string $nam
             $q->execute([$name, hasaAuthHash($password), $actorId]);
             $result = ['message' => 'Player-Konto angelegt.', 'name' => $name, 'password' => $password];
         } else {
-            if (!in_array($action, ['reset-password','block','unblock','grant-admin','revoke-admin'], true)) throw new RuntimeException('Unbekannte Aktion.');
+            if (!in_array($action, ['reset-password','block','unblock','grant-admin','revoke-admin','delete'], true)) throw new RuntimeException('Unbekannte Aktion.');
             if ($targetId < 1 || $targetId === $actorId) throw new RuntimeException('Das eigene Konto kann hier nicht verändert werden.');
             $q = $pdo->prepare('SELECT id, player_name, role, active, auth_version, created_by_user_id, is_user_admin, can_manage_user_admins FROM hasa_users WHERE id = ? FOR UPDATE');
             $q->execute([$targetId]); $target = $q->fetch();
             if (!$target || $target['role'] !== 'player' || (int)$target['can_manage_user_admins']) throw new RuntimeException('Dieses Konto ist geschützt oder nicht verfügbar.');
             if (!(int)$actor['can_manage_user_admins'] && ((int)$target['created_by_user_id'] !== $actorId || (int)$target['is_user_admin'])) throw new RuntimeException('Dieses Konto gehört nicht zu deinem Verwaltungsbereich.');
             $result = ['message' => 'Kontenaktion abgeschlossen.', 'name' => $target['player_name']];
-            if ($action === 'reset-password' && hasaSignupAvailable($pdo)) {
+            if ($action === 'delete') {
+                if((int)$target['is_user_admin'])throw new RuntimeException('Bitte zuerst das Benutzeradmin-Recht entziehen.');
+                if(trim($deleteConfirmation)!==$target['player_name'])throw new RuntimeException('Zum Löschen bitte den angezeigten Spielernamen genau eingeben.');
+                // Account-owned systems cascade to their planets, reports, measurements and ASFI.
+                // Other accounts and global galaxy metadata are retained.
+                $pdo->prepare('DELETE FROM hasa_systems WHERE owner_user_id=?')->execute([$targetId]);
+                if(hasaSignupAvailable($pdo))$pdo->prepare('DELETE FROM hasa_registrations WHERE player_name=?')->execute([$target['player_name']]);
+                $pdo->prepare('DELETE FROM hasa_login_limits WHERE limit_key=?')->execute([hash('sha256','name:'.mb_strtolower($target['player_name'],'UTF-8'))]);
+                $pdo->prepare('UPDATE hasa_users SET created_by_user_id=NULL WHERE created_by_user_id=?')->execute([$targetId]);
+                $pdo->prepare('DELETE FROM hasa_users WHERE id=?')->execute([$targetId]);
+                // Foreign keys remove account contacts, password links, event/production
+                // histories, sharing permissions and explicit recipient entries.
+                $result['message']='HASA-Konto und die zugehörigen eigenen Serverdaten endgültig gelöscht.';
+            } elseif ($action === 'reset-password' && hasaSignupAvailable($pdo)) {
                 if(trim($email)===''){$q=$pdo->prepare('SELECT email FROM hasa_account_contacts WHERE user_id=?');$q->execute([$targetId]);$email=(string)$q->fetchColumn();}
                 $result += hasaPasswordLinkIssue($pdo,$target,$email);
                 $result['message']='Einmaliger Passwortlink erstellt. Der Spieler wählt sein Passwort selbst.';
@@ -67,4 +80,5 @@ function hasaUserAdminAction(PDO $pdo, int $actorId, string $action, string $nam
         $pdo->commit(); return $result;
     } catch (Throwable $e) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $e; }
 }
+
 
