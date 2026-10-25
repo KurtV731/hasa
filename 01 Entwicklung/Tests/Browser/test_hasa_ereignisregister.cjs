@@ -42,7 +42,7 @@ const helpers = source.slice(source.indexOf('    function prdrNormalisiereText')
     await test('all Wiki catalog titles and specific follow-up precedence', async () => {
         const r = await page.evaluate(() => ({bad:test.exports.catalog.filter(t => test.exports.classify(t+'!') !== t), count:test.exports.catalog.length,
             follow:test.exports.classify('Laserkristalle vom Hund gefressen!')}));
-        assert.deepEqual(r.bad, []); assert.equal(r.count,66); assert.equal(r.follow,'Laserkristalle vom Hund gefressen');
+        assert.deepEqual(r.bad, []); assert.equal(r.count,72); assert.equal(r.follow,'Laserkristalle vom Hund gefressen');
     });
     await test('unknown text remains unclassified; no fictional evaluation', async () => {
         assert.equal(await page.evaluate(() => test.exports.classify('Eine neue Spielmeldung')), null);
