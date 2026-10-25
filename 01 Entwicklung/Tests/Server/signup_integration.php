@@ -2,6 +2,7 @@
 declare(strict_types=1);
 $api=getenv('HASA_TEST_API');if(!$api || getenv('CI')!=='true')throw new RuntimeException('Disposable CI only');
 require $api.'/user-admin-service.php';
+set_exception_handler(static function(Throwable $e):never{fwrite(STDERR,'FAIL '.$e->getMessage().PHP_EOL);exit(1);});
 $c=hasaConfig()['database'];if($c['host']!=='127.0.0.1'||$c['name']!=='hasa_test_events')throw new RuntimeException('Disposable database required');
 $pdo=hasaPdo();$n=0;
 function signupCheck(bool $ok,string $text):void{global $n;if(!$ok)throw new RuntimeException($text);$n++;echo 'PASS '.$text.PHP_EOL;}
