@@ -6,6 +6,7 @@ on:
       - '01 Entwicklung/Userscript/Aktuell/HASA-AKTUELL.user.js'
       - '02 Website/api/**'
       - '01 Entwicklung/Tests/Server/events_integration.php'
+      - '01 Entwicklung/Tests/Server/signup*'
       - '01 Entwicklung/Tests/Server/maintenance_integration.py'
       - '01 Entwicklung/Tests/Server/initial_password_integration.php'
       - '01 Entwicklung/Tests/Server/system_search_integration.php'
@@ -75,6 +76,9 @@ jobs:
           php '01 Entwicklung/Tests/Server/sharing_global_integration.php'
           HASA_TEST_SHARING_HTML="$test_api/sharing-global-fixture.html" node '01 Entwicklung/Tests/Browser/test_hasa_sharing_ui.cjs'
           HASA_TEST_JOURNAL_HTML="$test_api/journal-fixture.html" node '01 Entwicklung/Tests/Browser/test_hasa_journal_ui.cjs'
+          php '01 Entwicklung/Tests/Server/signup_integration.php'
+          python3 '01 Entwicklung/Tests/Server/signup_http.py'
+          node '01 Entwicklung/Tests/Browser/test_hasa_signup.cjs'
 
 
 
@@ -89,4 +93,5 @@ jobs:
           if ($parseErrors.Count) { $parseErrors | ForEach-Object { Write-Error $_ }; exit 1 }
       - name: Check TechTree window
         run: node '01 Entwicklung/Tests/Browser/test_hasa_techtree_window.cjs'
+
 

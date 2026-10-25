@@ -30,6 +30,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
 } elseif (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') { header('Allow: GET, POST'); hasaAuthError('Diese Anfrage wird nicht unterstützt.', 405); }
 $body = '<p>Mit deinem Horizon-Spielernamen anmelden.</p>';
 if ($message !== '') $body .= '<p role="alert" class="error">' . hasaAuthEscape($message) . '</p>';
-$body .= '<form method="post" action="login.php"><input type="hidden" name="csrf" value="' . hasaAuthEscape(hasaAuthCsrf()) . '"><label>Spielername<input name="player_name" autocomplete="username" maxlength="120" required value="' . hasaAuthEscape($name) . '"></label><label>Passwort<input name="password" type="password" autocomplete="current-password" required></label><button type="submit">Anmelden</button></form><p class="muted">Konten und neue Startpasswörter erhältst du von der HASA-Verwaltung.</p>';
+$body .= '<form method="post" action="login.php"><input type="hidden" name="csrf" value="' . hasaAuthEscape(hasaAuthCsrf()) . '"><label>Spielername<input name="player_name" autocomplete="username" maxlength="120" required value="' . hasaAuthEscape($name) . '"></label><label>Passwort<input name="password" type="password" autocomplete="current-password" required></label><button type="submit">Anmelden</button></form><p><a href="register.php">Neu bei HASA? Selbst registrieren</a> · <a href="password-reset.php">Passwort vergessen?</a></p><p class="muted">Bestehende Konten können sich weiterhin mit ihrem bisherigen Passwort anmelden.</p>';
 hasaAuthPage('HASA-Anmeldung', $body);
+
 

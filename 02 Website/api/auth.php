@@ -46,6 +46,15 @@ function hasaAuthPage(string $title, string $body, bool $showHeading = true): vo
     echo <<<HTML
 <script nonce="$nonce">
 (()=>{
+  const tokenInput=document.querySelector('[data-onboarding-token]');
+  if(tokenInput){
+    const fragment=window.location.hash.slice(1);
+    if(/^[a-f0-9]{64}$/.test(fragment)){tokenInput.value=fragment;history.replaceState(null,'',window.location.pathname);}
+    if(/^[a-f0-9]{64}$/.test(tokenInput.value)){
+      document.querySelector('[data-onboarding-form]').hidden=false;
+      document.querySelector('[data-onboarding-help]').hidden=true;
+    }
+  }
   document.querySelectorAll('input[type="password"]').forEach((input,index)=>{
     const label=input.closest('label');
     const name=label?.firstChild?.textContent.trim()||'Passwort';
@@ -283,6 +292,7 @@ set_exception_handler(static function (Throwable $error): never {
     $json = in_array($script, ['auth-status.php','galaxy-read.php','prospection-read.php','systems.php','prospection-reports.php'], true);
     hasaAuthError('Die Funktion ist gerade nicht verfügbar. Bitte später erneut versuchen.', 503, $json);
 });
+
 
 
 

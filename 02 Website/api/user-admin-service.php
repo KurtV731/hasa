@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
-require_once __DIR__ . '/account-service.php';
-const HASA_USERADMIN_VERSION = '1.2.0-useradmin.1';
+require_once __DIR__ . '/signup-service.php';
+const HASA_USERADMIN_VERSION = '1.3.0-signup.1';
 function hasaUserAdminActor(PDO $pdo, int $id, bool $lock = false): array
 {
     $q = $pdo->prepare('SELECT id, role, active, must_change_password, is_user_admin, can_manage_user_admins FROM hasa_users WHERE id = ?' . ($lock ? ' FOR UPDATE' : ''));
@@ -14,15 +14,21 @@ function hasaUserAdminList(PDO $pdo, array $actor): array
     $scope = (int)$actor['can_manage_user_admins'] ? '' : ' AND created_by_user_id = ? AND is_user_admin = 0 AND can_manage_user_admins = 0';
     $q = $pdo->prepare("SELECT id, player_name, active, must_change_password, is_user_admin FROM hasa_users WHERE role = 'player'" . $scope . ' ORDER BY player_name');
     $q->execute($scope === '' ? [] : [(int)$actor['id']]);
-    return $q->fetchAll();
+    $rows=$q->fetchAll();
+    if(hasaSignupAvailable($pdo)){
+        $contact=$pdo->prepare('SELECT email,verified_at FROM hasa_account_contacts WHERE user_id=?');
+        foreach($rows as &$row){$contact->execute([$row['id']]);$c=$contact->fetch();$row['email']=$c['email']??'';$row['email_verified']=!empty($c['verified_at']);}unset($row);
+    }
+    return $rows;
 }
-function hasaUserAdminAction(PDO $pdo, int $actorId, string $action, string $name, int $targetId): array
+function hasaUserAdminAction(PDO $pdo, int $actorId, string $action, string $name, int $targetId, string $email = ''): array
 {
     $pdo->beginTransaction();
     try {
         // Immer aus der DB lesen; kein Vertrauen in Rollen/IDs aus dem Formular.
         $actor = hasaUserAdminActor($pdo, $actorId, true);
         if ($action === 'create') {
+            if(hasaSignupAvailable($pdo))throw new RuntimeException('Neue Spieler registrieren sich jetzt selbst über die HASA-Startseite.');
             $name = hasaAccountName($name);
             $password = hasaAccountStartPassword($pdo);
             $q = $pdo->prepare("INSERT INTO hasa_users (player_name, password_hash, role, active, must_change_password, created_by_user_id) VALUES (?, ?, 'player', 1, 1, ?)");
@@ -31,12 +37,16 @@ function hasaUserAdminAction(PDO $pdo, int $actorId, string $action, string $nam
         } else {
             if (!in_array($action, ['reset-password','block','unblock','grant-admin','revoke-admin'], true)) throw new RuntimeException('Unbekannte Aktion.');
             if ($targetId < 1 || $targetId === $actorId) throw new RuntimeException('Das eigene Konto kann hier nicht verändert werden.');
-            $q = $pdo->prepare('SELECT id, player_name, role, created_by_user_id, is_user_admin, can_manage_user_admins FROM hasa_users WHERE id = ? FOR UPDATE');
+            $q = $pdo->prepare('SELECT id, player_name, role, active, auth_version, created_by_user_id, is_user_admin, can_manage_user_admins FROM hasa_users WHERE id = ? FOR UPDATE');
             $q->execute([$targetId]); $target = $q->fetch();
             if (!$target || $target['role'] !== 'player' || (int)$target['can_manage_user_admins']) throw new RuntimeException('Dieses Konto ist geschützt oder nicht verfügbar.');
             if (!(int)$actor['can_manage_user_admins'] && ((int)$target['created_by_user_id'] !== $actorId || (int)$target['is_user_admin'])) throw new RuntimeException('Dieses Konto gehört nicht zu deinem Verwaltungsbereich.');
             $result = ['message' => 'Kontenaktion abgeschlossen.', 'name' => $target['player_name']];
-            if ($action === 'reset-password') {
+            if ($action === 'reset-password' && hasaSignupAvailable($pdo)) {
+                if(trim($email)===''){$q=$pdo->prepare('SELECT email FROM hasa_account_contacts WHERE user_id=?');$q->execute([$targetId]);$email=(string)$q->fetchColumn();}
+                $result += hasaPasswordLinkIssue($pdo,$target,$email);
+                $result['message']='Einmaliger Passwortlink erstellt. Der Spieler wählt sein Passwort selbst.';
+            } elseif ($action === 'reset-password') {
                 $password = hasaAccountStartPassword($pdo);
                 $q = $pdo->prepare('UPDATE hasa_users SET password_hash = ?, must_change_password = 1, auth_version = auth_version + 1 WHERE id = ?');
                 $q->execute([hasaAuthHash($password), $targetId]);
@@ -57,3 +67,4 @@ function hasaUserAdminAction(PDO $pdo, int $actorId, string $action, string $nam
         $pdo->commit(); return $result;
     } catch (Throwable $e) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $e; }
 }
+

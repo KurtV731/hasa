@@ -36,6 +36,7 @@ with tempfile.TemporaryDirectory(prefix="hasa-maintenance-") as folder:
         endpoints=["health.php","index.php","systems.php","prospection-reports.php",
                    "event-record.php","production-samples.php","auth-status.php",
                    "login.php","logout.php","password-change.php","settings.php",
+                   "register.php","verify.php","password-reset.php","password-set.php",
                    "user-admin.php","sharing-install.php","events-install.php",
                    "galaxy.php","galaxy-read.php","galaxies.php","events.php",
                    "prospection-read.php"]
@@ -65,3 +66,4 @@ with tempfile.TemporaryDirectory(prefix="hasa-maintenance-") as folder:
     finally:
         process.terminate()
         process.wait(timeout=5)
+
