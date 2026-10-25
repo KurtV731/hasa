@@ -10,7 +10,13 @@ $pdo=hasaPdo();
 if(!hasaEventsAvailable($pdo)){
     hasaAuthPage('Ereignislisten','<h1>Ereignislisten</h1><p>Die einmalige Einrichtung fehlt noch.</p>'.((int)($user['can_manage_user_admins']??0)?'<p><a href="events-install.php">Ereignislisten einrichten</a></p>':'<p>Bitte die Benutzerleitung um Einrichtung bitten.</p>'));exit;
 }
-$round=hasaRound($_GET['round']??null);$view=in_array($_GET['view']??'', ['hub','event','active','asfi','guild','production','combat','videos','breakthroughs'],true)?$_GET['view']:'hub';
+$round=hasaRound($_GET['round']??null);$view=in_array($_GET['view']??'', ['hub','event','active','asfi','guild','production','combat','videos','breakthroughs','water'],true)?$_GET['view']:'hub';
+// Existing bookmarks lead into the consolidated family view too.
+if($view==='event' && is_string($_GET['subject']??null)){
+    if(hasaIsVideoSubject($_GET['subject']))$view='videos';
+    elseif(in_array($_GET['subject'],hasaWaterSubjects(),true))$view='water';
+    elseif(hasaIsBreakthroughSubject($_GET['subject']))$view='breakthroughs';
+}
 $offset=filter_var($_GET['offset']??0,FILTER_VALIDATE_INT);if($offset===false||$offset<0||$offset>1000000)hasaAuthError('Ungültige Seite.',400);
 $navigation='<nav aria-label="HASA Bereiche"><p><a href="galaxy.php?round='.$round.'">Galaxiedatenbank</a> · <a href="events.php?view=hub&amp;round='.$round.'">Events/Scans</a> · <a href="events.php?view=production&amp;round='.$round.'">Ressourcen</a> · <a href="events.php?view=combat&amp;round='.$round.'">Kampfbericht</a></p></nav>';
 if($view==='active'){
@@ -30,6 +36,7 @@ if(in_array($view,['hub','event','guild','combat'],true)){
     $rows=hasaJournalRows($pdo,$user,$round,$subject,$window,$offset);
     hasaAuthPage($subject,$navigation.hasaJournalEventHtml($subject,$summary,$rows,$round,$offset),false);exit;
 }
+if($view==='water'){hasaAuthPage('Wassereinbrüche',$navigation.hasaWaterHistoryHtml($pdo,$user,$round,new DateTimeImmutable('now',new DateTimeZone('UTC'))),false);exit;}
 if(in_array($view,['videos','breakthroughs','production'],true)){
     $now=new DateTimeImmutable('now',new DateTimeZone('UTC'));
     if($view==='production'){$title='Ressourcenverlauf';$body=hasaResourceHistoryHtml($pdo,$user,$round,$now);}

@@ -13,18 +13,66 @@ function hasaEventGameInstant(?string $raw): ?DateTimeImmutable
     return $date;
 }
 
+function hasaWaterSubjects(): array
+{
+    return ['Wassereinbruch in Metallmine','Wassereinbruch in Mineralmine','Wassereinbruch repariert','Wassereinbruch in Metallmine repariert','Wassereinbruch in Mineralmine repariert'];
+}
+function hasaBreakthroughSubjects(): array
+{
+    return ['Technologischer Durchbruch','Technischer Durchbruch','Technologische Durchbrüche','Technische Durchbrüche'];
+}
+function hasaIsBreakthroughSubject(string $subject): bool
+{
+    return (bool)preg_match('/^Techn(?:olog)?isch(?:er|e) Durchbr(?:uch|üche)(?:\s*[:!–-].*)?$/u',trim($subject));
+}
+function hasaIsVideoSubject(string $subject): bool
+{
+    return in_array($subject,['Motivationsvideo verfügbar','Motivationsvideo abgespielt','Motivationsvideo verliert Wirkung','Motivationsvideo verschlampt'],true);
+}
+function hasaWaterTimeline(array $events, DateTimeImmutable $now): array
+{
+    usort($events,static fn($a,$b)=>strcmp($a['reported_order']??'',$b['reported_order']??'') ?: ((int)$a['id']<=>(int)$b['id']));
+    $states=[];$rows=[];$seen=[];
+    foreach($events as $event){
+        $subject=$event['subject'];if(!in_array($subject,hasaWaterSubjects(),true))continue;
+        $identity=(string)($event['message_id']??$event['id']);if(isset($seen[$identity]))continue;$seen[$identity]=true;
+        $at=hasaEventGameInstant($event['reported_game_time']??null);
+        $position=null;
+        if($event['galaxy_number']!==null && $event['system_number']!==null && $event['orbit_position']!==null)$position=$event['galaxy_number'].':'.$event['system_number'].':'.$event['orbit_position'];
+        $repair=str_contains($subject,'repariert');$mine=null;$source='Betreff';
+        if(str_contains($subject,'Metallmine'))$mine='metal';elseif(str_contains($subject,'Mineralmine'))$mine='mineral';
+        $text=preg_replace('/\s+/u',' ',trim($event['details_text']??''));
+        if($mine===null){
+            $metal=(bool)preg_match('/\bMetallmine\b/iu',$text);$mineral=(bool)preg_match('/\bMineralmine\b/iu',$text);
+            if($metal!==$mineral){$mine=$metal?'metal':'mineral';$source='Bericht';}
+        }
+        $usable=$at!==null && $at<=$now && $position!==null;
+        if($repair && $mine===null && $usable){
+            $open=array_keys(array_filter($states[$position]??[],static fn($s)=>$s['active']));
+            if(count($open)===1){$mine=$open[0];$source='Verlauf: einzige offene Mine';}
+        }
+        $damage=$repair?'–':'Unbekannt';
+        if(!$repair && preg_match('/(?:keine|ohne)\s+(?:weiteren?\s+)?(?:Schäden|Beschädigungen|Gebäudeschäden)/iu',$text))$damage='Keine gemeldet';
+        elseif(!$repair && preg_match('/(?:Gebäude|Bauwerk)[^.]{0,160}(?:zerstört|beschädigt)|(?:zerstört|beschädigt)[^.]{0,160}(?:Gebäude|Bauwerk)/iu',$text,$m))$damage='Bauwerk: '.$m[0];
+        $row=['event'=>$event,'position'=>$position,'mine'=>$mine,'action'=>$repair?'Reparatur':'Einbruch','damage'=>$damage,'source'=>$source,'at'=>$at];
+        $rows[]=$row;
+        if($usable && $mine!==null)$states[$position][$mine]=['active'=>!$repair,'event'=>$event,'source'=>$source];
+    }
+    return ['rows'=>$rows,'states'=>$states];
+}
+
 function hasaActiveEvents(PDO $pdo, array $user, int $round, ?DateTimeImmutable $now=null): array
 {
     $now=$now??new DateTimeImmutable('now',new DateTimeZone('UTC'));
-    $q=$pdo->prepare('SELECT id,subject,details_text,reported_game_time,galaxy_number,system_number,orbit_position,planet_name FROM hasa_event_reports WHERE owner_user_id=? AND round_number=? AND system_event=1 ORDER BY reported_order ASC,id ASC');
-    $q->execute([(int)$user['id'],$round]);$planets=[];
-    while($r=$q->fetch()){
+    $q=$pdo->prepare('SELECT id,message_id,subject,details_text,reported_game_time,reported_order,galaxy_number,system_number,orbit_position,planet_name FROM hasa_event_reports WHERE owner_user_id=? AND round_number=? AND system_event=1 ORDER BY reported_order ASC,id ASC');
+    $q->execute([(int)$user['id'],$round]);$events=$q->fetchAll();$water=hasaWaterTimeline($events,$now);$planets=[];
+    foreach($events as $r){
         $at=hasaEventGameInstant($r['reported_game_time']);
         if(!$at || $at>$now || $r['galaxy_number']===null || $r['system_number']===null || $r['orbit_position']===null)continue;
         $position=[(int)$r['galaxy_number'],(int)$r['system_number'],(int)$r['orbit_position']];$key=implode(':',$position);
         if(!isset($planets[$key]))$planets[$key]=['position'=>$position,'name'=>$r['planet_name']?:'Planet unbekannt','effects'=>[]];
         if($r['planet_name'])$planets[$key]['name']=$r['planet_name'];
-        $subject=$r['subject'];$text=preg_replace('/\s+/u',' ',$r['details_text']??'');
+        $subject=$r['subject'];if(in_array($subject,hasaWaterSubjects(),true))continue;$text=preg_replace('/\s+/u',' ',$r['details_text']??'');
         $resource=null;$direction='positive';$end=false;$label='';$until=null;
         if($subject==='Motivationsvideo abgespielt'){
             $resource='all';$direction='video';$label='Motivationsvideo läuft';$until=$at->setTimestamp($at->getTimestamp()+3600);
@@ -32,10 +80,8 @@ function hasaActiveEvents(PDO $pdo, array $user, int $round, ?DateTimeImmutable 
             $resource=str_contains($subject,'Metall')?'metal':(str_contains($subject,'Mineral')?'mineral':'fuel');$label='Produktionssteigerung';
         }elseif(preg_match('/(?:Metallvorkommen|Mineralvorkommen|Treibstoffsee).*(?:erschöpft|versiegt|beendet|vorbei|normalisiert)/iu',$subject)){
             $resource=preg_match('/Metall/iu',$subject)?'metal':(preg_match('/Mineral/iu',$subject)?'mineral':'fuel');$end=true;
-        }elseif($subject==='Wassereinbruch in Metallmine' && str_contains($text,'Wassereinbruch in ihrer Metallmine') && str_contains($text,'Die Minenproduktion wird für unbestimmte Zeit herabgesetzt, um das Wasser abzupumpen.')){
-            $resource='metal';$direction='water';$label='Wassereinbruch: Metallproduktion gesenkt';
-        }elseif($subject==='Wassereinbruch repariert' && str_contains($text,'Die normale Arbeit in der Mine kann fortgesetzt werden.') && str_contains($text,'Der Wassereinbruch in der Metallmine') && !str_contains($text,'Der Wassereinbruch in der Mineralmine')){
-            $resource='metal';$direction='water';$end=true;
+        }elseif($subject==='Motivationsvideo verliert Wirkung'){
+            $resource='all';$direction='video';$end=true;
         }else{
             $effect=$subject.' '.$text;
             $decrease=preg_match('/(?:Eisenerz|Metall|Mineral|Treibstoff)(?:produktion|förderung)\s+(?:ist\s+|wird\s+|wurde\s+)?(?:um\s+\d+(?:[,.]\d+)?\s*%\s+)?(?:verringert|gesenkt|reduziert)/iu',$effect,$down);
@@ -47,6 +93,11 @@ function hasaActiveEvents(PDO $pdo, array $user, int $round, ?DateTimeImmutable 
         $effectKey=$resource.':'.$direction;
         if($end)unset($planets[$key]['effects'][$effectKey]);
         else $planets[$key]['effects'][$effectKey]=['subject'=>$subject,'label'=>$label,'resource'=>$resource,'since'=>$r['reported_game_time'],'until'=>$until,'at'=>$at];
+    }
+    foreach($water['states'] as $key=>$mines)foreach($mines as $resource=>$state){
+        if(!$state['active'])continue;$r=$state['event'];
+        if(!isset($planets[$key]))$planets[$key]=['position'=>array_map('intval',explode(':',$key)),'name'=>$r['planet_name']?:'Planet unbekannt','effects'=>[]];
+        $planets[$key]['effects'][$resource.':water']=['subject'=>$r['subject'],'label'=>'Wassereinbruch: '.($resource==='metal'?'Metall':'Mineral').'produktion gesenkt','resource'=>$resource,'since'=>$r['reported_game_time'],'until'=>null,'at'=>hasaEventGameInstant($r['reported_game_time'])];
     }
     foreach($planets as$key=>&$planet){
         foreach($planet['effects'] as$effectKey=>$effect)if($effect['until']!==null && $effect['until']<=$now)unset($planet['effects'][$effectKey]);
@@ -121,9 +172,15 @@ function hasaJournalHubHtml(array $summary, int $round): string
     $html='<h1>Events/Scans <small>· Gesamt: '.number_format($total,0,',','.').'</small></h1>'
         .'<p>Deine gespeicherten Systemmeldungen. Jeder Ereignistyp zeigt die letzten 30 Tage mit Datum und seinen Gesamtzähler seit Beginn deiner Aufzeichnungen in dieser Spielrunde.</p>'
         .'<p><a href="events.php?view=active&amp;round='.$round.'">Laufende Events nach Planet</a></p>'
-        .'<p><a href="events.php?view=videos&amp;round='.$round.'">Motivationsvideos: Eingang und Verwendung</a> · <a href="events.php?view=breakthroughs&amp;round='.$round.'">Technologische Durchbrüche</a></p>'
+
         .'<h2>Events</h2><div class="hasa-event-buttons" style="display:flex;flex-wrap:wrap;gap:.65rem">';
+    foreach(['videos'=>'Motivationsvideos','water'=>'Wassereinbrüche','breakthroughs'=>'Technologische Durchbrüche'] as $view=>$label){
+        $counts=['total'=>0,'recent'=>0];
+        foreach($summary as $item)if(($view==='videos' && hasaIsVideoSubject($item['subject'])) || ($view==='water' && in_array($item['subject'],hasaWaterSubjects(),true)) || ($view==='breakthroughs' && hasaIsBreakthroughSubject($item['subject']))){$counts['total']+=(int)$item['total'];$counts['recent']+=(int)$item['recent'];}
+        $html.='<a class="hasa-event-button" style="display:block;border:1px solid #64748b;border-radius:.4rem;padding:.65rem;text-decoration:none" href="events.php?view='.$view.'&amp;round='.$round.'">'.$label.' <strong>· '.$counts['total'].'</strong><br><small>Letzte 30 Tage: '.$counts['recent'].'</small></a>';
+    }
     foreach($summary as $r){
+        if(hasaIsVideoSubject($r['subject']) || in_array($r['subject'],hasaWaterSubjects(),true) || hasaIsBreakthroughSubject($r['subject']))continue;
         $label=$r['subject']==='Treffen des Gildenvorstandes'?'Gildensitzungen':$r['subject'];
         $html.='<a class="hasa-event-button" style="display:block;border:1px solid #64748b;border-radius:.4rem;padding:.65rem;text-decoration:none;overflow-wrap:anywhere" href="'.hasaAuthEscape(hasaJournalUrl($round,$r['subject'])).'">'
             .hasaAuthEscape($label).' <strong>· '.number_format((int)$r['total'],0,',','.').'</strong><br><small>Letzte 30 Tage: '.(int)$r['recent'].'</small></a>';
@@ -295,7 +352,7 @@ function hasaStoreEvent(PDO $pdo, array $user, array $input): array
         if ($old && !hash_equals($old['identity_hash'],$identity)) throw new DomainException('message_identity_conflict');
         if ($old) {
             $id=(int)$old['id'];
-            if ($details!==null) {$q=$pdo->prepare('UPDATE hasa_event_reports SET details_text=? WHERE id=?');$q->execute([$details,$id]);}
+            if ($details!==null || $type!==null) {$q=$pdo->prepare('UPDATE hasa_event_reports SET details_text=COALESCE(?,details_text),event_type=COALESCE(?,event_type) WHERE id=?');$q->execute([$details,$type,$id]);}
         } else {
             $q=$pdo->prepare('INSERT INTO hasa_event_reports(owner_user_id,round_number,message_id,subject,event_type,system_event,galaxy_number,system_number,orbit_position,planet_name,reported_game_time,reported_order,captured_at,details_text,identity_hash) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
             $q->execute([(int)$user['id'],$round,$message,$subject,$type,$systemEvent?1:0,$position['galaxy']??null,$position['system']??null,$position['orbit']??null,$name,$time,$order,$captured,$details,$identity]);$id=(int)$pdo->lastInsertId();

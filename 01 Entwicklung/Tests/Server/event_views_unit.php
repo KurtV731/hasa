@@ -26,4 +26,15 @@ unit(count($rows)===3 && count(array_filter($rows,static fn($r)=>$r['uncertain']
 $rows=hasaVideoHistory([$e(1,'Motivationsvideo verfügbar','01.09.2026 12:00:00')],$now);
 unit($rows[0]['wasted']===null,'old offer never proves wasted video');
 unit(hasaEventGameInstant('25.10.2026 02:30:00')===null,'ambiguous game time rejected');
+
+$waterRows=[$e(20,'Wassereinbruch in Metallmine repariert','19.10.2026 20:37:00'),$e(21,'Wassereinbruch in Metallmine','21.10.2026 05:26:00'),$e(22,'Wassereinbruch repariert','21.10.2026 20:42:00')];
+$timeline=hasaWaterTimeline(array_reverse($waterRows),$now);
+unit(count($timeline['rows'])===3 && $timeline['states']['1:2:3']['metal']['active']===false,'orphan repair retained and newest repair settles chronological water history');
+unit($timeline['rows'][1]['damage']==='Unbekannt','missing body never means no damage');
+$waterRows[]=$e(23,'Wassereinbruch in Mineralmine','22.10.2026 11:00:00');
+$timeline=hasaWaterTimeline($waterRows,$now);
+unit($timeline['states']['1:2:3']['mineral']['active'] && !$timeline['states']['1:2:3']['metal']['active'],'mineral and metal remain separate within shared water history');
+$ends=hasaVideoHistory([$e(30,'Motivationsvideo verfügbar','21.10.2026 12:00:00'),$e(31,'Motivationsvideo verliert Wirkung','22.10.2026 12:30:00')],$now);
+unit(count($ends)===1 && $ends[0]['used']==='22.10.2026 11:30:00' && $ends[0]['inferred_start'],'fixed one-hour rule derives video use from an explicit end and unique preceding offer');
+unit(hasaIsBreakthroughSubject('Technischer Durchbruch') && hasaIsBreakthroughSubject('Technologischer Durchbruch'),'ordinary breakthrough subject variants belong to same history');
 echo $n.' isolated event-view checks passed'.PHP_EOL;

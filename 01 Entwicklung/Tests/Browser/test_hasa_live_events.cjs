@@ -130,7 +130,7 @@ const moduleSource=source.slice(source.indexOf('    // Alpha28: Rohmeldungen'),s
    return {red,green,normal:document.querySelector('#metal [data-haa-rate]').style.color};
   });assert.deepEqual(r,{red:'rgb(255, 102, 102)',green:'rgb(124, 255, 124)',normal:'rgb(170, 170, 170)'});
  });
- await test('real metal flooding requires an opened report and only colors metal',async()=>{
+ await test('metal flooding uses the standard overview and only colors metal',async()=>{
   const r=await page.evaluate(()=>{
    const event={id:'flood-start',ownerId:'7',round:8,messageId:'flood-start',systemEvent:true,subject:'Wassereinbruch in Metallmine',position:{galaxy:1,system:191,orbit:6},reportedTimeText:'18.10.2026 22:50:54'};
    live.api.event(event);
@@ -140,7 +140,7 @@ const moduleSource=source.slice(source.indexOf('    // Alpha28: Rohmeldungen'),s
    const rejected=document.querySelector('#metal [data-haa-rate]').style.color;
    live.api.event({...event,observations:[{kind:'report',rawText:body}]});
    return {before,rejected,colors:['metal','mineral','fuel'].map(k=>document.querySelector('[data-haa-rate="'+k+'"]').style.color)};
-  });assert.equal(r.before,'rgb(170, 170, 170)');assert.equal(r.rejected,r.before);assert.deepEqual(r.colors,['rgb(255, 102, 102)','rgb(170, 170, 170)','rgb(170, 170, 170)']);
+  });assert.equal(r.before,'rgb(255, 102, 102)');assert.equal(r.rejected,r.before);assert.deepEqual(r.colors,['rgb(255, 102, 102)','rgb(170, 170, 170)','rgb(170, 170, 170)']);
  });
  await test('video temporarily overrides flooding and restores its red state',async()=>{
   const r=await page.evaluate(()=>{
@@ -151,12 +151,9 @@ const moduleSource=source.slice(source.indexOf('    // Alpha28: Rohmeldungen'),s
    return {green,red:document.querySelector('#metal [data-haa-rate]').style.color};
   });assert.deepEqual(r,{green:'rgb(0, 255, 85)',red:'rgb(255, 102, 102)'});
  });
- await test('repair needs exact metal body; overview, vague and mineral text cannot end metal flooding',async()=>{
+ await test('mineral repair leaves the metal flood alone',async()=>{
   const r=await page.evaluate(()=>{
-   const event={ownerId:'7',messageId:'repair-preview',id:'repair-preview',systemEvent:true,subject:'Wassereinbruch repariert',position:{galaxy:1,system:191,orbit:6},reportedTimeText:'19.10.2026 20:37:19'};
-   for(const body of [null,'Die Mine läuft wieder.', 'Der Wassereinbruch in der Mineralmine auf ihrer Kolonie "Test" konnte zurückgedrängt werden. Die normale Arbeit in der Mine kann fortgesetzt werden.']){
-    live.api.event({...event,observations:body?[{kind:'report',rawText:body}]:[]});
-   }
+   live.api.event({ownerId:'7',messageId:'mineral-repair',id:'mineral-repair',systemEvent:true,subject:'Wassereinbruch in Mineralmine repariert',position:{galaxy:1,system:191,orbit:6},reportedTimeText:'19.10.2026 20:37:19'});
    return document.querySelector('#metal [data-haa-rate]').style.color;
   });assert.equal(r,'rgb(255, 102, 102)');
  });
@@ -231,6 +228,16 @@ const moduleSource=source.slice(source.indexOf('    // Alpha28: Rohmeldungen'),s
  await page.screenshot({path:process.env.HASA_TEST_SCREENSHOT||require('os').tmpdir()+'/hasa-live-test.png'});
  await test('HASA off restores native slot and production text',async()=>{
   await page.evaluate(()=>{live.control.active=false;live.api.stop();live.api.stopScan();});assert.equal(await page.locator('.haa-stored-mark').count(),0);assert.equal(await page.locator('[data-haa-rate]').count(),0);assert.equal(await page.evaluate(()=>document.querySelector('img.MessageButtons').style.display),'');
+ });
+ await test('opened breakthrough is captured at changed or missing body width',async()=>{
+  await page.evaluate(()=>{live.control.active=true;});
+  for(const width of ['width="540"','']){
+   const id=width?'breakthrough-width':'breakthrough-auto';
+   await page.setContent('<div class="MessageContainer">'+overview(id).replace('Planet zerbrochen','Technischer Durchbruch')+'<table><tr><td class="MessageTableCellLeft" '+width+'>Forschung: Flottentechnik Stufe 1. Dies ist der vollständige gespeicherte Bericht.</td></tr></table></div>');
+   const record=await page.evaluate(id=>{live.api.scan();return live.store.get(live.api.eventsKey).find(e=>e.messageId===id);},id);
+   assert.ok(record);assert.equal(record.eventType,'Technischer Durchbruch');
+   assert.ok(record.observations.some(o=>o.kind==='report' && o.rawText.includes('Flottentechnik Stufe 1')));
+  }
  });
  assert.deepEqual(errors,[]);await browser.close();console.log(passed+' live browser test groups passed');
 })().catch(e=>{console.error(e);process.exit(1);});

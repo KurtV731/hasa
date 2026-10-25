@@ -1,0 +1,16 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const source=fs.readFileSync(process.env.HASA_TEST_SOURCE||require('node:path').join(__dirname,'../../Userscript/Aktuell/HASA-AKTUELL.user.js'),'utf8');
+const start=source.indexOf('    function hasaProductionKey('),end=source.indexOf('    function erfasseHasaProduktion(');
+const data={register:[],tracker:{}};
+const ctx={console,Date,Intl,Set,Map,Number,Object,String,Math,JSON,HASA_RUNDE:8,STORAGE_EREIGNIS_REGISTER:'register',STORAGE_PRODUCTION_TRACKER:'tracker',ereignisScannerBenutzer:()=>7,laden:(k,d)=>data[k]??d,speichern:(k,v)=>{data[k]=v;},maleHasaProduktion:()=>{},hasaAsfiZeitKey:t=>t?t.slice(6,10)+t.slice(3,5)+t.slice(0,2)+t.slice(11).replaceAll(':',''):null};
+vm.createContext(ctx);vm.runInContext(source.slice(start,end),ctx);
+const event=(id,subject,time,extra={})=>({id,messageId:id,ownerId:7,round:8,systemEvent:true,position:{galaxy:1,system:2,orbit:3},reportedTimeText:time,subject,observations:[],...extra});
+const repair=event('1','Wassereinbruch in Metallmine repariert','19.10.2026 20:37:00');
+const flood=event('2','Wassereinbruch in Metallmine','21.10.2026 05:26:00');
+const repaired=event('3','Wassereinbruch repariert','21.10.2026 20:42:00');
+data.register=[repaired,repair,flood];ctx.aktualisiereHasaWassereinbrueche();assert.equal(data.tracker['8:7:1:2:3'].waterIngress.metal,false);assert.equal(data.tracker['8:7:1:2:3'].active.metal,false);
+ctx.hasaProductionEvent(flood);assert.equal(data.tracker['8:7:1:2:3'].waterIngress.metal,false,'re-reading old flood cannot rewind repair');
+const mineral=event('4','Wassereinbruch in Mineralmine','22.10.2026 01:00:00');data.register.push(mineral);ctx.hasaProductionEvent(mineral);assert.equal(data.tracker['8:7:1:2:3'].waterIngress.mineral,true);assert.equal(data.tracker['8:7:1:2:3'].waterIngress.metal,false);
+const other=event('5','Wassereinbruch in Metallmine','22.10.2026 02:00:00');const ambiguous=event('6','Wassereinbruch repariert','22.10.2026 03:00:00');data.register.push(other,ambiguous);ctx.hasaProductionEvent(ambiguous);assert.equal(data.tracker['8:7:1:2:3'].waterIngress.metal,true);assert.equal(data.tracker['8:7:1:2:3'].waterIngress.mineral,true);
+const mineralRepair=event('7','Wassereinbruch in Mineralmine repariert','22.10.2026 04:00:00');data.register.push(mineralRepair);ctx.hasaProductionEvent(mineralRepair);assert.equal(data.tracker['8:7:1:2:3'].waterIngress.mineral,false);assert.equal(data.tracker['8:7:1:2:3'].waterIngress.metal,true);
+console.log('PASS combined water replay: orphan repair, chronological latest state, both mines and ambiguous repair isolation');

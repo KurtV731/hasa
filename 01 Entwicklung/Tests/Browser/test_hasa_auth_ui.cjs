@@ -22,7 +22,7 @@ if (/^\/\/ @version\s+1\.2\.0-alpha\.39a\s*$/m.test(source)) {
  assert.match(source,/^\/\/ @updateURL\s+none\s*$/m);
  assert.match(source,/^\/\/ @downloadURL\s+none\s*$/m);
 } else {
- assert.match(source,/\/\/ @updateURL\s+https:\/\/raw\.githubusercontent\.com\/KurtV731\/hasa\/main\//);
+ assert.match(source,/\/\/ @updateURL\s+https:\/\/raw\.githubusercontent\.com\/KurtV731\/hasa\/(?:main|dev-1\.3-alpha1)\//);
 }
 
 (async()=>{

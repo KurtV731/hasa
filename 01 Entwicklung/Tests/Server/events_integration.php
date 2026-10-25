@@ -118,7 +118,7 @@ $put('new-flood','Wassereinbruch in Metallmine','22.10.2026 13:10:00','Wasserein
 $put('future-repair','Wassereinbruch repariert','23.10.2026 13:00:00','Der Wassereinbruch in der Metallmine. Die normale Arbeit in der Mine kann fortgesetzt werden.');
 $put('unproven-repair','Wassereinbruch repariert','22.10.2026 13:20:00');
 $active=hasaActiveEvents($pdo,$one,8,$clock);
-check(isset($active[0]['effects']['metal:water']),'new flood survives older, future or header-only repair');
+check(!isset($active[0]['effects']['metal:water']),'standard header repair closes the only open mine even without a full report');
 check(hasaActiveEvents($pdo,$rootUser,8,$clock)===[] && hasaActiveEvents($pdo,$two,8,$clock)===[],'active analysis never inherits root or other-player data access');
 $put('round-scope','Radioaktivitätsleck','22.10.2026 13:50:00','Treibstoffproduktion ist reduziert');
 $pdo->exec("UPDATE hasa_event_reports SET round_number=7 WHERE message_id='round-scope'");
@@ -160,6 +160,14 @@ $ownView=hasaResourceHistoryHtml($pdo,$one,8,new DateTimeImmutable('now',new Dat
 check(substr_count($ownView,'<svg')===3,'three resource charts rendered for own measured planet');
 $foreignView=hasaResourceHistoryHtml($pdo,$rootUser,8,new DateTimeImmutable('now',new DateTimeZone('UTC')));
 check(!str_contains($foreignView,'<svg'),'resource chart does not use admin visibility');
+
+$put('breakthrough-alias','Technischer Durchbruch','22.10.2026 13:16:00','Forschung: Konstruktionstechnik Stufe 1');
+check(str_contains(hasaPersonalHistoryHtml($pdo,$one,8,'breakthroughs',$clock),'Konstruktionstechnik'),'existing technical breakthrough title is included in combined research list');
+$put('water-overview-start','Wassereinbruch in Mineralmine','22.10.2026 13:21:00',null,['position'=>['galaxy'=>1,'system'=>42,'orbit'=>3]]);
+$put('water-overview-end','Wassereinbruch repariert','22.10.2026 13:22:00',null,['position'=>['galaxy'=>1,'system'=>42,'orbit'=>3]]);
+$waterHtml=hasaWaterHistoryHtml($pdo,$one,8,$clock);
+check(str_contains($waterHtml,'Minentyp') && str_contains($waterHtml,'Schäden') && str_contains($waterHtml,'Repariert'),'shared private water table and current repaired state from overview only');
+check(!str_contains(hasaWaterHistoryHtml($pdo,$rootUser,8,$clock),'Active planet'),'water history remains private even for root');
 ob_start();hasaAuthPage('Ein Titel','<h1>Ein Titel</h1>',false);$singleHeading=ob_get_clean();
 check(substr_count($singleHeading,'<h1>')===1,'event page has exactly one heading');
 echo $n.' MariaDB checks passed'.PHP_EOL;

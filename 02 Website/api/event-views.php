@@ -4,8 +4,8 @@ declare(strict_types=1);
 // These views deliberately never use alliance/public visibility or admin privileges.
 function hasaOwnHistoryRows(PDO $pdo, array $user, int $round, array $subjects): array
 {
-    $sql='SELECT id,message_id,subject,reported_game_time,reported_order,planet_name,galaxy_number,system_number,orbit_position,details_text FROM hasa_event_reports WHERE owner_user_id=? AND round_number=? AND system_event=1 AND subject IN ('.implode(',',array_fill(0,count($subjects),'?')).') ORDER BY reported_order ASC,id ASC';
-    $q=$pdo->prepare($sql);$q->execute(array_merge([(int)$user['id'],$round],$subjects));return $q->fetchAll();
+    $sql='SELECT id,message_id,subject,reported_game_time,reported_order,planet_name,galaxy_number,system_number,orbit_position,details_text FROM hasa_event_reports WHERE owner_user_id=? AND round_number=? AND system_event=1 AND (subject IN ('.implode(',',array_fill(0,count($subjects),'?')).') OR event_type IN ('.implode(',',array_fill(0,count($subjects),'?')).')) ORDER BY reported_order ASC,id ASC';
+    $q=$pdo->prepare($sql);$q->execute(array_merge([(int)$user['id'],$round],$subjects,$subjects));return $q->fetchAll();
 }
 function hasaHistoryPosition(array $r): ?string
 {
@@ -14,9 +14,22 @@ function hasaHistoryPosition(array $r): ?string
 }
 function hasaVideoHistory(array $events, DateTimeImmutable $now): array
 {
+    usort($events,static fn($a,$b)=>strcmp($a['reported_order']??'',$b['reported_order']??'') ?: ((int)$a['id']<=>(int)$b['id']));
     $rows=[];$pending=[];
     foreach($events as $e){
         $at=hasaEventGameInstant($e['reported_game_time']);$key=hasaHistoryPosition($e);
+        if($e['subject']==='Motivationsvideo verliert Wirkung'){
+            if($at===null || $at>$now){$rows[]=['event'=>$e,'received'=>null,'used'=>null,'wasted'=>null,'uncertain'=>false,'at'=>$at,'action_at'=>null,'ended'=>$e['reported_game_time']];continue;}
+            $start=$at->setTimestamp($at->getTimestamp()-3600);$matches=[];
+            foreach($rows as $index=>$row)if($key!==null && hasaHistoryPosition($row['event'])===$key && $row['used']!==null && ($row['ended']??null)===null && $row['action_at']!==null && $row['action_at']->getTimestamp()===$start->getTimestamp())$matches[]=$index;
+            if(count($matches)===1){$rows[$matches[0]]['ended']=$e['reported_game_time'];continue;}
+            $offers=array_values(array_filter($key!==null?($pending[$key]??[]):[],static fn($index)=>$rows[$index]['at']!==null && $rows[$index]['at']<=$start));
+            if(count($offers)===1 && !$rows[$offers[0]]['uncertain']){
+                $index=$offers[0];$rows[$index]['used']=$start->setTimezone(new DateTimeZone('Europe/Berlin'))->format('d.m.Y H:i:s');$rows[$index]['action_at']=$start;$rows[$index]['ended']=$e['reported_game_time'];$rows[$index]['inferred_start']=true;
+                $pending[$key]=array_values(array_diff($pending[$key],[$index]));continue;
+            }
+            $rows[]=['event'=>$e,'received'=>null,'used'=>null,'wasted'=>null,'uncertain'=>false,'at'=>$at,'action_at'=>$at,'ended'=>$e['reported_game_time']];continue;
+        }
         if($e['subject']==='Motivationsvideo verfügbar'){
             $index=count($rows);$rows[]=['event'=>$e,'received'=>$e['reported_game_time'],'used'=>null,'wasted'=>null,'uncertain'=>false,'at'=>$at,'action_at'=>null];
             if($key!==null && $at!==null && $at<=$now)$pending[$key][]=$index;
@@ -42,6 +55,7 @@ function hasaBreakthroughResult(?string $text): array
     $patterns=[
         '/(?:Forschung|Technologie)\s*[:：]\s*["„»]?([\p{L}\p{N} _()\-]{2,90}?)["“«]?\s*(?:[:：,;·\-]|auf|erreicht|wurde auf|ist auf)*\s*(?:Stufe|Forschungsstufe)\s*:?\s*(\d{1,4})\b/iu',
         '/["„»]([\p{L}\p{N} _()\-]{2,90})["“«]\s+(?:(?:wurde|ist|wird|nun|auf|erreicht|jetzt|die|der|Forschungsstand|Technologie|Forschung)\s+){0,8}(?:Stufe|Forschungsstufe)\s*:?\s*(\d{1,4})\b/iu',
+        '/(?:Forschungsgebiet|Bereich)\s*[:：]?\s*["„»]?([\p{L}\p{N} _()\-]{2,70}?)["“«]?\s+(?:wurde|ist|wird)\s+.{0,60}?auf\s+(?:die\s+)?Stufe\s+(\d{1,4})\b/iu',
         '/^([\p{L}\p{N} _\-]{2,70})\s*[:：·\-]\s*(?:Stufe|Forschungsstufe)\s*:?\s*(\d{1,4})\s*[.!]?$/iu'
     ];
     $results=[];
@@ -50,7 +64,7 @@ function hasaBreakthroughResult(?string $text): array
 }
 function hasaPersonalHistoryHtml(PDO $pdo, array $user, int $round, string $view, DateTimeImmutable $now): string
 {
-    $video=$view==='videos';$subjects=$video?['Motivationsvideo verfügbar','Motivationsvideo abgespielt','Motivationsvideo verschlampt']:['Technologischer Durchbruch'];
+    $video=$view==='videos';$subjects=$video?['Motivationsvideo verfügbar','Motivationsvideo abgespielt','Motivationsvideo verschlampt','Motivationsvideo verliert Wirkung']:hasaBreakthroughSubjects();
     $events=hasaOwnHistoryRows($pdo,$user,$round,$subjects);$window=hasaJournalWindow($now);
     $counts=array_count_values(array_column($events,'subject'));
     $html='<style>body{max-width:1100px}th,td{padding:.55rem;text-align:left;border-bottom:1px solid #475569;vertical-align:top}table{width:100%;border-collapse:collapse}</style>';
@@ -62,24 +76,46 @@ function hasaPersonalHistoryHtml(PDO $pdo, array $user, int $round, string $view
             $e=$r['event'];$order=hasaEventTimeOrder(($r['action_at']??$r['at'])?->setTimezone(new DateTimeZone('Europe/Berlin'))->format('d.m.Y H:i:s'));
             if($order!==null && ($order<$window[0] || $order>$window[1]))continue;
             $status='Verwendung unbekannt';
-            if($r['used']){$end=$r['action_at']->setTimestamp($r['action_at']->getTimestamp()+3600);$status=($end>$now?'Läuft · noch '.max(1,(int)ceil(($end->getTimestamp()-$now->getTimestamp())/60)).' Min.':'Wirkung beendet').' · bis '.$end->setTimezone(new DateTimeZone('Europe/Berlin'))->format('d.m.Y H:i:s');}
+            if($r['ended']??null)$status='Wirkung beendet · gemeldet am '.$r['ended'];
+            elseif($r['used'] && $r['action_at']){$end=$r['action_at']->setTimestamp($r['action_at']->getTimestamp()+3600);$status=($end>$now?'Läuft · noch '.max(1,(int)ceil(($end->getTimestamp()-$now->getTimestamp())/60)).' Min.':'Wirkung beendet').' · bis '.$end->setTimezone(new DateTimeZone('Europe/Berlin'))->format('d.m.Y H:i:s');}
             elseif($r['wasted'])$status='Verschlampt · gemeldet am '.$r['wasted'];
             elseif($r['at'] && $r['at']<=$now){$expiry=$r['at']->modify('+14 days');$status=$expiry>$now?'Offen gemeldet · voraussichtlich bis '.$expiry->format('d.m.Y H:i'):'14-Tage-Frist erreicht · Verwendung unbekannt';}
             if($r['uncertain'])$status.=' · Zuordnung zum Eingang unklar';
-            $html.='<tr><td>'.hasaAuthEscape(($e['planet_name']?:'Planet unbekannt').' ('.(hasaHistoryPosition($e)??'?').')').'</td><td>'.hasaAuthEscape($r['received']??'Nicht zugeordnet').'</td><td>'.hasaAuthEscape($r['used']??'–').'</td><td>'.hasaAuthEscape($status).'</td></tr>';$shown++;
+            $html.='<tr><td>'.hasaAuthEscape(($e['planet_name']?:'Planet unbekannt').' ('.(hasaHistoryPosition($e)??'?').')').'</td><td>'.hasaAuthEscape($r['received']??'Nicht zugeordnet').'</td><td>'.hasaAuthEscape(($r['used']??'–').(!empty($r['inferred_start'])?' (aus Wirkungsende)':'')).'</td><td>'.hasaAuthEscape($status).'</td></tr>';$shown++;
         }
     }else{
         foreach(array_reverse($events) as $e){
             if($e['reported_order']!==null && ($e['reported_order']<$window[0] || $e['reported_order']>$window[1]))continue;
             [$research,$level]=hasaBreakthroughResult($e['details_text']);
-            $html.='<tr><td>'.hasaAuthEscape($e['reported_game_time']??'Zeit unbekannt').'</td><td>'.hasaAuthEscape($research??'Aus Meldung noch nicht eindeutig erkannt').'</td><td>'.($level===null?'–':$level).'</td><td><details><summary>Originaltext ansehen</summary><p style="white-space:pre-wrap">'.hasaAuthEscape($e['details_text']?:'Bisher nur die Nachrichtenübersicht erfasst. Bericht im Spiel öffnen.').'</p></details></td></tr>';$shown++;
+            $html.='<tr><td>'.hasaAuthEscape($e['reported_game_time']??'Zeit unbekannt').'</td><td>'.hasaAuthEscape($research??'Im gespeicherten Text noch nicht erkannt').'</td><td>'.($level===null?'–':$level).'</td><td><details><summary>Originaltext ansehen</summary><p style="white-space:pre-wrap">'.hasaAuthEscape($e['details_text']?:'Kein Berichtstext in dieser gespeicherten Meldung vorhanden.').'</p></details></td></tr>';$shown++;
         }
     }
     if(!$shown)$html.='<tr><td colspan="4">Noch keine passenden Meldungen erfasst.</td></tr>';
     $html.='</tbody></table></div>';
-    if($video)$html.='<p>Seit Aufzeichnungsbeginn: bekommen '.($counts[$subjects[0]]??0).' · verwendet '.($counts[$subjects[1]]??0).' · verschlampt '.($counts[$subjects[2]]??0).'.</p><p class="muted">Eingang und Verwendung werden nur bei einem eindeutig offenen Eingang am selben Planeten zeitlich zugeordnet. Bei mehreren Videos bleibt die Zuordnung offen. 14 Tage sind eine voraussichtliche Frist; ohne entsprechende Meldung wird kein Video als verschlampt ausgegeben. Ein gelöschter Bericht beweist keinen Ablauf.</p>';
-    else $html.='<p class="muted">Die erreichte Stufe wird nur aus einer eindeutigen Meldung gelesen. Fehlende Angaben bleiben unbekannt; der Forschungsstand wird durch diese Verlaufsliste nicht verändert.</p>';
+    if($video)$html.='<p>Seit Aufzeichnungsbeginn: bekommen '.($counts[$subjects[0]]??0).' · verwendet gemeldet '.($counts[$subjects[1]]??0).' · verschlampt '.($counts[$subjects[2]]??0).' · Wirkungsende gemeldet '.($counts[$subjects[3]]??0).'.</p><p class="muted">Bekannte Systemmeldungen werden aus Betreff, Planet und Nachrichtenzeit ausgewertet. Ein aus dem Wirkungsende berechneter Start ist gekennzeichnet; die feste Wirkungsdauer beträgt eine Stunde.</p>';
+    else $html.='<p class="muted">Forschung und erreichte Stufe stammen aus dem gespeicherten Bericht. Originaltext aufklappen, um die erfasste Meldung zu sehen.</p>';
     return $html;
+}
+
+function hasaWaterHistoryHtml(PDO $pdo, array $user, int $round, DateTimeImmutable $now): string
+{
+    $events=hasaOwnHistoryRows($pdo,$user,$round,hasaWaterSubjects());$history=hasaWaterTimeline($events,$now);$window=hasaJournalWindow($now);
+    $html='<h1>Wassereinbrüche <small>· Gesamt: '.count($events).' Meldungen</small></h1><p>Privat · letzte 30 Tage · Spielzeit (Europe/Berlin).</p>';
+    $names=['metal'=>'Metall','mineral'=>'Mineral'];
+    $html.='<h2>Letzter gemeldeter Zustand</h2><ul>';$states=0;
+    foreach($history['states'] as $position=>$mines)foreach($mines as $mine=>$state){
+        $event=$state['event'];$html.='<li>'.hasaAuthEscape(($event['planet_name']?:'Planet').' ('.$position.') · '.$names[$mine].' · '.($state['active']?'Einbruch gemeldet':'Repariert').' · '.$event['reported_game_time']).'</li>';$states++;
+    }
+    if(!$states)$html.='<li>Noch kein zugeordneter Minenzustand.</li>';
+    $html.='</ul><div style="overflow:auto"><table style="width:100%;border-collapse:collapse"><thead><tr>';
+    foreach(['Datum / Uhrzeit','Planet','Minentyp','Was?','Schäden'] as $label)$html.='<th style="padding:.55rem;text-align:left">'.hasaAuthEscape($label).'</th>';
+    $html.='</tr></thead><tbody>';$shown=0;
+    foreach($history['rows'] as $row){$event=$row['event'];if($event['reported_order']!==null && ($event['reported_order']<$window[0] || $event['reported_order']>$window[1]))continue;
+        $values=[$event['reported_game_time']??'–',($event['planet_name']?:'Planet').' ('.($row['position']??'?').')',$names[$row['mine']]??'Unbekannt',$row['action'],$row['damage']];
+        $html.='<tr title="'.hasaAuthEscape('Zuordnung: '.$row['source']).'">';foreach($values as $value)$html.='<td style="padding:.55rem;border-top:1px solid #475569">'.hasaAuthEscape($value).'</td>';$html.='</tr>';$shown++;
+    }
+    if(!$shown)$html.='<tr><td colspan="5">Noch keine Meldungen in diesem Zeitraum.</td></tr>';
+    return $html.'</tbody></table></div><p class="muted">Einbrüche und Reparaturen stehen gemeinsam in zeitlicher Reihenfolge. Der letzte zugeordnete Eintrag bestimmt den gemeldeten Zustand je Planet und Mine. Eine Reparatur ohne früher erfassten Einbruch bleibt als Reparatur erhalten. Unbekannte Schäden bedeuten nicht, dass keine entstanden sind.</p>';
 }
 
 function hasaProductionDays(array $rows): array

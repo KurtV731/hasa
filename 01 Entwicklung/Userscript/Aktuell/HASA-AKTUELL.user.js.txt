@@ -1,10 +1,10 @@
 ﻿// ==UserScript==
 // @name         HASA – Horizon Ascension Assistant
 // @namespace    horiversum.hasa
-// @version      1.2.0-alpha.40
+// @version      1.3.0-alpha.1
 // @charset      UTF-8
-// @updateURL    https://raw.githubusercontent.com/KurtV731/hasa/main/2%20src/current/HASA-AKTUELL.user.js
-// @downloadURL  https://raw.githubusercontent.com/KurtV731/hasa/main/2%20src/current/HASA-AKTUELL.user.js
+// @updateURL    https://raw.githubusercontent.com/KurtV731/hasa/dev-1.3-alpha1/01%20Entwicklung/Userscript/Aktuell/HASA-AKTUELL.user.js
+// @downloadURL  https://raw.githubusercontent.com/KurtV731/hasa/dev-1.3-alpha1/01%20Entwicklung/Userscript/Aktuell/HASA-AKTUELL.user.js
 // @description  Horizon-Assistent mit kompakter Galaxiescanner-Anzeige und aktiver lokaler IndexedDB
 // @match        https://horiversum.org/game/main/main.php*
 // @grant        GM_getValue
@@ -58,7 +58,7 @@
 ==========================================================
  HASA – Horizon Ascension Assistant
 
- Version : 1.2.0 Alpha 40
+ Version : 1.3.0 Alpha 1
  Status  : Anmeldestatus, Tages-Sitzung und vorhandene Spielassistenten
  Build   : 2026-10-19
 
@@ -217,8 +217,8 @@
         'PHYSICS', 'PSYCHOLOGY', 'NUCLEARPHYSICS', 'SOLARENERGYTECH'
     ]);
 
-    const HASA_VERSION = '1.2.0 Alpha 40';
-    const HASA_BUILD_LABEL = '1.2.0-alpha40-techtree-2026-10-23';
+    const HASA_VERSION = '1.3.0 Alpha 1';
+    const HASA_BUILD_LABEL = '1.3.0-alpha1-ereignisverlaeufe-2026-10-25';
     const HASA_RUNDE = 8;
     const HASA_RUNDE_SCHLUESSEL = 'runde8';
     // Die MariaDB und sämtliche Schreibendpunkte trennen Runde 7 und 8 jetzt
@@ -396,7 +396,7 @@
         'Mietanfrage der Handelsgilde', 'Sektenführer erschienen', 'Sektenführer verschwunden',
         'Galaktische Generalamnestie', 'Insider Handel', 'Bruchlandung eines Raketenschlittens',
         'Erhöhte Energieausbeute durch Sonnenfleckenaktivität',
-        'Wassereinbruch in Mineralmine', 'Wassereinbruch in Metallmine', 'Wassereinbruch repariert', 'Radioaktivitätsleck', 'Reaktorkernschmelze',
+        'Wassereinbruch in Mineralmine', 'Wassereinbruch in Metallmine', 'Wassereinbruch repariert', 'Wassereinbruch in Metallmine repariert', 'Wassereinbruch in Mineralmine repariert', 'Radioaktivitätsleck', 'Reaktorkernschmelze',
         'Meteoriteneinschlag', 'Schwächung der Verteidigungsbereitschaft',
         'Zwischenfall auf Testgelände', 'Polsprung', 'Ausbruch einer Seuche',
         'Seuche erfolgreich bekämpft', 'Quarantäne zur Seuchenbekämpfung', 'Seuche verbreitet sich',
@@ -412,8 +412,8 @@
         'Science-Ologen mit kleiner Spende bedacht', 'Ungenügende Rohstoffreserven für Science-Ologen',
         'Science-Ologen retten Planeten', 'Die Gildenversammlung',
         'Effizienzverbesserung des Reaktors möglich',
-        'Technologischer Durchbruch', 'Treffen des Gildenvorstandes'
-    ];
+        'Technologischer Durchbruch', 'Technischer Durchbruch', 'Technologische Durchbrüche', 'Technische Durchbrüche', 'Treffen des Gildenvorstandes'
+    , 'Motivationsvideo verliert Wirkung'];
     const STORAGE_EREIGNIS_REGISTER = 'hasa_ereignisregister_v1_' + HASA_RUNDE_SCHLUESSEL;
     const HAA_EREIGNIS_DOKUMENTE = new Map();
     const HAA_EREIGNIS_FRAMES = new Map();
@@ -446,10 +446,6 @@
     function erfasseGeoeffnetenHasaBericht(doc, scopeVorgabe, auchEntfernt) {
         const scope = scopeVorgabe || doc.querySelector('.MessageContainer');
         if (!scope || !ereignisIstSpieltext(scope, Boolean(auchEntfernt))) return false;
-        const koerper = Array.from(scope.querySelectorAll('td.MessageTableCellLeft')).find(function (td) {
-            return td.getAttribute('width') === '608' && prdrNormalisiereText(td.textContent).length > 20;
-        });
-        if (!koerper || !ereignisIstSpieltext(koerper, Boolean(auchEntfernt))) return false;
         const links = Array.from(scope.querySelectorAll('td.MessageTableCell a[href]')).filter(function (a) {
             return ereignisNachrichtenUrl(a.getAttribute('href'), doc.location.href)
                 && ereignisZeilenMeta(a).subject;
@@ -458,6 +454,15 @@
         const link = links[0];
         const adresse = ereignisNachrichtenUrl(link.getAttribute('href'), doc.location.href);
         const meta = ereignisZeilenMeta(link);
+        const headerRow=link.closest('tr');
+        const bodies=Array.from(scope.querySelectorAll('td.MessageTableCellLeft')).filter(function(td){
+            return !headerRow.contains(td) && !td.contains(headerRow) && !td.closest('.MessageTableNavigation')
+                && prdrNormalisiereText(td.textContent).length>20 && ereignisIstSpieltext(td,Boolean(auchEntfernt));
+        });
+        const koerper=bodies.find(function(td){return td.getAttribute('width')==='608';})
+            || bodies.sort(function(a,b){return b.textContent.length-a.textContent.length;})[0];
+        if(!koerper)return false;
+
         registriereHasaEreignis(ereignisOriginaltext(koerper),
             Object.assign({}, meta, { headerText: ereignisOriginaltext(link.closest('tr')),
                 messageId: adresse.messageId, kind: 'report', sourceUrl: adresse.url }));
@@ -551,7 +556,7 @@
     function registriereHasaEreignis(text, meta) {
         const ownerId = ereignisScannerBenutzer();
         if (!ownerId || !prdrNormalisiereText(text)) return false;
-        const typ = erkenneHasaEreignis(text);
+        const typ = erkenneHasaEreignis(meta.subject || '') || erkenneHasaEreignis(text);
         if (!meta.messageId && !typ) return false;
         const identitaet = meta.messageId ? 'message:' + meta.messageId
             : 'text:' + prdrHash(prdrNormalisiereText(text));
@@ -565,7 +570,7 @@
             }));
         });
         const neueMetadaten = Boolean(eintrag && ((meta.position && !eintrag.position)
-            || (meta.subject && !eintrag.subject)));
+            || (meta.subject && !eintrag.subject) || (typ && typ!==eintrag.eventType)));
         if (eintrag && !neueMetadaten && eintrag.observations.some(function (s) {
             return s.kind === meta.kind && s.rawText === text;
         })) return false;
@@ -718,7 +723,7 @@
         }
         scanneHasaEreignisDokument(document, new Set());
         (laden(STORAGE_EREIGNIS_REGISTER, []) || []).forEach(function(e){
-            if(e && ['Wassereinbruch in Metallmine','Wassereinbruch repariert'].includes(e.subject))hasaProductionEvent(e);
+            if(e && (hasaWaterSubjects().includes(e.subject) || e.subject==='Motivationsvideo verliert Wirkung'))hasaProductionEvent(e);
             if(e && e.subject==='Motivationsvideo abgespielt'){
                 const start=hasaMotivationStartzeit(e.reportedTimeText);
                 if(start!==null && start+3600000>Date.now())hasaProductionEvent(e);
@@ -733,7 +738,7 @@
         if (HAA_EREIGNIS_TIMER) return;
         (laden(STORAGE_EREIGNIS_REGISTER, []) || []).forEach(function(e) {
             uebernehmeHasaAsfiEreignis(e);
-            if(e && ['Motivationsvideo abgespielt','Wassereinbruch in Metallmine','Wassereinbruch repariert'].includes(e.subject)) hasaProductionEvent(e);
+            if(e && (['Motivationsvideo abgespielt','Motivationsvideo verliert Wirkung'].includes(e.subject) || hasaWaterSubjects().includes(e.subject))) hasaProductionEvent(e);
         });
         pruefeHasaEreignisse();
         HAA_EREIGNIS_TIMER = setInterval(pruefeHasaEreignisse, 30000);
@@ -1288,7 +1293,59 @@
     function hasaMotivationAktiv(state) {
         const video=state && state.motivation,now=Date.now();
         return !!video && Number.isFinite(video.startedAt) && Number.isFinite(video.endsAt)
-            && video.endsAt===video.startedAt+3600000 && video.startedAt<=now && now<video.endsAt;
+            && video.endsAt===video.startedAt+3600000 && video.startedAt<=now && now<video.endsAt
+            && !(Number.isFinite(state.motivationEndedAt) && state.motivationEndedAt>=video.startedAt && state.motivationEndedAt<=now);
+    }
+
+    function hasaWaterSubjects() {
+        return ['Wassereinbruch in Metallmine','Wassereinbruch in Mineralmine','Wassereinbruch repariert','Wassereinbruch in Metallmine repariert','Wassereinbruch in Mineralmine repariert'];
+    }
+
+    function hasaWaterStates(events, now) {
+        const states={},seen=new Set();
+        events.filter(function(e){return hasaWaterSubjects().includes(e.subject);}).slice().sort(function(a,b){
+            return String(hasaAsfiZeitKey(a.reportedTimeText)||'').localeCompare(String(hasaAsfiZeitKey(b.reportedTimeText)||'')) || String(a.messageId||a.id).localeCompare(String(b.messageId||b.id),undefined,{numeric:true});
+        }).forEach(function(e){
+            const identity=e.messageId||e.id;if(seen.has(identity))return;seen.add(identity);
+            const at=hasaMotivationStartzeit(e.reportedTimeText);
+            if(!e.position || at===null || at>now)return;
+            const key=e.position.galaxy+':'+e.position.system+':'+e.position.orbit;
+            const repair=e.subject.includes('repariert');let mine=null;
+            if(e.subject.includes('Metallmine'))mine='metal';else if(e.subject.includes('Mineralmine'))mine='mineral';
+            if(!mine){
+                const text=(e.observations||[]).filter(function(o){return o.kind==='report';}).map(function(o){return o.rawText||'';}).join(' ');
+                const metal=/\bMetallmine\b/i.test(text),mineral=/\bMineralmine\b/i.test(text);
+                if(metal!==mineral)mine=metal?'metal':'mineral';
+            }
+            if(repair && !mine){const open=Object.keys(states[key]||{}).filter(function(m){return states[key][m].active;});if(open.length===1)mine=open[0];}
+            if(mine){states[key]=states[key]||{};states[key][mine]={active:!repair,event:e};}
+        });
+        return states;
+    }
+
+    function aktualisiereHasaWassereinbrueche(extra) {
+        const owner=ereignisScannerBenutzer();if(!owner)return;
+        let events=(laden(STORAGE_EREIGNIS_REGISTER,[])||[]).filter(function(e){return String(e.ownerId)===String(owner) && e.round===HASA_RUNDE && e.systemEvent && e.messageId && hasaWaterSubjects().includes(e.subject);});
+        if(extra && String(extra.ownerId)===String(owner) && (extra.round===undefined || extra.round===HASA_RUNDE) && extra.systemEvent && extra.messageId){
+            events=events.filter(function(e){return e.messageId!==extra.messageId;});events.push(extra);
+        }
+        const states=hasaWaterStates(events,Date.now()),all=laden(STORAGE_PRODUCTION_TRACKER,{})||{};let changed=false;
+        Object.entries(states).forEach(function(entry){
+            const position=entry[0],mines=entry[1],key=HASA_RUNDE+':'+owner+':'+position;
+            const state=all[key]||{baseline:{},active:{},eventOrder:{},eventIds:{},lastSampleAt:null};
+            state.positive=state.positive||{};state.negative=state.negative||{};state.waterIngress=state.waterIngress||{};state.active=state.active||{};state.eventOrder=state.eventOrder||{};
+            Object.entries(mines).forEach(function(pair){
+                const resource=pair[0],result=pair[1],order=hasaAsfiZeitKey(result.event.reportedTimeText);
+                if(state.eventOrder[resource+':waterIngress'] && order<state.eventOrder[resource+':waterIngress'])return;
+                if(state.waterIngress[resource]===result.active && state.eventOrder[resource+':waterIngress']===order)return;
+                state.waterIngress[resource]=result.active;state.eventOrder[resource+':waterIngress']=order;
+                state.active[resource]=!!state.positive[resource] || !!state.negative[resource] || result.active;
+                if(!state.active[resource]){state.resetBaseline=state.resetBaseline||{};state.resetBaseline[resource]=true;}
+                changed=true;
+            });
+            all[key]=state;
+        });
+        if(changed){speichern(STORAGE_PRODUCTION_TRACKER,all);maleHasaProduktion();}
     }
 
     function hasaProductionEvent(e) {
@@ -1296,6 +1353,13 @@
         if(e.round!==undefined && e.round!==HASA_RUNDE)return;
         if(String(e.ownerId)!==String(ereignisScannerBenutzer()))return;
         const subject=e.subject;
+        if(hasaWaterSubjects().includes(subject)){aktualisiereHasaWassereinbrueche(e);return;}
+        if(subject==='Motivationsvideo verliert Wirkung'){
+            const endedAt=hasaMotivationStartzeit(e.reportedTimeText);if(endedAt===null || endedAt>Date.now())return;
+            const key=hasaProductionKey(e.ownerId,e.position),all=laden(STORAGE_PRODUCTION_TRACKER,{})||{};
+            const state=all[key]||{baseline:{},active:{},eventOrder:{},eventIds:{},lastSampleAt:null};
+            state.motivationEndedAt=Math.max(state.motivationEndedAt||0,endedAt);all[key]=state;speichern(STORAGE_PRODUCTION_TRACKER,all);maleHasaProduktion();return;
+        }
         if(subject==='Motivationsvideo abgespielt'){
             const startedAt=hasaMotivationStartzeit(e.reportedTimeText);
             if(startedAt===null || startedAt>Date.now())return;
@@ -1318,20 +1382,6 @@
         // nicht aus geringeren Messwerten, Kosten oder einem Ereignistitel raten.
         const reports=(e.observations||[]).filter(function(o){return o.kind==='report';});
         const effectText=subject+' '+reports.map(function(o){return o.rawText||'';}).join(' ');
-        // Nur geöffnete Systemberichte belegen den Beginn bzw. die Entwarnung.
-        // Eigene Wirkungsgruppe: Reparatur beendet keinen anderen Produktionsmalus.
-        const reportTexts=reports.map(function(o){return String(o.rawText||'').replace(/\s+/g,' ').trim();});
-        if(subject==='Wassereinbruch in Metallmine' && reportTexts.some(function(t){
-            return /Wassereinbruch in ihrer Metallmine/.test(t)
-                && /Die Minenproduktion wird für unbestimmte Zeit herabgesetzt, um das Wasser abzupumpen\./.test(t);
-        })){resource='metal';start=true;negative=true;flood=true;}
-        if(subject==='Wassereinbruch repariert'){
-            const matching=reportTexts.filter(function(t){return /Die normale Arbeit in der Mine kann fortgesetzt werden\./.test(t);});
-            const metal=matching.some(function(t){return /Der Wassereinbruch in der Metallmine/.test(t);});
-            const mineral=matching.some(function(t){return /Der Wassereinbruch in der Mineralmine/.test(t);});
-            if(metal && !mineral){resource='metal';end=true;negative=true;flood=true;}
-        }
-        if(flood && !hasaAsfiZeitKey(e.reportedTimeText))return;
         const decrease=effectText.match(/(?:Eisenerz|Metall|Mineral|Treibstoff)(?:produktion|förderung)\s+(?:ist\s+|wird\s+|wurde\s+)?(?:um\s+\d+(?:[,.]\d+)?\s*%\s+)?(?:verringert|gesenkt|reduziert)/i);
         const recovered=effectText.match(/(?:Eisenerz|Metall|Mineral|Treibstoff)(?:produktion|förderung)\s+(?:ist\s+|wird\s+)?(?:wieder\s+)?normal(?:isiert)?/i);
         if(!resource && (decrease||recovered)){
