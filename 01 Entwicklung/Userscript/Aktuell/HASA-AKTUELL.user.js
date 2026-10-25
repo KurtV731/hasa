@@ -435,15 +435,13 @@
         const zeitText = cells[0] ? prdrNormalisiereText(ereignisOriginaltext(cells[0])) : '';
         if (cells.length < 4 || !cells[2].contains(link)
             || !/\d{2}\.\d{2}\.\d{4}\s+\d{2}:\d{2}:\d{2}/.test(zeitText)) return {};
-        const ort = cells[1].querySelector('div') || cells[1];
+        const ort = Array.from(cells[1].querySelectorAll('div')).reverse().find(node=>ereignisPosition(node.textContent)) || cells[1];
         const ortText = ort ? prdrNormalisiereText(ort.textContent) : '';
         const name = ortText.replace(/\s*\(\s*\d+\s*:\s*\d+\s*:\s*\d+\s*\)\s*$/, '').trim();
         // textContent alone joins words across BR, e.g. TechnologischerDurchbruch.
         const subject=prdrNormalisiereText(ereignisOriginaltext(link));
         const position=ereignisPosition(ortText);
-        const senderNode=cells[1].cloneNode(true);
-        senderNode.querySelectorAll('div').forEach(node=>node.remove());
-        const sender=prdrNormalisiereText(ereignisOriginaltext(senderNode));
+        const sender=ereignisOriginaltext(cells[1]).split('\n').map(line=>prdrNormalisiereText(line)).filter(Boolean)[0]||'';
         const researchNotice=/^Techn(?:ologischer|ischer|ologische|ische) Durchbr(?:uch|üche)$/i.test(subject)
             && sender==='Forschungszentrum' && Boolean(position);
         return { subject: subject, position: position,

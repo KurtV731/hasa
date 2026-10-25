@@ -247,6 +247,12 @@ const moduleSource=source.slice(source.indexOf('    // Alpha28: Rohmeldungen'),s
   const result=await page.evaluate(()=>{live.api.scan();return live.store.get(live.api.eventsKey).find(e=>e.messageId==='research-br');});
   assert.equal(result.subject,'Technologischer Durchbruch');assert.equal(result.eventType,'Technologischer Durchbruch');assert.equal(result.systemEvent,true);
  });
+ await test('research sender and planet survive nested header layout wrappers',async()=>{
+  const html=overview('research-wrapped').replace('Planet zerbrochen','Technologischer<br>Durchbruch').replace('Raumüberwachung<div>Target XIV (3:48:14)</div>','<div><b>Forschungszentrum</b><div>Target XIV (3:48:14)</div></div>').replace('MessageReportEvent','MessageReportResearch');
+  await page.setContent(html);
+  const r=await page.evaluate(()=>{live.api.scan();return live.store.get(live.api.eventsKey).find(e=>e.messageId==='research-wrapped');});
+  assert.equal(r.systemEvent,true);assert.equal(r.planetName,'Target XIV');assert.deepEqual(r.position,{galaxy:3,system:48,orbit:14});
+ });
  await test('same stored observation is enriched when its system flag was previously false',async()=>{
   const r=await page.evaluate(()=>{
    const meta={kind:'overview',messageId:'old-system-flag',subject:'Technologischer Durchbruch',reportedTimeText:'13.10.2026 20:42:55',position:{galaxy:3,system:48,orbit:14},systemEvent:false};
