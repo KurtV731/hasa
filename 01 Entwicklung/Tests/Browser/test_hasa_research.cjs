@@ -23,6 +23,8 @@ const planetKey = section('    function techTreeGebaeudeSpeicherKey(', '    func
                 let area = 'research';
                 function ermittleAktuellenBereich() { return area; }
                 function findeAktuellenPlanetennamen() { return 'Testplanet'; }
+                function leseHasaProduktion() { return null; }
+                function ereignisScannerBenutzer() { return null; }
                 function laden(k, fallback) { return store[k] || fallback; }
                 function speichern(k, v) { store[k] = v; }
                 function normalisiereGebaeudename(s) { return String(s || '').trim(); }
@@ -91,5 +93,6 @@ const planetKey = section('    function techTreeGebaeudeSpeicherKey(', '    func
         console.log(`${buildingCases.length} building regressions passed`);
     } finally { await browser.close(); }
 })().catch(e => {console.error(e); process.exitCode = 1;});
+
 
 

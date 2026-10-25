@@ -33,9 +33,9 @@ try {
  if($LASTEXITCODE -ne 0){throw 'Serversicherung fehlgeschlagen. Keine Testdateien hochgeladen.'}
  Write-Host ('Bisherige Serverdateien gesichert: '+$backup)
  $commands+='exit'
- Write-Host ('HASA 13-alpha1 | Verbindung: '+$settings.site+' | API-Ziel: '+$settings.remote) -ForegroundColor Yellow
+ Write-Host ('HASA 1.3 Alpha 1 | Verbindung: '+$settings.site+' | API-Ziel: '+$settings.remote) -ForegroundColor Yellow
  Write-Host 'Uebertrage die drei geprueften PHP-Dateien aus diesem Paket ...'
- $tempScript=[IO.Path]::GetTempFileName();[IO.File]::WriteAllLines($tempScript,$commands,(New-Object Text.UTF8Encoding($true)))
+ [IO.File]::WriteAllLines($tempScript,$commands,(New-Object Text.UTF8Encoding($true)))
  & $winscp ('/script='+$tempScript)
  if($LASTEXITCODE -ne 0){throw 'Upload fehlgeschlagen. Teilweise uebertragene Dateien sind moeglich; bitte die Fehlermeldung sichern.'}
  Write-Host 'Server 13-alpha1 uebertragen. Keine SQL-Migration erforderlich. Jetzt das Userscript 1.3 Alpha 1 einsetzen und Horizon sowie Datenbankansicht neu laden.' -ForegroundColor Green

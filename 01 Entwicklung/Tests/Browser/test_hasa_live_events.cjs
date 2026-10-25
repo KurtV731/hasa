@@ -239,6 +239,17 @@ const moduleSource=source.slice(source.indexOf('    // Alpha28: Rohmeldungen'),s
    assert.ok(record.observations.some(o=>o.kind==='report' && o.rawText.includes('Flottentechnik Stufe 1')));
   }
  });
+
+ await test('missing breakthrough body is fetched through a read-only message link',async()=>{
+  const html='<div class="MessageContainer">'+overview('auto-breakthrough').replace('Planet zerbrochen','Technologischer Durchbruch')+'<table><tr><td class="MessageTableCellLeft">Gebäude:<table><tr><td>SHIPYARD</td><td>2</td><td>Provisorische Raumschiffswerkstatt</td></tr></table>--- Forschungszentrum -- Test</td></tr></table></div>';
+  await page.evaluate(html=>{window.breakthroughReads=[];window.fetch=async(url,options)=>{window.breakthroughReads.push({url,method:options.method,credentials:options.credentials});return {ok:true,text:async()=>html};};},html);
+  await page.setContent(overview('auto-breakthrough').replace('Planet zerbrochen','Technologischer Durchbruch'));
+  await page.evaluate(()=>live.api.scan());
+  await page.waitForFunction(()=>live.store.get(live.api.eventsKey).some(e=>e.messageId==='auto-breakthrough' && e.observations.some(o=>o.kind==='report')));
+  const result=await page.evaluate(()=>({reads:window.breakthroughReads,entry:live.store.get(live.api.eventsKey).find(e=>e.messageId==='auto-breakthrough')}));
+  assert.equal(result.reads.length,1);assert.equal(result.reads[0].method,'GET');assert.equal(result.reads[0].credentials,'same-origin');
+  assert.match(result.reads[0].url,/action=view/);assert.ok(result.entry.observations.some(o=>o.kind==='report' && o.rawText.includes('SHIPYARD')));
+ });
  assert.deepEqual(errors,[]);await browser.close();console.log(passed+' live browser test groups passed');
 })().catch(e=>{console.error(e);process.exit(1);});
 

@@ -62,6 +62,28 @@ function hasaBreakthroughResult(?string $text): array
     foreach($patterns as $pattern)if(preg_match_all($pattern,$text,$matches,PREG_SET_ORDER))foreach($matches as $m)$results[trim($m[1]).':'.$m[2]]=[trim($m[1]),(int)$m[2]];
     return count($results)===1?array_values($results)[0]:[null,null];
 }
+// The numeric value in an unlock notice is an unlock variant, not completed research.
+function hasaBreakthroughEntries(?string $text): array
+{
+    $text=explode("\n\n[HASA Zustandsvergleich]\n",$text??'',2)[0];
+    $text=preg_replace('/\s+/u',' ',trim($text));$entries=[];
+    if(preg_match_all('/\b(Gebäude|Einheiten|Forschungen)\s*:\s*(.*?)(?=\b(?:Gebäude|Einheiten|Forschungen)\s*:|\s---|Forschungszentrum\s*--|$)/u',$text,$sections,PREG_SET_ORDER)){
+        foreach($sections as $section){
+            // Horizon uses both CODE number name and CODE name number.
+            if(preg_match_all('/\b([A-Z][A-Z0-9_\-]{1,39})\s+(.*?)(?=\s+[A-Z][A-Z0-9_\-]{1,39}\s+|$)/u',trim($section[2]),$rows,PREG_SET_ORDER))foreach($rows as $row){
+                $tail=trim($row[2]);$name=null;$variant=null;
+                if(preg_match('/^(\d{1,4})\s+(.+)$/u',$tail,$m)){$variant=(int)$m[1];$name=trim($m[2]);}
+                elseif(preg_match('/^(.+?)\s+(\d{1,4})$/u',$tail,$m)){$name=trim($m[1]);$variant=(int)$m[2];}
+                if($name!==null && mb_strlen($name)<=160)$entries[]=['category'=>$section[1],'code'=>$row[1],'name'=>$name,'variant'=>$variant];
+            }
+        }
+    }
+    return $entries;
+}
+function hasaBreakthroughDetails(?string $text): array
+{
+    $parts=explode("\n\n[HASA Zustandsvergleich]\n",$text??'',2);return [$parts[0],$parts[1]??null];
+}
 function hasaPersonalHistoryHtml(PDO $pdo, array $user, int $round, string $view, DateTimeImmutable $now): string
 {
     $video=$view==='videos';$subjects=$video?['Motivationsvideo verfügbar','Motivationsvideo abgespielt','Motivationsvideo verschlampt','Motivationsvideo verliert Wirkung']:hasaBreakthroughSubjects();
@@ -69,7 +91,7 @@ function hasaPersonalHistoryHtml(PDO $pdo, array $user, int $round, string $view
     $counts=array_count_values(array_column($events,'subject'));
     $html='<style>body{max-width:1100px}th,td{padding:.55rem;text-align:left;border-bottom:1px solid #475569;vertical-align:top}table{width:100%;border-collapse:collapse}</style>';
     $html.='<h1>'.($video?'Motivationsvideos':'Technologische Durchbrüche').' <small>· Gesamt: '.count($events).' Meldungen</small></h1><p>Privat · letzte 30 Tage · Datum und Uhrzeit: Spielzeit (Europe/Berlin).</p>';
-    $html.='<div style="overflow:auto"><table><thead><tr>'.($video?'<th>Planet</th><th>Bekommen</th><th>Verwendet</th><th>Status / Wirkungsende</th>':'<th>Datum und Uhrzeit</th><th>Forschung</th><th>Erreichte Stufe</th><th>Meldung</th>').'</tr></thead><tbody>';
+    $html.='<div style="overflow:auto"><table><thead><tr>'.($video?'<th>Planet</th><th>Bekommen</th><th>Verwendet</th><th>Status / Wirkungsende</th>':'<th>Datum und Uhrzeit</th><th>Freischaltung / Forschung</th><th>Angabe</th><th>Meldung</th>').'</tr></thead><tbody>';
     $shown=0;
     if($video){
         foreach(hasaVideoHistory($events,$now) as $r){
@@ -86,14 +108,22 @@ function hasaPersonalHistoryHtml(PDO $pdo, array $user, int $round, string $view
     }else{
         foreach(array_reverse($events) as $e){
             if($e['reported_order']!==null && ($e['reported_order']<$window[0] || $e['reported_order']>$window[1]))continue;
-            [$research,$level]=hasaBreakthroughResult($e['details_text']);
-            $html.='<tr><td>'.hasaAuthEscape($e['reported_game_time']??'Zeit unbekannt').'</td><td>'.hasaAuthEscape($research??'Im gespeicherten Text noch nicht erkannt').'</td><td>'.($level===null?'–':$level).'</td><td><details><summary>Originaltext ansehen</summary><p style="white-space:pre-wrap">'.hasaAuthEscape($e['details_text']?:'Kein Berichtstext in dieser gespeicherten Meldung vorhanden.').'</p></details></td></tr>';$shown++;
+            [$original,$comparison]=hasaBreakthroughDetails($e['details_text']);
+            $entries=hasaBreakthroughEntries($original);[$research,$level]=hasaBreakthroughResult($original);
+            if(!$entries)$entries=[['category'=>$research===null?'Meldung':'Forschung','code'=>'','name'=>$research??($original!==''?'Gespeicherter Bericht siehe rechts':'Berichtstext noch nicht gespeichert'),'variant'=>null]];
+            foreach($entries as $entry){
+                $label=hasaAuthEscape($entry['category'].' · '.$entry['name'].($entry['code']!==''?' ('.$entry['code'].')':''));
+                $value=$entry['variant']!==null?'Freischaltung '.$entry['variant']:($level===null?'–':'Erreichte Stufe '.$level);
+                $html.='<tr><td>'.hasaAuthEscape($e['reported_game_time']??'Zeit unbekannt').'</td><td>'.$label.'</td><td>'.hasaAuthEscape($value).'</td><td><details><summary>Originaltext ansehen</summary><p style="white-space:pre-wrap">'.hasaAuthEscape($original?:'Kein Berichtstext in dieser gespeicherten Meldung vorhanden.').'</p></details>';
+                if($comparison!==null)$html.='<details><summary>Ergänzender Zustandsvergleich</summary><p style="white-space:pre-wrap">'.hasaAuthEscape($comparison).'</p></details>';
+                $html.='</td></tr>';$shown++;
+            }
         }
     }
     if(!$shown)$html.='<tr><td colspan="4">Noch keine passenden Meldungen erfasst.</td></tr>';
     $html.='</tbody></table></div>';
     if($video)$html.='<p>Seit Aufzeichnungsbeginn: bekommen '.($counts[$subjects[0]]??0).' · verwendet gemeldet '.($counts[$subjects[1]]??0).' · verschlampt '.($counts[$subjects[2]]??0).' · Wirkungsende gemeldet '.($counts[$subjects[3]]??0).'.</p><p class="muted">Bekannte Systemmeldungen werden aus Betreff, Planet und Nachrichtenzeit ausgewertet. Ein aus dem Wirkungsende berechneter Start ist gekennzeichnet; die feste Wirkungsdauer beträgt eine Stunde.</p>';
-    else $html.='<p class="muted">Forschung und erreichte Stufe stammen aus dem gespeicherten Bericht. Originaltext aufklappen, um die erfasste Meldung zu sehen.</p>';
+    else $html.='<p class="muted">Neu freigeschaltete Gebäude, Einheiten und Forschungen stehen gemeinsam in dieser Liste. Freischaltungsnummern sind keine abgeschlossenen Forschungsstufen. Ergänzende Zustandsvergleiche stehen getrennt vom Originaltext; zeitgleiche Änderungen können weitere Ursachen haben.</p>';
     return $html;
 }
 

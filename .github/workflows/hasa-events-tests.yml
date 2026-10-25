@@ -49,6 +49,7 @@ jobs:
           node '01 Entwicklung/Tests/Browser/test_hasa_ereignisregister.cjs'
           node '01 Entwicklung/Tests/Browser/test_hasa_live_events.cjs'
           node '01 Entwicklung/Tests/Browser/test_hasa_water_history.cjs'
+          php '01 Entwicklung/Tests/Server/event_views_unit.php'
           node '01 Entwicklung/Tests/Browser/test_hasa_web_ui.cjs'
           node '01 Entwicklung/Tests/Browser/test_hasa_research.cjs'
           node '01 Entwicklung/Tests/Browser/test_hasa_menu.cjs'

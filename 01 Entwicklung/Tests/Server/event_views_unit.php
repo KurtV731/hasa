@@ -37,4 +37,17 @@ unit($timeline['states']['1:2:3']['mineral']['active'] && !$timeline['states']['
 $ends=hasaVideoHistory([$e(30,'Motivationsvideo verfügbar','21.10.2026 12:00:00'),$e(31,'Motivationsvideo verliert Wirkung','22.10.2026 12:30:00')],$now);
 unit(count($ends)===1 && $ends[0]['used']==='22.10.2026 11:30:00' && $ends[0]['inferred_start'],'fixed one-hour rule derives video use from an explicit end and unique preceding offer');
 unit(hasaIsBreakthroughSubject('Technischer Durchbruch') && hasaIsBreakthroughSubject('Technologischer Durchbruch'),'ordinary breakthrough subject variants belong to same history');
+
+$unlocks=hasaBreakthroughEntries("Technologischer Durchbruch erzielt! Gebäude:\nSHIPYARD\n2\nProvisorische Raumschiffswerkstatt\nSPACEPORT\n1\nKleiner Notlandeplatz\n--- Forschungszentrum -- Test");
+unit(count($unlocks)===2 && $unlocks[0]['code']==='SHIPYARD' && $unlocks[1]['variant']===1,'actual building unlock rows parsed with numeric variant before name');
+$unlocks=hasaBreakthroughEntries("Einheiten: PTRN Interplanetarer Transporter 1 --- Forschungszentrum -- Test");
+unit(count($unlocks)===1 && $unlocks[0]['name']==='Interplanetarer Transporter' && $unlocks[0]['variant']===1,'actual unit unlock row uses trailing number');
+$unlocks=hasaBreakthroughEntries("Gebäude: BIOTECHCENTER 1 Kleines Biolabor Einheiten: PTNK Interplanetares Tankschiff 1 ---");
+unit(count($unlocks)===2 && $unlocks[1]['category']==='Einheiten','mixed unlock sections retained in single history');
+$unlocks=hasaBreakthroughEntries("Forschungen: HULLTECH 1 Schiffsrumpftechnik 1 ---");
+unit(count($unlocks)===1 && $unlocks[0]['name']==='Schiffsrumpftechnik 1','numeric name suffix retained without inventing completed research level');
+unit(hasaBreakthroughResult('Forschungen: HULLTECH 1 Schiffsrumpftechnik 1 ---')===[null,null],'unlock variant never interpreted as achieved research level');
+unit(hasaBreakthroughEntries('Nur ein unbekannter Bericht')===[],'unknown report retains original without invented entries');
+unit(hasaBreakthroughDetails("Original\n\n[HASA Zustandsvergleich]\nVergleich")===['Original','Vergleich'],'state comparison kept separate from original report');
+
 echo $n.' isolated event-view checks passed'.PHP_EOL;

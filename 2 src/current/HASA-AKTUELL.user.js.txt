@@ -443,16 +443,44 @@
             systemEvent: link.classList.contains('MessageReportEvent') };
     }
 
-    function erfasseGeoeffnetenHasaBericht(doc, scopeVorgabe, auchEntfernt) {
+    let HAA_DURCHBRUCH_ABRUF=false;
+    const HAA_DURCHBRUCH_VERSUCHE=new Map();
+    async function ladeHasaDurchbruchBericht(adresse,meta) {
+        const owner=ereignisScannerBenutzer();
+        if(!owner || !meta.systemEvent || !/^Techn(?:ologischer|ischer|ologische|ische) Durchbr(?:uch|üche)$/i.test(meta.subject||'') || HAA_DURCHBRUCH_ABRUF)return;
+        const e=(laden(STORAGE_EREIGNIS_REGISTER,[])||[]).find(e=>String(e.ownerId)===String(owner) && e.round===HASA_RUNDE && e.messageId===adresse.messageId);
+        if(!e || (e.observations||[]).some(o=>o.kind==='report'))return;
+        const key=owner+':'+adresse.messageId;
+        if(Date.now()-(HAA_DURCHBRUCH_VERSUCHE.get(key)||0)<60000)return;
+        HAA_DURCHBRUCH_VERSUCHE.set(key,Date.now());HAA_DURCHBRUCH_ABRUF=true;
+        const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),10000);
+        try {
+            // Only a validated same-origin message action=view URL; no buttons submitted.
+            const reply=await fetch(adresse.url,{method:'GET',credentials:'same-origin',cache:'no-store',redirect:'error',signal:controller.signal,headers:{Accept:'text/html'}});
+            if(!reply.ok)return;
+            const html=await reply.text();if(ereignisScannerBenutzer()!==owner)return;
+            const parsed=new DOMParser().parseFromString(html,'text/html');
+            const body=parsed.querySelector('.MessageContainer');if(!body)return;
+            const scope=document.importNode(body,true);
+            const header=Array.from(scope.querySelectorAll('td.MessageTableCell a[href]')).find(a=>{
+                const u=ereignisNachrichtenUrl(a.getAttribute('href'),adresse.url);return u && u.messageId===adresse.messageId;
+            });
+            if(!header || ereignisZeilenMeta(header).subject!==meta.subject)return;
+            erfasseGeoeffnetenHasaBericht(document,scope,true,adresse.url);
+        } catch(_) { /* Existing overview stays stored; next visible visit may retry. */ }
+        finally {clearTimeout(timer);HAA_DURCHBRUCH_ABRUF=false;}
+    }
+
+    function erfasseGeoeffnetenHasaBericht(doc, scopeVorgabe, auchEntfernt, basisUrl) {
         const scope = scopeVorgabe || doc.querySelector('.MessageContainer');
         if (!scope || !ereignisIstSpieltext(scope, Boolean(auchEntfernt))) return false;
         const links = Array.from(scope.querySelectorAll('td.MessageTableCell a[href]')).filter(function (a) {
-            return ereignisNachrichtenUrl(a.getAttribute('href'), doc.location.href)
+            return ereignisNachrichtenUrl(a.getAttribute('href'), basisUrl || doc.location.href)
                 && ereignisZeilenMeta(a).subject;
         });
         if (links.length !== 1) return false;
         const link = links[0];
-        const adresse = ereignisNachrichtenUrl(link.getAttribute('href'), doc.location.href);
+        const adresse = ereignisNachrichtenUrl(link.getAttribute('href'), basisUrl || doc.location.href);
         const meta = ereignisZeilenMeta(link);
         const headerRow=link.closest('tr');
         const bodies=Array.from(scope.querySelectorAll('td.MessageTableCellLeft')).filter(function(td){
@@ -639,6 +667,7 @@
             registriereHasaEreignis(ereignisOriginaltext(zeile), Object.assign({}, ereignisZeilenMeta(link), {
                 messageId: adresse.messageId, kind: 'overview', sourceUrl: adresse.url
             }));
+            ladeHasaDurchbruchBericht(adresse,ereignisZeilenMeta(link));
         });
         // Kurze Einblendungen ohne Nachrichtenkennung bleiben als unsichere Sichtung erhalten.
         const kandidaten = [root].concat(Array.from(root.querySelectorAll('p,td,li,div')));
@@ -968,7 +997,8 @@
             subject: e.subject || e.eventType || 'Unbekannte Meldung', event_type: e.eventType || null,
             system_event: Boolean(e.systemEvent), position: e.position || null, planet_name: e.planetName || null,
             reported_time_text: e.reportedTimeText || (first && first.reportedTimeText) || null,
-            captured_at: e.firstCapturedAt, details: reports.length ? reports[reports.length - 1].rawText : null };
+            captured_at: e.firstCapturedAt, details: (reports.length ? reports[reports.length - 1].rawText : '')
+                + ((e.stateComparisons||[]).length ? '\n\n[HASA Zustandsvergleich]\n'+e.stateComparisons.join('\n') : '') || null };
     }
 
     function hasaEventRevision(e) { return prdrHash(JSON.stringify(hasaEventPayload(e))); }
@@ -1201,7 +1231,7 @@
         const groups=new Map(),seen=new Set(),events=[];
         for(const e of (laden(STORAGE_EREIGNIS_REGISTER,[])||[])){
             if(!e || String(e.ownerId)!==owner || e.round!==HASA_RUNDE || !e.messageId || !e.systemEvent
-                || !['Motivationsvideo verfügbar','Motivationsvideo abgespielt','Motivationsvideo verschlampt'].includes(e.subject)
+                || !['Motivationsvideo verfügbar','Motivationsvideo abgespielt','Motivationsvideo verschlampt','Motivationsvideo verliert Wirkung'].includes(e.subject)
                 || seen.has(e.messageId))continue;
             seen.add(e.messageId);
             const at=hasaMotivationStartzeit(e.reportedTimeText);
@@ -1220,6 +1250,11 @@
             if(item.e.subject==='Motivationsvideo verfügbar'){
                 if(!group){group={key:item.key,name:item.e.planetName||'Planet unbekannt',pending:[],uncertain:false};groups.set(item.key,group);}
                 group.pending.push(item);
+            }else if(item.e.subject==='Motivationsvideo verliert Wirkung'){
+                if(group){
+                    const eligible=group.pending.filter(function(offer){return offer.at!==null && offer.at<=item.at-3600000;});
+                    if(eligible.length===1){group.pending=group.pending.filter(function(offer){return offer!==eligible[0];});if(!group.pending.length)groups.delete(item.key);}
+                }
             }else if(group && group.pending.length){
                 // Bei mehreren Videos ist die konkrete Zuordnung und Frist unklar.
                 if(group.pending.length>1)group.uncertain=true;
@@ -4016,6 +4051,43 @@ return box;
         return '';
     }
 
+    // Owner- and round-scoped page snapshots. Compare only the same visible category.
+    function hasaVergleicheDurchbruchStand(context,typ,observed,now) {
+        const owner=ereignisScannerBenutzer();if(!owner || !Object.keys(observed).length)return;
+        now=now||Date.now();
+        const key='hasa_durchbruch_vergleich_v1_'+HASA_RUNDE+'_'+owner;
+        const snapshots=laden(key,{})||{},previous=snapshots[context];
+        snapshots[context]={at:now,items:observed};speichern(key,snapshots);
+        if(!previous || now-previous.at>86400000)return;
+        const changes=[];
+        for(const [id,item] of Object.entries(observed)){
+            const before=previous.items[id];
+            if(!before)changes.push('Neu sichtbar: '+item.name+' ('+id+'); angezeigter Stand '+item.level);
+            else if(item.level>before.level)changes.push(item.name+' ('+id+'): '+before.level+' → '+item.level);
+        }
+        if(!changes.length)return;
+        const events=laden(STORAGE_EREIGNIS_REGISTER,[])||[];
+        const matches=events.filter(function(e){
+            if(String(e.ownerId)!==String(owner) || e.round!==HASA_RUNDE || !e.systemEvent || !e.messageId
+                || !/^Techn(?:ologischer|ischer|ologische|ische) Durchbr(?:uch|üche)$/i.test(e.eventType||e.subject||''))return false;
+            const at=hasaMotivationStartzeit(e.reportedTimeText);
+            if(at===null || at<=previous.at || at>now)return false;
+            if(typ==='building' || typ==='ship'){
+                const pos=e.position;if(!pos || !context.includes('|'+pos.galaxy+':'+pos.system+':'+pos.orbit+'|'))return false;
+            }
+            return true;
+        });
+        // More than one notice: retain no arbitrary attribution to one of them.
+        if(matches.length!==1)return;
+        const e=matches[0],description=typ+' · '+new Date(previous.at).toISOString()+' bis '+new Date(now).toISOString()
+            +' (Beobachtungsvergleich, keine sichere Ursachenzuordnung): '+changes.join('; ');
+        e.stateComparisons=e.stateComparisons||[];
+        if(!e.stateComparisons.includes(description)){
+            e.stateComparisons.push(description);e.stateComparisons=e.stateComparisons.slice(-12);
+            speichern(STORAGE_EREIGNIS_REGISTER,events);planeHasaEventSync();
+        }
+    }
+
     function speichereTechTreeSpielstandAusSeite() {
         const bereich = ermittleAktuellenBereich();
         const typ = (bereich === 'research' || bereich === 'forschung') ? 'research'
@@ -4036,6 +4108,8 @@ return box;
         // Neustart/Ascension sichtbar gewordene kleinere Stufe korrigiert werden.
 
         let gefunden = 0;
+        const beobachtet={};
+        const merke=function(e){beobachtet[e.id||normalisiereTechTreeName(e.name)]={name:e.name,level:e.level};};
         const koepfe = Array.from(document.querySelectorAll('.BldClsRow, .ResClsRow, [class*="ClsRow"]'));
 
         koepfe.forEach(function (kopf) {
@@ -4077,6 +4151,7 @@ return box;
             const technischeId = ermittleTechnischeIdAusKopf(kopf);
             const eintrag = { id: technischeId || '', name: name, level: level, type: typ, seenAt: Date.now() };
             const schluessel = normalisiereTechTreeName(name);
+            merke(eintrag);
             neu[schluessel] = eintrag;
             if (technischeId) neu['id:' + technischeId] = eintrag;
 
@@ -4123,6 +4198,7 @@ return box;
                 };
 
                 const schluessel = normalisiereTechTreeName(name);
+                merke(eintrag);
                 neu[schluessel] = eintrag;
                 neu['id:' + technischeId] = eintrag;
 
@@ -4145,13 +4221,21 @@ return box;
                 if (/wird gebaut/i.test(m[1])) level = Math.max(0, level - 1);
                 if (!name || !technischeId || !Number.isFinite(level)) return;
                 const eintrag = { id: technischeId, name, level, type: 'building', seenAt: Date.now(), quelle: 'horizon-gebaeude-kopfzeile' };
+                merke(eintrag);
                 neu['id:' + technischeId] = eintrag;
                 neu[normalisiereTechTreeName(name)] = eintrag;
                 gefunden++;
             });
         }
 
-        if (gefunden) speichern(speicherKey, neu);
+        if (gefunden) {
+            speichern(speicherKey, neu);
+            const url=new URL(window.location.href),position=leseHasaProduktion();
+            const pos=position && position.position;
+            const scope=typ==='research'?'global':(pos?pos.galaxy+':'+pos.system+':'+pos.orbit:'unbekannt');
+            const category=['area','tab','type'].map(k=>k+'='+String(url.searchParams.get(k)||'')).join('&');
+            if(scope!=='unbekannt')hasaVergleicheDurchbruchStand(typ+'|'+scope+'|'+category,typ,beobachtet);
+        }
         return gefunden;
     }
 

@@ -2,7 +2,7 @@ const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/st
 const source=fs.readFileSync(process.env.HASA_TEST_SOURCE||require('node:path').join(__dirname,'../../Userscript/Aktuell/HASA-AKTUELL.user.js'),'utf8');
 const start=source.indexOf('    function hasaProductionKey('),end=source.indexOf('    function erfasseHasaProduktion(');
 const data={register:[],tracker:{}};
-const ctx={console,Date,Intl,Set,Map,Number,Object,String,Math,JSON,HASA_RUNDE:8,STORAGE_EREIGNIS_REGISTER:'register',STORAGE_PRODUCTION_TRACKER:'tracker',ereignisScannerBenutzer:()=>7,laden:(k,d)=>data[k]??d,speichern:(k,v)=>{data[k]=v;},maleHasaProduktion:()=>{},hasaAsfiZeitKey:t=>t?t.slice(6,10)+t.slice(3,5)+t.slice(0,2)+t.slice(11).replaceAll(':',''):null};
+const ctx={console,Date,Intl,Set,Map,Number,Object,String,Math,JSON,HASA_RUNDE:8,STORAGE_EREIGNIS_REGISTER:'register',STORAGE_PRODUCTION_TRACKER:'tracker',ereignisScannerBenutzer:()=>'7',laden:(k,d)=>data[k]??d,speichern:(k,v)=>{data[k]=v;},maleHasaProduktion:()=>{},hasaAsfiZeitKey:t=>t?t.slice(6,10)+t.slice(3,5)+t.slice(0,2)+t.slice(11).replaceAll(':',''):null};
 vm.createContext(ctx);vm.runInContext(source.slice(start,end),ctx);
 const event=(id,subject,time,extra={})=>({id,messageId:id,ownerId:7,round:8,systemEvent:true,position:{galaxy:1,system:2,orbit:3},reportedTimeText:time,subject,observations:[],...extra});
 const repair=event('1','Wassereinbruch in Metallmine repariert','19.10.2026 20:37:00');
@@ -14,3 +14,38 @@ const mineral=event('4','Wassereinbruch in Mineralmine','22.10.2026 01:00:00');d
 const other=event('5','Wassereinbruch in Metallmine','22.10.2026 02:00:00');const ambiguous=event('6','Wassereinbruch repariert','22.10.2026 03:00:00');data.register.push(other,ambiguous);ctx.hasaProductionEvent(ambiguous);assert.equal(data.tracker['8:7:1:2:3'].waterIngress.metal,true);assert.equal(data.tracker['8:7:1:2:3'].waterIngress.mineral,true);
 const mineralRepair=event('7','Wassereinbruch in Mineralmine repariert','22.10.2026 04:00:00');data.register.push(mineralRepair);ctx.hasaProductionEvent(mineralRepair);assert.equal(data.tracker['8:7:1:2:3'].waterIngress.mineral,false);assert.equal(data.tracker['8:7:1:2:3'].waterIngress.metal,true);
 console.log('PASS combined water replay: orphan repair, chronological latest state, both mines and ambiguous repair isolation');
+
+vm.runInContext(source.slice(source.indexOf('    function hasaOffeneVideoMeldungen('),source.indexOf('    function baueHasaVideoErinnerungHtml(')),ctx);
+data.register=[event('offer-old','Motivationsvideo verfügbar','22.10.2026 10:00:00'),event('offer-new','Motivationsvideo verfügbar','22.10.2026 11:30:00'),event('end','Motivationsvideo verliert Wirkung','22.10.2026 12:00:00')];
+const pending=ctx.hasaOffeneVideoMeldungen(Date.parse('2026-10-22T12:00:00Z'));
+assert.equal(pending.length,1);assert.equal(pending[0].pending.length,1);assert.equal(pending[0].pending[0].e.messageId,'offer-new');
+console.log('PASS explicit video end settles its earlier offer without consuming a newer available video');
+
+ctx.planeHasaEventSync=()=>{};
+vm.runInContext(source.slice(source.indexOf('    function hasaVergleicheDurchbruchStand('),source.indexOf('    function speichereTechTreeSpielstandAusSeite(')),ctx);
+const t0=Date.parse('2026-10-22T08:00:00Z'),t1=t0+600000;
+const comparisonEvent=event('compare','Technologischer Durchbruch','22.10.2026 10:05:00');
+data.register=[comparisonEvent];
+const context='research|global|area=1';
+ctx.hasaVergleicheDurchbruchStand(context,'research',{PHYSICS:{name:'Physik',level:1}},t0);
+assert.equal(comparisonEvent.stateComparisons,undefined,'initial snapshot does not manufacture change');
+ctx.hasaVergleicheDurchbruchStand(context,'research',{PHYSICS:{name:'Physik',level:2},HULLTECH:{name:'Schiffsrumpftechnik',level:0}},t1);
+assert.equal(comparisonEvent.stateComparisons.length,1);
+assert.match(comparisonEvent.stateComparisons[0],/1 → 2/);
+assert.match(comparisonEvent.stateComparisons[0],/Neu sichtbar/);
+assert.match(comparisonEvent.stateComparisons[0],/keine sichere Ursachenzuordnung/);
+ctx.hasaVergleicheDurchbruchStand(context,'research',{PHYSICS:{name:'Physik',level:2},HULLTECH:{name:'Schiffsrumpftechnik',level:0}},t1+1000);
+assert.equal(comparisonEvent.stateComparisons.length,1,'unchanged page has no second comparison');
+data.register=[event('amb1','Technologischer Durchbruch','22.10.2026 10:05:00'),event('amb2','Technologischer Durchbruch','22.10.2026 10:06:00')];
+ctx.hasaVergleicheDurchbruchStand('research|global|area=2','research',{A:{name:'A',level:0}},t0);
+ctx.hasaVergleicheDurchbruchStand('research|global|area=2','research',{A:{name:'A',level:1}},t1);
+assert.ok(data.register.every(e=>!e.stateComparisons),'multiple notices do not arbitrarily receive same change');
+data.register=[event('old','Technologischer Durchbruch','21.10.2026 10:05:00')];
+ctx.hasaVergleicheDurchbruchStand('research|global|area=3','research',{A:{name:'A',level:0}},t0);
+ctx.hasaVergleicheDurchbruchStand('research|global|area=3','research',{A:{name:'A',level:1}},t1);
+assert.equal(data.register[0].stateComparisons,undefined,'opening historical report cannot attach present change');
+data.register=[event('wrongPlanet','Technologischer Durchbruch','22.10.2026 10:05:00')];
+ctx.hasaVergleicheDurchbruchStand('building|1:2:4|area=1','building',{A:{name:'A',level:0}},t0);
+ctx.hasaVergleicheDurchbruchStand('building|1:2:4|area=1','building',{A:{name:'A',level:1}},t1);
+assert.equal(data.register[0].stateComparisons,undefined,'planet-local building changes do not attach to other planet');
+console.log('PASS state comparisons: initial snapshot, observed delta, duplicate visits, ambiguous notices, historical reports and planet isolation');
