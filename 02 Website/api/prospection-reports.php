@@ -79,8 +79,8 @@ $reportKey = hash('sha256', 'hasa-account:' . (int)$hasaUser['id'] . ':' . $roun
 $pdo = hasaPdo();
 hasaGalaxySchema();
 $pdo->beginTransaction();
-    hasaAuthLockWrite($pdo,$hasaUser);
 try {
+    hasaAuthLockWrite($pdo,$hasaUser);
     $galaxySql = $pdo->prepare(
         'INSERT INTO hasa_galaxies (round_number, game_id, display_name, galaxy_type, max_system_number)
          VALUES (?, ?, ?, ?, ?)
