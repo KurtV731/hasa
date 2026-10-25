@@ -213,6 +213,12 @@ function hasaRequireUser(bool $json = false, bool $allowPasswordChange = false, 
     if ($root && $user['role'] !== 'root') hasaAuthError('Diese Funktion ist nur für root verfügbar.', 403, $json, 'root_required');
     return $user;
 }
+// Serialize authenticated writes with account deletion, blocking and password resets.
+function hasaAuthLockWrite(PDO $pdo,array $user): void
+{
+    $q=$pdo->prepare('SELECT active,auth_version FROM hasa_users WHERE id=? FOR UPDATE');$q->execute([(int)$user['id']]);$fresh=$q->fetch();
+    if(!$fresh || !(int)$fresh['active'] || (int)$fresh['auth_version']!==(int)($user['auth_version']??0))throw new DomainException('account_changed');
+}
 function hasaRequireTransferUser(): array
 {
     $user = hasaRequireUser(true);

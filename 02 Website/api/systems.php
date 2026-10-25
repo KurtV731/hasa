@@ -98,6 +98,7 @@ function storeSystem(): never
     $pdo = hasaPdo();
     hasaGalaxySchema();
     $pdo->beginTransaction();
+    hasaAuthLockWrite($pdo,$hasaUser);
     try {
         $galaxySql = $pdo->prepare(
             'INSERT INTO hasa_galaxies (round_number, game_id, display_name, galaxy_type, max_system_number)
@@ -229,4 +230,5 @@ function storeSystem(): never
         ],
     ], 201);
 }
+
 

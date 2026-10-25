@@ -68,7 +68,9 @@ signupReject(fn()=>hasaUserAdminAction($pdo,$lead,'delete','',$lead,'','SignupLe
 signupReject(fn()=>hasaUserAdminAction($pdo,$lead,'delete','',$admin,'','SignupAdmin'),'administrator rights must be revoked before deletion');
 $otherRoot=(int)$pdo->query("SELECT id FROM hasa_users WHERE role='root' AND id<>".$lead.' LIMIT 1')->fetchColumn();
 signupReject(fn()=>hasaUserAdminAction($pdo,$lead,'delete','',$otherRoot,'','TestRoot'),'other root account protected from deletion');
+$staleWriteUser=['id'=>$deleteId,'auth_version'=>1];
 $deleted=hasaUserAdminAction($pdo,$lead,'delete','',$deleteId,'','DeleteTarget');
+signupReject(function()use($pdo,$staleWriteUser){$pdo->beginTransaction();try{hasaAuthLockWrite($pdo,$staleWriteUser);}finally{$pdo->rollBack();}},'in-flight upload cannot write after account deletion');
 signupCheck(str_contains($deleted['message'],'gelöscht')&&(int)$pdo->query('SELECT COUNT(*) FROM hasa_users WHERE id='.$deleteId)->fetchColumn()===0,'authorized confirmed deletion actually removes account');
 foreach(['hasa_systems'=>'owner_user_id','hasa_event_reports'=>'owner_user_id','hasa_production_samples'=>'owner_user_id','hasa_account_contacts'=>'user_id','hasa_password_links'=>'user_id'] as $table=>$column)
  signupCheck((int)$pdo->query('SELECT COUNT(*) FROM '.$table.' WHERE '.$column.'='.$deleteId)->fetchColumn()===0,'deleted account leaves no rows in '.$table);

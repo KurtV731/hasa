@@ -34,7 +34,7 @@ try {
  Write-Host ('Bisherige Serverdateien gesichert: '+$backup)
  $commands+='exit'
  Write-Host ('HASA Benutzerverwaltung | Verbindung: '+$settings.site+' | API-Ziel: '+$settings.remote) -ForegroundColor Yellow
- Write-Host 'Uebertrage die drei geprueften PHP-Dateien aus diesem Paket ...'
+ Write-Host 'Uebertrage die fuenf geprueften PHP-Dateien aus diesem Paket ...'
  [IO.File]::WriteAllLines($tempScript,$commands,(New-Object Text.UTF8Encoding($true)))
  & $winscp ('/script='+$tempScript)
  if($LASTEXITCODE -ne 0){throw 'Upload fehlgeschlagen. Teilweise uebertragene Dateien sind moeglich; bitte die Fehlermeldung sichern.'}
