@@ -1,5 +1,5 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert/strict');
-const source=fs.readFileSync(process.env.HASA_TEST_SOURCE || require('path').join(__dirname, '../../Userscript/Aktuell/HASA-AKTUELL.user.js'),'utf8');
+const source=fs.readFileSync(process.env.HASA_TEST_SOURCE || require('path').join(__dirname, '../Userscript/Aktuell/HASA-AKTUELL.user.js'),'utf8');
 function section(a,b){const i=source.indexOf(a);assert(i>=0);return source.slice(i,source.indexOf(b,i));}
 const functions=section('    function techTreeAktuellerStandKey()', '    function normalisiereStanKategorie(');
 const data={research:{'id:ASTRO':{id:'ASTRO',type:'research',level:4}}};
