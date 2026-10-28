@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         HASA – Horizon Ascension Assistant
 // @namespace    horiversum.hasa
-// @version      1.3.0-alpha.2
+// @version      1.3.0-alpha.3
 // @charset      UTF-8
 // @updateURL    https://raw.githubusercontent.com/KurtV731/hasa/dev-1.3-alpha1/01%20Entwicklung/Userscript/Aktuell/HASA-AKTUELL.user.js
 // @downloadURL  https://raw.githubusercontent.com/KurtV731/hasa/dev-1.3-alpha1/01%20Entwicklung/Userscript/Aktuell/HASA-AKTUELL.user.js
@@ -217,7 +217,7 @@
         'PHYSICS', 'PSYCHOLOGY', 'NUCLEARPHYSICS', 'SOLARENERGYTECH'
     ]);
 
-    const HASA_VERSION = '1.3.0 Alpha 2';
+    const HASA_VERSION = '1.3.0 Alpha 3';
     const HASA_BUILD_LABEL = '1.3.0-alpha2-durchbruch-erfassung-2026-10-25';
     const HASA_RUNDE = 8;
     const HASA_RUNDE_SCHLUESSEL = 'runde8';
@@ -4101,7 +4101,7 @@ return box;
             : (bereich === 'shipyard' ? 'ship' : ''));
         if (!typ) return 0;
 
-        const speicherKey = typ === 'building' ? techTreeGebaeudeSpeicherKey() : STORAGE_TECHTREE_SPIELSTAND;
+        const speicherKey = typ === 'building' ? techTreeGebaeudeSpeicherKey() : techTreeAktuellerStandKey();
         if (!speicherKey) return 0;
         const stand = laden(speicherKey, {});
         const neu = stand && typeof stand === 'object' && !Array.isArray(stand) ? stand : {};
@@ -4245,18 +4245,35 @@ return box;
         return gefunden;
     }
 
+    function techTreeAktuellerStandKey() {
+        const generation = laden(STORAGE_TECHTREE_SPIELSTAND + '_neueinlesen', '');
+        return STORAGE_TECHTREE_SPIELSTAND + (generation ? '_neu_' + generation : '');
+    }
+
+    function techTreeSpielstandNeuEinlesen() {
+        if (!window.confirm('Forschungs- und Gebäudestände für alle Planeten neu einlesen? Der alte Planungsstand wird nicht mehr verwendet. Besuche danach deine Forschungs- und Gebäudeseiten. Noch nicht gelesene Stufen gelten als unbekannt. Ziel, Ereignisse und Galaxiedaten bleiben erhalten.')) return false;
+        // Keep old snapshots intact; a durable generation selects a fresh namespace.
+        speichern(STORAGE_TECHTREE_SPIELSTAND + '_neueinlesen', Date.now().toString(36) + '_' + Math.random().toString(36).slice(2));
+        const owner = ereignisScannerBenutzer();
+        if (owner) speichern('hasa_durchbruch_vergleich_v1_' + HASA_RUNDE + '_' + owner, {});
+        speichern(STORAGE_TECHTREE_DEBUG, {});
+        speichereTechTreeSpielstandAusSeite();
+        baueBox();
+        return true;
+    }
+
     function techTreeGebaeudeSpeicherKey() {
         const auswahl = document.querySelector('select.PlanetSelectBox');
         const id = auswahl && String(auswahl.value || '').trim();
         const name = findeAktuellenPlanetennamen();
         const planet = id ? 'id:' + id : (name && name !== 'Planet nicht erkannt' ? 'name:' + name : '');
-        return planet ? STORAGE_TECHTREE_SPIELSTAND + '_planet_' + encodeURIComponent(planet) : null;
+        return planet ? techTreeAktuellerStandKey() + '_planet_' + encodeURIComponent(planet) : null;
     }
 
     function ermittleErfuellungsstand(req) {
         const reqId = String(req && req.id || '').trim().toUpperCase();
         const typ = req.type && req.type !== 'unknown' ? req.type : ermittleTechTreeTypAusIdUndName(reqId, req.name);
-        const key = typ === 'building' ? techTreeGebaeudeSpeicherKey() : STORAGE_TECHTREE_SPIELSTAND;
+        const key = typ === 'building' ? techTreeGebaeudeSpeicherKey() : techTreeAktuellerStandKey();
         const stand = key ? laden(key, {}) : {};
         const passt = e => e && (!e.id || !reqId || String(e.id).toUpperCase() === reqId)
             && (!e.type || typ === 'unknown' || e.type === typ);
@@ -4800,9 +4817,11 @@ return box;
         let html = '<div class="haa-plan-kopf" style="margin-top:2px;position:sticky;top:0;z-index:30;background:#191612;padding-bottom:5px;">';
 
         html += '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">';
+        html += '<button id="haa-stand-neueinlesen" style="font-size:11px;" title="Nach einem Aufstieg alte Forschungs- und Gebäudestände ersetzen">Spielstand neu einlesen</button>';
         html += '<b>Import & Datenbestand</b><button id="haa-stan-import" style="font-size:11px;">' + (daten ? 'XML-Datei aktualisieren' : 'STAN-XML einlesen') + '</button>';
         html += '<input id="haa-stan-datei" type="file" accept=".xml,text/xml,application/xml" style="display:none;"></div>';
 
+        if (laden(STORAGE_TECHTREE_SPIELSTAND + '_neueinlesen', '')) html += '<div style="margin-top:4px;color:#FFD27C;font-size:11px;">Neueinlesen aktiv: Forschungs- und Gebäudeseiten besuchen. Ungelesene Stufen bleiben unbekannt.</div>';
         const aktuell = stanAktualitaet(daten);
         const aktuellFarbe = aktuell.state === 'green' ? '#7CFF7C' : aktuell.state === 'yellow' ? '#FFD27C' : '#FF8080';
         html += '<div style="margin-top:4px;color:' + aktuellFarbe + ';font-size:11px;">● ' + esc(aktuell.text) + (daten && daten.dataDate ? ' · Stand ' + esc(daten.dataDate) : '') + '</div>';
@@ -4909,6 +4928,8 @@ return box;
     }
 
     function verbindeTechTreeTestButtons() {
+        const neuEinlesen = document.getElementById('haa-stand-neueinlesen');
+        if (neuEinlesen) neuEinlesen.onclick = techTreeSpielstandNeuEinlesen;
         const stanBtn = document.getElementById('haa-stan-import');
         const stanDatei = document.getElementById('haa-stan-datei');
         if (stanBtn && stanDatei) stanBtn.onclick = function () { stanDatei.value = ''; stanDatei.click(); };
@@ -7327,6 +7348,7 @@ return box;
     window.addEventListener('load', starteSicher);
     setTimeout(starteSicher, 800);
 })();
+
 
 
 
