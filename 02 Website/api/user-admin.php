@@ -41,7 +41,7 @@ if ($flash === null) {
 }
 $_SESSION['useradmin_once'] = bin2hex(random_bytes(24));
 $hidden = '<input type="hidden" name="csrf" value="' . hasaAuthEscape(hasaAuthCsrf()) . '"><input type="hidden" name="once" value="' . hasaAuthEscape($_SESSION['useradmin_once']) . '">';
-$body = '<p>' . hasaAuthEscape($user['player_name']) . ' · <a href="galaxy.php">Galaxiedatenbank</a> · <a href="logout.php">Abmelden</a></p><p>Hier verwaltest du Konten. Private Spieldaten bleiben ausschließlich beim jeweiligen HASA-Konto.</p>';
+$body = '<p>' . hasaAuthEscape($user['player_name']) . ' · <a href="galaxy.php">Galaxiedatenbank</a>' . (($user['role'] === 'root' || (int)($actor['can_manage_user_admins'] ?? 0)) ? ' · <a href="suggestions-admin.php">Vorschlagsverwaltung</a>' : '') . ' · <a href="logout.php">Abmelden</a></p><p>Hier verwaltest du Konten. Private Spieldaten bleiben ausschließlich beim jeweiligen HASA-Konto.</p>';
 if ($flash) {
     if (isset($flash['error'])) $body .= '<p class="error" role="alert">' . hasaAuthEscape($flash['error']) . '</p>';
     else {
