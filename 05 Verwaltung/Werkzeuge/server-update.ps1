@@ -51,9 +51,10 @@ try {
     if (-not (Test-Path (Join-Path $repo '02 Website\api\galaxy.php'))) { throw 'HASA-Serverdateien fehlen.' }
     $tempScript = [IO.Path]::GetTempFileName()
     $commands = @(
+        'option batch off',
+        ('open ' + $siteArg),
         'option batch abort',
         'option confirm off',
-        ('open ' + $siteArg),
         ('put -transfer=binary -filemask="*.php | config.php; config.example.php" ' + $sourceArg + ' ' + $remoteArg),
         'exit'
     )
