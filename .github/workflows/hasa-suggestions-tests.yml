@@ -1,0 +1,42 @@
+name: HASA suggestion reception
+on:
+  push:
+    paths:
+      - '02 Website/api/suggestions*.php'
+      - '01 Entwicklung/Tests/Server/suggestions*'
+      - '.github/workflows/hasa-suggestions-tests.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  reception:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    services:
+      mariadb:
+        image: mariadb:10.11
+        env:
+          MARIADB_ROOT_PASSWORD: disposable-ci-only
+          MARIADB_DATABASE: hasa_suggestions_test
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s --health-timeout=5s --health-retries=12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PHP
+        run: sudo apt-get update -qq && sudo apt-get install -y php-cli php-mysql php-mbstring
+      - name: Isolated API copy and disposable configuration
+        run: |
+          mkdir -p "$RUNNER_TEMP/suggestion-api"
+          cp '02 Website/api/'*.php "$RUNNER_TEMP/suggestion-api/"
+          cat > "$RUNNER_TEMP/suggestion-api/config.php" <<'PHP'
+          <?php return ['environment'=>'development','database'=>['host'=>'127.0.0.1','port'=>3306,'name'=>'hasa_suggestions_test','user'=>'root','password'=>'disposable-ci-only','charset'=>'utf8mb4'],'api_key'=>str_repeat('c',64)];
+          PHP
+          echo "HASA_TEST_API=$RUNNER_TEMP/suggestion-api" >> "$GITHUB_ENV"
+      - name: PHP syntax
+        run: for file in '02 Website/api/'suggestions*.php; do php -l "$file"; done
+      - name: MariaDB validation, rate limits, retention and access tests
+        run: php '01 Entwicklung/Tests/Server/suggestions-integration.php'
+      - name: Real HTTP reception, admin read and deletion
+        run: python3 '01 Entwicklung/Tests/Server/suggestions-http.py'
