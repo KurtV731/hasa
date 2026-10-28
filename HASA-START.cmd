@@ -15,5 +15,5 @@ if errorlevel 6 exit /b 0
 if errorlevel 5 (start "" explorer.exe "%~dp003 Dokumentation" & goto menu)
 if errorlevel 4 (start "" explorer.exe "%~dp002 Website" & goto menu)
 if errorlevel 3 (call "%~dp005 Verwaltung\HASA-Website-Hochladen.bat" & goto menu)
-if errorlevel 2 (call "%~dp005 Verwaltung\HASA-Serverupdate-hasa-li.bat" & goto menu)
+if errorlevel 2 (call "%~dp0HASA-API-START.cmd" & goto menu)
 if errorlevel 1 (call "%~dp005 Verwaltung\HASA-AKTUALISIEREN.cmd" & goto menu)
