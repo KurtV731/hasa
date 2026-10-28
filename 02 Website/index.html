@@ -194,9 +194,9 @@
       if(!field)return;
       field.setAttribute('aria-invalid',invalid?'true':'false');
     };
-    async function prepareSuggestionForm(){
+    async function prepareSuggestionForm(silent=false){
       suggestionSubmit.disabled=true;
-      showSuggestionResult('Der Vorschlagsdienst wird geprüft …','info');
+      if(!silent)showSuggestionResult('Der Vorschlagsdienst wird geprüft …','info');
       try{
         const response=await fetch('/api/suggestions.php',{credentials:'same-origin',cache:'no-store'});
         const data=await response.json();
@@ -206,7 +206,7 @@
         suggestionReadyAt=now+(Number(data.min_wait_seconds)||2)*1000;
         suggestionExpiresAt=now+(Number(data.expires_in_seconds)||7200)*1000;
         suggestionSubmit.disabled=false;
-        showSuggestionResult('Das Formular ist bereit. Dein Text wird erst beim Klick auf „Vorschlag senden“ übertragen.','info');
+        if(!silent)showSuggestionResult('Das Formular ist bereit. Dein Text wird erst beim Klick auf „Vorschlag senden“ übertragen.','info');
       }catch(error){
         suggestionState=null;
         showSuggestionResult('Der Vorschlagsdienst ist momentan nicht erreichbar. Es wurde nichts übertragen. Bitte versuche es später erneut.','error');
@@ -232,7 +232,7 @@
     suggestionForm.addEventListener('submit',async event=>{
       event.preventDefault();
       if(!suggestionState){await prepareSuggestionForm();return;}
-      if(Date.now()>=suggestionExpiresAt){suggestionState=null;showSuggestionResult('Die Formularsitzung ist abgelaufen. Der Text bleibt erhalten. Bitte klicke noch einmal auf „Vorschlag senden“, um eine neue Sitzung vorzubereiten.','error');await prepareSuggestionForm();return;}
+      if(Date.now()>=suggestionExpiresAt){suggestionState=null;await prepareSuggestionForm(true);showSuggestionResult('Die Formularsitzung war abgelaufen und wurde erneuert. Dein Text blieb erhalten. Bitte sende jetzt noch einmal bewusst.','error');return;}
       const wait=Math.ceil((suggestionReadyAt-Date.now())/1000);
       if(wait>0){showSuggestionResult('Bitte warte noch '+wait+' Sekunde'+(wait===1?'':'n')+' und sende dann erneut.','error');return;}
       const payload=validateSuggestion();
@@ -248,8 +248,8 @@
         if(response.status===201&&data.ok===true){
           suggestionForm.reset();
           suggestionState=null;
+          await prepareSuggestionForm(true);
           showSuggestionResult(data.message||'Dein Vorschlag wurde gespeichert. Vielen Dank!','success');
-          await prepareSuggestionForm();
           return;
         }
         const messages={
