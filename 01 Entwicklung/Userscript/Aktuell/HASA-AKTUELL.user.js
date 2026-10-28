@@ -218,7 +218,7 @@
     ]);
 
     const HASA_VERSION = '1.3.0 Alpha 3';
-    const HASA_BUILD_LABEL = '1.3.0-alpha2-durchbruch-erfassung-2026-10-25';
+    const HASA_BUILD_LABEL = '1.3.0-alpha3-spielstand-neueinlesen-2026-10-28';
     const HASA_RUNDE = 8;
     const HASA_RUNDE_SCHLUESSEL = 'runde8';
     // Die MariaDB und sämtliche Schreibendpunkte trennen Runde 7 und 8 jetzt
