@@ -1,0 +1,57 @@
+name: HASA event matrix and data sheets
+on:
+  push:
+    paths:
+      - '02 Website/api/event-catalog.php'
+      - '02 Website/api/events.php'
+      - '01 Entwicklung/Tests/Server/event-catalog-test.php'
+      - '01 Entwicklung/Tests/Browser/test_hasa_event_catalog.cjs'
+      - '.github/workflows/hasa-event-catalog-tests.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  catalog:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      mariadb:
+        image: mariadb:10.11
+        env:
+          MARIADB_ROOT_PASSWORD: disposable-ci-only
+          MARIADB_DATABASE: hasa_event_catalog_test
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s --health-timeout=5s --health-retries=12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install test dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y php-cli php-mysql php-mbstring
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Disposable API configuration
+        run: |
+          mkdir -p "$RUNNER_TEMP/catalog-api"
+          cp '02 Website/api/'*.php "$RUNNER_TEMP/catalog-api/"
+          cat > "$RUNNER_TEMP/catalog-api/config.php" <<'PHP'
+          <?php return ['environment'=>'development','database'=>['host'=>'127.0.0.1','port'=>3306,'name'=>'hasa_event_catalog_test','user'=>'root','password'=>'disposable-ci-only','charset'=>'utf8mb4']];
+          PHP
+          echo "HASA_TEST_API=$RUNNER_TEMP/catalog-api" >> "$GITHUB_ENV"
+          echo "HASA_CATALOG_PREVIEW=$RUNNER_TEMP/event-catalog.html" >> "$GITHUB_ENV"
+      - name: PHP syntax and catalog/database regression
+        run: |
+          php -l '02 Website/api/event-catalog.php'
+          php -l '02 Website/api/events.php'
+          php '01 Entwicklung/Tests/Server/event-catalog-test.php'
+      - name: Desktop and mobile rendering
+        run: node '01 Entwicklung/Tests/Browser/test_hasa_event_catalog.cjs'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: event-catalog-previews
+          path: event-catalog-*.png

@@ -4,15 +4,23 @@ require __DIR__.'/auth.php';
 require __DIR__.'/galaxy-access.php';
 require __DIR__.'/events-service.php';
 require __DIR__.'/event-views.php';
+require __DIR__.'/event-catalog.php';
 $user=hasaRequireUser();
 if(($_SERVER['REQUEST_METHOD']??'GET')!=='GET'){header('Allow: GET');hasaAuthError('Ungültige Anfrage.',405);}
 $pdo=hasaPdo();
 if(!hasaEventsAvailable($pdo)){
     hasaAuthPage('Ereignislisten','<h1>Ereignislisten</h1><p>Die einmalige Einrichtung fehlt noch.</p>'.((int)($user['can_manage_user_admins']??0)?'<p><a href="events-install.php">Ereignislisten einrichten</a></p>':'<p>Bitte die Benutzerleitung um Einrichtung bitten.</p>'));exit;
 }
-$round=hasaRound($_GET['round']??null);$view=in_array($_GET['view']??'', ['hub','event','active','asfi','guild','production','combat','videos','breakthroughs'],true)?$_GET['view']:'hub';
+$round=hasaRound($_GET['round']??null);$view=in_array($_GET['view']??'', ['hub','sheet','event','active','asfi','guild','production','combat','videos','breakthroughs'],true)?$_GET['view']:'hub';
 $offset=filter_var($_GET['offset']??0,FILTER_VALIDATE_INT);if($offset===false||$offset<0||$offset>1000000)hasaAuthError('Ungültige Seite.',400);
 $navigation='<nav aria-label="HASA Bereiche"><p><a href="galaxy.php?round='.$round.'">Galaxiedatenbank</a> · <a href="events.php?view=hub&amp;round='.$round.'">Events/Scans</a> · <a href="events.php?view=production&amp;round='.$round.'">Ressourcen</a> · <a href="events.php?view=combat&amp;round='.$round.'">Kampfbericht</a></p></nav>';
+if($view==='sheet'){
+    $id=$_GET['type']??'';
+    if(!is_string($id) || !($family=hasaEventFamily($id))) hasaAuthError('Unbekanntes Datenblatt.',404);
+    $window=hasaJournalWindow();$summary=hasaJournalSummary($pdo,$user,$round,$window);
+    $rows=hasaEventFamilyRows($pdo,$user,$round,$family,$window,$offset);
+    hasaAuthPage($family['title'],$navigation.hasaEventFamilyHtml($family,$summary,$rows,$round,$offset),false);exit;
+}
 if($view==='active'){
     $now=new DateTimeImmutable('now',new DateTimeZone('UTC'));
     hasaAuthPage('Laufende Events nach Planet',$navigation.hasaActiveEventsHtml(hasaActiveEvents($pdo,$user,$round,$now),$now),false);exit;
@@ -23,7 +31,7 @@ if(in_array($view,['hub','event','guild','combat'],true)){
     }
     $window=hasaJournalWindow();$summary=hasaJournalSummary($pdo,$user,$round,$window);
     if($view==='hub'){
-        hasaAuthPage('Events/Scans',$navigation.hasaJournalHubHtml($summary,$round),false);exit;
+        hasaAuthPage('Events/Scans',$navigation.hasaEventMatrixHtml($summary,hasaEventCatalogRows($pdo,$user,$round,$window),$round,hasaEventObservedPlanets($pdo,$user,$round)),false);exit;
     }
     $subject=$view==='guild'?'Treffen des Gildenvorstandes':($_GET['subject']??'');
     if(!is_string($subject)||trim($subject)===''||mb_strlen($subject,'UTF-8')>240)hasaAuthError('Ungültiger Ereignistyp.',400);
@@ -74,5 +82,6 @@ if($more)$html.='<p><a href="events.php?view='.$view.'&amp;round='.$round.'&amp;
 if($view==='asfi')$html.='<p class="muted">Eigene und nach deinen Freigaben sichtbare Funde. Fehlende Sicht entfernt kein Feld. Alte Nachweise werden nach ungefähr 14 Tagen als prüfbedürftig markiert.</p>';
 if($view==='asfi' && count($rawRows)>=1000)$html.='<p class="muted">Diese Ansicht berücksichtigt die ersten 1000 sichtbaren Positionsnachweise.</p>';
 hasaAuthPage($title,$html,false);
+
 
 
