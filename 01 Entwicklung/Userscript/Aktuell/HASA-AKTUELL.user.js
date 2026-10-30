@@ -6707,6 +6707,39 @@ return box;
         return (hatWirdGebaut || hatAbbrechen) && hatZeit;
     }
 
+    // HQ_COLONY_TOOLTIP_BEGIN — table supplied by Styl on 2026-10-30.
+    const HAA_HQ_TOOLTIP_ORIGINAL = new WeakMap();
+    function hqKoloniepunkte(stufe) {
+        const punkte = [null,1,1,1,1,1,1,1,2,2,3,3,4,4,4,5,5,6,6,7,7,7,8,8,10];
+        return Number.isInteger(stufe) && stufe >= 1 && stufe <= 24 ? punkte[stufe] : null;
+    }
+    function hqAusbauTooltip(angezeigteStufe, laufend) {
+        if (!Number.isInteger(angezeigteStufe) || angezeigteStufe < 0) return '';
+        const ziel = laufend ? angezeigteStufe : angezeigteStufe + 1;
+        const vorher = hqKoloniepunkte(ziel - 1), nachher = hqKoloniepunkte(ziel);
+        if (nachher === null) return '';
+        const plus = vorher === null ? null : nachher - vorher;
+        const wirkung = plus === null ? nachher + ' Koloniepunkt insgesamt'
+            : plus > 0 ? '+' + plus + ' ' + (plus === 1 ? 'Koloniepunkt' : 'Koloniepunkte') + ' (insgesamt ' + nachher + ')'
+            : 'kein zusätzlicher Koloniepunkt (insgesamt ' + nachher + ')';
+        return 'Geplante Stufe ' + ziel + ' → ' + wirkung;
+    }
+    function aktualisiereHqKolonieTooltip(kopf, body) {
+        const name = leseGebaeudeNameAusKopf(kopf);
+        if (!/^(?:Hauptquartier|Headquarters?)(?:\s|\(|$)/i.test(name)) return;
+        const level = ermittleTechTreeStufeAusKopf(kopf, true);
+        const hinweis = hqAusbauTooltip(level, istLaufenderBau(kopf, body));
+        const targets = [kopf, istAktiverBauenButton(body)].filter(Boolean);
+        targets.forEach(function (element) {
+            if (!HAA_HQ_TOOLTIP_ORIGINAL.has(element)) HAA_HQ_TOOLTIP_ORIGINAL.set(element, element.getAttribute('title'));
+            const original = HAA_HQ_TOOLTIP_ORIGINAL.get(element);
+            const title = [original, hinweis].filter(Boolean).join('\n');
+            if (title) { if (element.getAttribute('title') !== title) element.setAttribute('title', title); }
+            else if (element.hasAttribute('title')) element.removeAttribute('title');
+        });
+    }
+    // HQ_COLONY_TOOLTIP_END
+
     function findeBauKandidaten() {
         const planet = findeAktuellenPlanetennamen();
         const kandidaten = [];
@@ -6722,6 +6755,8 @@ return box;
 
             const name = normalisiereGebaeudename(leseGebaeudeNameAusKopf(kopf));
             if (!name || name === 'Bauauftrag') return;
+
+            aktualisiereHqKolonieTooltip(kopf, body);
 
             const laufend = istLaufenderBau(kopf, body);
             const bauenButton = istAktiverBauenButton(body);
