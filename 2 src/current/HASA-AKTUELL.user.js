@@ -4043,6 +4043,8 @@ return box;
         // The ID in this exact heading is stronger evidence than a neighbouring image.
         const marker = text(kopf).match(/\(\s*([a-z0-9_-]{2,40})\s*-\s*(?:Ausbaustufe|Forschungsstufe|Stufe)\s+\d+/i);
         if (marker) return marker[1].toUpperCase();
+        const sichereDatenId = String((kopf.dataset && (kopf.dataset.id || kopf.dataset.object || kopf.dataset.key)) || '').trim().toUpperCase();
+        if (/^[A-Z0-9_-]{2,40}$/.test(sichereDatenId)) return sichereDatenId;
         const container = findeKoerperZeileZumKopf(kopf);
         const bild = container && container.querySelector('img[alt]');
         const alt = bild ? String(bild.getAttribute('alt') || '').trim().toUpperCase() : '';
@@ -4279,7 +4281,8 @@ return box;
         const name = (kopf && text(kopf)) || findeAktuellenPlanetennamen();
         if (!name || name === 'Planet nicht erkannt') return null;
         const base = techTreeAktuellerStandKey(), mapKey = base + '_planet_aliases';
-        const aliases = laden(mapKey, {}) || {}, nameKey = 'name:' + name.trim();
+        const originalAliases = JSON.stringify(laden(mapKey, {}) || {});
+        const aliases = JSON.parse(originalAliases), nameKey = 'name:' + name.trim();
         const coords = new Set();
         document.querySelectorAll('.TickPlanetEntry[onmouseover]').forEach(function(node) {
             const m = String(node.getAttribute('onmouseover') || '').match(/CAPTION\s*,\s*['"](\d+\s*:\s*\d+\s*:\s*\d+)\s*-\s*([^'"]+)['"]/i);
@@ -4295,15 +4298,15 @@ return box;
         if (all.has(nameKey) && all.size > 1) all.delete(nameKey);
         aliases[nameKey] = [...all];
         const keyFor = p => base + '_planet_' + encodeURIComponent(p);
-        const target = keyFor(planet), merged = laden(target,{}) || {};
+        const target = keyFor(planet), originalTarget = JSON.stringify(laden(target,{}) || {}), merged = JSON.parse(originalTarget);
         const proven = [planet];
         if (id) proven.push('id:' + id);
         if (known.length <= 1 && coords.size <= 1) proven.push(nameKey);
         for (const alias of proven) for (const [k,v] of Object.entries(laden(keyFor(alias),{}) || {})) {
             if (!merged[k] || Number(v.seenAt || 0) > Number(merged[k].seenAt || 0)) merged[k] = v;
         }
-        if (JSON.stringify(laden(target,{})) !== JSON.stringify(merged)) speichern(target,merged);
-        if (JSON.stringify(laden(mapKey,{})) !== JSON.stringify(aliases)) speichern(mapKey,aliases);
+        if (originalTarget !== JSON.stringify(merged)) speichern(target,merged);
+        if (originalAliases !== JSON.stringify(aliases)) speichern(mapKey,aliases);
         return target;
     }
 
