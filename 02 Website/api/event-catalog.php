@@ -830,7 +830,7 @@ function hasaEventFamilyRows(PDO $pdo,array $user,int $round,array $family,array
     $q=$pdo->prepare($sql);$q->execute(array_merge([(int)$user['id'],$round],$family['aliases'],[$window[1]]));
     $episodes=hasaEventInformationRows($family,$q->fetchAll(PDO::FETCH_ASSOC));
     $episodes=array_values(array_filter($episodes,static function($r)use($window){$order=$r['last']['reported_order'];return $order===null || ($order>=$window[0] && $order<=$window[1]);}));
-    return array_slice($episodes,$offset,26);
+    return hasaEventAttachProduction($pdo,$user,$round,$family,array_slice($episodes,$offset,26));
 }
 function hasaEventFamilyHtml(array $family,array $summary,array $rows,int $round,int $offset): string
 {

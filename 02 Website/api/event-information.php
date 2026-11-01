@@ -19,7 +19,8 @@ function hasaEventInformationPhase(array $family,array $row): array
     if($family['instant'])$action='single';
     elseif(in_array($subject,$family['ends'],true))$action='end';
     if($family['id']==='water'){
-        $metal=str_contains($text,'Metallmine');$mineral=str_contains($text,'Mineralmine');
+        $text=html_entity_decode(strip_tags($text),ENT_QUOTES|ENT_HTML5,'UTF-8');
+        $metal=(bool)preg_match('/Metall\s*mine/iu',$text);$mineral=(bool)preg_match('/Mineral\s*mine/iu',$text);
         $variant=($metal xor $mineral)?($metal?'Metallmine':'Mineralmine'):'Mine unbekannt';
     }
     if($family['id']==='video' && $subject==='Motivationsvideo abgespielt')$action='activate';
@@ -87,11 +88,58 @@ function hasaEventInformationDuration(?int $seconds): string
     if($seconds===null)return 'Unbekannt';
     return sprintf('%d:%02d:%02d',intdiv($seconds,3600),intdiv($seconds%3600,60),$seconds%60);
 }
+// Production observations are samples, not continuous accounting. Report a measured
+// rate-based estimate, preserving zero and the actual event duration.
+function hasaEventProductionImpact(array $family,array $row,array $samples,?array $before=null,?DateTimeImmutable $now=null): array
+{
+    $resource=match($family['id']){'metal'=>'metal','mineral'=>'mineral','fuel'=>'fuel','water'=>match($row['variant']){'Metallmine'=>'metal','Mineralmine'=>'mineral',default=>null},default=>null};
+    if($resource===null)return ['text'=>'–','detail'=>'Keine Berechnung für diesen Ereignistyp eingerichtet.'];
+    $start=$row['start'];$end=$row['end']??($now??new DateTimeImmutable('now',new DateTimeZone('UTC')));
+    if(!$start || $row['uncertain'] || $end<$start)return ['text'=>'Beginn/Ende nicht zugeordnet','detail'=>'Keine geratene Laufzeit.'];
+    $points=[];
+    foreach($samples as $s){
+        $at=DateTimeImmutable::createFromFormat('!Y-m-d H:i:s',(string)$s['sampled_at'],new DateTimeZone('UTC'));
+        if(!$at || $at<$start || $at>=$end)continue;
+        $rate=$s[$resource.'_per_hour']??null;if(!is_numeric($rate)||!is_finite((float)$rate))continue;
+        $base=json_decode($s['baseline_json']??'null',true)[$resource]??null;
+        if(!is_numeric($base))$base=$before[$resource.'_per_hour']??null;
+        if(!is_numeric($base)||!is_finite((float)$base))continue;
+        $points[]=['at'=>$at->getTimestamp(),'rate'=>(float)$rate,'base'=>(float)$base];
+    }
+    if(!$points)return ['text'=>$samples?'Referenzmessung fehlt':'Produktionsmessung fehlt','detail'=>'Es fehlen eigene passende Stundenwerte oder der Vergleichswert für diesen Zeitraum und Planeten.'];
+    usort($points,static fn($a,$b)=>$a['at']<=>$b['at']);$amount=0.;$parts=[];
+    foreach($points as $i=>$p){
+        $from=$i===0?$start->getTimestamp():$p['at'];$until=$points[$i+1]['at']??$end->getTimestamp();
+        $amount+=($p['rate']-$p['base'])*max(0,$until-$from)/3600;
+        $parts[]=number_format($p['base'],2,',','.').' → '.number_format($p['rate'],2,',','.').'/h';
+    }
+    $name=['metal'=>'Eisenerz','mineral'=>'Minerale','fuel'=>'Treibstoff'][$resource];
+    $direction=$amount<0?'Verlust':($amount>0?'Gewinn':'Abweichung');
+    return ['text'=>'≈ '.number_format(abs($amount),0,',','.').' '.$name.' '.$direction.($row['end']===null?' · bisher':''),
+        'detail'=>count($points).' Messungen; Referenz → gemessen: '.implode('; ',array_unique($parts)).'. Über '.hasaEventInformationDuration($end->getTimestamp()-$start->getTimestamp()).' stückweise hochgerechnet; erster Messwert bis Beginn zurückgeführt, letzter bis Ende fortgeschrieben. Andere gleichzeitige Einflüsse sind enthalten.'];
+}
+function hasaEventAttachProduction(PDO $pdo,array $user,int $round,array $family,array $rows): array
+{
+    if(!in_array($family['id'],['metal','mineral','fuel','water'],true))return $rows;
+    $fields='sampled_at,metal_per_hour,mineral_per_hour,fuel_per_hour,baseline_json';
+    $scope=' FROM hasa_production_samples WHERE owner_user_id=? AND round_number=? AND galaxy_number=? AND system_number=? AND orbit_position=?';
+    $before=$pdo->prepare('SELECT '.$fields.$scope.' AND sampled_at<? ORDER BY sampled_at DESC,id DESC LIMIT 1');
+    $during=$pdo->prepare('SELECT '.$fields.$scope.' AND sampled_at>=? AND sampled_at<? ORDER BY sampled_at,id');
+    $now=new DateTimeImmutable('now',new DateTimeZone('UTC'));$utc=new DateTimeZone('UTC');
+    foreach($rows as &$r){
+        if(!$r['start'] || !$r['position'])continue;
+        $args=array_merge([(int)$user['id'],$round],array_map('intval',explode(':',$r['position'])));
+        $start=$r['start']->setTimezone($utc)->format('Y-m-d H:i:s');$end=($r['end']??$now)->setTimezone($utc)->format('Y-m-d H:i:s');
+        $before->execute([...$args,$start]);$prior=$before->fetch(PDO::FETCH_ASSOC)?:null;
+        $during->execute([...$args,$start,$end]);$r['impact']=hasaEventProductionImpact($family,$r,$during->fetchAll(PDO::FETCH_ASSOC),$prior,$now);
+    }unset($r);return $rows;
+}
 function hasaEventInformationHtml(array $family,array $rows): string
 {
     $esc='hasaAuthEscape';
     $html='<div class="event-information-scroll" role="region" aria-label="Ereignisliste" tabindex="0"><table class="event-information"><thead><tr>';
-    foreach(['Datum/Zeit','Event','Planet','Dauer','Verlust'] as $label)$html.='<th scope="col">'.$esc($label).'</th>';
+    $impactLabel=in_array($family['group'],[1,2],true)?'Gewinn': 'Verlust';
+    foreach(['Datum/Zeit','Event','Planet','Dauer',$impactLabel] as $label)$html.='<th scope="col">'.$esc($label).'</th>';
     $html.='</tr></thead><tbody>';
     foreach($rows as $r){
         $first=$r['first'];$label=$r['variant']!==''?$r['variant']:$family['title'];
@@ -101,10 +149,12 @@ function hasaEventInformationHtml(array $family,array $rows): string
         if($r['uncertain'] && $family['id']==='video')$state.=' · Zuordnung offen';
         $planet=in_array($family['group'],[2,4],true)?'Account':(($first['planet_name']?:'Planet unbekannt').($r['position']?' ('.$r['position'].')':''));
         $tip='Letzter Stand: '.$r['state'].' · '.($r['last']['reported_game_time']??'Zeit unbekannt');
-        $html.='<tr><td>'.$esc($first['reported_game_time']??'Zeit unbekannt').'</td><td title="'.$esc($tip).'">'.$esc($label.$state).'</td><td>'.$esc($planet).'</td><td title="Dauer zwischen eindeutig zugeordnetem Beginn und Ende; Stunden:Minuten:Sekunden">'.$esc(hasaEventInformationDuration($r['seconds'])).'</td><td>'.$esc($r['losses']?implode('; ',$r['losses']):'Unbekannt').'</td></tr>';
+        $impact=$r['impact']??['text'=>in_array($family['id'],['metal','mineral','fuel','water'],true)?'Produktionsmessung fehlt':'–','detail'=>''];
+        $damage=$r['losses']?' · Gemeldete Schäden: '.implode('; ',$r['losses']):'';
+        $html.='<tr><td>'.$esc($first['reported_game_time']??'Zeit unbekannt').'</td><td title="'.$esc($tip).'">'.$esc($label.$state).'</td><td>'.$esc($planet).'</td><td title="Dauer zwischen eindeutig zugeordnetem Beginn und Ende; Stunden:Minuten:Sekunden">'.$esc(hasaEventInformationDuration($r['seconds'])).'</td><td title="'.$esc($impact['detail'].$damage).'">'.$esc($impact['text']).($damage?'<br><small>'.$esc(ltrim($damage,' ·')).'</small>':'').'</td></tr>';
     }
     if(!$rows)$html.='<tr><td colspan="5">Noch keine Vorgänge in diesem Zeitraum erfasst.</td></tr>';
-    return $html.'</tbody></table></div><p class="muted">Dauer in Stunden:Minuten:Sekunden. Unbekannt bedeutet: aus den gespeicherten Angaben nicht bestimmbar.</p>';
+    return $html.'</tbody></table></div><p class="muted">Dauer: Stunden:Minuten:Sekunden. ≈ kennzeichnet eine Hochrechnung aus gemessenen Stundenwerten gegenüber dem Referenzwert; keine Lagerbilanz. Gleichzeitige Ausbau- oder andere Produktionsänderungen können die Abweichung mit beeinflussen. Messgrundlage per Mauszeiger über dem Betrag.</p>';
 }
 function hasaEventInformationStyle(): string
 {
@@ -124,4 +174,3 @@ function hasaEventPlainListHtml(string $subject,array $summary,array $rows,int $
     if($more)$html.='<p><a href="'.$esc(hasaJournalUrl($round,$subject,$offset+25)).'">Weitere Vorgänge</a></p>';
     return $html;
 }
-

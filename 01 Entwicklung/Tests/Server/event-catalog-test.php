@@ -35,14 +35,14 @@ check(str_contains($sheet,'&lt;script&gt;') && !str_contains($sheet,'<script>'),
 check(hasaEventFamily('unknown')===null,'unknown family rejected');
 if(getenv('CI')==='true'){
  $pdo=hasaPdo();$pdo->exec('CREATE TABLE hasa_event_reports(id INT AUTO_INCREMENT PRIMARY KEY,owner_user_id INT,round_number INT,system_event INT,subject VARCHAR(240),reported_game_time VARCHAR(40),reported_order CHAR(14),planet_name VARCHAR(160),galaxy_number INT,system_number INT,orbit_position INT,details_text TEXT) CHARACTER SET utf8mb4');
- $pdo->exec('CREATE TABLE hasa_production_samples(owner_user_id INT,round_number INT,planet_name VARCHAR(160),galaxy_number INT,system_number INT,orbit_position INT) CHARACTER SET utf8mb4');
+ $pdo->exec('CREATE TABLE hasa_production_samples(owner_user_id INT,round_number INT,planet_name VARCHAR(160),galaxy_number INT,system_number INT,orbit_position INT,id INT AUTO_INCREMENT PRIMARY KEY,sampled_at DATETIME,metal_per_hour DOUBLE,mineral_per_hour DOUBLE,fuel_per_hour DOUBLE,baseline_json TEXT) CHARACTER SET utf8mb4');
  $insert=$pdo->prepare('INSERT INTO hasa_event_reports(owner_user_id,round_number,system_event,subject,reported_game_time,reported_order,planet_name,galaxy_number,system_number,orbit_position,details_text)VALUES(?,8,?,?,?, ?,?,1,191,6,?)');
  foreach([[1,1,'Wassereinbruch in Metallmine'],[1,1,'Wassereinbruch repariert'],[2,1,'Wassereinbruch in Metallmine'],[1,0,'Wassereinbruch in Metallmine']] as [$owner,$system,$subject])$insert->execute([$owner,$system,$subject,'30.10.2026 12:00:00','20261030120000',$owner===2?'Foreign':'Ikan','Mine']);
  $window=['20261001000000','20261031235959'];$user=['id'=>1,'role'=>'root'];
  $actual=hasaEventCatalogRows($pdo,$user,8,$window);check(count($actual)===2 && $actual[0]['planet_name']==='Ikan','hub query excludes foreign reports even for root and excludes non-system mail');
  check(count(hasaEventFamilyRows($pdo,$user,8,hasaEventFamily('water'),$window,0))===2,'sheet family query includes start and repair but no foreign report');
  check(count(hasaEventFamilyRows($pdo,$user,8,hasaEventFamily('water'),$window,25))===0,'sheet pagination has stable empty page');
- $pdo->exec("INSERT INTO hasa_production_samples VALUES(1,8,'Ikan',1,191,6),(2,8,'Secret',9,99,9),(1,7,'OldRound',7,7,7)");
+ $pdo->exec("INSERT INTO hasa_production_samples(owner_user_id,round_number,planet_name,galaxy_number,system_number,orbit_position) VALUES(1,8,'Ikan',1,191,6),(2,8,'Secret',9,99,9),(1,7,'OldRound',7,7,7)");
  check(count(hasaEventObservedPlanets($pdo,$user,8))===1,'planet columns limited to own round observations');
  check(count(hasaEventCatalogRows($pdo,$user,8,['20261101000000','20261102235959']))===0,'window boundaries applied');
 }
