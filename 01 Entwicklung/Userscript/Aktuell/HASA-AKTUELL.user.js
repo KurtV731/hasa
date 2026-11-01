@@ -4935,6 +4935,9 @@ return box;
             id=String(id||'').toUpperCase();level=Number(level);
             if(!id || !Number.isInteger(level) || level<1 || level>999){gaps.add('Ungültige Zielstufe');return;}
             const req={id,name:name||id,type:type||ermittleTechTreeTypAusStan(id,name),level};
+            if(req.type==='ship' || req.type==='defense'){
+                gaps.add((name||id)+' · Stückzahl nicht aus sichtbarem Bauangebot ableitbar; Zielweg derzeit für Gebäude und Forschung');return;
+            }
             const state=ermittleErfuellungsstand(req);
             if(state.erledigt)return;
             if(state.aktuell===null){gaps.add((name||id)+' · Ist-Stufe noch nicht erfasst');return;}

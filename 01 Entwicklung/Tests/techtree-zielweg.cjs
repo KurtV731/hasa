@@ -26,3 +26,6 @@ vm.runInContext(fn('baueTechTreeTestHtml'),ctx);
 const html=ctx.baueTechTreeTestHtml();
 assert.ok(html.includes('offen: <b>1</b>'));assert.ok(html.includes('erledigt: <b>2</b>'));assert.ok(html.includes('noch nicht erfasst: <b>1</b>'));assert.ok(!html.includes('6 davon offen'));assert.ok(!html.includes('data-id="LAB"'));assert.ok(html.includes('noch nicht erfasst</span>'));
 console.log('PASS actual planner renderer has live separate counts, no stale summary and hides fulfilled lab6');
+states.SCOL=1;
+assert.ok(ctx.erstelleTechTreeZielweg({SCOL:{id:'SCOL',requirements:[]}},{id:'SCOL',name:'Kolonieschiff',type:'ship',level:1}).gaps.some(s=>s.includes('Stückzahl')));
+console.log('PASS visible ship offer is not proof of having built a colony ship');
