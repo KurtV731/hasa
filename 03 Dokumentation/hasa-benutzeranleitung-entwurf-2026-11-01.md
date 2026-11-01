@@ -1,10 +1,11 @@
-# HASA kennenlernen – dein Begleiter durch Horizon
+# HASA – Benutzerhandbuch 1.3
 
-**Erster Entwurf zur Prüfung · 1. November 2026**  
-Projektverantwortlicher: **Styl**  
-Diese Anleitung beginnt nach der Installation. Sie beschreibt die Bedienung ab **HASA aktivieren**. Eine Installationsanleitung ist hier bewusst nicht noch einmal enthalten.
+**Prüfentwurf · Stand 1. November 2026 · 1.3.0 Alpha 6**  
+Projektverantwortlicher: **Styl**
 
-> **Welche Fassung hast du?** Die öffentliche stabile Version ist **1.2.0**. Styls Bilder zu dieser Anleitung zeigen **1.3.0 Alpha 6**, eine getrennte Testversion. Zusätzliche Testfunktionen sind unten gekennzeichnet. Manche neue Webansichten sind im Repository vorbereitet; ihr tatsächlicher Serverstand muss noch bestätigt werden. Diese Datei ist ein Entwurf, keine Freigabe neuer Funktionen.
+Dieses Handbuch beschreibt HASA 1.3 mit den bis zu diesem Stand geprüften Ergänzungen. Die Bilder und die Bedienung orientieren sich an Alpha 6. Die öffentliche stabile Version bleibt 1.2.0. Offene Fragen zur endgültigen Veröffentlichung sind im internen Prüfan­hang gesammelt.
+
+Die Installation ist bereits erledigt? Dann geht es hier mit dem Einschalten los.
 
 ## 1. Willkommen! Du musst nicht gleich alles benutzen
 
@@ -15,8 +16,6 @@ Du kannst klein anfangen. **Einschalten, anmelden und beim normalen Spielen ein 
 HASA unterstützt dich mit Beobachtungen und Planung. Bauen, forschen, Videos starten und Ascension-Käufe entscheidest du weiterhin selbst.
 
 ## 2. HASA aktivieren – hier geht es los
-
-**Für stabile 1.2.0 und Testversion; das erste Bild zeigt Alpha 6.**
 
 1. Öffne Horizon wie gewohnt.
 2. Im kleinen HASA-Fenster steht zunächst **Bereitschaft**. „Noch nicht aktiviert“ ist in diesem Zustand normal.
@@ -31,17 +30,38 @@ Position und Größe lassen sich mit der Maus anpassen. Wenn eine Zeile oder Tab
 
 **Ascension fehlt?** Das kann völlig normal sein: Der Bereich erscheint erst, wenn HASA vorhandene oder investierte Ascension-Punkte beziehungsweise gekaufte Skillstufen erkannt hat. Ein erwarteter Gewinn beim nächsten Aufstieg allein reicht dafür nicht.
 
-## 3. Bei HASA anmelden
+> **Bildplatzhalter 01 – HASA aktivieren**  
+> Geplantes Motiv: Zugeschnittener Bereitschaftsbereich mit markiertem Knopf „HASA aktivieren“.  
+> Bildunterschrift / Alternativtext: HASA in Bereitschaft – ein Klick startet den Assistenten.
+
+## 3. Dein HASA-Konto: registrieren und anmelden
 
 **Horizon-Anmeldung und HASA-Anmeldung sind zwei verschiedene Dinge.** Für HASA verwendest du dein eigenes HASA-Konto, nicht dein Horizon-Passwort.
 
-1. Klicke in der Werkzeugzeile auf **Anmelden**.
-2. Melde dich mit deinem für HASA angelegten Spielernamen und dem HASA-Passwort an.
-3. Hast du ein Startpasswort erhalten, lege beim geforderten ersten Passwortwechsel dein persönliches Passwort fest.
-4. Kehre zur Spielseite zurück.
-5. Falls noch „Keine HASA-Sitzung im Spiel erkannt“ erscheint, klicke auf **Anmeldestatus prüfen**.
+### Neu bei HASA? Lege dein eigenes Konto an
 
-Ein Konto beziehungsweise ein neues Startpasswort erhältst du von der HASA-Verwaltung. Die geprüfte Anmeldeseite bietet keine Selbstregistrierung an.
+1. Klicke in der Werkzeugzeile auf **Anmelden**.
+2. Wähle auf der Anmeldeseite **Neu bei HASA? Selbst registrieren**.
+3. Trage deinen Horizon-Spielernamen und deine E-Mail-Adresse ein.
+4. Wähle ein eigenes HASA-Passwort mit mindestens zwölf Zeichen und wiederhole es.
+5. Klicke auf **Registrieren und Bestätigungsmail anfordern**.
+6. Öffne die Bestätigungsmail und bestätige deine E-Mail-Adresse über den enthaltenen Link. Prüfe gegebenenfalls auch den Spamordner.
+7. Melde dich anschließend mit deinem Spielernamen und deinem selbst gewählten Passwort an.
+
+Dein normales Spielerkonto wird nach der E-Mail-Bestätigung freigeschaltet. Für Verwaltungsrechte ist weiterhin eine gesonderte Freigabe durch Styl nötig. Dein Passwort wird weder Styl angezeigt noch per E-Mail verschickt.
+
+### Du hast schon ein HASA-Konto?
+
+Melde dich mit deinem bisherigen HASA-Passwort an. Hast du von der Verwaltung ein Startpasswort erhalten, schließe den geforderten ersten Passwortwechsel ab. Kehre dann zur Spielseite zurück und wähle bei Bedarf **Anmeldestatus prüfen**.
+
+### Passwort vergessen?
+
+1. Wähle auf der Anmeldeseite **Passwort vergessen?**.
+2. Gib deinen Spielernamen und deine bestätigte E-Mail-Adresse an.
+3. Fordere den Passwortlink an und öffne die entsprechende E-Mail.
+4. Wähle über den Link ein neues Passwort und melde dich damit an.
+
+Für ein älteres Konto ohne bestätigte E-Mail-Adresse hilft Styl mit einem Einrichtungslink. Ein abgelaufener oder bereits benutzter Link benötigt einen neuen Link; dein Konto musst du deshalb nicht neu anlegen. Fehlt der Registrierungs- oder Passwortlink in deiner Ansicht, melde das Styl.
 
 **Die Webseite sagt „angemeldet“, das Spiel aber nicht?** Öffne beides im selben Browser und im selben Profil. Eine Anmeldung in Firefox meldet dich nicht gleichzeitig in Edge an. Bleibt die Meldung bestehen, gib Styl ihren genauen Wortlaut; ein neues Passwort ist nicht automatisch die Lösung.
 
@@ -63,6 +83,10 @@ Fahre mit der Maus über einen Punkt und warte kurz: Die eingeblendete Erklärun
 
 „Lokale DB aktiv“ heißt: HASA kann größere Bestände in deinem Browser speichern. „Tampermonkey als Rückfall“ bezeichnet eine zusätzliche Speichermöglichkeit. Diese Angaben verlangen normalerweise keinen Eingriff von dir.
 
+> **Bildplatzhalter 02 – Anmeldung und erster Überblick**  
+> Geplantes Motiv: Anmeldeseite ohne Zugangsdaten sowie Hauptfenster mit markiertem Anmeldeknopf; Registrierung bei bestätigtem Live-Link ergänzen.  
+> Bildunterschrift / Alternativtext: Mit dem eigenen HASA-Konto anmelden; das Spielpasswort wird hier nicht verwendet.
+
 ## 4. Dein Wegweiser
 
 | Du möchtest … | Hier beginnst du |
@@ -77,6 +101,10 @@ Fahre mit der Maus über einen Punkt und warte kurz: Die eingeblendete Erklärun
 | Eine Kampfauswertung ansehen | **Noch nicht verfügbar:** Der Knopf **Kampfbericht** führt zu einem vorbereiteten Bereich |
 
 Die Webansichten öffnen sich außerhalb des HASA-Fensters. Wird dort erneut die Anmeldung verlangt, ist das kein Hinweis, dass deine Spielanmeldung verloren wäre.
+
+> **Bildplatzhalter 03 – Die Hauptbereiche**  
+> Geplantes Motiv: Hauptfenster mit Alarme, Forschungsplanung und Galaxiescanner; Nummern passend zum Wegweiser.  
+> Bildunterschrift / Alternativtext: Diese drei Bereiche kannst du einzeln aufklappen.
 
 ## 5. Galaxiescanner: Beim Erkunden entsteht dein Nachschlagewerk
 
@@ -100,11 +128,19 @@ HASA besucht nicht selbstständig sämtliche Systeme. Du sammelst beim normalen 
 
 Die Datenbank ist ein Gedächtnis, keine garantierte Livekarte. Eine alte Beobachtung bleibt eine alte Beobachtung; ein fehlender neuer Blick beweist nicht, dass ein Planet verschwunden ist.
 
-**Neue Suchbedienung im Serverquellstand vom 1. November – Auslieferung noch prüfen:** Ein leeres Systemfeld sucht über alle Systeme, **0** ist eine echte Systemnummer. Texteingaben leeren eine alte Systemnummer, damit sie die Suche nicht unbemerkt einschränkt. **Standort anzeigen** kehrt zum zuletzt konkret gespeicherten Standort zurück. Bei mehreren Ergebnisseiten bleibt die Seitennavigation unten sichtbar. Wenn du diese Bedienung noch nicht siehst, muss Styl den Serverstand prüfen; dafür brauchst du keine Neuinstallation.
+**So verwendest du die Suchfelder:** Ein leeres Systemfeld sucht über alle Systeme, **0** ist eine echte Systemnummer. Texteingaben leeren eine alte Systemnummer, damit sie die Suche nicht unbemerkt einschränkt. **Standort anzeigen** kehrt zum zuletzt konkret gespeicherten Standort zurück. Bei mehreren Ergebnisseiten bleibt die Seitennavigation unten sichtbar.
 
-### Was bedeutet ★3?
+### Was bedeutet die Zahl der Sondenberichte?
 
-Eine Markierung wie **★3** nennt drei lokal gespeicherte Sondenberichte zu diesem Planeten. Sondenangaben sind Beobachtungen beziehungsweise Schätzungen mit einem Zeitpunkt. Sie sind keine Zusicherung, dass der Planet jetzt noch genau so aussieht.
+Im **Galaxiescanner des Userscripts** nennt eine Markierung wie **★3** drei lokal in diesem Browser gespeicherte Sondenberichte zum Planeten.
+
+In der **Galaxiedatenbank-Webansicht** bezeichnet die Berichtszahl dagegen die in der Serverdatenbank gespeicherten Berichte, die du nach den geltenden Freigaben sehen darfst. Sie ist nicht auf deinen lokalen Browserbestand beschränkt. Der erste Statuspunkt im HASA-Fenster beschreibt weiterhin den lokalen Bestand.
+
+Sondenangaben sind Beobachtungen beziehungsweise Schätzungen mit einem Zeitpunkt. Sie sind keine Zusicherung, dass der Planet jetzt noch genau so aussieht.
+
+> **Bildplatzhalter 04 – Galaxiedatenbank durchsuchen**  
+> Geplantes Motiv: Websuche mit leerem Systemfeld, Suchbegriff und sichtbarer Seitennavigation.  
+> Bildunterschrift / Alternativtext: Leeres Systemfeld lässt deine Suche über alle Systeme laufen.
 
 ## 6. Datenfreigaben: Du entscheidest, mit wem du teilst
 
@@ -132,6 +168,10 @@ Deine privaten Ereignis- und Produktionsauswertungen werden dadurch nicht freige
 
 Zum Beenden der Freigabe wähle **Nur ich** und speichere. Weitere Serverabrufe durch andere sind dann gesperrt; bereits von Empfängern kopierte Informationen können dadurch nicht zurückgeholt werden.
 
+> **Bildplatzhalter 05 – Datenfreigaben**  
+> Geplantes Motiv: Freigabeformular mit anonymisiertem gegenseitigem Beispiel und Berichts-Häkchen.  
+> Bildunterschrift / Alternativtext: Du entscheidest, mit wem du deine Erfassungen teilst.
+
 ## 7. Nachrichten und Ereignisse: Was ist passiert?
 
 ### Erst erfassen, dann nachlesen
@@ -147,18 +187,18 @@ Die Ereignisjournale arbeiten mit gespeicherten Daten. Fehlende frühere Spielna
 
 ### Welche Darstellung sehe ich?
 
-**Bisherige stabile Anleitung:** Ereignisarten, persönliche Journale und separate Listen etwa für Videos und technologische Durchbrüche. Auch **ASFI** und Gildensitzungen sind über **Events/Scans** erreichbar.
+Unter **Events/Scans** findest du Ereignisse, persönliche Journale und Auswertungen. Auch **ASFI** und Gildensitzungen sind darüber erreichbar.
 
-**Neue Serveransichten im geprüften Repository, Übernahme auf hasa.li noch bestätigen:** Vier Gruppen ordnen positive und negative Ereignisse nach **Planet** beziehungsweise **Account**. Ein Account-Ereignis betrifft nicht nur einen einzelnen Planeten.
+ Vier Gruppen ordnen positive und negative Ereignisse nach **Planet** beziehungsweise **Account**. Ein Account-Ereignis betrifft nicht nur einen einzelnen Planeten.
 
-| Zeichen in der neuen Matrix | Bedeutung |
+| Zeichen in der Ereignismatrix | Bedeutung |
 |---|---|
 | **X** | Eine passende Meldung wurde gespeichert; keine automatische Bestätigung einer noch laufenden Wirkung |
 | **✓** | Ein passendes Ende beziehungsweise ein Verlust wurde gemeldet |
 | **•** | Einzelereignis |
 | **–** | Kein Nachweis im betrachteten Zeitraum |
 
-Ein Klick auf einen Ereignisnamen führt in der neuen Ansicht zur Informationsliste mit **Datum/Zeit, Event, Planet, Dauer und Gewinn oder Verlust**. Allgemeine Erklärungen und Originaltexte lassen sich bei Bedarf aufklappen. Ein eindeutig zugehöriger Anfang und ein Ende können zu einer Zeile zusammengefasst werden.
+Ein Klick auf einen Ereignisnamen führt zur Informationsliste mit **Datum/Zeit, Event, Planet, Dauer und Gewinn oder Verlust**. Allgemeine Erklärungen und Originaltexte lassen sich bei Bedarf aufklappen. Ein eindeutig zugehöriger Anfang und ein Ende können zu einer Zeile zusammengefasst werden.
 
 **Beispiel:** Ein Mineneinbruch von 05:26:37 bis 20:42:06 dauert **15:15:29**. Ohne eindeutigen Anfang und passende Reparatur kann HASA keine sichere Dauer nennen.
 
@@ -180,7 +220,11 @@ Starte das Video über die ursprüngliche Nachricht im Spiel. HASA kann das einz
 
 Bei eindeutig erkanntem Start zeigt HASA Wirkungsrestzeit und Ende. Die Stunde zählt ab der nachgewiesenen Startzeit, nicht ab erneutem Lesen. **Beispiel:** 12:01:55 bis 13:01:55.
 
-Video- und Ascensionkorrekturen sind im Brett weiterhin teilweise offen. Deshalb gilt: Wenn Erinnerung oder Färbung nicht zum Spiel passen, melde den konkreten Fall; aus einer Anzeige allein folgt keine bestätigte Spielwirkung.
+Wenn Erinnerung oder Färbung nicht zum Spiel passen, melde Styl den konkreten Fall. Aus einer Anzeige allein folgt keine bestätigte Spielwirkung.
+
+> **Bildplatzhalter 06 – Ereignisliste**  
+> Geplantes Motiv: Kompakte Ereignisliste mit erklärter Dauer und ≈-Betrag; private Daten bereinigen.  
+> Bildunterschrift / Alternativtext: Dauer und Hochrechnung bleiben von tatsächlich gemeldeten Gebäudeschäden getrennt.
 
 ## 8. Ressourcen: Deine Produktion besser einordnen
 
@@ -238,9 +282,9 @@ Ein Klick auf eine Voraussetzung macht sie zum **Zwischenziel** und ersetzt dabe
 
 **TechTree ↗** öffnet den Community-TechTree. Er ist eine zusätzliche Hilfe und verändert dein Ziel nicht. Bei blockiertem Fenster prüfe die Popup-Freigabe für die Spielseite.
 
-### Zusätzlich in 1.3.0 Alpha 6: erster Zielweg
+### Dein Zielweg
 
-Die Testversion ordnet benötigte Gebäude- und Forschungsstufen zu einer Schrittfolge. Gemeinsame Voraussetzungen werden zusammengeführt, Erreichtes ausgeblendet, der nächste Schritt hervorgehoben. Neue Beobachtungen können den Weg aktualisieren.
+HASA ordnet benötigte Gebäude- und Forschungsstufen zu einer Schrittfolge. Gemeinsame Voraussetzungen werden zusammengeführt, Erreichtes ausgeblendet, der nächste Schritt hervorgehoben. Neue Beobachtungen können den Weg aktualisieren.
 
 **Beispiel:** Dein Ziel benötigt eine bereits erreichte Forschung und ein noch fehlendes Labor. Nach dem Besuch der Forschungsseite sollte die erfüllte Forschung nicht mehr als offene Aufgabe erscheinen. Nach einem abweichenden Ausbau wird der Weg anhand der neu erfassten Werte angepasst.
 
@@ -252,15 +296,17 @@ Das ist **noch kein vollständiger Kolonisationsassistent und kein zeitoptimaler
 
 Bei Kolonisationsschiffen erklären Tooltips die Besiedelungsdauer laut der übernommenen Wiki-Tabelle; Bau- und Flugzeit kommen hinzu.
 
-**Alpha 6** zeigt am Hauptquartier-Ziel und an passenden Einträgen Hinweise auf Koloniepunkte. Beispiel: eigene Stufe 7, geplante Stufe 8 → **+1 Koloniepunkt, insgesamt 2**. Das ist keine automatische Gründung einer Kolonie. Für nicht belegte Stufen wird keine Fortschreibung versprochen.
+HASA zeigt am Hauptquartier-Ziel und an passenden Einträgen Hinweise auf Koloniepunkte. Beispiel: eigene Stufe 7, geplante Stufe 8 → **+1 Koloniepunkt, insgesamt 2**. Das ist keine automatische Gründung einer Kolonie. Für nicht belegte Stufen wird keine Fortschreibung versprochen.
 
 ### Nach einer Ascension den Planungsstand erneuern
 
-**Alpha 6:** Der Knopf **Spielstand neu einlesen** befindet sich noch im Forschungsplaner. Er eröffnet bewusst einen frischen persönlichen Gebäude-/Forschungsstand. Bestätige ihn nur, wenn du diesen Stand tatsächlich ersetzen möchtest, und besuche danach die betreffenden Spielseiten. Ungelesene Werte bleiben unbekannt; Ziel und Ereignis-/Galaxiedaten sollen erhalten bleiben.
+Der Knopf **Spielstand neu einlesen** befindet sich noch im Forschungsplaner. Er eröffnet bewusst einen frischen persönlichen Gebäude-/Forschungsstand. Bestätige ihn nur, wenn du diesen Stand tatsächlich ersetzen möchtest, und besuche danach die betreffenden Spielseiten. Ungelesene Werte bleiben unbekannt; Ziel und Ereignis-/Galaxiedaten sollen erhalten bleiben.
 
 **Nicht bei jedem Seitenwechsel drücken.** Für normale Fortschritte genügt der Besuch der entsprechenden Seiten.
 
-**Nur vorbereitet:** Die Umbenennung in **Planungsstand zurücksetzen und neu erfassen** und die Verlagerung unter Ascension liegen in einem separaten Featurezweig. Sie gehören noch nicht zum aktiven Alpha-6-Update.
+> **Bildplatzhalter 07 – Zielweg und HQ-Tooltip**  
+> Geplantes Motiv: Zielweg mit offen/erledigt/noch nicht erfasst; HQ-Auswahltooltip erst nach praktischer Bestätigung.  
+> Bildunterschrift / Alternativtext: Der Zielweg hilft beim nächsten Schritt und nennt fehlende Informationen.
 
 ## 11. Ascension: Punkte und Favoriten überblicken
 
@@ -316,15 +362,11 @@ Ein Userscript-Update aktualisiert nicht zugleich die Webauswertungen. Neue Erei
 
 Für eine Rückmeldung reichen oft: **Version, Browser, betroffener Bereich, deine Klickfolge, erwartetes Ergebnis und tatsächliches Ergebnis**. Ein passender Screenshot hilft. Passwörter, Schlüssel und ungeprüfte Spielquelltexte bitte nicht öffentlich teilen.
 
-## 14. Was schon da ist – und was noch nicht
+## 14. Was du von HASA erwarten kannst
 
-| Stand | Einordnung |
-|---|---|
-| **Öffentlich stabil 1.2.0** | Veröffentlichtes Userscript; Aktivierung, Anmeldung, Galaxie-/Sondenerfassung, Freigaben, Ereignis-/Ressourcenfunktionen des damaligen Backendstands, Alarme, Voraussetzungssuche und Ascension-Übersicht |
-| **Testversion 1.3.0 Alpha 6** | Im getrennten Entwicklungs-Updatekanal freigegeben; auf Styls beiden Bildern sichtbar. Enthält unter anderem neuen Planungsstandabgleich, ersten Zielweg und HQ-Tooltips. Keine allgemeine Praxisabnahme aller Funktionen daraus ableiten. |
-| **Neue Webansichten auf main** | Ereignismatrix, kompakte Informationslisten, Produktionshochrechnung und verbesserte Systemsuche im Quellstand vorhanden und mit Prüfberichten dokumentiert. Tatsächliche Übernahme auf hasa.li noch bestätigen. |
-| **Nur vorbereiteter Featurezweig** | Planungsstand-Reset unter Ascension mit neuer Beschriftung |
-| **Noch keine belegte fertige Nutzerfunktion** | Kampfauswertung/-simulator, Handelsstatistik, Lagerfüllprognose und vollständiger optimaler Kolonisationsassistent |
+HASA hilft beim Beobachten, Wiederfinden und Planen. Eine Kampfauswertung, eine fertige Handelsstatistik, eine allgemeine Lagerfüllprognose und ein vollständiger zeitoptimaler Kolonisationsassistent gehören noch nicht zu den hier belegten fertigen Funktionen. Auch ein persönlicher STAN-Spielervergleich ist keine eingebaute Funktion.
+
+Du musst deshalb nicht auf „alles fertig“ warten, um HASA auszuprobieren. Wähle zuerst den Bereich, der dir heute Arbeit abnimmt.
 
 ---
 
@@ -341,15 +383,23 @@ Recherche am **01.11.2026**, vorhandene Anleitungen bleiben unverändert.
 - Vorbereiteter Reset: Featurezweig **feature/planungsstand-reset-ascension**, Commit **aac1cdbc28d0f1c390547d731c3375e455f26253** laut aktuellem Brett und Zweigübersicht; nicht als ausgeliefert behandelt.
 - Keine privaten Screenshots, Zugangsdaten oder Spielquellen in dieses Repository übernommen. Es wurden keine Programmdateien und keine Website verändert.
 
+### Redaktionelle Überarbeitung nach CE-Rückmeldung
+
+Die CE-Redaktion vom 01.11.2026 im gemeinsamen Brett wurde eingearbeitet: zusammenhängendes Handbuch 1.3, Registrierungs-/Mailweg, klare Trennung lokaler und serverseitiger Berichtszahlen und gezielte Bildplatzhalter. Die neu hinzugezogenen Kontoseiten wurden auf Ref **02d07256d995b969b426bbffbef97db598d2b78a** geprüft; der praktische Test mit Tempus ist als Bestätigung von CE/Styl übernommen, nicht hier neu durchgeführt.
+
+Die Bedienungsbeschreibung der jüngsten Webansichten ist redaktionell integriert, **nicht damit als produktiv hochgeladen bestätigt**. Vor Veröffentlichung bleiben die Deploymentfragen unten zu klären. Ein Knopf für den Reset unter Ascension ist weiterhin nur vorbereitet; der Spielertext nennt für Alpha6 den vorhandenen Ort im Planer. Kein aufgerufener oder validierter additiv/multiplikativer Ascension-Wirkungsrechner behauptet.
+
+**Website-Übergabe:** Website-Chatty übernimmt nach fachlicher Abstimmung die vorhandene hasa.li-Navigation und Gestaltung. Gewünscht sind Inhaltsverzeichnis mit Kapitelankern, anklickbar vergrößerbare echte Screenshots, mobile Lesbarkeit und Druckansicht. Die folgenden Bildstellen sind Platzhalter, keine erfundenen Produktoberflächen. Hier wurde noch keine HTML-Vorschau und kein produktiver Upload erstellt.
+
 ### Offene Fragen an den HASA-Entwickler und Styl
 
 1. **Live-Serverstand:** Welche Änderungen vom 30.10./01.11. wurden tatsächlich mit dem Serverupdate hochgeladen? Bitte Ereignismatrix, Informationslisten/Gewinn-Verlust und Galaxiesuche einzeln bestätigen. Bis dahin bleiben die betreffenden Kapitel entsprechend markiert.
-2. **Anmeldung/Testkonto:** Gelten für aktuelle Testkonten weiterhin Verwaltungsanlage und Startpasswortwechsel? Die gelesene main-Anmeldeseite und stabile Anleitung sagen ja. Eine bestätigte neuere Selbstregistrierung darf anschließend gezielt ergänzt werden.
+2. **Anmeldung/Live-Abgleich:** Selbstregistrierung und Passwortweg per E-Mail sind laut CE/Styl mit Tempus praktisch bestätigt. Zusätzlich dev-login.php, register.php, password-reset.php und password-set.php am Alpha6-Ref gelesen. Konkrete produktive Verlinkung und Serverfassung vor Veröffentlichung abgleichen; keine erneute Behauptung, Selbstregistrierung existiere nicht.
 3. **Alarme:** Bitte die aktuelle praktische Bedienung an je einem Bau und einer laufenden Forschung bestätigen: Kreiswahl, getrennte Forschungsüberwachung, Beenden und Ton. Die Anleitung folgt den geprüften Render-/Bindefunktionen; keine Live-Spielaktion ausgeführt.
 4. **Ascension-Formeln:** Welche Kosten-/Investitionswerte und gegebenenfalls Bonusformeln sind praktisch geprüft? Keine allgemeine additive/multiplikative Wirkungszusage im Spielertext.
 5. **Video/Ascension:** Welche im Brett noch vorgemerkten Korrekturen beeinflussen die sichtbaren Erinnerungen und Ressourcenfarben? Bekannte Grenzen bitte konkret benennen.
 6. **Freigabeumfang:** Backend speichert Freigaben rundenbezogen. Bitte bestätigen, wie der Nutzer beim nächsten Rundenwechsel darüber informiert wird; die Anleitung verspricht keine automatische Übernahme in spätere Runden.
 7. **Bilder:** Sollen für eine spätere Veröffentlichung zwei bereinigte Abbildungen der Aktivierung/Anmeldung erstellt werden? Die vorhandenen Bilder wurden als Bedienungsreferenz verwendet, nicht veröffentlicht.
-8. **Endgültige Zielversion:** Soll die erste öffentliche Überarbeitung weiter 1.2.0 begleiten oder erst eine später freigegebene 1.3? Bis dahin bleibt diese Datei ein eigener Entwurf mit Versionshinweisen.
+8. **Zielversion festgelegt:** Ein zusammenhängendes Handbuch 1.3 mit Ergänzungen bis 01.11.2026/Alpha6. Öffentliche Veröffentlichung und bestätigte Serverfassung separat abstimmen. Keine parallelen Hauptanleitungen als neues redaktionelles Gerüst.
 
 Bitte fachliche Korrekturen am Entwurf oder im gemeinsamen Brett sammeln. Veröffentlichung und Ersetzung der bestehenden Anleitung sind noch nicht beauftragt.
