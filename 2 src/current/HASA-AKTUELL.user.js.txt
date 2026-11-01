@@ -3638,6 +3638,12 @@ return box;
             }));
     }
 
+    function bauePlanungsstandResetHtml() {
+        return '<div style="margin-top:12px;padding-top:8px;border-top:1px solid #555;">'
+            + '<p style="font-size:12px;color:#bbb;">Nach einem Aufstieg oder zur Korrektur falscher Ist-Stufen: bisherige Gebäude- und Forschungsstände in HASA ersetzen. Danach die jeweiligen Spielseiten besuchen. Ziel, Ereignisse und Galaxiedaten bleiben erhalten.</p>'
+            + '<button id="haa-stand-neueinlesen" type="button" style="font-size:12px;max-width:100%;white-space:normal;" title="Setzt nur HASAs Planungsstand nach Bestätigung zurück; löst keinen Aufstieg im Spiel aus.">Planungsstand zurücksetzen und neu erfassen</button></div>';
+    }
+
     function baueAscensionDashboardHtml(status) {
         let html = '';
         html += '<div style="margin-bottom:8px;">';
@@ -4867,7 +4873,6 @@ return box;
         let html = '<div class="haa-plan-kopf" style="margin-top:2px;position:sticky;top:0;z-index:30;background:#191612;padding-bottom:5px;">';
 
         html += '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">';
-        html += '<button id="haa-stand-neueinlesen" style="font-size:11px;" title="Nach einem Aufstieg alte Forschungs- und Gebäudestände ersetzen">Spielstand neu einlesen</button>';
         html += '<b>Import & Datenbestand</b><button id="haa-stan-import" style="font-size:11px;">' + (daten ? 'XML-Datei aktualisieren' : 'STAN-XML einlesen') + '</button>';
         html += '<input id="haa-stan-datei" type="file" accept=".xml,text/xml,application/xml" style="display:none;"></div>';
 
@@ -5381,7 +5386,8 @@ return box;
 
             html += baueNavigationHtml();
             html += baueHasaWerkzeugleisteHtml();
-            if (hatAscensionPunkte(ascStatus)) {
+            ascensionHtml += bauePlanungsstandResetHtml();
+            if (hatAscensionPunkte(ascStatus) || istAscensionSeite()) {
                 html += baueAccordionBereichHtml('ascension', '⭐ Ascension', ascensionHtml);
             }
             let alarmHtml = '<div style="font-weight:bold;color:#FFD27C;margin:2px 0 5px;">🏗 Baualarm</div>';
