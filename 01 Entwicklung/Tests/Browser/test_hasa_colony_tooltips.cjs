@@ -17,7 +17,7 @@ const code = source.slice(start, end);
             const selected = {id:'SCOL',name:'SCOL',type:'ship',level:1};
             const objects = [selected, {id:'GCOL',name:'GCOL',type:'ship'}, {id:'LFGT',name:'LFGT',type:'ship'}, {id:'ENERGYTECH',name:'Energietechnik',type:'research'}];
             const api = new Function('objects', 'selected', [
-                'const STORAGE_STAN_STATUS="stanStatus", STORAGE_STAN_AUSWAHL_OFFEN="open", STORAGE_TECHTREE_GRAPH="graph", STORAGE_TECHTREE_STATUS="status", STORAGE_TECHTREE_ERLEDIGT_ZEIGEN="done", STORAGE_TECHTREE_DEBUG="debug";',
+                'const STORAGE_TECHTREE_SPIELSTAND="spielstand", STORAGE_STAN_STATUS="stanStatus", STORAGE_STAN_AUSWAHL_OFFEN="open", STORAGE_TECHTREE_GRAPH="graph", STORAGE_TECHTREE_STATUS="status", STORAGE_TECHTREE_ERLEDIGT_ZEIGEN="done", STORAGE_TECHTREE_DEBUG="debug";',
                 'const TECHTREE_DIAGNOSE_ANZEIGEN=false;',
                 'function esc(v){return String(v??"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}',
                 'function laden(k,f){return k==="open"?"1":k==="graph"?{SCOL:{}}:f;}',
