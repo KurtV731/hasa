@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         HASA – Horizon Ascension Assistant
 // @namespace    horiversum.hasa
-// @version      1.3.0-alpha.5
+// @version      1.3.0-alpha.6
 // @charset      UTF-8
 // @updateURL    https://raw.githubusercontent.com/KurtV731/hasa/dev-1.3-alpha1/01%20Entwicklung/Userscript/Aktuell/HASA-AKTUELL.user.js
 // @downloadURL  https://raw.githubusercontent.com/KurtV731/hasa/dev-1.3-alpha1/01%20Entwicklung/Userscript/Aktuell/HASA-AKTUELL.user.js
@@ -217,8 +217,8 @@
         'PHYSICS', 'PSYCHOLOGY', 'NUCLEARPHYSICS', 'SOLARENERGYTECH'
     ]);
 
-    const HASA_VERSION = '1.3.0 Alpha 5';
-    const HASA_BUILD_LABEL = '1.3.0-alpha5-spielstand-zielweg-2026-11-01';
+    const HASA_VERSION = '1.3.0 Alpha 6';
+    const HASA_BUILD_LABEL = '1.3.0-alpha6-hq-auswahl-tooltip-2026-11-01';
     const HASA_RUNDE = 8;
     const HASA_RUNDE_SCHLUESSEL = 'runde8';
     // Die MariaDB und sämtliche Schreibendpunkte trennen Runde 7 und 8 jetzt
@@ -4851,6 +4851,14 @@ return box;
             + 'Bau- und Flugzeit kommen zusätzlich hinzu.';
     }
 
+    function hqPlanungsTooltip(objekt) {
+        if (!objekt || objekt.type !== 'building' || String(objekt.id || '').trim().toUpperCase() !== 'HEADQUARTER') return '';
+        const stand = ermittleErfuellungsstand({id:'HEADQUARTER',name:objekt.name,type:'building',level:1});
+        const ziel = Number.isInteger(Number(objekt.level)) && Number(objekt.level) > 0 ? Number(objekt.level) : stand.aktuell === null ? null : stand.aktuell + 1;
+        const hinweis = ziel === null ? 'Eigene HQ-Stufe noch nicht erfasst.' : hqAusbauTooltip(ziel, true);
+        return [hinweis, 'Koloniepunkte nach HQ-Stufe: 1–7: 1 · 8–9: 2 · 10–11: 3 · 12–14: 4 · 15–16: 5 · 17–18: 6 · 19–21: 7 · 22–23: 8 · 24: 10.'].filter(Boolean).join('\n');
+    }
+
     function baueStanNavigationHtml() {
         const daten = ladeStanBestandMitFallback();
         const status = laden(STORAGE_STAN_STATUS, null);
@@ -4874,7 +4882,7 @@ return box;
         html += '<div style="margin-top:8px;border-top:1px solid #555;padding-top:7px;">';
         if (auswahl) {
             html += '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">';
-            html += '<div><span style="color:#aaa;font-size:11px;">Gewähltes Ziel</span><br><b title="' + esc(kolonisationsTooltip(auswahl)) + '" style="color:#FFD27C;">' + esc(auswahl.name) + ' (' + esc(auswahl.id) + ')</b></div>';
+            html += '<div><span style="color:#aaa;font-size:11px;">Gewähltes Ziel</span><br><b title="' + esc([kolonisationsTooltip(auswahl), hqPlanungsTooltip(auswahl)].filter(Boolean).join('\n')) + '" style="color:#FFD27C;">' + esc(auswahl.name) + ' (' + esc(auswahl.id) + ')</b></div>';
             html += '<button id="haa-stan-auswahl-umschalten" style="font-size:11px;">' + (auswahlOffen ? 'Auswahl schließen' : 'Ziel ändern') + '</button>';
             html += '</div>';
         } else {
@@ -4912,7 +4920,7 @@ return box;
                     html += '<div style="padding:2px 0 4px 5px;">';
                     objekte.forEach(function (o) {
                         const aktiv = auswahl && auswahl.id === o.id && auswahl.type === o.type;
-                        html += '<button title="' + esc(kolonisationsTooltip(o)) + '" class="haa-stan-ziel" data-id="' + esc(o.id) + '" data-name="' + esc(o.name) + '" data-type="' + esc(o.type) + '" style="display:block;width:100%;text-align:left;margin:2px 0;padding:4px 6px;background:' + (aktiv ? '#4a402a' : '#2a251f') + ';color:' + (aktiv ? '#FFD27C' : '#fff') + ';border:1px solid #555;border-radius:2px;cursor:pointer;">' + esc(o.name) + ' (' + esc(o.id) + ')' + (o.historical ? ' <small style="color:#FFD27C;">[älterer Stand' + (o.knownDataDate ? ': ' + esc(o.knownDataDate) : '') + ']</small>' : '') + '</button>';
+                        html += '<button title="' + esc([kolonisationsTooltip(o), hqPlanungsTooltip(o)].filter(Boolean).join('\n')) + '" class="haa-stan-ziel" data-id="' + esc(o.id) + '" data-name="' + esc(o.name) + '" data-type="' + esc(o.type) + '" style="display:block;width:100%;text-align:left;margin:2px 0;padding:4px 6px;background:' + (aktiv ? '#4a402a' : '#2a251f') + ';color:' + (aktiv ? '#FFD27C' : '#fff') + ';border:1px solid #555;border-radius:2px;cursor:pointer;">' + esc(o.name) + ' (' + esc(o.id) + ')' + (o.historical ? ' <small style="color:#FFD27C;">[älterer Stand' + (o.knownDataDate ? ': ' + esc(o.knownDataDate) : '') + ']</small>' : '') + '</button>';
                     });
                     html += '</div></details>';
                 });
@@ -5004,7 +5012,7 @@ return box;
                 if (!gruppe.length) return;
                 html += '<div style="margin-top:7px;color:#FFD27C;font-weight:bold;">' + techTreeTypSymbol(typ) + ' ' + esc(techTreeTypLabel(typ)) + '</div>';
                 gruppe.sort(function (a,b) { return String(a.name).localeCompare(String(b.name),'de'); }).forEach(function (req) {
-                    html += '<div style="display:grid;grid-template-columns:18px minmax(180px,1fr) auto;gap:4px;padding:2px 0;color:' + (req.erledigt ? '#888' : '#fff') + ';"><span>' + (req.erledigt ? '✓' : '➜') + '</span><button type="button" class="haa-req-ziel" data-id="' + esc(req.id) + '" data-name="' + esc(req.name) + '" data-type="' + esc(req.type || 'unknown') + '" data-level="' + esc(req.level) + '" title="' + esc(["Als Zwischenziel übernehmen", kolonisationsTooltip(req)].filter(Boolean).join("\n")) + '" style="text-align:left;background:transparent;border:0;padding:0;color:inherit;cursor:pointer;text-decoration:underline;text-decoration-style:dotted;">' + esc(req.name) + ' <small style="display:block;color:#aaa;">' + esc((req.direkt ? 'Direkt' : 'Sekundär') + ' · für ' + (req.fuer || []).join(', ')) + '</small> <span style="color:#777;font-size:10px;">[' + esc(req.id) + ']</span></button><b style="text-align:right;white-space:nowrap;">benötigt ' + esc(req.level) + (req.aktuell !== null ? '<br><span style="font-weight:normal;color:#aaa;">vorhanden ' + esc(req.aktuell) + (req.running ? ' · Stufe ' + esc(req.targetLevel) + ' läuft' : '') + '</span>' : '<br><span style="font-weight:normal;color:#facc15;">noch nicht erfasst</span>') + '</b></div>';
+                    html += '<div style="display:grid;grid-template-columns:18px minmax(180px,1fr) auto;gap:4px;padding:2px 0;color:' + (req.erledigt ? '#888' : '#fff') + ';"><span>' + (req.erledigt ? '✓' : '➜') + '</span><button type="button" class="haa-req-ziel" data-id="' + esc(req.id) + '" data-name="' + esc(req.name) + '" data-type="' + esc(req.type || 'unknown') + '" data-level="' + esc(req.level) + '" title="' + esc(["Als Zwischenziel übernehmen", kolonisationsTooltip(req), hqPlanungsTooltip(req)].filter(Boolean).join("\n")) + '" style="text-align:left;background:transparent;border:0;padding:0;color:inherit;cursor:pointer;text-decoration:underline;text-decoration-style:dotted;">' + esc(req.name) + ' <small style="display:block;color:#aaa;">' + esc((req.direkt ? 'Direkt' : 'Sekundär') + ' · für ' + (req.fuer || []).join(', ')) + '</small> <span style="color:#777;font-size:10px;">[' + esc(req.id) + ']</span></button><b style="text-align:right;white-space:nowrap;">benötigt ' + esc(req.level) + (req.aktuell !== null ? '<br><span style="font-weight:normal;color:#aaa;">vorhanden ' + esc(req.aktuell) + (req.running ? ' · Stufe ' + esc(req.targetLevel) + ' läuft' : '') + '</span>' : '<br><span style="font-weight:normal;color:#facc15;">noch nicht erfasst</span>') + '</b></div>';
                 });
             });
         }

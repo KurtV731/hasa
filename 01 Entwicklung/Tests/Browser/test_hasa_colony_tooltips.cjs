@@ -7,15 +7,16 @@ const start = source.indexOf('    function kolonisationsTooltip(');
 const end = source.indexOf('    function verbindeTechTreeTestButtons()', start);
 assert.ok(start >= 0 && end > start, 'actual tooltip and planner renderers present');
 const code = source.slice(start, end);
+const hq = source.slice(source.indexOf('    function hqKoloniepunkte('),source.indexOf('    function aktualisiereHqKolonieTooltip('));
 (async () => {
     const options = {headless: true};
     if (process.env.HASA_TEST_BROWSER) Object.assign(options, {executablePath: process.env.HASA_TEST_BROWSER, args: ['--no-sandbox','--single-process','--no-zygote','--disable-webgl','--disable-gpu','--disable-software-rasterizer','--use-gl=disabled']});
     const browser = await chromium.launch(options);
     try {
         const page = await browser.newPage();
-        const result = await page.evaluate(code => {
+        const result = await page.evaluate(({code,hq}) => {
             const selected = {id:'SCOL',name:'SCOL',type:'ship',level:1};
-            const objects = [selected, {id:'GCOL',name:'GCOL',type:'ship'}, {id:'LFGT',name:'LFGT',type:'ship'}, {id:'ENERGYTECH',name:'Energietechnik',type:'research'}];
+            const objects = [{id:'HEADQUARTER',name:'HEADQUARTER',type:'building'},selected, {id:'GCOL',name:'GCOL',type:'ship'}, {id:'LFGT',name:'LFGT',type:'ship'}, {id:'ENERGYTECH',name:'Energietechnik',type:'research'}];
             const api = new Function('objects', 'selected', [
                 'const STORAGE_TECHTREE_SPIELSTAND="spielstand", STORAGE_STAN_STATUS="stanStatus", STORAGE_STAN_AUSWAHL_OFFEN="open", STORAGE_TECHTREE_GRAPH="graph", STORAGE_TECHTREE_STATUS="status", STORAGE_TECHTREE_ERLEDIGT_ZEIGEN="done", STORAGE_TECHTREE_DEBUG="debug";',
                 'const TECHTREE_DIAGNOSE_ANZEIGEN=false;',
@@ -27,9 +28,10 @@ const code = source.slice(start, end);
                 'function istStanExplorerKategorieAusgeblendet(){return false;}',
                 'function techTreeTypSymbol(){return "";} function techTreeTypLabel(t){return t;}',
                 'function sammleTechTreeAnforderungen(){return [{...selected,level:1,fuer:["GCOL"]}];}',
-                'function ermittleErfuellungsstand(){return {erledigt:false,aktuell:null};}',
+                'function ermittleErfuellungsstand(r){return {erledigt:false,aktuell:r.id===\"HEADQUARTER\"?7:null};}',
+                hq,
                 code,
-                'return {tooltip:kolonisationsTooltip, render:baueTechTreeTestHtml};'
+                'return {tooltip:kolonisationsTooltip, hq:hqPlanungsTooltip, render:baueTechTreeTestHtml};'
             ].join('\n'))(objects,selected);
             document.body.innerHTML=api.render();
             return {
@@ -46,9 +48,11 @@ const code = source.slice(start, end);
                 req:document.querySelector('.haa-req-ziel').title,
                 unknown:document.querySelector('.haa-stan-ziel[data-id="GCOL"]').title,
                 ordinary:document.querySelector('.haa-stan-ziel[data-id="LFGT"]').title,
+                hq:document.querySelector('.haa-stan-ziel[data-id="HEADQUARTER"]').title,
+                hqChosen:api.hq({id:'HEADQUARTER',type:'building',level:10}),
                 count:document.querySelectorAll('.haa-stan-ziel').length
             };
-        }, code);
+        }, {code,hq});
         assert.match(result.scol,/Besiedelungsdauer: 3 Stunden/);
         assert.match(result.scol,/laut Wiki/);
         const expected={SCOL:'3 Stunden',GRCO:'4 Stunden',CCOL:'7 Stunden',FCOL:'30 Minuten',LRCO:'9 Stunden',ICOL:'24 Stunden',GCOL:'4 Stunden',ASCS:'8 Stunden',LACS:'20 Stunden',IACS:'72 Stunden'};
@@ -64,7 +68,10 @@ const code = source.slice(start, end);
         assert.equal(result.req,'Als Zwischenziel übernehmen\n'+result.scol);
         assert.match(result.other,/Besiedelungsdauer: 4 Stunden \(laut Wiki\)/);
         assert.equal(result.unknown,result.other);
-        assert.equal(result.count,4,'selection retains all objects');
+        assert.match(result.hq,/Geplante Stufe 8 → \+1 Koloniepunkt \(insgesamt 2\)/);
+        assert.match(result.hq,/24: 10/);
+        assert.match(result.hqChosen,/Geplante Stufe 10 → \+1 Koloniepunkt \(insgesamt 3\)/);
+        assert.equal(result.count,5,'selection retains all objects');
         console.log('PASS all ten Wiki durations, exact identity/type, three actual planner tooltip locations and existing action hint');
     } finally { await browser.close(); }
 })().catch(e=>{console.error(e);process.exitCode=1;});

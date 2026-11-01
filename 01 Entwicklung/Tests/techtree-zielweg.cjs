@@ -21,7 +21,7 @@ states.LAB=6;states.PHYSICS=11;states.SHIPYARD=1;
 Object.assign(ctx,{STORAGE_TECHTREE_GRAPH:'graph',STORAGE_TECHTREE_STATUS:'status',STORAGE_TECHTREE_ERLEDIGT_ZEIGEN:'show',STORAGE_TECHTREE_DEBUG:'debug',TECHTREE_DIAGNOSE_ANZEIGEN:false,
  laden:(k,f)=>k==='graph'?graph:k==='status'?{state:'ok',message:'12 Voraussetzungen · 6 davon offen.'}:f,
  ladeStanAuswahl:()=>goal,baueStanNavigationHtml:()=>'',sammleTechTreeAnforderungen:()=>[req('LAB',3),req('PHYSICS',10),req('SHIPYARD',3),req('UNKNOWN',1)],
- techTreeTypSymbol:()=>'',techTreeTypLabel:s=>s,kolonisationsTooltip:()=>''});
+ techTreeTypSymbol:()=>'',techTreeTypLabel:s=>s,kolonisationsTooltip:()=>'',hqPlanungsTooltip:()=>''});
 vm.runInContext(fn('baueTechTreeTestHtml'),ctx);
 const html=ctx.baueTechTreeTestHtml();
 assert.ok(html.includes('offen: <b>1</b>'));assert.ok(html.includes('erledigt: <b>2</b>'));assert.ok(html.includes('noch nicht erfasst: <b>1</b>'));assert.ok(!html.includes('6 davon offen'));assert.ok(!html.includes('data-id="LAB"'));assert.ok(html.includes('noch nicht erfasst</span>'));
