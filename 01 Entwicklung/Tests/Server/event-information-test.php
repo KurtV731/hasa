@@ -11,6 +11,7 @@ if(!function_exists('hasaEventGameInstant')){
  }
 }
 require_once $api.'/event-catalog.php';
+set_exception_handler(static function(Throwable $e):never{fwrite(STDERR,'FAIL '.$e->getMessage().PHP_EOL);exit(1);});
 function infoCheck(bool $ok,string $name):void{if(!$ok)throw new RuntimeException($name);echo 'PASS '.$name.PHP_EOL;}
 function infoEvent(string $subject,string $at,int $id=1,string $details='',int $system=191):array{
  $d=DateTimeImmutable::createFromFormat('!d.m.Y H:i:s',$at,new DateTimeZone('Europe/Berlin'));
@@ -46,7 +47,9 @@ if(getenv('CI')==='true'){
  $matched=array_values(array_filter($actual,static fn($r)=>$r['position']==='1:300:6'));
  infoCheck(count($matched)===1 && $matched[0]['seconds']===141329,'start before window pairs with in-window repair and foreign report cannot change duration');
  infoCheck($matched[0]['first']['reported_game_time']==='30.09.2026 05:26:37','original start retained when history starts before window');
- infoCheck(count(hasaEventFamilyRows($pdo,['id'=>2],8,$f,['20261001000000','20261031235959'],0))===1,'other owner sees only own orphan end');
+ $foreign=hasaEventFamilyRows($pdo,['id'=>2],8,$f,['20261001000000','20261031235959'],0);
+ $foreign=array_values(array_filter($foreign,static fn($r)=>$r['position']==='1:300:6'));
+ infoCheck(count($foreign)===1 && $foreign[0]['uncertain'] && $foreign[0]['seconds']===null,'other owner sees only own orphan end');
  infoCheck(count(hasaEventFamilyRows($pdo,['id'=>1],7,$f,['20261001000000','20261031235959'],0))===0,'other round remains empty');
 }
 $head='<!doctype html><html lang="de"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ereignisinformationen – Testdaten</title><style>body{max-width:620px;margin:3rem auto;padding:1rem;background:#111827;color:#f3f4f6;font:19px/1.5 system-ui}a{color:#bfdbfe}.muted{color:#cbd5e1}</style>';

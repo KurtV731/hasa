@@ -4,6 +4,7 @@ $api=getenv('HASA_TEST_API')?:__DIR__;
 if(getenv('CI')==='true'){require $api.'/auth.php';require_once $api.'/events-service.php';}
 else {function hasaAuthEscape(string $s):string{return htmlspecialchars($s,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8');}}
 require $api.'/event-catalog.php';
+set_exception_handler(static function(Throwable $e):never{fwrite(STDERR,'FAIL '.$e->getMessage().PHP_EOL);exit(1);});
 if(!function_exists('hasaJournalUrl')){function hasaJournalUrl(int $r,string $s,int $o=0):string{return 'events.php?'.http_build_query(['view'=>'event','round'=>$r,'subject'=>$s,'offset'=>$o]);}}
 function check(bool $ok,string $label):void{if(!$ok)throw new RuntimeException($label);echo 'PASS '.$label.PHP_EOL;}
 $catalog=hasaEventCatalog();$ids=[];$aliases=[];$groups=[];
