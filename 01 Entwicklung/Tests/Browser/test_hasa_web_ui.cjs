@@ -54,7 +54,7 @@ html=html.replace('<option value="">Alle sichtbaren</option>','<option value="">
   await page.locator('[name=q]').fill('Elsewhere');await page.locator('#system-forward').click();await page.waitForTimeout(120);assert.equal(latest().system,'1');
  });
  await test('opening more filters clears system and bottom pager remains visible on scroll',async()=>{
-  await page.locator('.filters-more summary').click();assert.equal(await page.locator('[name=system]').inputValue(),'');
+  await page.locator('.filters-more summary').click();await page.waitForFunction(()=>document.querySelector('[name=system]').value==='');assert.equal(await page.locator('[name=system]').inputValue(),'');
   await page.getByRole('button',{name:'Suchen',exact:true}).click();await page.waitForTimeout(120);
   await page.locator('#results').evaluate(n=>{n.style.minHeight='3000px';});await page.evaluate(()=>scrollTo(0,1500));
   const box=await page.locator('#pages').boundingBox();assert.ok(box.y>=0&&box.y+box.height<=901);
