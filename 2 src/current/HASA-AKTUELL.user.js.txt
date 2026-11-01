@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         HASA – Horizon Ascension Assistant
 // @namespace    horiversum.hasa
-// @version      1.3.0-alpha.4
+// @version      1.3.0-alpha.5
 // @charset      UTF-8
 // @updateURL    https://raw.githubusercontent.com/KurtV731/hasa/dev-1.3-alpha1/01%20Entwicklung/Userscript/Aktuell/HASA-AKTUELL.user.js
 // @downloadURL  https://raw.githubusercontent.com/KurtV731/hasa/dev-1.3-alpha1/01%20Entwicklung/Userscript/Aktuell/HASA-AKTUELL.user.js
@@ -217,8 +217,8 @@
         'PHYSICS', 'PSYCHOLOGY', 'NUCLEARPHYSICS', 'SOLARENERGYTECH'
     ]);
 
-    const HASA_VERSION = '1.3.0 Alpha 4';
-    const HASA_BUILD_LABEL = '1.3.0-alpha4-hq-koloniepunkte-2026-11-01';
+    const HASA_VERSION = '1.3.0 Alpha 5';
+    const HASA_BUILD_LABEL = '1.3.0-alpha5-spielstand-zielweg-2026-11-01';
     const HASA_RUNDE = 8;
     const HASA_RUNDE_SCHLUESSEL = 'runde8';
     // Die MariaDB und sämtliche Schreibendpunkte trennen Runde 7 und 8 jetzt
@@ -4040,7 +4040,10 @@ return box;
 
     function ermittleTechnischeIdAusKopf(kopf) {
         if (!kopf) return '';
-        const container = kopf.closest('form, .BldTable, .BldContainerAccordionBox, .ResContainerAccordionBox') || kopf.parentElement;
+        // The ID in this exact heading is stronger evidence than a neighbouring image.
+        const marker = text(kopf).match(/\(\s*([a-z0-9_-]{2,40})\s*-\s*(?:Ausbaustufe|Forschungsstufe|Stufe)\s+\d+/i);
+        if (marker) return marker[1].toUpperCase();
+        const container = findeKoerperZeileZumKopf(kopf);
         const bild = container && container.querySelector('img[alt]');
         const alt = bild ? String(bild.getAttribute('alt') || '').trim().toUpperCase() : '';
         if (/^[A-Z0-9_-]{2,40}$/.test(alt)) return alt;
@@ -4128,7 +4131,10 @@ return box;
             // Horizon beschriftet einen laufenden Bau bereits mit der Zielstufe,
             // obwohl bis zum Ablauf des Timers nur die vorherige Stufe vorhanden ist.
             // Beispiel: „wird gebaut … Ausbaustufe 10“ bedeutet aktuell Stufe 9.
-            if (typ === 'building' && Number.isFinite(level) && istLaufenderBau(kopf, body)) {
+            const laufend = (typ === 'building' && istLaufenderBau(kopf, body))
+                || (typ === 'research' && /wird erforscht/i.test(text(kopf)+' '+text(body)));
+            const zielLevel = laufend && Number.isFinite(level) ? level : null;
+            if (laufend && Number.isFinite(level)) {
                 level = Math.max(0, level - 1);
             }
             if (typ === 'research' && !Number.isFinite(level) && body) {
@@ -4155,7 +4161,7 @@ return box;
             if (!name || name === 'Bauauftrag' || !Number.isFinite(level)) return;
 
             const technischeId = ermittleTechnischeIdAusKopf(kopf);
-            const eintrag = { id: technischeId || '', name: name, level: level, type: typ, seenAt: Date.now() };
+            const eintrag = { id: technischeId || '', name: name, level: level, targetLevel: zielLevel, running: laufend, type: typ, seenAt: Date.now() };
             const schluessel = normalisiereTechTreeName(name);
             merke(eintrag);
             neu[schluessel] = eintrag;
@@ -4191,6 +4197,8 @@ return box;
                 const name = normalisiereGebaeudename(m[1]);
                 const technischeId = String(m[3] || '').trim().toUpperCase();
                 const level = Number(m[4]);
+
+                if (neu['id:' + technischeId] && neu['id:' + technischeId].running) return;
 
                 if (!name || !technischeId || !Number.isFinite(level)) return;
 
@@ -4262,12 +4270,41 @@ return box;
         return true;
     }
 
+    // A planet ID selector may disappear on research pages. Keep explicitly learned
+    // aliases; never use the last visited planet as a fallback for a different one.
     function techTreeGebaeudeSpeicherKey() {
         const auswahl = document.querySelector('select.PlanetSelectBox');
         const id = auswahl && String(auswahl.value || '').trim();
-        const name = findeAktuellenPlanetennamen();
-        const planet = id ? 'id:' + id : (name && name !== 'Planet nicht erkannt' ? 'name:' + name : '');
-        return planet ? techTreeAktuellerStandKey() + '_planet_' + encodeURIComponent(planet) : null;
+        const kopf = document.querySelector('.ResPlanetName');
+        const name = (kopf && text(kopf)) || findeAktuellenPlanetennamen();
+        if (!name || name === 'Planet nicht erkannt') return null;
+        const base = techTreeAktuellerStandKey(), mapKey = base + '_planet_aliases';
+        const aliases = laden(mapKey, {}) || {}, nameKey = 'name:' + name.trim();
+        const coords = new Set();
+        document.querySelectorAll('.TickPlanetEntry[onmouseover]').forEach(function(node) {
+            const m = String(node.getAttribute('onmouseover') || '').match(/CAPTION\s*,\s*['"](\d+\s*:\s*\d+\s*:\s*\d+)\s*-\s*([^'"]+)['"]/i);
+            if (m && m[2].trim() === name.trim()) coords.add(m[1].replace(/\s/g,''));
+        });
+        const known = Array.isArray(aliases[nameKey]) ? aliases[nameKey] : [];
+        const planet = coords.size === 1 ? 'pos:' + [...coords][0] : id ? 'id:' + id : known.length === 1 ? known[0] : known.length > 1 ? '' : nameKey;
+        if (!planet || coords.size > 1 && !id) return null;
+        const all = new Set([...known, planet]);
+        // An explicitly selected ID and unique coordinates prove the alias, without
+        // merging two unrelated planets that merely share a name.
+        if (id && coords.size === 1) all.delete('id:' + id);
+        if (all.has(nameKey) && all.size > 1) all.delete(nameKey);
+        aliases[nameKey] = [...all];
+        const keyFor = p => base + '_planet_' + encodeURIComponent(p);
+        const target = keyFor(planet), merged = laden(target,{}) || {};
+        const proven = [planet];
+        if (id) proven.push('id:' + id);
+        if (known.length <= 1 && coords.size <= 1) proven.push(nameKey);
+        for (const alias of proven) for (const [k,v] of Object.entries(laden(keyFor(alias),{}) || {})) {
+            if (!merged[k] || Number(v.seenAt || 0) > Number(merged[k].seenAt || 0)) merged[k] = v;
+        }
+        if (JSON.stringify(laden(target,{})) !== JSON.stringify(merged)) speichern(target,merged);
+        if (JSON.stringify(laden(mapKey,{})) !== JSON.stringify(aliases)) speichern(mapKey,aliases);
+        return target;
     }
 
     function ermittleErfuellungsstand(req) {
@@ -4283,7 +4320,9 @@ return box;
         const level = eintrag && eintrag.level;
         const aktuell = level !== null && level !== undefined && level !== '' && Number.isFinite(Number(level))
             && Number(level) >= 0 ? Number(level) : null;
-        return { aktuell: aktuell, erledigt: aktuell !== null && aktuell >= Number(req.level) };
+        return { aktuell: aktuell, erledigt: aktuell !== null && aktuell >= Number(req.level),
+            bekannt: aktuell !== null, running: !!(eintrag && eintrag.running), targetLevel: eintrag && eintrag.targetLevel,
+            seenAt: eintrag && eintrag.seenAt };
     }
 
     function normalisiereStanKategorie(roh) {
@@ -4884,6 +4923,52 @@ return box;
         return html;
     }
 
+    // Rebuild from observations on each render. No artificial completion checkboxes,
+    // no game actions, and no claim of a fastest resource/time schedule.
+    function erstelleTechTreeZielweg(graph, ziel) {
+        const steps=[], gaps=new Set(), done=new Set(), visiting=new Set();
+        let budget=500;
+        function visit(id, level, name, type) {
+            id=String(id||'').toUpperCase();level=Number(level);
+            if(!id || !Number.isInteger(level) || level<1 || level>999){gaps.add('Ungültige Zielstufe');return;}
+            const req={id,name:name||id,type:type||ermittleTechTreeTypAusStan(id,name),level};
+            const state=ermittleErfuellungsstand(req);
+            if(state.erledigt)return;
+            if(state.aktuell===null){gaps.add((name||id)+' · Ist-Stufe noch nicht erfasst');return;}
+            const obj=graph && graph[id];
+            if(!obj || !Array.isArray(obj.requirements)){gaps.add((name||id)+' · Voraussetzungen noch nicht gelesen');return;}
+            for(let next=state.aktuell+1;next<=level;next++){
+                const key=id+':'+next;if(done.has(key))continue;
+                if(visiting.has(key)){gaps.add('Zyklus bei '+id+' '+next);return;}
+                if(--budget<0){gaps.add('Schrittgrenze erreicht');return;}
+                visiting.add(key);
+                for(const dep of waehleVoraussetzungenBisStufe(obj,next)) {
+                    const depId=String(dep.id||'').toUpperCase();
+                    if(depId===id){gaps.add('Selbstbezug bei '+id);continue;}
+                    visit(depId,Number(dep.level),dep.name,dep.type||ermittleTechTreeTypAusStan(depId,dep.name));
+                }
+                visiting.delete(key);done.add(key);
+                steps.push({...req,level:next,running:state.running && Number(state.targetLevel)===next});
+            }
+        }
+        if(ziel)visit(ziel.id,Number(ziel.level)||1,ziel.name,ziel.type);
+        return {steps,gaps:[...gaps]};
+    }
+    function baueTechTreeZielwegHtml(graph,ziel) {
+        const plan=erstelleTechTreeZielweg(graph,ziel);
+        let html='<section class="haa-zielweg" style="margin:9px 0;padding:8px;border:1px solid #7caa75;border-radius:4px"><b>Dein Zielweg</b>';
+        if(plan.gaps.length){
+            html+='<p style="color:#facc15">Vor einer verlässlichen Empfehlung bitte ergänzen:</p><ul>';
+            plan.gaps.forEach(gap=>{html+='<li>'+esc(gap)+'</li>';});
+            html+='</ul><small>Gebäude-/Forschungsseiten besuchen; fehlende Voraussetzungen über „Mindestliste lesen“ laden. Dein Ziel bleibt erhalten.</small>';
+        }else if(!plan.steps.length)html+='<p style="color:#7CFF7C">Gewählte Zielstufe erreicht.</p>';
+        else {
+            html+='<p style="color:#7CFF7C"><strong>'+(plan.steps[0].running?'Läuft bereits: ':'Nächster Schritt: ')+esc(plan.steps[0].name+' → Stufe '+plan.steps[0].level)+'</strong></p><ol>';
+            plan.steps.forEach(step=>{html+='<li>'+esc(step.name+' → Stufe '+step.level+(step.running?' · läuft':''))+'</li>';});
+            html+='</ol>';
+        }
+        return html+'<small>Reihenfolge nach Voraussetzungen; keine Zusage des zeitlich schnellsten Wegs. Ressourcen, Energie und freie Bau-/Forschungsplätze vor dem Start im Spiel prüfen. Nach neu erfasstem Fortschritt wird die Liste angepasst.</small></section>';
+    }
     function baueTechTreeTestHtml() {
         const graph = laden(STORAGE_TECHTREE_GRAPH, {});
         const auswahl = ladeStanAuswahl();
@@ -4894,24 +4979,26 @@ return box;
         const erledigteZeigen = laden(STORAGE_TECHTREE_ERLEDIGT_ZEIGEN, '0') === '1';
         const alle = objekt ? sammleTechTreeAnforderungen(graph, zielId, zielStufe) : [];
         const bewertet = alle.map(function (req) { return Object.assign({}, req, ermittleErfuellungsstand(req)); });
-        const offen = bewertet.filter(function (req) { return !req.erledigt; });
+        const offen = bewertet.filter(function (req) { return req.aktuell !== null && !req.erledigt; });
+        const unbekannt = bewertet.filter(function (req) { return req.aktuell === null; });
         const erledigt = bewertet.filter(function (req) { return req.erledigt; });
-        const sichtbar = erledigteZeigen ? bewertet : offen;
+        const sichtbar = erledigteZeigen ? bewertet : bewertet.filter(function(req) { return !req.erledigt; });
         let html = baueStanNavigationHtml();
         if (!zielId) return html + '<div style="margin-top:8px;color:#aaa;">Nach dem STAN-Import ein Ziel auswählen.</div>';
         html += '<div style="margin-top:9px;border-top:1px solid #555;padding-top:7px;">';
         html += '<div style="font-size:12px;margin-bottom:5px;">Zielstufe: <input id="haa-techtree-zielstufe" type="number" min="1" max="999" value="' + esc(zielStufe) + '" style="width:65px;"> · Gebäude: aktueller Planet · Forschung: planetenübergreifend</div>';
         html += '<div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;"><button id="haa-techtree-import" style="font-size:11px;">Mindestliste lesen</button></div>';
-        if (status) html += '<div style="margin-top:4px;color:' + (status.state === 'error' ? '#FF8080' : status.state === 'ok' ? '#7CFF7C' : '#FFD27C') + ';font-size:12px;">' + esc(status.message || '') + '</div>';
+        if (status && status.state !== 'ok') html += '<div style="margin-top:4px;color:' + (status.state === 'error' ? '#FF8080' : '#FFD27C') + ';font-size:12px;">' + esc(status.message || '') + '</div>';
         if (objekt) {
             html += '<label style="display:block;margin-top:5px;font-size:11px;color:#bbb;"><input id="haa-techtree-erledigt" type="checkbox" ' + (erledigteZeigen ? 'checked' : '') + '> vollständige Ansicht (erledigte zeigen)</label>';
-            html += '<div style="font-size:12px;margin-top:3px;"><span style="color:#FFD27C;">offen: <b>' + offen.length + '</b></span> · <span style="color:#7CFF7C;">erledigt: <b>' + erledigt.length + '</b></span></div>';
+            html += '<div style="font-size:12px;margin-top:3px;"><span style="color:#FFD27C;">offen: <b>' + offen.length + '</b></span> · <span style="color:#7CFF7C;">erledigt: <b>' + erledigt.length + '</b></span> · <span style="color:#facc15;">noch nicht erfasst: <b>' + unbekannt.length + '</b></span></div>';
+            html += baueTechTreeZielwegHtml(graph, auswahl);
             ['building','research','ship','defense','unknown'].forEach(function (typ) {
                 const gruppe = sichtbar.filter(function (req) { return (req.type || 'unknown') === typ; });
                 if (!gruppe.length) return;
                 html += '<div style="margin-top:7px;color:#FFD27C;font-weight:bold;">' + techTreeTypSymbol(typ) + ' ' + esc(techTreeTypLabel(typ)) + '</div>';
                 gruppe.sort(function (a,b) { return String(a.name).localeCompare(String(b.name),'de'); }).forEach(function (req) {
-                    html += '<div style="display:grid;grid-template-columns:18px minmax(180px,1fr) auto;gap:4px;padding:2px 0;color:' + (req.erledigt ? '#888' : '#fff') + ';"><span>' + (req.erledigt ? '✓' : '➜') + '</span><button type="button" class="haa-req-ziel" data-id="' + esc(req.id) + '" data-name="' + esc(req.name) + '" data-type="' + esc(req.type || 'unknown') + '" data-level="' + esc(req.level) + '" title="' + esc(["Als Zwischenziel übernehmen", kolonisationsTooltip(req)].filter(Boolean).join("\n")) + '" style="text-align:left;background:transparent;border:0;padding:0;color:inherit;cursor:pointer;text-decoration:underline;text-decoration-style:dotted;">' + esc(req.name) + ' <small style="display:block;color:#aaa;">' + esc((req.direkt ? 'Direkt' : 'Sekundär') + ' · für ' + (req.fuer || []).join(', ')) + '</small> <span style="color:#777;font-size:10px;">[' + esc(req.id) + ']</span></button><b style="text-align:right;white-space:nowrap;">benötigt ' + esc(req.level) + (req.aktuell !== null ? '<br><span style="font-weight:normal;color:#aaa;">vorhanden ' + esc(req.aktuell) + '</span>' : '') + '</b></div>';
+                    html += '<div style="display:grid;grid-template-columns:18px minmax(180px,1fr) auto;gap:4px;padding:2px 0;color:' + (req.erledigt ? '#888' : '#fff') + ';"><span>' + (req.erledigt ? '✓' : '➜') + '</span><button type="button" class="haa-req-ziel" data-id="' + esc(req.id) + '" data-name="' + esc(req.name) + '" data-type="' + esc(req.type || 'unknown') + '" data-level="' + esc(req.level) + '" title="' + esc(["Als Zwischenziel übernehmen", kolonisationsTooltip(req)].filter(Boolean).join("\n")) + '" style="text-align:left;background:transparent;border:0;padding:0;color:inherit;cursor:pointer;text-decoration:underline;text-decoration-style:dotted;">' + esc(req.name) + ' <small style="display:block;color:#aaa;">' + esc((req.direkt ? 'Direkt' : 'Sekundär') + ' · für ' + (req.fuer || []).join(', ')) + '</small> <span style="color:#777;font-size:10px;">[' + esc(req.id) + ']</span></button><b style="text-align:right;white-space:nowrap;">benötigt ' + esc(req.level) + (req.aktuell !== null ? '<br><span style="font-weight:normal;color:#aaa;">vorhanden ' + esc(req.aktuell) + (req.running ? ' · Stufe ' + esc(req.targetLevel) + ' läuft' : '') + '</span>' : '<br><span style="font-weight:normal;color:#facc15;">noch nicht erfasst</span>') + '</b></div>';
                 });
             });
         }
@@ -6729,7 +6816,10 @@ return box;
         if (!/^(?:Hauptquartier|Headquarters?)(?:\s|\(|$)/i.test(name)) return;
         const level = ermittleTechTreeStufeAusKopf(kopf, true);
         const hinweis = hqAusbauTooltip(level, istLaufenderBau(kopf, body));
-        const targets = [kopf, istAktiverBauenButton(body)].filter(Boolean);
+        const buttons = body && typeof body.querySelectorAll === 'function'
+            ? Array.from(body.querySelectorAll('a,button,input[type="button"],input[type="submit"]')).filter(el => /^bauen$/i.test((el.tagName === 'INPUT' ? el.value : text(el)).trim()))
+            : [istAktiverBauenButton(body)].filter(Boolean);
+        const targets = [kopf, ...buttons];
         targets.forEach(function (element) {
             if (!HAA_HQ_TOOLTIP_ORIGINAL.has(element)) HAA_HQ_TOOLTIP_ORIGINAL.set(element, element.getAttribute('title'));
             const original = HAA_HQ_TOOLTIP_ORIGINAL.get(element);
@@ -7383,14 +7473,3 @@ return box;
     window.addEventListener('load', starteSicher);
     setTimeout(starteSicher, 800);
 })();
-
-
-
-
-
-
-
-
-
-
-

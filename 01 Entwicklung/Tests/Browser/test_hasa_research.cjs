@@ -7,7 +7,7 @@ function section(start, end) { return source.slice(source.indexOf(start), source
 const parser = section('    function ermittleTechTreeStufeAusKopf(', '    function techTreeGebaeudeSpeicherKey(');
 const bodyFinder = section('    function findeKoerperZeileZumKopf(', '    function istAktiverBauenButton(');
 const running = section('    function istLaufenderBau(', '    function findeBauKandidaten(');
-const planetKey = section('    function techTreeGebaeudeSpeicherKey(', '    function ermittleErfuellungsstand(');
+const planetKey = section('    function techTreeGebaeudeSpeicherKey(', '    function normalisiereStanKategorie(');
 (async () => {
     const options = {headless: true};
     if (process.env.HASA_TEST_BROWSER) Object.assign(options, {executablePath: process.env.HASA_TEST_BROWSER, args: ['--no-sandbox','--single-process','--no-zygote','--disable-webgl','--disable-gpu','--disable-software-rasterizer','--use-gl=disabled']});
@@ -29,9 +29,10 @@ const planetKey = section('    function techTreeGebaeudeSpeicherKey(', '    func
                 function speichern(k, v) { store[k] = v; }
                 function normalisiereGebaeudename(s) { return String(s || '').trim(); }
                 function normalisiereTechTreeName(s) { return String(s || '').toLowerCase(); }
+                function ermittleTechTreeTypAusIdUndName(){return 'building';}
                 function leseGebaeudeNameAusKopf(k) { return text(k); }
                 ${bodyFinder}\n${running}\n${parser}\n${planetKey}
-                return {scan: speichereTechTreeSpielstandAusSeite, setArea(value) {area = value;}, planetKey: techTreeGebaeudeSpeicherKey};
+                return {scan: speichereTechTreeSpielstandAusSeite, setArea(value) {area = value;}, planetKey: techTreeGebaeudeSpeicherKey, evaluate: ermittleErfuellungsstand};
             `)(store);
             window.researchTest = {store, api};
         }, {parser, bodyFinder, running, planetKey});
@@ -52,6 +53,7 @@ const planetKey = section('    function techTreeGebaeudeSpeicherKey(', '    func
             ['explicit header wins over requirement', 'Energietechnik 1 (energytech - Forschungsstufe 1)', 'Voraussetzung: Physik Stufe 10', null, 1],
             ['completed research corrects earlier wrong level', 'Energietechnik 1 (energytech - Forschungsstufe 1)', 'Forschen', 10, 1],
             ['unlabelled costs are not research levels', 'energytech', '<table><tr><td>10</td><td>50</td></tr></table>', null, null],
+            ['running physics-style target twelve means eleven currently', 'Energietechnik 12 wird erforscht (energytech - Stufe 12)', '<button>Abbrechen</button> Zeit: 0:00:32:47s', null, 11],
             ['labelled level ten remains valid', 'Energietechnik 10 (energytech - Forschungsstufe 10)', 'Beschreibung', null, 10],
         ];
         for (const [name, header, body, initial, expected] of cases) {
@@ -91,6 +93,18 @@ const planetKey = section('    function techTreeGebaeudeSpeicherKey(', '    func
             console.log('PASS ' + name);
         }
         console.log(`${buildingCases.length} building regressions passed`);
+        await page.setContent('<div class="ResPlanetName">Ikan</div><select class="PlanetSelectBox"><option value="731">Ikan</option></select><table>'+row('Forschungszentrum (researchcenter - Ausbaustufe 6)','<button disabled>Bauen</button>','researchcenter')+'</table>');
+        await page.evaluate(()=>{window.researchTest.api.setArea('building');window.researchTest.api.scan();});
+        const originalKey=await page.evaluate(()=>window.researchTest.api.planetKey());
+        await page.setContent('<div class="ResPlanetName">Ikan</div><table class="ResTable">'+fixture('Energietechnik 7 (energytech - Forschungsstufe 7)','<button>Forschen</button>')+'</table>');
+        const researchState=await page.evaluate(()=>{const t=window.researchTest;t.api.setArea('research');t.api.scan();return {key:t.api.planetKey(),state:t.api.evaluate({id:'RESEARCHCENTER',name:'Forschungseinrichtung',type:'building',level:3})};});
+        assert.equal(researchState.key,originalKey);assert.equal(researchState.state.aktuell,6);assert.equal(researchState.state.erledigt,true);
+        console.log('PASS lab6 persists when changing from building to research page without selector');
+        await page.setContent('<div class="ResPlanetName">Anderer Planet</div>');
+        const other=await page.evaluate(()=>window.researchTest.api.evaluate({id:'RESEARCHCENTER',name:'Forschungseinrichtung',type:'building',level:3}));
+        assert.equal(other.aktuell,null);assert.equal(other.erledigt,false);
+        console.log('PASS no previous-planet fallback for an unvisited planet');
+
     } finally { await browser.close(); }
 })().catch(e => {console.error(e); process.exitCode = 1;});
 
