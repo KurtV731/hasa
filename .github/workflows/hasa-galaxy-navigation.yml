@@ -1,0 +1,23 @@
+name: HASA galaxy navigation
+on:
+  push:
+    paths:
+      - '02 Website/api/galaxy.php'
+      - '01 Entwicklung/Tests/Browser/test_hasa_web_ui.cjs'
+      - '.github/workflows/hasa-galaxy-navigation.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  navigation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: php -l '02 Website/api/galaxy.php'
+      - run: npm install --no-save playwright
+      - run: npx playwright install --with-deps chromium
+      - run: node '01 Entwicklung/Tests/Browser/test_hasa_web_ui.cjs'

@@ -13,8 +13,8 @@ html=html.replace('<option value="">Alle sichtbaren</option>','<option value="">
   const url=new URL(route.request().url());
   if(url.pathname.endsWith('galaxy-read.php')){
    queries.push(Object.fromEntries(url.searchParams));
-   const system=Number(url.searchParams.get('system')||191),galaxy=Number(url.searchParams.get('galaxy')||1);
-   return route.fulfill({contentType:'application/json',body:JSON.stringify({ok:true,limit:20,offset:0,total:1,has_more:false,data:[{galaxy,system,system_name:'Testsystem',data_owner:'Testplayer',planets:Array.from({length:14},(_,i)=>({orbit:i+1,name:'Testplanet '+(i+1),type:'STPL',report_count:0}))}]})});
+   const system=Number(url.searchParams.get('system')??191),galaxy=Number(url.searchParams.get('galaxy')||1);
+   return route.fulfill({contentType:'application/json',body:JSON.stringify({ok:true,limit:20,offset:0,total:49,has_more:Number(url.searchParams.get('offset')||0)<40,data:[{galaxy,system,system_name:'Testsystem',data_owner:'Testplayer',planets:Array.from({length:14},(_,i)=>({orbit:i+1,name:'Testplanet '+(i+1),type:'STPL',report_count:0}))}]})});
   }
   return route.fulfill({contentType:'text/html; charset=utf-8',body:html});
  });
@@ -31,15 +31,33 @@ html=html.replace('<option value="">Alle sichtbaren</option>','<option value="">
   await page.locator('[name=system]').fill('193');await page.waitForTimeout(550);assert.equal(latest().system,'193');const count=queries.length;
   await page.locator('[name=q]').click();await page.waitForTimeout(150);assert.equal(queries.length,count);
  });
- await test('system zero and upper bound disable the corresponding arrow',async()=>{
-  await page.locator('[name=system]').fill('0');await page.waitForTimeout(500);assert.equal(latest().system,'0');assert.equal(await page.locator('#system-back').isDisabled(),true);
-  await page.locator('[name=system]').fill('999999');await page.waitForTimeout(500);assert.equal(await page.locator('#system-forward').isDisabled(),true);
+ await test('system zero is searchable and arrows wrap at both boundaries',async()=>{
+  await page.locator('[name=system]').fill('0');await page.waitForTimeout(500);assert.equal(latest().system,'0');await page.locator('#system-back').click();await page.waitForTimeout(120);assert.equal(latest().system,'999');
+  await page.locator('#system-forward').click();await page.waitForTimeout(120);assert.equal(latest().system,'0');
  });
- await test('invalid number cannot trigger out-of-range request',async()=>{const count=queries.length;await page.locator('[name=system]').fill('1000000');await page.waitForTimeout(550);assert.equal(queries.length,count);});
+ await test('invalid number cannot trigger out-of-range request',async()=>{const count=queries.length;await page.locator('[name=system]').fill('1000');await page.waitForTimeout(550);assert.equal(queries.length,count);});
  await test('galaxy change resets number and searches with remaining filters',async()=>{await page.locator('[name=galaxy]').selectOption('2');await page.waitForTimeout(120);assert.equal(latest().galaxy,'2');assert.ok(!latest().system);assert.equal(latest().q,'Testplanet');});
  await test('all-galaxies system search and unrestricted filtered search use one search button',async()=>{
   await page.locator('[name=galaxy]').selectOption('');await page.locator('[name=system]').fill('191');await page.waitForTimeout(550);assert.equal(latest().system,'191');assert.ok(!latest().galaxy);
   await page.locator('[name=system]').fill('');await page.getByRole('button',{name:'Suchen',exact:true}).click();await page.waitForTimeout(120);assert.ok(!latest().galaxy&&!latest().system);assert.equal(latest().q,'Testplanet');
+ });
+ await test('name input clears a previous system, paging keeps that unrestricted query',async()=>{
+  await page.locator('[name=galaxy]').selectOption('1');await page.locator('[name=system]').fill('131');await page.waitForTimeout(550);
+  await page.locator('[name=q]').fill('New name');assert.equal(await page.locator('[name=system]').inputValue(),'');
+  await page.getByRole('button',{name:'Suchen',exact:true}).click();await page.waitForTimeout(120);
+  assert.ok(!latest().system);assert.equal(latest().q,'New name');
+  await page.locator('#next').click();await page.waitForTimeout(120);assert.equal(latest().offset,'20');assert.ok(!latest().system);
+  await page.locator('#previous').click();await page.waitForTimeout(120);assert.equal(latest().offset,'0');
+ });
+ await test('blank field moves right to one, saved location can be restored',async()=>{
+  await page.locator('#system-forward').click();await page.waitForTimeout(120);assert.equal(latest().system,'1');
+  await page.locator('[name=q]').fill('Elsewhere');await page.locator('#position').click();await page.waitForTimeout(120);assert.equal(latest().system,'131');
+ });
+ await test('opening more filters clears system and bottom pager remains visible on scroll',async()=>{
+  await page.locator('.filters-more summary').click();assert.equal(await page.locator('[name=system]').inputValue(),'');
+  await page.getByRole('button',{name:'Suchen',exact:true}).click();await page.waitForTimeout(120);
+  await page.locator('#results').evaluate(n=>{n.style.minHeight='3000px';});await page.evaluate(()=>scrollTo(0,1500));
+  const box=await page.locator('#pages').boundingBox();assert.ok(box.y>=0&&box.y+box.height<=901);
  });
  await page.screenshot({path:process.env.HASA_WEB_SCREENSHOT||require('os').tmpdir()+'/hasa-web-ui.png'});
  await test('system controls stay on one line at narrow width',async()=>{

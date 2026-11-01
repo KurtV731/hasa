@@ -28,7 +28,7 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
 <style>
   :root { color-scheme: dark; font: 18px/1.45 system-ui,sans-serif; background:#111827; color:#f3f4f6; }
   [hidden] { display:none !important; }
-  * { box-sizing:border-box; } body { margin:0 auto; max-width:1920px; padding:1rem; }
+  * { box-sizing:border-box; } body { margin:0 auto; max-width:1920px; padding:1rem 1rem 7rem; }
   h1 { margin:0; font-size:1.5rem; } h2 { margin:0 0 .4rem; font-size:1.15rem; }
   p { margin:.4rem 0 .8rem; } form { padding:.8rem; background:#1f2937; border-radius:.6rem; }
   .filters,.toolbar { display:flex; flex-wrap:wrap; gap:.6rem; align-items:end; }
@@ -68,8 +68,8 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
   .report label { display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; font-weight:600; }
   input[type=checkbox] { width:1.2rem; height:1.2rem; accent-color:#60a5fa; }
   .muted { color:#cbd5e1; font-size:.85rem; } .average { padding:.7rem; border:1px solid #60a5fa; border-radius:.4rem; margin:.6rem 0; }
-  .report-pane { margin-top:.6rem; } #pages { display:flex; gap:.6rem; align-items:center; }
-  @media(max-width:700px) { .comparison { --label-width:112px; } body { padding:.5rem; } }
+  .report-pane { margin-top:.6rem; } #pages { display:flex; gap:.6rem; align-items:center; justify-content:center; position:fixed; bottom:0; left:0; right:0; z-index:10; padding:.7rem; background:#172033; border-top:1px solid #64748b; box-shadow:0 -3px 12px #0006; }
+  @media(max-width:700px) { .comparison { --label-width:112px; } body { padding:.5rem .5rem 7rem; } }
 </style>
 </head>
 <body>
@@ -86,7 +86,7 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
     </select></label>
     <div class="system-field"><label for="system-number">System</label><div class="system-control" role="group" aria-label="Systemnavigation">
       <button id="system-back" type="button" aria-label="Vorheriges System" title="Vorheriges System">◀</button>
-      <input id="system-number" name="system" type="number" min="0" max="999999" step="1" inputmode="numeric" aria-label="Systemnummer">
+      <input id="system-number" name="system" type="number" min="0" max="999" placeholder="Alle" title="Leer: alle Systeme; 0–999: bestimmtes System" step="1" inputmode="numeric" aria-label="Systemnummer">
       <button id="system-forward" type="button" aria-label="Nächstes System" title="Nächstes System">▶</button>
     </div></div>
     <label>Suchbegriff <input name="q" type="search" maxlength="160" placeholder="Name, Spieler, Allianz, Typ …"></label>
@@ -136,7 +136,7 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
   const activeRound = String(<?= $hasaRound ?>);
   const pages = document.querySelector('#pages');
   function validPosition(galaxy, system) {
-    return /^\d+$/.test(String(galaxy)) && /^\d+$/.test(String(system)) && Number(galaxy) >= 1 && Number(galaxy) <= 255 && Number(system) <= 999999;
+    return /^\d+$/.test(String(galaxy)) && /^\d+$/.test(String(system)) && Number(galaxy) >= 1 && Number(galaxy) <= 255 && Number(system) <= 999;
   }
   function rememberPosition(galaxy, system) {
     if (!validPosition(galaxy, system)) return;
@@ -161,8 +161,8 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
   function updateSystemButtons() {
     const value = systemInput.value.trim();
     const invalid = !systemInput.validity.valid;
-    systemBack.disabled = invalid || value === '' || Number(value) <= 0;
-    systemForward.disabled = invalid || (value !== '' && Number(value) >= 999999);
+    systemBack.disabled = invalid;
+    systemForward.disabled = invalid;
   }
   function searchChangedSystem() {
     clearTimeout(systemTimer);
@@ -171,9 +171,19 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
   }
   for (const [button, step] of [[systemBack,-1],[systemForward,1]]) button.addEventListener('click', () => {
     if (!systemInput.validity.valid) return;
-    const next = Math.max(0, Math.min(999999, Number(systemInput.value || 0) + step));
+    const next = ((systemInput.value === '' ? 0 : Number(systemInput.value)) + step + 1000) % 1000;
     systemInput.value = String(next);
     searchChangedSystem();
+  });
+  // A name search must not silently retain the last visited system.
+  function clearSystemFilter() {
+    clearTimeout(systemTimer);
+    systemInput.value = '';
+    updateSystemButtons();
+  }
+  for (const name of ['q','name','player']) form.elements[name].addEventListener('input', clearSystemFilter);
+  document.querySelector('.filters-more').addEventListener('toggle', event => {
+    if (event.target.open) clearSystemFilter();
   });
   systemInput.addEventListener('input', () => {
     clearTimeout(systemTimer); updateSystemButtons();
