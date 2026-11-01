@@ -24,7 +24,7 @@ html=html.replace('<option value="">Alle sichtbaren</option>','<option value="">
  await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('gefunden'));
  await test('obsolete all-galaxies button absent and two accessible system arrows present',async()=>{assert.equal(await page.locator('#all').count(),0);assert.equal(await page.getByRole('button',{name:'Vorheriges System',exact:true}).count(),1);assert.equal(await page.getByRole('button',{name:'Nächstes System',exact:true}).count(),1);assert.equal(latest().system,'191');});
  await test('forward and back arrows search immediately and retain other filters',async()=>{
-  await page.locator('[name=q]').fill('Testplanet');await page.locator('#system-forward').click();await page.waitForTimeout(120);assert.equal(latest().system,'192');assert.equal(latest().q,'Testplanet');
+  await page.locator('[name=q]').fill('Testplanet');await page.locator('[name=system]').fill('191');await page.locator('#system-forward').click();await page.waitForTimeout(120);assert.equal(latest().system,'192');assert.equal(latest().q,'Testplanet');
   await page.locator('#system-back').click();await page.waitForTimeout(120);assert.equal(latest().system,'191');
  });
  await test('typed number searches after pause without duplicate on blur',async()=>{
