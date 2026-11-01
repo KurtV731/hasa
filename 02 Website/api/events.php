@@ -4,6 +4,7 @@ require __DIR__.'/auth.php';
 require __DIR__.'/galaxy-access.php';
 require __DIR__.'/events-service.php';
 require __DIR__.'/event-views.php';
+require __DIR__.'/event-information.php';
 require __DIR__.'/event-catalog.php';
 $user=hasaRequireUser();
 if(($_SERVER['REQUEST_METHOD']??'GET')!=='GET'){header('Allow: GET');hasaAuthError('Ungültige Anfrage.',405);}
@@ -13,7 +14,7 @@ if(!hasaEventsAvailable($pdo)){
 }
 $round=hasaRound($_GET['round']??null);$view=in_array($_GET['view']??'', ['hub','sheet','event','active','asfi','guild','production','combat','videos','breakthroughs'],true)?$_GET['view']:'hub';
 $offset=filter_var($_GET['offset']??0,FILTER_VALIDATE_INT);if($offset===false||$offset<0||$offset>1000000)hasaAuthError('Ungültige Seite.',400);
-$navigation='<nav aria-label="HASA Bereiche"><p><a href="galaxy.php?round='.$round.'">Galaxiedatenbank</a> · <a href="events.php?view=hub&amp;round='.$round.'">Events/Scans</a> · <a href="events.php?view=production&amp;round='.$round.'">Ressourcen</a> · <a href="events.php?view=combat&amp;round='.$round.'">Kampfbericht</a></p></nav>';
+$navigation=hasaEventInformationStyle().'<nav aria-label="HASA Bereiche"><p><a href="galaxy.php?round='.$round.'">Galaxiedatenbank</a> · <a href="events.php?view=hub&amp;round='.$round.'">Events/Scans</a> · <a href="events.php?view=production&amp;round='.$round.'">Ressourcen</a> · <a href="events.php?view=combat&amp;round='.$round.'">Kampfbericht</a></p></nav>';
 if($view==='sheet'){
     $id=$_GET['type']??'';
     if(!is_string($id) || !($family=hasaEventFamily($id))) hasaAuthError('Unbekanntes Datenblatt.',404);
@@ -35,8 +36,13 @@ if(in_array($view,['hub','event','guild','combat'],true)){
     }
     $subject=$view==='guild'?'Treffen des Gildenvorstandes':($_GET['subject']??'');
     if(!is_string($subject)||trim($subject)===''||mb_strlen($subject,'UTF-8')>240)hasaAuthError('Ungültiger Ereignistyp.',400);
+    foreach(hasaEventCatalog() as $family){
+        if(!in_array($subject,$family['aliases'],true))continue;
+        $rows=hasaEventFamilyRows($pdo,$user,$round,$family,$window,$offset);
+        hasaAuthPage($family['title'],$navigation.hasaEventFamilyHtml($family,$summary,$rows,$round,$offset),false);exit;
+    }
     $rows=hasaJournalRows($pdo,$user,$round,$subject,$window,$offset);
-    hasaAuthPage($subject,$navigation.hasaJournalEventHtml($subject,$summary,$rows,$round,$offset),false);exit;
+    hasaAuthPage($subject,$navigation.hasaEventPlainListHtml($subject,$summary,$rows,$round,$offset),false);exit;
 }
 if(in_array($view,['videos','breakthroughs','production'],true)){
     $now=new DateTimeImmutable('now',new DateTimeZone('UTC'));
@@ -82,6 +88,7 @@ if($more)$html.='<p><a href="events.php?view='.$view.'&amp;round='.$round.'&amp;
 if($view==='asfi')$html.='<p class="muted">Eigene und nach deinen Freigaben sichtbare Funde. Fehlende Sicht entfernt kein Feld. Alte Nachweise werden nach ungefähr 14 Tagen als prüfbedürftig markiert.</p>';
 if($view==='asfi' && count($rawRows)>=1000)$html.='<p class="muted">Diese Ansicht berücksichtigt die ersten 1000 sichtbaren Positionsnachweise.</p>';
 hasaAuthPage($title,$html,false);
+
 
 
 

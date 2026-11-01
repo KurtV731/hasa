@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 $api=getenv('HASA_TEST_API')?:__DIR__;
-if(getenv('CI')==='true')require $api.'/auth.php';
+if(getenv('CI')==='true'){require $api.'/auth.php';require_once $api.'/events-service.php';}
 else {function hasaAuthEscape(string $s):string{return htmlspecialchars($s,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8');}}
 require $api.'/event-catalog.php';
 if(!function_exists('hasaJournalUrl')){function hasaJournalUrl(int $r,string $s,int $o=0):string{return 'events.php?'.http_build_query(['view'=>'event','round'=>$r,'subject'=>$s,'offset'=>$o]);}}

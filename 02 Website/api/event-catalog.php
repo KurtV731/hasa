@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__.'/event-information.php';
 
 // Facts transcribed and paraphrased from Styl's supplied Wiki PDF (revision 2024-10-14).
 // This catalog describes event families. It does not modify any stored reports or effects.
@@ -823,27 +824,29 @@ function hasaEventMatrixHtml(array $summary,array $rows,int $round,array $observ
 function hasaEventFamilyRows(PDO $pdo,array $user,int $round,array $family,array $window,int $offset): array
 {
     if($offset<0 || $offset>1000000)throw new InvalidArgumentException('invalid_offset');
-    $sql='SELECT subject,reported_game_time,planet_name,galaxy_number,system_number,orbit_position,details_text FROM hasa_event_reports WHERE owner_user_id=? AND round_number=? AND system_event=1 AND subject COLLATE utf8mb4_bin IN ('.implode(',',array_fill(0,count($family['aliases']),'?')).') AND reported_order>=? AND reported_order<=? ORDER BY reported_order DESC,id DESC LIMIT 26 OFFSET '.(int)$offset;
-    $q=$pdo->prepare($sql);$q->execute(array_merge([(int)$user['id'],$round],$family['aliases'],[$window[0],$window[1]]));return $q->fetchAll(PDO::FETCH_ASSOC);
+    // Fold complete histories before pagination; a page boundary must not separate
+    // an event's start from its repair, including a start before the 30-day window.
+    $sql='SELECT id,subject,reported_game_time,reported_order,planet_name,galaxy_number,system_number,orbit_position,details_text FROM hasa_event_reports WHERE owner_user_id=? AND round_number=? AND system_event=1 AND subject COLLATE utf8mb4_bin IN ('.implode(',',array_fill(0,count($family['aliases']),'?')).') AND (reported_order<=? OR reported_order IS NULL) ORDER BY reported_order ASC,id ASC';
+    $q=$pdo->prepare($sql);$q->execute(array_merge([(int)$user['id'],$round],$family['aliases'],[$window[1]]));
+    $episodes=hasaEventInformationRows($family,$q->fetchAll(PDO::FETCH_ASSOC));
+    $episodes=array_values(array_filter($episodes,static function($r)use($window){$order=$r['last']['reported_order'];return $order===null || ($order>=$window[0] && $order<=$window[1]);}));
+    return array_slice($episodes,$offset,26);
 }
 function hasaEventFamilyHtml(array $family,array $summary,array $rows,int $round,int $offset): string
 {
     $esc='hasaAuthEscape';$counts=hasaEventFamilyCounts($family,$summary);$more=count($rows)>25;$rows=array_slice($rows,0,25);
-    $html='<h1>'.$esc($family['title']).'</h1><p><a href="events.php?view=hub&amp;round='.$round.'">Zur Ereignisübersicht</a></p><p>Privat · Gesamt: '.$counts['total'].' Meldungen · letzte 30 Tage: '.$counts['recent'].'</p><h2>Datenblatt</h2><dl>';
-    $facts=['Wirkung'=>$family['effect'],'Voraussetzungen / Auftreten'=>$family['needs'],'Dauer'=>$family['duration'],'Beginn / Fortsetzung'=>implode(' · ',array_diff($family['aliases'],$family['ends'])),'Ende / Verlust'=>$family['ends']?implode(' · ',$family['ends']):'Kein eindeutiger Endmeldungsbetreff in der vorliegenden Quelle belegt.','Wichtige Hinweise'=>$family['notes']?:'Keine weiteren gesicherten Angaben aus der Quelle.'];
+    // Allow focused callers/tests with raw records to use the same renderer.
+    if($rows && !isset($rows[0]['first']))$rows=hasaEventInformationRows($family,$rows);
+    $html=hasaEventInformationStyle().'<h1>'.$esc($family['title']).'</h1><p><a href="events.php?view=hub&amp;round='.$round.'">Zur Ereignisübersicht</a></p>';
+    $html.='<details class="event-knowledge"><summary>Datenblatt und Wiki anzeigen</summary><dl>';
+    $facts=['Wirkung'=>$family['effect'],'Voraussetzungen / Auftreten'=>$family['needs'],'Dauer'=>$family['duration'],'Beginn / Fortsetzung'=>implode(' · ',array_diff($family['aliases'],$family['ends'])),'Ende / Verlust'=>$family['ends']?implode(' · ',$family['ends']):'Endmeldung nicht belegt.','Wichtige Hinweise'=>$family['notes']?:'Keine weiteren gesicherten Angaben.'];
     foreach($facts as $label=>$value)$html.='<dt><strong>'.$esc($label).'</strong></dt><dd style="margin-bottom:.8rem">'.$esc($value).'</dd>';
-    $html.='</dl><p class="muted">Quelle: von Styl bereitgestellter Wiki-Auszug, Abschnitt '.$esc($family['source']).', Wiki-Stand 14.10.2024; ergänzende Angaben von Styl sind gekennzeichnet. Ungefähre, unbekannte oder widersprüchliche Angaben sind keine bestätigten aktuellen Spielregeln.</p>';
-    if($family['id']==='video')$html.='<p><a href="events.php?view=videos&amp;round='.$round.'">Vorhandener gemeinsamer Videoverlauf</a></p>';
-    if($counts['undated'])$html.='<p>'.$counts['undated'].' Meldungen ohne Datum sind nur im Gesamtzähler enthalten.</p>';
-    $html.='<h2>Verlauf · letzte 30 Tage</h2>';
-    if(!$rows)$html.='<p>Keine datierten Meldungen dieser Ereignisfamilie gespeichert.</p>';
-    foreach($rows as $row){
-        $position=$row['galaxy_number']!==null?$row['galaxy_number'].':'.$row['system_number'].':'.$row['orbit_position']:'Position unbekannt';
-        $html.='<article style="border-top:1px solid #64748b;padding:.7rem 0"><h3>'.$esc(($row['reported_game_time']??'').' · '.$row['subject']).'</h3><p>'.$esc(($row['planet_name']?:'Planet unbekannt').' · '.$position).'</p>';
-        $html.=!empty($row['details_text'])?'<div style="white-space:pre-wrap;overflow-wrap:anywhere">'.$esc($row['details_text']).'</div>':'<p class="muted">Bislang nur Übersichtsdaten gespeichert.</p>';
-        $html.='</article>';
-    }
+    $html.='</dl><p>Wiki-Auszug vom 14.10.2024, Abschnitt '.$esc($family['source']).'; ungefähre Angaben sind keine bestätigten aktuellen Regeln.</p><p><a href="https://wiki.goetterheimat.de/index.php?title=Ereignis" target="_blank" rel="noopener noreferrer">Ereignisse im Wiki nachlesen</a></p></details>';
+    $html.='<p>Privat · letzte 30 Tage · zusammengehörige Meldungen in einer Zeile.</p>'.hasaEventInformationHtml($family,$rows);
+    $html.='<details><summary>Erfasste Meldungen und Originaltexte</summary><p>Gesamt: '.$counts['total'].' Meldungen; davon '.$counts['recent'].' im Zeitraum. Diese Zahlen zählen Meldungen, nicht Vorgänge.</p>';
+    foreach($rows as $episode)foreach($episode['events'] as $event)$html.='<article><strong>'.$esc(($event['reported_game_time']??'Zeit unbekannt').' · '.$event['subject']).'</strong><p style="white-space:pre-wrap;overflow-wrap:anywhere">'.$esc($event['details_text']?:'Bislang nur Übersichtsdaten gespeichert.').'</p></article>';
+    $html.='</details>';
     if($offset)$html.='<p><a href="'.$esc(hasaEventFamilyUrl($round,$family['id']).'&offset='.max(0,$offset-25)).'">Zurück</a></p>';
-    if($more)$html.='<p><a href="'.$esc(hasaEventFamilyUrl($round,$family['id']).'&offset='.($offset+25)).'">Weitere Meldungen</a></p>';
+    if($more)$html.='<p><a href="'.$esc(hasaEventFamilyUrl($round,$family['id']).'&offset='.($offset+25)).'">Weitere Vorgänge</a></p>';
     return $html;
 }

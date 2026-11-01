@@ -3,6 +3,8 @@ on:
   push:
     paths:
       - '02 Website/api/event-catalog.php'
+      - '02 Website/api/event-information.php'
+      - '01 Entwicklung/Tests/Server/event-information-test.php'
       - '02 Website/api/events.php'
       - '01 Entwicklung/Tests/Server/event-catalog-test.php'
       - '01 Entwicklung/Tests/Browser/test_hasa_event_catalog.cjs'
@@ -44,11 +46,13 @@ jobs:
           PHP
           echo "HASA_TEST_API=$RUNNER_TEMP/catalog-api" >> "$GITHUB_ENV"
           echo "HASA_CATALOG_PREVIEW=$RUNNER_TEMP/event-catalog.html" >> "$GITHUB_ENV"
+          echo "HASA_INFO_PREVIEW=$RUNNER_TEMP/event-information.html" >> "$GITHUB_ENV"
       - name: PHP syntax and catalog/database regression
         run: |
           php -l '02 Website/api/event-catalog.php'
           php -l '02 Website/api/events.php'
           php '01 Entwicklung/Tests/Server/event-catalog-test.php'
+          php '01 Entwicklung/Tests/Server/event-information-test.php'
       - name: Desktop and mobile rendering
         run: node '01 Entwicklung/Tests/Browser/test_hasa_event_catalog.cjs'
       - uses: actions/upload-artifact@v4
