@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         HASA – Horizon Ascension Assistant
 // @namespace    horiversum.hasa
-// @version      1.3.0-alpha.6
+// @version      1.3.0-alpha.7
 // @charset      UTF-8
 // @updateURL    https://raw.githubusercontent.com/KurtV731/hasa/dev-1.3-alpha1/01%20Entwicklung/Userscript/Aktuell/HASA-AKTUELL.user.js
 // @downloadURL  https://raw.githubusercontent.com/KurtV731/hasa/dev-1.3-alpha1/01%20Entwicklung/Userscript/Aktuell/HASA-AKTUELL.user.js
@@ -217,8 +217,8 @@
         'PHYSICS', 'PSYCHOLOGY', 'NUCLEARPHYSICS', 'SOLARENERGYTECH'
     ]);
 
-    const HASA_VERSION = '1.3.0 Alpha 6';
-    const HASA_BUILD_LABEL = '1.3.0-alpha6-hq-auswahl-tooltip-2026-11-01';
+    const HASA_VERSION = '1.3.0 Alpha 7';
+    const HASA_BUILD_LABEL = '1.3.0-alpha7-reset-ascension-2026-11-01';
     const HASA_RUNDE = 8;
     const HASA_RUNDE_SCHLUESSEL = 'runde8';
     // Die MariaDB und sämtliche Schreibendpunkte trennen Runde 7 und 8 jetzt

@@ -60,7 +60,12 @@ const points = take('    function hatAscensionPunkte(', '    function baueAscens
         assert.deepEqual(statuses,[false,false,false,false,true,true,true]);
         assert.match(source,/const TECHTREE_DIAGNOSE_ANZEIGEN = false;/);
         assert.match(source,/if \(TECHTREE_DIAGNOSE_ANZEIGEN && debugDaten/);
-        assert.match(source,/if \(hatAscensionPunkte\(ascStatus\)\) \{\s*html \+= baueAccordionBereichHtml\('ascension'/);
+        assert.match(source,/if \(hatAscensionPunkte\(ascStatus\) \|\| istAscensionSeite\(\)\) \{\s*html \+= baueAccordionBereichHtml\('ascension'/);
+        assert.match(source,/ascensionHtml \+= bauePlanungsstandResetHtml\(\);/);
+        const planningStart=source.indexOf('    function baueTechTreeTestHtml(');
+        const planning=source.slice(planningStart,source.indexOf('\n    function ',planningStart+20));
+        assert.ok(planningStart>=0 && !planning.includes('haa-stand-neueinlesen'),'reset absent from planning');
+        assert.match(source,/Planungsstand zurücksetzen und neu erfassen/);
         const targetHandler=take("        Array.from(document.querySelectorAll('.haa-req-ziel'))", '        const debugKopieren =');
         const target=await page.evaluate(handler=>{
             document.body.innerHTML='<button class="haa-req-ziel" data-id="HULLTECH" data-type="research" data-name="Hulltech" data-level="2">Hulltech</button>';
@@ -81,3 +86,4 @@ const points = take('    function hatAscensionPunkte(', '    function baueAscens
         console.log('PASS closed state survives navigation; selection preserved; single open menu; stale events ignored; Ascension points gated; research diagnosis hidden');
     } finally {await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
+

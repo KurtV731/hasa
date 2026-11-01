@@ -61,6 +61,7 @@ jobs:
           node '01 Entwicklung/Tests/Browser/test_hasa_colony_tooltips.cjs'
           node '01 Entwicklung/Tests/hq-kolonie-tooltip.cjs'
           node '01 Entwicklung/Tests/techtree-zielweg.cjs'
+          HASA_TEST_SOURCE='01 Entwicklung/Userscript/Aktuell/HASA-AKTUELL.user.js' node '01 Entwicklung/Tests/planungsstand-reset.cjs'
       - name: Disposable MariaDB integration
         env:
           MYSQL_PWD: disposable-ci-only
