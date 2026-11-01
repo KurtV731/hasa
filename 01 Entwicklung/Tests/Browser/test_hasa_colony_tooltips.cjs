@@ -16,7 +16,8 @@ const hq = source.slice(source.indexOf('    function hqKoloniepunkte('),source.i
         const page = await browser.newPage();
         const result = await page.evaluate(({code,hq}) => {
             const selected = {id:'SCOL',name:'SCOL',type:'ship',level:1};
-            const objects = [{id:'HEADQUARTER',name:'HEADQUARTER',type:'building'},selected, {id:'GCOL',name:'GCOL',type:'ship'}, {id:'LFGT',name:'LFGT',type:'ship'}, {id:'ENERGYTECH',name:'Energietechnik',type:'research'}];
+            const objects = [selected, {id:'GCOL',name:'GCOL',type:'ship'}, {id:'LFGT',name:'LFGT',type:'ship'}, {id:'ENERGYTECH',name:'Energietechnik',type:'research'}];
+            objects.push({id:'HEADQUARTER',name:'HEADQUARTER',type:'building'});
             const api = new Function('objects', 'selected', [
                 'const STORAGE_TECHTREE_SPIELSTAND="spielstand", STORAGE_STAN_STATUS="stanStatus", STORAGE_STAN_AUSWAHL_OFFEN="open", STORAGE_TECHTREE_GRAPH="graph", STORAGE_TECHTREE_STATUS="status", STORAGE_TECHTREE_ERLEDIGT_ZEIGEN="done", STORAGE_TECHTREE_DEBUG="debug";',
                 'const TECHTREE_DIAGNOSE_ANZEIGEN=false;',
