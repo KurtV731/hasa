@@ -50,8 +50,8 @@ html=html.replace('<option value="">Alle sichtbaren</option>','<option value="">
   await page.locator('#previous').click();await page.waitForTimeout(120);assert.equal(latest().offset,'0');
  });
  await test('blank field moves right to one, saved location can be restored',async()=>{
-  await page.locator('#system-forward').click();await page.waitForTimeout(120);assert.equal(latest().system,'1');
-  await page.locator('[name=q]').fill('Elsewhere');await page.locator('#position').click();await page.waitForTimeout(120);assert.equal(latest().system,'131');
+  await page.locator('#position').click();await page.waitForTimeout(120);assert.equal(latest().system,'131');
+  await page.locator('[name=q]').fill('Elsewhere');await page.locator('#system-forward').click();await page.waitForTimeout(120);assert.equal(latest().system,'1');
  });
  await test('opening more filters clears system and bottom pager remains visible on scroll',async()=>{
   await page.locator('.filters-more summary').click();assert.equal(await page.locator('[name=system]').inputValue(),'');
