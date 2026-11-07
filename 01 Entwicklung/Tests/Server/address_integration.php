@@ -1,0 +1,26 @@
+<?php
+declare(strict_types=1);
+$api=getenv('HASA_TEST_API');if(!$api||getenv('CI')!=='true')throw new RuntimeException('Disposable CI required');
+require $api.'/auth.php';require $api.'/address-service.php';$cfg=hasaConfig()['database'];if($cfg['host']!=='127.0.0.1'||$cfg['name']!=='hasa_test_events')throw new RuntimeException('Disposable database required');
+set_exception_handler(static function(Throwable $e):never{fwrite(STDERR,'FAIL address: '.$e->getMessage().PHP_EOL);exit(1);});
+$db=hasaPdo();$n=0;
+function test(bool $ok,string $label):void{global $n;if(!$ok)throw new RuntimeException($label);$n++;echo "PASS $label\n";}
+function invalid(callable $fn,string $label):void{try{$fn();}catch(InvalidArgumentException|DomainException $e){test(true,$label);return;}throw new RuntimeException('Accepted '.$label);}
+function addressUser(PDO $db,string $role='player'):int{$q=$db->prepare('INSERT INTO hasa_users(player_name,role,active,must_change_password,auth_version) VALUES (?,?,1,0,1)');$q->execute(['Address-'.bin2hex(random_bytes(6)),$role]);return (int)$db->lastInsertId();}
+hasaAddressInstall($db);hasaAddressInstall($db);$a=addressUser($db);$b=addressUser($db);$c=addressUser($db);$root=addressUser($db,'root');
+$r=['name'=>'Address Tester','planet'=>'Home','game_id'=>901,'galaxy'=>1,'system'=>0,'orbit'=>7,'source'=>3,'kind'=>'listed_planet','observed_at'=>gmdate('Y-m-d\TH:i:s\Z')];
+test(hasaAddressStore($db,$a,8,[$r])===1,'durable record accepted');hasaAddressStore($db,$a,8,[$r]);test(count(hasaAddressVisible($db,$a,8))===1,'same observation idempotent and system zero valid');
+test(count(hasaAddressVisible($db,$b,8))===0,'default private');hasaAddressStore($db,$a,7,[array_replace($r,['system'=>9])]);
+$db->beginTransaction();hasaAddressAudience($db,$a,8,'participants');$db->commit();test(count(hasaAddressVisible($db,$b,8))===1,'explicit one-way participant sharing works');test(count(hasaAddressVisible($db,$b,7))===0,'round isolation');test(count(hasaAddressVisible($db,$root,8))===0,'root cannot bypass player role');
+$db->beginTransaction();hasaAddressAudience($db,$a,8,'private');$db->commit();test(count(hasaAddressVisible($db,$b,8))===0,'revocation immediate');
+$db->beginTransaction();invalid(fn()=>hasaAddressAudience($db,$a,8,'alliance'),'unconfirmed alliance denied');$db->rollBack();
+$q=$db->prepare('INSERT INTO hasa_alliances(game_tag) VALUES (?)');$q->execute(['ADDRESS-'.bin2hex(random_bytes(5))]);$aid=(int)$db->lastInsertId();$db->exec("UPDATE hasa_users SET alliance_id=$aid WHERE id IN ($a,$b)");
+$db->beginTransaction();hasaAddressAudience($db,$a,8,'alliance');$db->commit();test(count(hasaAddressVisible($db,$b,8))===1&&count(hasaAddressVisible($db,$c,8))===0,'only confirmed alliance');$db->exec("UPDATE hasa_users SET alliance_id=NULL WHERE id=$b");test(count(hasaAddressVisible($db,$b,8))===0,'alliance departure immediate');
+$db->beginTransaction();hasaAddressAudience($db,$a,8,'participants');$db->commit();foreach(['active=0','active=1,must_change_password=1'] as $set){$db->exec("UPDATE hasa_users SET $set WHERE id=$b");test(count(hasaAddressVisible($db,$b,8))===0,'blocked recipient excluded');}$db->exec("UPDATE hasa_users SET active=1,must_change_password=0 WHERE id=$b");
+invalid(fn()=>hasaAddressStore($db,$a,8,[array_replace($r,['enemy'=>true])]),'relationship data rejected');invalid(fn()=>hasaAddressStore($db,$a,8,[array_replace($r,['system'=>1000])]),'out of range system rejected');invalid(fn()=>hasaAddressStore($db,$a,8,[array_replace($r,['observed_at'=>'2026-02-30T10:00:00Z'])]),'invalid dates rejected');invalid(fn()=>hasaAddressStore($db,$a,8,[array_replace($r,['source'=>1])]),'mismatched source rejected');
+invalid(fn()=>hasaAddressStore($db,$a,8,[$r,array_replace($r,['relation'=>'secret'])]),'whole batch validated before mutation');test(count(hasaAddressVisible($db,$a,8))===1,'rejected batch unchanged');
+hasaAddressStore($db,$a,8,[array_replace($r,['system'=>20])]);test(count(hasaAddressVisible($db,$a,8))===2,'changed address retains history');
+$roster=['players'=>[['name'=>'Address Tester','rank'=>1,'game_id'=>901],['name'=>'Missing','rank'=>2,'game_id'=>null]],'complete'=>true,'observed_at'=>$r['observed_at']];hasaAddressRoster($db,$a,8,$roster);$cmp=hasaAddressCompare($roster['players'],hasaAddressVisible($db,$a,8));test($cmp[0]['status']==='planet_known'&&$cmp[1]['status']==='address_missing','roster exact ID/name comparison');invalid(fn()=>hasaAddressRoster($db,$a,8,array_replace($roster,['players'=>[['name'=>'Only','rank'=>2]]])),'false complete roster denied');
+$conflict=[['player_name'=>'Same','game_id'=>1,'orbit'=>1],['player_name'=>'Same','game_id'=>2,'orbit'=>2]];test(hasaAddressCompare([['name'=>'Same','game_id'=>null]],$conflict)[0]['status']==='identity_conflict','conflicting identities not merged');
+$db->exec("DELETE FROM hasa_users WHERE id=$a");test((int)$db->query("SELECT COUNT(*) FROM hasa_address_evidence WHERE owner_user_id=$a")->fetchColumn()===0,'account deletion cascades evidence');test((int)$db->query("SELECT COUNT(*) FROM hasa_address_roster WHERE owner_user_id=$a")->fetchColumn()===0,'account deletion cascades roster');test((int)$db->query("SELECT COUNT(*) FROM hasa_address_sharing WHERE owner_user_id=$a")->fetchColumn()===0,'account deletion cascades sharing');
+echo "$n address MariaDB checks passed\n";

@@ -40,13 +40,14 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y php-cli php-mysql php-mbstring mariadb-client
-          npm install --no-save playwright
+          npm install --no-save playwright linkedom
           npx playwright install --with-deps chromium
       - name: Syntax and browser regression
         run: |
           cmp '01 Entwicklung/Userscript/Aktuell/HASA-AKTUELL.user.js.txt' '01 Entwicklung/Userscript/Aktuell/HASA-AKTUELL.user.js'
           find '02 Website/api' -name '*.php' -print0 | xargs -0 -n1 php -l
           python3 '01 Entwicklung/Tests/Server/maintenance_integration.py'
+          node '01 Entwicklung/Tests/Browser/test_hasa_address.cjs'
           node '01 Entwicklung/Tests/Browser/test_hasa_ereignisregister.cjs'
           node '01 Entwicklung/Tests/Browser/test_hasa_live_events.cjs'
           node '01 Entwicklung/Tests/Browser/test_hasa_water_history.cjs'
@@ -79,6 +80,7 @@ jobs:
           php '01 Entwicklung/Tests/Server/sharing_global_integration.php'
           HASA_TEST_SHARING_HTML="$test_api/sharing-global-fixture.html" node '01 Entwicklung/Tests/Browser/test_hasa_sharing_ui.cjs'
           HASA_TEST_JOURNAL_HTML="$test_api/journal-fixture.html" node '01 Entwicklung/Tests/Browser/test_hasa_journal_ui.cjs'
+          php '01 Entwicklung/Tests/Server/address_integration.php'
           php '01 Entwicklung/Tests/Server/signup_integration.php'
           python3 '01 Entwicklung/Tests/Server/signup_http.py'
           node '01 Entwicklung/Tests/Browser/test_hasa_signup.cjs'
@@ -96,5 +98,3 @@ jobs:
           if ($parseErrors.Count) { $parseErrors | ForEach-Object { Write-Error $_ }; exit 1 }
       - name: Check TechTree window
         run: node '01 Entwicklung/Tests/Browser/test_hasa_techtree_window.cjs'
-
-

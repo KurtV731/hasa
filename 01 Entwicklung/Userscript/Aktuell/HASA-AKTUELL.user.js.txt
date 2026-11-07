@@ -1,12 +1,14 @@
-﻿// ==UserScript==
+// ==UserScript==
 // @name         HASA – Horizon Ascension Assistant
 // @namespace    horiversum.hasa
-// @version      1.3.0-alpha.7
+// @version      1.3.0-alpha.8
 // @charset      UTF-8
 // @updateURL    https://raw.githubusercontent.com/KurtV731/hasa/dev-1.3-alpha1/01%20Entwicklung/Userscript/Aktuell/HASA-AKTUELL.user.js
 // @downloadURL  https://raw.githubusercontent.com/KurtV731/hasa/dev-1.3-alpha1/01%20Entwicklung/Userscript/Aktuell/HASA-AKTUELL.user.js
 // @description  Horizon-Assistent mit kompakter Galaxiescanner-Anzeige und aktiver lokaler IndexedDB
 // @match        https://horiversum.org/game/main/main.php*
+// @match        https://horiversum.org/game/stat/index.php*
+// @match        https://horiversum.org/game/stat/stat_main.php*
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_xmlhttpRequest
@@ -200,7 +202,7 @@
     // Sicherung könnte Tampermonkey HASA dort ein zweites Mal starten.
     if (window.top !== window.self) return;
     if (window.location.origin !== 'https://horiversum.org'
-            || window.location.pathname !== '/game/main/main.php') return;
+            || !['/game/main/main.php','/game/stat/index.php','/game/stat/stat_main.php'].includes(window.location.pathname)) return;
 
     // Fremdrassen: nicht als erreichbare Spielerziele im Explorer anzeigen.
     // Die Datensätze bleiben bewusst gespeichert, damit sie später z. B.
@@ -217,8 +219,8 @@
         'PHYSICS', 'PSYCHOLOGY', 'NUCLEARPHYSICS', 'SOLARENERGYTECH'
     ]);
 
-    const HASA_VERSION = '1.3.0 Alpha 7';
-    const HASA_BUILD_LABEL = '1.3.0-alpha7-reset-ascension-2026-11-01';
+    const HASA_VERSION = '1.3.0 Alpha 8';
+    const HASA_BUILD_LABEL = '1.3.0-alpha8-adressbuch-2026-11-07';
     const HASA_RUNDE = 8;
     const HASA_RUNDE_SCHLUESSEL = 'runde8';
     // Die MariaDB und sämtliche Schreibendpunkte trennen Runde 7 und 8 jetzt
@@ -2132,6 +2134,8 @@
             const button=document.getElementById(eintrag[0]);
             if(button)button.onclick=function(){window.open(HASA_EVENT_LIST+'?view='+eintrag[1]+'&round='+HASA_RUNDE,'_blank','noopener');};
         });
+        const adressbuch=document.getElementById('haa-adressbuch');
+        if(adressbuch)adressbuch.onclick=function(){window.open(HASA_ADDRESS_API+'?round='+HASA_RUNDE,'_blank','noopener');};
         const datenbank = document.getElementById('haa-galascan-datenbank');
         if (datenbank) {
             datenbank.onclick = function () {
@@ -2235,6 +2239,7 @@
                 : '')
             + '<button id="haa-galascan-datenbank" type="button" '
             + 'style="flex:0 0 auto;font-size:11px;font-weight:bold;cursor:pointer;">Galaxiedatenbank</button>'
+            + '<button id="haa-adressbuch" type="button">Adressbuch</button>'
             + '<button id="haa-events-scans" type="button" style="flex:0 0 auto;font-size:11px;cursor:pointer;">Events/Scans</button>'
             + '<button id="haa-ressourcen" type="button" style="flex:0 0 auto;font-size:11px;cursor:pointer;">Ressourcen</button>'
             + '<button id="haa-kampfbericht" type="button" style="flex:0 0 auto;font-size:11px;cursor:pointer;">Kampfbericht</button>'
@@ -7346,6 +7351,154 @@ return box;
         }, true);
     }
 
+/* HASA address evidence: passive DOM reading only; never follows game action links. */
+const HasaAddress = (() => {
+    const clean = x => String(x || '').replace(/\s+/gu,' ').trim();
+    const key = x => clean(x).normalize('NFC').toLocaleLowerCase('de');
+    function position(g,s,o) {
+        if(!/^\d+$/.test(String(g)) || !/^\d+$/.test(String(s)))return null;
+        g=Number(g);s=Number(s);o=o==null?null:Number(o);
+        return g>=1&&g<=255&&s>=0&&s<=999&&(o===null||(Number.isInteger(o)&&o>=1&&o<=255))?{galaxy:g,system:s,orbit:o}:null;
+    }
+    function planetLink(a,base) {
+        try {const u=new URL(a.getAttribute('href'),base);
+            if(u.origin!==new URL(base).origin||u.searchParams.get('cmd')!=='galaxy'||u.searchParams.get('subcmd')!=='galaxy')return null;
+            return position(u.searchParams.get('galaxy'),u.searchParams.get('system'),u.searchParams.get('planet'));
+        }catch(_){return null;}
+    }
+    function playerId(row,base) {
+        const ids=new Set();
+        for(const a of row.querySelectorAll('a[href]'))try{const u=new URL(a.getAttribute('href'),base);
+            if(u.origin!==new URL(base).origin)continue;
+            // u_id in bounty links uses another namespace; never merge it with message user_id.
+            for(const k of ['user_id','sender_id']){const n=u.searchParams.get(k);if(n&&/^\d+$/.test(n)&&Number(n)>0)ids.add(Number(n));}
+        }catch(_){}
+        return ids.size===1?[...ids][0]:null;
+    }
+    function buddies(doc,base,at) {
+        const rows=[];
+        for(const span of doc.querySelectorAll('span.MessageBuddyFriend,span.MessageBuddyEnemy')){
+            const a=[...span.querySelectorAll('a[href]')].find(a=>planetLink(a,base));if(!a)continue;
+            const pos=planetLink(a,base);let before='';
+            for(const n of span.childNodes){if(n===a)break;before+=n.textContent;}
+            const name=clean(before.replace(/\s*\(online\)\s*/gi,' ').replace(/\s*-\s*$/,''));if(!name)continue;
+            const tr=span.closest('tr');rows.push({...pos,name,planet:clean(a.textContent),game_id:tr?playerId(tr,base):null,source:3,kind:'listed_planet',observed_at:at});
+        }return rows;
+    }
+    function stpl(doc,base,scan,at) {
+        if(!scan||scan.state!=='visible'||!scan.safeToStore)return [];
+        const trs=[...doc.querySelectorAll('table.OrbitTable tr')];
+        return (scan.planets||[]).filter(p=>p.type==='STPL'&&clean(p.ruler)).map(p=>{
+            const tr=trs.find(t=>clean(t.querySelectorAll('td')[0]?.textContent)===String(p.orbit));
+            return {...position(scan.galaxy,scan.system,p.orbit),name:clean(p.ruler),planet:clean(p.name),game_id:tr?.querySelectorAll('td')[3]?playerId(tr.querySelectorAll('td')[3],base):null,source:2,kind:'stpl',observed_at:at};
+        }).filter(r=>r.galaxy);
+    }
+    function roster(doc,base,at) {
+        let u;try{u=new URL(base);}catch(_){return null;}
+        if(u.searchParams.get('cmd')!=='hitlist')return null;
+        const selects=[...doc.querySelectorAll('select')];
+        const selected=selects.map(s=>s.selectedOptions?.[0]||s.querySelector('option[selected]')||s.querySelector('option'));
+        if(!selected.some(o=>o&&o.getAttribute('value')?.includes(':player:')))return null;
+        const rows=[];
+        for(const tr of doc.querySelectorAll('.StatWrapper tr')){
+            const c=[...tr.querySelectorAll('td')];if(c.length!==9||!/^\d+$/.test(clean(c[0].textContent)))continue;
+            const name=clean(c[1].textContent);if(name)rows.push({name,game_id:playerId(c[1],base),rank:Number(clean(c[0].textContent)),account:clean(c[4].textContent),observed_at:at});
+        }
+        const allOptions=selects.flatMap(s=>[...s.querySelectorAll('option')]).filter(o=>/^\d+\s*-\s*\d+$/.test(clean(o.textContent)));
+        const ranks=rows.map(r=>r.rank).sort((a,b)=>a-b);
+        const complete=allOptions.length===1&&ranks.length>0&&ranks[0]===1&&ranks.every((n,i)=>n===i+1)&&new Set(rows.map(r=>key(r.name))).size===rows.length;
+        return rows.length?{players:rows,complete,observed_at:at}:null;
+    }
+    function magazine(doc,edition,at) {
+        if(doc.querySelector('parsererror')||doc.documentElement?.nodeName!=='ROOT')throw new Error('invalid_magazine_xml');
+        const rows=[];
+        for(const a of doc.querySelectorAll('NEWSARTICLE[type="PLAYERNEW"]')){
+            const text=clean([...a.querySelectorAll('TEXT')].map(e=>e.textContent).join(' '));
+            const m=text.match(/Position (\d+):(\d+):(\d+).*?zufolge ist (.*?) der Herrscher.*?Zivilisation von (.*?) die Schwelle/u);
+            if(!m)continue;const pos=position(m[1],m[2],m[3]);if(!pos)continue;
+            rows.push({...pos,name:clean(m[4]),planet:clean(m[5]),game_id:null,source:1,kind:'founding',event_time:clean(a.getAttribute('date')),edition,observed_at:at});
+        }return rows;
+    }
+    function comparison(players,evidence) {
+        return players.map(p=>{
+            const byName=evidence.filter(e=>key(e.name)===key(p.name));
+            const ids=new Set(byName.map(e=>e.game_id).filter(Boolean));
+            const matches=p.game_id?evidence.filter(e=>e.game_id===p.game_id||(!e.game_id&&key(e.name)===key(p.name))):ids.size<=1?byName:[];
+            return {...p,status:ids.size>1&&!p.game_id?'identity_conflict':matches.some(e=>e.orbit!=null)?'planet_known':matches.length?'system_known':'address_missing'};
+        });
+    }
+    return {clean,key,position,planetLink,playerId,buddies,stpl,roster,magazine,comparison};
+})();
+if(typeof module!=='undefined'&&module.exports)module.exports=HasaAddress;
+
+    // ADDRESS_AUTOMATION_BEGIN
+    let HAA_ADDRESS_TIMER=null,HAA_ADDRESS_BUSY=false,HAA_ADDRESS_NEXT=0;
+    const HASA_ADDRESS_API='https://hasa.li/api/address-book.php';
+    function hasaAddressStoreKey(owner){return 'hasa_address_evidence_v1_r'+HASA_RUNDE+'_u'+owner;}
+    function hasaAddressDocuments(){
+        const docs=[],seen=new Set();function add(d){if(!d||seen.has(d))return;seen.add(d);docs.push(d);for(const f of d.querySelectorAll('frame,iframe'))try{add(f.contentDocument);}catch(_){}}
+        add(document);return docs;
+    }
+    async function hasaAddressPost(body,owner){
+        if(!hasaAddressActive()||String(HAA_SERVER_AUTH.userId)!==String(owner)||!hasaServerSchreibbereit())throw new Error('Anmeldung fehlt');
+        return hasaJsonRequest({url:HASA_ADDRESS_API,method:'POST',headers:{'Accept':'application/json','Content-Type':'application/json','X-HASA-Key':galascannerApiSchluessel(false),'X-HASA-CSRF':HAA_SERVER_AUTH.csrf},data:JSON.stringify({round:HASA_RUNDE,expected_user_id:Number(owner),...body})});
+    }
+    async function hasaAddressTick(){
+        if(HAA_ADDRESS_BUSY||!hasaAddressActive())return;HAA_ADDRESS_BUSY=true;
+        try{
+            await aktualisiereHasaServerAnmeldung(false);if(!hasaServerSchreibbereit())return;
+            if(!location.pathname.startsWith('/game/stat/'))GM_setValue('hasa_address_active_until',Date.now()+45000);
+            const owner=String(HAA_SERVER_AUTH.userId),storage=hasaAddressStoreKey(owner),at=new Date().toISOString();
+            const old=laden(storage,{pending:[],sent:{}}),state=old&&Array.isArray(old.pending)?old:{pending:[],sent:{}};
+            const add=rows=>{for(const r of rows){const identity=prdrHash(JSON.stringify([r.source,r.kind,r.game_id,r.name,r.galaxy,r.system,r.orbit,r.planet,r.event_time||null]));
+                if(state.sent[identity]&&Date.now()-state.sent[identity]<86400000)continue;
+                if(!state.pending.some(x=>x.identity===identity))state.pending.push({identity,row:r});}speichern(storage,state);};
+            for(const doc of hasaAddressDocuments()){
+                const base=doc.location?.href||window.location.href;
+                add(HasaAddress.buddies(doc,base,at));
+                if(doc===document)add(HasaAddress.stpl(doc,base,leseGalaxiesystemAusSichtbarerSeite(),at));
+                const roster=HasaAddress.roster(doc,base,at);if(roster){const h=prdrHash(JSON.stringify([roster.complete,roster.players.map(p=>[p.name,p.game_id,p.rank])]));
+                    if(state.rosterHash!==h||!state.rosterAt||Date.now()-state.rosterAt>86400000){await hasaAddressPost({action:'roster',roster},owner);state.rosterHash=h;state.rosterAt=Date.now();}}
+            }
+            // Persist unsent observations before attempting transfer; retry after authentication/network errors.
+            if(state.pending.length>2000)console.warn('HASA Adressbuch: viele Nachweise warten auf Übertragung.');speichern(storage,state);
+            if(state.pending.length){const batch=state.pending.slice(0,100);const ack=await hasaAddressPost({action:'evidence',records:batch.map(x=>x.row)},owner);
+                if(ack.stored!==batch.length)throw new Error('Adressbuch: unvollständige Speicherbestätigung');
+                for(const x of batch)state.sent[x.identity]=Date.now();state.pending.splice(0,batch.length);
+                state.sent=Object.fromEntries(Object.entries(state.sent).filter(([,t])=>Date.now()-t<7*86400000));speichern(storage,state);}
+            if(!location.pathname.startsWith('/game/stat/')&&Date.now()>=HAA_ADDRESS_NEXT){HAA_ADDRESS_NEXT=Date.now()+3600000;await hasaAddressMagazine(owner);}
+        }catch(error){console.warn('HASA Adressbuch:',error.message);}finally{HAA_ADDRESS_BUSY=false;}
+    }
+    async function hasaAddressMagazine(owner){
+        const k='hasa_magazine_cursor_v1_r'+HASA_RUNDE+'_u'+owner,done=laden(k,{}),now=Date.now(),day=new Date().toISOString().slice(0,10);
+        if(done.day===day)return;
+        const boundary={8:'index_202610071900.xml'}[HASA_RUNDE];if(!boundary)return;
+        const response=await fetch('https://horiversum.org/homepage/newspaper/index.php',{credentials:'omit'});if(!response.ok)throw new Error('Galaxy Mag nicht erreichbar');
+        const doc=new DOMParser().parseFromString(await response.text(),'text/html');
+        const names=[...new Set([...doc.querySelectorAll('a[href]')].map(a=>a.getAttribute('href')).filter(n=>/^index_\d{12}\.xml$/.test(n)))].sort();
+        if(!names.length)throw new Error('Galaxy Mag: keine Ausgaben gefunden');let budget=3,pending=false;
+        for(const name of names){
+            if(done[name])continue;
+            // XML has no round ID. Explicit current-round boundary, not filename year alone.
+            if(name<boundary){done[name]=true;continue;}
+            if(--budget<0){pending=true;break;}
+            const r=await fetch('https://horiversum.org/homepage/newspaper/'+name,{credentials:'omit'});if(!r.ok)throw new Error('Magazinausgabe nicht erreichbar');
+            const bytes=await r.arrayBuffer();let text;try{text=new TextDecoder('utf-8',{fatal:true}).decode(bytes);}catch(_){text=new TextDecoder('iso-8859-15').decode(bytes);}
+            const xml=new DOMParser().parseFromString(text,'application/xml');
+            const records=HasaAddress.magazine(xml,name,new Date().toISOString());
+            for(let i=0;i<records.length;i+=100){const batch=records.slice(i,i+100),ack=await hasaAddressPost({action:'evidence',records:batch},owner);if(ack.stored!==batch.length)throw new Error('Magazin nicht vollständig gespeichert');}
+            done[name]=true;speichern(k,done);
+        }
+        if(!pending)done.day=day;else HAA_ADDRESS_NEXT=now+60000;
+        speichern(k,done);
+    }
+    function hasaAddressActive(){
+        if(location.pathname.startsWith('/game/stat/')){try{return Date.now()-Number(GM_getValue('hasa_address_active_until',0))<0;}catch(_){return false;}}
+        return istHasaFuerSitzungAktiv();
+    }
+    function installiereHasaAdressbuch(){if(HAA_ADDRESS_TIMER)return;hasaAddressTick();HAA_ADDRESS_TIMER=setInterval(hasaAddressTick,15000);}
+    // ADDRESS_AUTOMATION_END
+
     function istAscensionSeite() {
         return document.querySelector('.AscAccCategory') !== null;
     }
@@ -7391,6 +7544,8 @@ return box;
     }
 
     function stoppeHasaLaufendeArbeit() {
+        if(HAA_ADDRESS_TIMER){clearInterval(HAA_ADDRESS_TIMER);HAA_ADDRESS_TIMER=null;}
+        GM_setValue('hasa_address_active_until',0);
         stoppeHasaLiveDaten();
         stoppeHasaEreignisScanner();
         if (HAA_SEITENSCAN_TIMER) {
@@ -7470,6 +7625,7 @@ return box;
         installiereHasaEreignisScanner();
         installiereHasaLiveDaten();
         installiereAutomatischenGalaxiescan();
+        installiereHasaAdressbuch();
         installiereHasaAnmeldungspruefung();
         installiereAudioFreigabe();
         HAA_PLANLISTEN_TIMER = setInterval(aktivierePlanlistenKlappung, 1400);
@@ -7489,7 +7645,12 @@ return box;
         }
     }
 
+    if(location.pathname.startsWith('/game/stat/')){
+        // Passive statistics reader only. Never inserts the full game overlay here.
+        setTimeout(installiereHasaAdressbuch,1000);return;
+    }
     window.addEventListener('resize', halteHasaFensterSichtbar);
     window.addEventListener('load', starteSicher);
     setTimeout(starteSicher, 800);
 })();
+

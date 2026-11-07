@@ -2,7 +2,7 @@
 Stand 07.11.2026. Auftraggeber öffentlich: Styl.
 
 ## Ziel und tatsächlicher Stand
-Styl beauftragt die Umsetzung als offizielles Public-Release. Die eigenständige HTML-Auswertung ist ein geprüfter Arbeitsprototyp, keine installierte HASA-Funktion. Am geprüften dev-1.3-alpha1 steht das Userscript weiterhin auf 1.3.0-alpha.7; es gibt dort noch kein Adressbuchmodul. Keine neue Versionsnummer oder Veröffentlichung nur durch Änderung des Versionsetiketts.
+Styl beauftragt die Umsetzung als offizielles Public-Release. Die eigenständige HTML-Auswertung ist ein geprüfter Arbeitsprototyp, keine installierte HASA-Funktion. Ausgangspunkt war 1.3.0-alpha.7 ohne Adressbuchmodul. Die anschließende Alpha-8-Implementierung ergänzt automatische Erfassung, Servernachweise, ausdrückliche Freigaben und Statistikvergleich. Keine neue Versionsnummer oder Veröffentlichung nur durch Änderung des Versionsetiketts.
 
 ## Verbindlicher Umfang
 - Spieler-Verzeichnis mit Quellenkennzeichen: 1 Magazin, 2 Systemscan/STPL, 3 Freund-/Feind-Liste. Datum und Quelle je Nachweis; Dateinamen/ausführliche Nachweisphrasen nicht ständig in Tabellenzeilen zeigen.
@@ -15,8 +15,8 @@ Styl beauftragt die Umsetzung als offizielles Public-Release. Die eigenständige
 - Runden, Spieleridentität und zeitliche Adressnachweise trennen. Namenswechsel und Zeichensatzfehler nicht durch unscharfen Namensvergleich automatisch entscheiden. Keine Adressen aus früheren Runden als aktuell einsetzen.
 - Eigene Planeten in persönlichen Ereignis-/Ressourcenlisten über tatsächlichen Besitznachweis begrenzen; Berichtsbesitz allein genügt nicht. Magazin-/Galaxiedaten und persönliche Ereignislisten bleiben fachlich getrennt.
 
-## Noch fehlende Originalnachweise
-Für Freunde/Feinde liegen Erklärung und Bilder, aber kein HTML-/Frame-Quelltext vor. Benötigt werden die tatsächlich angezeigte Freund-/Feind-Liste mit Spieler-/Planetenlinks sowie der Quelltext einer nach Planetenklick angezeigten unerforschten Systemseite. Links können Identitätsbezug und volle Koordinaten enthalten; niemals Parameter raten. Sitzungstoken aus Originalen nicht auf GitHub hochladen.
+## Originalnachweise und Umsetzung
+Freund-/Feind-Liste sowie unerforschtes System sind am 07.11.2026 geliefert und intern geprüft. Die Planetenlinks enthalten volle Koordinaten; Nachrichtenlinks liefern user_id/sender_id. Kopfgeld-u_id ist ein anderer Nummernraum und wird nicht als dieselbe Identität behandelt. Originalquellen werden nicht veröffentlicht. Die Automatik wird mit Alpha 8 eingebunden; Details und Einrichtung in adressbuch-automatik.md. Die Public-Freigabe bleibt von vollständiger Abnahme abhängig.
 
 ## Release-Abnahme
 Parser mit bereinigten künstlichen Beispielen testen: exakter Name vs. ähnlicher Treffer; STPL mit Spieler; fehlender Orbit; veralteter/anderer Rundenstand; widersprüchliche Adresse; Unicode-Name. Server muss nur-ich/Allianz/alle einschließlich widerrufener Freigaben und privater Feindmarkierung nachweisbar durchsetzen. Eigentumsfilter für persönliche Listen prüfen. Danach Anleitung, Migration/Serverpaket, Userscript und korrigierten Public-Downloadkanal zusammen prüfen. Erst geprüften vollständigen Stand offiziell freigeben. Bestehende stabile Veröffentlichung bis dahin unverändert belassen.
