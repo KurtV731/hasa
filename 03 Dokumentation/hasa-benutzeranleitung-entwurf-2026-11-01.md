@@ -1,9 +1,9 @@
 # HASA – Benutzerhandbuch 1.3
 
-**Prüfentwurf · Stand 1. November 2026 · 1.3.0 Alpha 6**  
+**Prüfentwurf · Stand 7. November 2026 · Ergänzungen bis 1.3.0 Alpha 8**  
 Projektverantwortlicher: **Styl**
 
-Dieses Handbuch beschreibt HASA 1.3 mit den bis zu diesem Stand geprüften Ergänzungen. Die Bilder und die Bedienung orientieren sich an Alpha 6. Die öffentliche stabile Version bleibt 1.2.0. Offene Fragen zur endgültigen Veröffentlichung sind im internen Prüfan­hang gesammelt.
+Dieses Handbuch beschreibt HASA 1.3 mit den bis zu diesem Stand geprüften Ergänzungen. Die bisherigen Bildvorlagen orientieren sich an Alpha 6; die Adressbuch-Anleitung berücksichtigt Alpha 8. Die öffentliche stabile Version bleibt 1.2.0. Offene Fragen zur endgültigen Veröffentlichung sind im internen Prüfan­hang gesammelt.
 
 Die Installation ist bereits erledigt? Dann geht es hier mit dem Einschalten los.
 
@@ -92,6 +92,7 @@ Fahre mit der Maus über einen Punkt und warte kurz: Die eingeblendete Erklärun
 | Du möchtest … | Hier beginnst du |
 |---|---|
 | Ein bekanntes System oder einen Planeten suchen | **Galaxiedatenbank** |
+| Spieleradressen sammeln und fehlende Fundstellen erkennen | **Adressbuch**, Kapitel 5a |
 | Beobachtungen mit anderen Spielern austauschen | **Galaxiedatenbank → Meine Datenfreigaben** |
 | Ereignisse und gespeicherte Meldungen ansehen | **Events/Scans** |
 | Deine Stundenproduktion vergleichen | **Ressourcen** |
@@ -141,6 +142,85 @@ Sondenangaben sind Beobachtungen beziehungsweise Schätzungen mit einem Zeitpunk
 > **Bildplatzhalter 04 – Galaxiedatenbank durchsuchen**  
 > Geplantes Motiv: Websuche mit leerem Systemfeld, Suchbegriff und sichtbarer Seitennavigation.  
 > Bildunterschrift / Alternativtext: Leeres Systemfeld lässt deine Suche über alle Systeme laufen.
+
+## 5a. Adressbuch: Spieler und ihre Fundstellen wiederfinden
+
+Öffne in der HASA-Werkzeugzeile **Adressbuch**. Die Liste sammelt belegte Spielernamen, Planeten und Koordinaten. Sie wächst beim normalen Spielen; du musst neue Fundstellen nicht von Hand abschreiben.
+
+### Was HASA automatisch übernimmt
+
+| Quellenziffer | Woher der Nachweis kommt | Was du dafür tust |
+|---|---|---|
+| **1** | Neugründungen im **Galaxy Mag** | HASA aktiv und angemeldet lassen; die verfügbaren Magazinausgaben werden täglich nachgelesen. |
+| **2** | Ein sichtbarer **Standardplanet (STPL)** mit zugeordnetem Spieler | Das betreffende System wie gewohnt besuchen. |
+| **3** | Spieler und Planetenlinks deiner angezeigten **Freund-/Feind-Liste** | Die Liste im Spiel öffnen. |
+
+Die kleine Quellenziffer am Namen ersetzt lange Herkunftstexte in jeder Zeile. Die Beobachtungszeit hilft dir, ältere Fundstellen einzuordnen. Gründungszeiten stammen aus der Spielzeit des Magazins; Beobachtungszeiten werden in UTC angezeigt.
+
+**HASA liest nur mit.** Es legt keine Freundschaft oder Feindschaft an, klickt keine Spielaktionen an und schickt keine Sonden los. Enthält ein angezeigter Planetenlink bereits die vollständigen Koordinaten, können sie auch bei einem noch unerforschten Zielsystem übernommen werden. Eine bloße Meldung über ein unerforschtes System ohne eindeutigen Spielerbezug genügt dafür nicht.
+
+Ein Gründungsbericht ist ein **historischer Nachweis**, keine Zusicherung der heutigen Heimatadresse. Spätere Fundstellen ergänzen den Verlauf. Widersprüchliche Spieleridentitäten werden nicht aufgrund ähnlich klingender Namen zusammengelegt.
+
+### Welche Spieler fehlen noch?
+
+1. Öffne im Spiel **Highscore → Normal → Spieler → Gesamter Highscore**.
+2. Lass die gewünschte Spielerliste anzeigen; HASA liest die geöffneten Zeilen.
+3. Öffne **Adressbuch** und gehe zu **Abgleich mit der Spielerliste**.
+
+Der Abgleich unterscheidet **Adresse fehlt**, **System bekannt**, **Planet bekannt**, **Nur Gründungsnachweis** und **Identität widersprüchlich**. Er berücksichtigt nur Nachweise derselben Runde, die dein Konto sehen darf. Eine Teilseite bleibt eine Teilliste; aus nicht angezeigten Spielern werden keine Einträge erfunden. Während du das Statistikfenster benutzt, lasse die aktive HASA-Hauptansicht geöffnet.
+
+### Muss ich jeden Tag etwas nachliefern?
+
+Nein. Bei aktiviertem HASA, geöffnetem Spiel und gültiger HASA-Anmeldung werden neue Fundstellen übertragen und verlinkte Magazinausgaben täglich nachgelesen. Beim ersten Einlesen kann die Nachlese einige Minuten dauern, weil Ausgaben in kleinen Paketen verarbeitet werden.
+
+**Bei geschlossenem Browser läuft diese Automatik nicht.** Nicht mehr öffentlich verfügbare alte Ausgaben kann sie nicht nachträglich abrufen. Für einen vorhandenen Altbestand gibt es den einmaligen Import unten. Ungesendete Adressnachweise bleiben bei einem Übertragungsfehler in der Warteschlange und werden erneut versucht.
+
+### Adressdaten bewusst freigeben
+
+Öffne im Adressbuch **Meine Adressdaten freigeben**, wähle die gewünschte Sichtbarkeit und klicke auf **Speichern**.
+
+| Auswahl | Wer deine Adressnachweise sehen darf |
+|---|---|
+| **Nur ich** | Nur dein eigenes Playerkonto; dies ist die Voreinstellung. |
+| **Meine bestätigte Allianz** | Angemeldete HASA-Spieler mit derselben bestätigten Allianzzuordnung. |
+| **Alle angemeldeten HASA-Spieler** | HASA-Spielerkonten, keine Veröffentlichung im offenen Internet. |
+
+Diese Auswahl gilt für deine Adressnachweise der jeweiligen Runde. Sie ist **unabhängig von den Galaxie- und Sondenfreigaben in Kapitel 6**. Für den Empfang freigegebener Adressnachweise ist keine gegenseitige Freigabe erforderlich.
+
+Freund-/Feindmarkierungen, persönliche Notizen und dein Suchverhalten werden nicht mit den Adressdaten übertragen. Ein Quellenhinweis aus der Liste verrät daher nicht, ob du den Spieler als Freund oder Feind markiert hast.
+
+Mit **Nur ich → Speichern** widerrufst du die Freigabe für weitere Abrufe. Bereits gelesene oder kopierte Angaben lassen sich dadurch nicht zurückholen.
+
+### Vorhandenen Altbestand einmalig übernehmen
+
+Falls Styl dir eine passende Adressbuch-JSON-Datei bereitstellt:
+
+1. Öffne **Adressbuch** mit deinem eigenen Playerkonto.
+2. Klappe **Vorhandene Adressnachweise einmalig importieren** auf.
+3. Wähle die bereitgestellte JSON-Datei für die betreffende Runde.
+4. Klicke auf **In mein Adressbuch übernehmen**.
+
+Danach erfolgt die weitere Pflege automatisch. Wiederholter Import derselben Adressnachweise erzeugt keine doppelten Adresszeilen. Die Datei gehört nicht in den öffentlichen Downloadbereich.
+
+### Einmalige Einrichtung durch die Benutzerleitung
+
+Diesen Schritt erledigt die Verwaltung, nicht jeder Mitspieler:
+
+1. Die Dateien aus dem Ordner **api** des Adressbuch-Updatepakets nach **/hasa.li/api/** hochladen.
+2. Als Benutzerleitung [Adressbuch einrichten](https://hasa.li/api/address-install.php) öffnen.
+3. **Adressbuchtabellen einrichten** anklicken.
+4. Das vorhandene HASA in Tampermonkey aktualisieren und gegebenenfalls die zusätzliche Berechtigung für die Statistikseiten bestätigen.
+
+Danach ist der neue **Adressbuch**-Knopf nutzbar. Ein Userscript-Update allein ersetzt diese einmalige Servereinrichtung nicht.
+
+### Wenn das Adressbuch leer bleibt
+
+- **Knopf fehlt:** Die installierte HASA-Version prüfen; das Adressbuch ist ab **1.3.0 Alpha 8** enthalten.
+- **Seite meldet „noch nicht eingerichtet“:** Die Benutzerleitung muss die Serverdateien und Tabellen einrichten.
+- **Neue Fundstelle fehlt:** HASA aktivieren, gültige HASA-Anmeldung prüfen und die betreffende Spielseite normal öffnen.
+- **Spielerliste fehlt:** Die oben genannte Normal-/Spieler-/Gesamthighscore-Liste besuchen.
+- **Ältere Gründung fehlt:** Magazinberichte sind unvollständig; nicht mehr verfügbare Ausgaben benötigen einen vorhandenen Altbestand.
+- **Fremde Adressen fehlen:** Die betreffende Person muss ihre Adressnachweise ausdrücklich freigeben.
 
 ## 6. Datenfreigaben: Du entscheidest, mit wem du teilst
 
@@ -403,3 +483,7 @@ Die Bedienungsbeschreibung der jüngsten Webansichten ist redaktionell integrier
 8. **Zielversion festgelegt:** Ein zusammenhängendes Handbuch 1.3 mit Ergänzungen bis 01.11.2026/Alpha6. Öffentliche Veröffentlichung und bestätigte Serverfassung separat abstimmen. Keine parallelen Hauptanleitungen als neues redaktionelles Gerüst.
 
 Bitte fachliche Korrekturen am Entwurf oder im gemeinsamen Brett sammeln. Veröffentlichung und Ersetzung der bestehenden Anleitung sind noch nicht beauftragt.
+
+### Nachtrag der Fachredaktion vom 07.11.2026 – Adressbuch
+
+Kapitel 5a und Wegweiser ergänzt anhand der geprüften Alpha-8-Implementierung, Quellcommit `ad66de24b3f13b4364981b2a894a14b8b8604217`. Enthält Quellenkennzeichen, tägliche Magazin-Nachlese nur bei aktivem geöffnetem HASA, Statistikabgleich, Historie, eigenständige Freigaben, privaten Altbestandimport, einmalige Servereinrichtung und Fehlerhilfe. Keine privaten Originalquellen oder Adressen eingebettet. GitHub-Prüflauf einschließlich HTTP-Empfang und MariaDB-Rechten bestanden. Diese redaktionelle Ergänzung bestätigt keinen produktiven Upload der neuen Serverdateien oder dieser Handbuchfassung. Die bestehende Websiteanleitung für 1.2 wird nicht automatisch durch diesen Entwurf ersetzt.
