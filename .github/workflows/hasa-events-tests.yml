@@ -12,7 +12,7 @@ on:
       - '01 Entwicklung/Tests/Server/system_search_integration.php'
       - '01 Entwicklung/Tests/Server/sharing_global_integration.php'
       - '01 Entwicklung/Datenbank/hasa_1_2_0_sharing_global_migration.sql'
-      - '01 Entwicklung/Tests/Browser/test_hasa_*.cjs'
+      - '01 Entwicklung/Tests/**'
       - '.github/workflows/hasa-events-tests.yml'
   workflow_dispatch:
 permissions:
