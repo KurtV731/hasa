@@ -1,6 +1,6 @@
 # HASA – Benutzerhandbuch 1.3
 
-**Prüfentwurf · Stand 7. November 2026 · Ergänzungen bis 1.3.0 Alpha 8**  
+**Prüfentwurf · Stand 7. November 2026 · Ergänzungen bis 1.3.0 Alpha 9**  
 Projektverantwortlicher: **Styl**
 
 Dieses Handbuch beschreibt HASA 1.3 mit den bis zu diesem Stand geprüften Ergänzungen. Die bisherigen Bildvorlagen orientieren sich an Alpha 6; die Adressbuch-Anleitung berücksichtigt Alpha 8. Die öffentliche stabile Version bleibt 1.2.0. Offene Fragen zur endgültigen Veröffentlichung sind im internen Prüfan­hang gesammelt.
@@ -424,6 +424,12 @@ Beim vorhandenen HASA in Tampermonkey **Nach Updates suchen**, ein angebotenes U
 Stabiler und Testkanal bleiben getrennt. **Alpha 6 ist nicht automatisch das normale Update für 1.2.0.** Wechsle den Kanal nur bewusst in Abstimmung mit Styl; lege nicht versehentlich zwei aktive HASA-Installationen an.
 
 Ein Userscript-Update aktualisiert nicht zugleich die Webauswertungen. Neue Ereignislisten oder Suchseiten muss Styl zusätzlich serverseitig übernehmen.
+
+### Rücksicht auf deine Bedienung und andere Programme
+
+HASA legt nicht zeitkritische Hintergrundscans in freie Browserzeit. Gleiche wartende Aufträge werden zusammengefasst. Bei Mausbewegungen, Tastatureingaben oder Scrollen wartet die Hintergrundarbeit; anschließend wird sie schrittweise fortgesetzt. In einem verborgenen Spielreiter pausieren diese Aufträge, bis du zurückkehrst. **HASA aus** verwirft die wartenden Hintergrundaufträge.
+
+Bau- und Forschungsalarme bleiben davon getrennt. HASA kann nicht erkennen, ob beispielsweise Plex gerade Rechenleistung braucht. Ein bereits laufender einzelner Rechenschritt lässt sich nicht mitten darin abbrechen. Die Forschungsplanung vermeidet deshalb zusätzlich wiederholtes Laden desselben Spielstands und Wiederaufbauen unveränderter Kataloge.
 
 ## 13. Wenn etwas fehlt: die kurze Hilfe
 
