@@ -71,6 +71,6 @@ function hasaAddressCompare(array $players,array $rows): array
 {
     foreach($players as &$p){$name=mb_strtolower($p['name']);$byName=array_values(array_filter($rows,fn($r)=>mb_strtolower($r['player_name'])===$name));$ids=array_unique(array_filter(array_column($byName,'game_id')));
         $matches=array_values(array_filter($rows,fn($r)=>!empty($p['game_id'])?((string)$r['game_id']===(string)$p['game_id']||(!$r['game_id']&&mb_strtolower($r['player_name'])===$name)):(count($ids)<=1&&mb_strtolower($r['player_name'])===$name)));
-        $p['status']=count($ids)>1&&empty($p['game_id'])?'identity_conflict':($matches?(count(array_filter($matches,fn($r)=>$r['orbit']!==null))?'planet_known':'system_known'):'address_missing');
+        $p['status']=count($ids)>1&&empty($p['game_id'])?'identity_conflict':($matches?(!count(array_filter($matches,fn($r)=>$r['evidence_kind']!=='founding'))?'historical_only':(count(array_filter($matches,fn($r)=>$r['orbit']!==null))?'planet_known':'system_known')):'address_missing');
     }unset($p);return $players;
 }

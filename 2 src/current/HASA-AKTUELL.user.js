@@ -7424,7 +7424,7 @@ const HasaAddress = (() => {
             const byName=evidence.filter(e=>key(e.name)===key(p.name));
             const ids=new Set(byName.map(e=>e.game_id).filter(Boolean));
             const matches=p.game_id?evidence.filter(e=>e.game_id===p.game_id||(!e.game_id&&key(e.name)===key(p.name))):ids.size<=1?byName:[];
-            return {...p,status:ids.size>1&&!p.game_id?'identity_conflict':matches.some(e=>e.orbit!=null)?'planet_known':matches.length?'system_known':'address_missing'};
+            return {...p,status:ids.size>1&&!p.game_id?'identity_conflict':matches.length&&!matches.some(e=>e.kind!=='founding')?'historical_only':matches.some(e=>e.orbit!=null)?'planet_known':matches.length?'system_known':'address_missing'};
         });
     }
     return {clean,key,position,planetLink,playerId,buddies,stpl,roster,magazine,comparison};
