@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HASA – Horizon Ascension Assistant
 // @namespace    horiversum.hasa
-// @version      1.3.0-alpha.8
+// @version      1.3.0-alpha.9
 // @charset      UTF-8
 // @updateURL    https://raw.githubusercontent.com/KurtV731/hasa/dev-1.3-alpha1/01%20Entwicklung/Userscript/Aktuell/HASA-AKTUELL.user.js
 // @downloadURL  https://raw.githubusercontent.com/KurtV731/hasa/dev-1.3-alpha1/01%20Entwicklung/Userscript/Aktuell/HASA-AKTUELL.user.js
@@ -219,8 +219,8 @@
         'PHYSICS', 'PSYCHOLOGY', 'NUCLEARPHYSICS', 'SOLARENERGYTECH'
     ]);
 
-    const HASA_VERSION = '1.3.0 Alpha 8';
-    const HASA_BUILD_LABEL = '1.3.0-alpha8-adressbuch-2026-11-07';
+    const HASA_VERSION = '1.3.0 Alpha 9';
+    const HASA_BUILD_LABEL = '1.3.0-alpha9-leistung-2026-11-07';
     const HASA_RUNDE = 8;
     const HASA_RUNDE_SCHLUESSEL = 'runde8';
     // Die MariaDB und sämtliche Schreibendpunkte trennen Runde 7 und 8 jetzt
@@ -386,6 +386,71 @@
     }
 
     // Alpha28: Rohmeldungen zuerst erhalten; Fachauswertung folgt je Ereignistyp.
+    function hasaFremdeDomAenderung(record) {
+        const node = record.target;
+        const el = node && (node.nodeType === 1 ? node : node.parentElement);
+        if (el && el.closest && el.closest('#haa-box')) return false;
+        // Insertion/removal of the overlay targets body, so inspect the changed nodes too.
+        const changed = [...(record.addedNodes || []), ...(record.removedNodes || [])];
+        return !changed.length || changed.some(n => !(n.nodeType === 1 && (n.id === 'haa-box' || n.closest?.('#haa-box'))));
+    }
+    // HAA_IDLE_BEGIN: nonurgent jobs yield between small work units; alarms never use this queue.
+    const HAA_HINTERGRUND_JOBS = new Map();
+    let HAA_HINTERGRUND_TICKET = null, HAA_HINTERGRUND_IDLE = false;
+    let HAA_LETZTE_EINGABE = 0, HAA_HINTERGRUND_LISTENER = false;
+    const HAA_HINTERGRUND_DOKUMENTE = new WeakMap();
+    let HAA_HINTERGRUND_DOKUMENT_ID = 0;
+    function hasaHintergrundDokumentKey(doc) {
+        if (!HAA_HINTERGRUND_DOKUMENTE.has(doc)) HAA_HINTERGRUND_DOKUMENTE.set(doc, ++HAA_HINTERGRUND_DOKUMENT_ID);
+        return HAA_HINTERGRUND_DOKUMENTE.get(doc);
+    }
+    function installiereHasaHintergrundplanung() {
+        if (HAA_HINTERGRUND_LISTENER) return;
+        HAA_HINTERGRUND_LISTENER = true;
+        for (const event of ['pointerdown','pointermove','keydown','wheel','touchstart']) {
+            document.addEventListener(event, function(){ HAA_LETZTE_EINGABE=Date.now(); }, {capture:true,passive:true});
+        }
+        document.addEventListener('visibilitychange', function(){ if(!document.hidden)fordereHasaLeerlaufAn(); });
+    }
+    function planeHasaHintergrundarbeit(key, work) {
+        if (!istHasaFuerSitzungAktiv()) return;
+        installiereHasaHintergrundplanung();
+        HAA_HINTERGRUND_JOBS.set(key, work);
+        fordereHasaLeerlaufAn();
+    }
+    function fordereHasaLeerlaufAn() {
+        if (HAA_HINTERGRUND_TICKET !== null || !HAA_HINTERGRUND_JOBS.size || document.hidden || !istHasaFuerSitzungAktiv()) return;
+        HAA_HINTERGRUND_IDLE = typeof window.requestIdleCallback === 'function';
+        HAA_HINTERGRUND_TICKET = HAA_HINTERGRUND_IDLE
+            ? window.requestIdleCallback(verarbeiteHasaLeerlauf)
+            : setTimeout(function(){verarbeiteHasaLeerlauf({timeRemaining:()=>6});}, 100);
+    }
+    function verarbeiteHasaLeerlauf(deadline) {
+        HAA_HINTERGRUND_TICKET = null;
+        if (!istHasaFuerSitzungAktiv()) { HAA_HINTERGRUND_JOBS.clear(); return; }
+        if (document.hidden) return;
+        const inputPending = typeof navigator !== 'undefined' && navigator.scheduling?.isInputPending?.({includeContinuous:true});
+        if (inputPending || Date.now()-HAA_LETZTE_EINGABE<200 || deadline.timeRemaining()<5) {
+            // Delay retry while the user is active; never spin in the same frame.
+            HAA_HINTERGRUND_IDLE=false;
+            HAA_HINTERGRUND_TICKET=setTimeout(function(){HAA_HINTERGRUND_TICKET=null;fordereHasaLeerlaufAn();},100);
+            return;
+        }
+        const [key,work]=HAA_HINTERGRUND_JOBS.entries().next().value || [];
+        if(key!==undefined){HAA_HINTERGRUND_JOBS.delete(key);try{work();}catch(error){console.warn('HASA Hintergrundarbeit:',error);}}
+        // One unit per idle callback, then give the browser control again.
+        fordereHasaLeerlaufAn();
+    }
+    function stoppeHasaHintergrundarbeit() {
+        HAA_HINTERGRUND_JOBS.clear();
+        if(HAA_HINTERGRUND_TICKET!==null){
+            if(HAA_HINTERGRUND_IDLE)window.cancelIdleCallback(HAA_HINTERGRUND_TICKET);
+            else clearTimeout(HAA_HINTERGRUND_TICKET);
+        }
+        HAA_HINTERGRUND_TICKET=null;
+    }
+    // HAA_IDLE_END
+
     const HASA_EREIGNIS_KATALOG = [
         'Reiche Mineralvorkommen entdeckt', 'Reiche Metallvorkommen entdeckt',
         'Unterirdischer Treibstoffsee entdeckt', 'Abschirmungsverbesserung',
@@ -711,7 +776,7 @@
                 let relevant = false;
                 records.forEach(function (record) {
                     const ziel = record.target.nodeType === 1 ? record.target : record.target.parentElement;
-                    if (ziel && ziel.closest('#haa-box')) return;
+                    if (!hasaFremdeDomAenderung(record)) return;
                     relevant = true;
                     if (!ereignisNachrichtenUrl(doc.location.href, window.location.href)) {
                         record.addedNodes.forEach(function (node) {
@@ -720,7 +785,7 @@
                     }
                 });
                 // Textänderungen und bereits geöffnete Berichte ebenfalls übernehmen.
-                if (relevant) { scanneHasaEreignisDokument(doc, new Set()); maleHasaProduktion(); markiereHasaGespeicherteBerichte(); }
+                if (relevant) planeHasaHintergrundarbeit('ereignis-dom-'+hasaHintergrundDokumentKey(doc), function(){if(doc.body){scanneHasaEreignisDokument(doc,new Set());maleHasaProduktion();markiereHasaGespeicherteBerichte();}});
             });
             observer.observe(doc.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['src'] });
             HAA_EREIGNIS_DOKUMENTE.set(doc, observer);
@@ -778,7 +843,7 @@
             if(e && (['Motivationsvideo abgespielt','Motivationsvideo verliert Wirkung'].includes(e.subject) || hasaWaterSubjects().includes(e.subject))) hasaProductionEvent(e);
         });
         pruefeHasaEreignisse();
-        HAA_EREIGNIS_TIMER = setInterval(pruefeHasaEreignisse, 30000);
+        HAA_EREIGNIS_TIMER = setInterval(function(){planeHasaHintergrundarbeit('ereignisse',pruefeHasaEreignisse);}, 30000);
     }
 
     function stoppeHasaEreignisScanner() {
@@ -1141,7 +1206,7 @@
                 if(!link || !state.links.has(link))return;
                 event.preventDefault();event.stopImmediatePropagation();
             };
-            state.observer=new MutationObserver(function(){if(istHasaFuerSitzungAktiv())aktualisiereHasaVideoSchutz(doc,state);});
+            state.observer=new MutationObserver(function(records){if(istHasaFuerSitzungAktiv()&&records.some(hasaFremdeDomAenderung))aktualisiereHasaVideoSchutz(doc,state);});
             state.observer.observe(doc.body,{subtree:true,childList:true,characterData:true});
             doc.addEventListener('click',state.guard,true);doc.addEventListener('auxclick',state.guard,true);
             HAA_VIDEO_SCHUTZ.set(doc,state);
@@ -1713,14 +1778,14 @@
     function planePrdrPruefung() {
         if (!istHasaFuerSitzungAktiv()) return;
         clearTimeout(HAA_PRDR_SCAN_GEPLANT);
-        HAA_PRDR_SCAN_GEPLANT = setTimeout(pruefeAufNeuePrdrBerichte, 120);
+        HAA_PRDR_SCAN_GEPLANT = setTimeout(function(){planeHasaHintergrundarbeit('sonden-scan',pruefeAufNeuePrdrBerichte);}, 120);
     }
 
     function installierePrdrSofortwaechter() {
         if (HAA_PRDR_BEOBACHTER) return;
-        HAA_PRDR_BEOBACHTER = new MutationObserver(planePrdrPruefung);
+        HAA_PRDR_BEOBACHTER = new MutationObserver(function(records) { if(records.some(hasaFremdeDomAenderung))planePrdrPruefung(); });
         HAA_PRDR_BEOBACHTER.observe(document.body, { childList: true, subtree: true });
-        HAA_PRDR_SCAN_TIMER = setInterval(pruefeAufNeuePrdrBerichte, 30000);
+        HAA_PRDR_SCAN_TIMER = setInterval(function(){planeHasaHintergrundarbeit('sonden-scan',pruefeAufNeuePrdrBerichte);}, 30000);
         pruefeAufNeuePrdrBerichte();
     }
 
@@ -2055,7 +2120,7 @@
     function installiereAutomatischenGalaxiescan() {
         if (HAA_GALASCAN_TIMER) return;
         pruefeSichtbaresGalaxiesystem();
-        HAA_GALASCAN_TIMER = setInterval(pruefeSichtbaresGalaxiesystem, 35000);
+        HAA_GALASCAN_TIMER = setInterval(function(){planeHasaHintergrundarbeit('galaxie-scan',pruefeSichtbaresGalaxiesystem);}, 35000);
     }
 
     async function pruefeHasaAnmeldungNachRueckkehr(manuell) {
@@ -2827,6 +2892,7 @@
     }
 
     function speichern(key, wert) {
+        if (HAA_PLAN_LESEKONTEXT) HAA_PLAN_LESEKONTEXT.reads.delete(key);
         if (!istHasaIndexedDbSchluessel(key)) {
             speichernKlassisch(key, wert);
             return;
@@ -2849,7 +2915,16 @@
         speichernKlassisch(key, wert);
     }
 
+    let HAA_PLAN_LESEKONTEXT = null;
     function laden(key, fallback) {
+        if (!HAA_PLAN_LESEKONTEXT) return ladeHasaWertOhnePlanCache(key, fallback);
+        if (!HAA_PLAN_LESEKONTEXT.reads.has(key)) {
+            HAA_PLAN_LESEKONTEXT.reads.set(key, ladeHasaWertOhnePlanCache(key, undefined));
+        }
+        const value = HAA_PLAN_LESEKONTEXT.reads.get(key);
+        return value === undefined || value === null || value === '' ? fallback : value;
+    }
+    function ladeHasaWertOhnePlanCache(key, fallback) {
         if (istHasaIndexedDbSchluessel(key)
             && HAA_INDEXEDDB_STATUS.zustand === 'bereit'
             && HAA_INDEXEDDB_CACHE.has(key)) {
@@ -4286,6 +4361,14 @@ return box;
     // A planet ID selector may disappear on research pages. Keep explicitly learned
     // aliases; never use the last visited planet as a fallback for a different one.
     function techTreeGebaeudeSpeicherKey() {
+        if (typeof HAA_PLAN_LESEKONTEXT === 'undefined' || !HAA_PLAN_LESEKONTEXT) return ermittleTechTreeGebaeudeSpeicherKey();
+        if (!HAA_PLAN_LESEKONTEXT.planetErmittelt) {
+            HAA_PLAN_LESEKONTEXT.planetKey = ermittleTechTreeGebaeudeSpeicherKey();
+            HAA_PLAN_LESEKONTEXT.planetErmittelt = true;
+        }
+        return HAA_PLAN_LESEKONTEXT.planetKey;
+    }
+    function ermittleTechTreeGebaeudeSpeicherKey() {
         const auswahl = document.querySelector('select.PlanetSelectBox');
         const id = auswahl && String(auswahl.value || '').trim();
         const kopf = document.querySelector('.ResPlanetName');
@@ -4551,7 +4634,23 @@ return box;
         })[0] || null;
     }
 
+    let HAA_STAN_KATALOG_CACHE = null;
+    function stanKatalogSignatur() {
+        return JSON.stringify([
+            laden(STORAGE_STAN_STAMMDATEN, null), laden(STORAGE_STAN_VERSIONEN, []),
+            ladenKlassisch(STORAGE_STAN_STAMMDATEN, null), ladenKlassisch(STORAGE_STAN_VERSIONEN, []),
+            laden(STORAGE_STAN_ZIELKATALOG, null), ladenKlassisch(STORAGE_STAN_ZIELKATALOG, null)
+        ]);
+    }
     function ladeStanBestandMitFallback() {
+        const signature = stanKatalogSignatur();
+        if (HAA_STAN_KATALOG_CACHE && HAA_STAN_KATALOG_CACHE.signature === signature) return HAA_STAN_KATALOG_CACHE.value;
+        const value = ermittleStanBestandMitFallback();
+        // Only cache complete catalogues. Asynchronous initial imports must keep retrying.
+        HAA_STAN_KATALOG_CACHE = value ? { signature: stanKatalogSignatur(), value } : null;
+        return value;
+    }
+    function ermittleStanBestandMitFallback() {
         const aktuell = laden(STORAGE_STAN_STAMMDATEN, null);
         const historie = laden(STORAGE_STAN_VERSIONEN, []);
         const klassisch = ladenKlassisch(STORAGE_STAN_STAMMDATEN, null);
@@ -4994,6 +5093,12 @@ return box;
         return html+'<small>Reihenfolge nach Voraussetzungen; keine Zusage des zeitlich schnellsten Wegs. Ressourcen, Energie und freie Bau-/Forschungsplätze vor dem Start im Spiel prüfen. Nach neu erfasstem Fortschritt wird die Liste angepasst.</small></section>';
     }
     function baueTechTreeTestHtml() {
+        const previous = HAA_PLAN_LESEKONTEXT;
+        HAA_PLAN_LESEKONTEXT = { reads: new Map(), planetErmittelt: false, planetKey: null };
+        try { return baueTechTreeTestHtmlAusStand(); }
+        finally { HAA_PLAN_LESEKONTEXT = previous; }
+    }
+    function baueTechTreeTestHtmlAusStand() {
         const graph = laden(STORAGE_TECHTREE_GRAPH, {});
         const auswahl = ladeStanAuswahl();
         const zielId = auswahl && auswahl.id;
@@ -5419,6 +5524,8 @@ return box;
         verbindeBaualarmButtons(ziel, baueBox);
         verbindeForschungsalarmButtons(forschung, baueBox);
         verbindeTechTreeTestButtons();
+        aktivierePlanlistenKlappung();
+        aktivierePlanStatusSticky();
         verbindeGalascannerButtons();
         aktualisiereBauMarkierungen();
     }
@@ -7315,14 +7422,14 @@ return box;
         if (!istHasaFuerSitzungAktiv()) return;
         clearTimeout(HAA_SEITENSCAN_TIMER);
         speichern(STORAGE_SEITENSCAN_STATUS, { state: 'red', message: 'sichtbare Horizon-Daten werden eingelesen', at: Date.now() });
-        baueBox();
         HAA_SEITENSCAN_TIMER = setTimeout(function () {
+            planeHasaHintergrundarbeit('planungsstand', function(){
             const bereich = ermittleAktuellenBereich();
             const istDatenSeite = bereich === 'research' || bereich === 'forschung'
                 || bereich === 'building' || bereich === 'gebäude' || bereich === 'shipyard';
-            if (istDatenSeite) speichereTechTreeSpielstandAusSeite();
             speichern(STORAGE_SEITENSCAN_STATUS, { state: 'green', message: istDatenSeite ? 'sichtbare Horizon-Daten aktuell' : 'bereit', at: Date.now() });
             baueBox();
+            });
         }, Number(verzoegerung) || 350);
     }
 
@@ -7544,6 +7651,7 @@ if(typeof module!=='undefined'&&module.exports)module.exports=HasaAddress;
     }
 
     function stoppeHasaLaufendeArbeit() {
+        stoppeHasaHintergrundarbeit();
         if(HAA_ADDRESS_TIMER){clearInterval(HAA_ADDRESS_TIMER);HAA_ADDRESS_TIMER=null;}
         GM_setValue('hasa_address_active_until',0);
         stoppeHasaLiveDaten();
@@ -7628,8 +7736,8 @@ if(typeof module!=='undefined'&&module.exports)module.exports=HasaAddress;
         installiereHasaAdressbuch();
         installiereHasaAnmeldungspruefung();
         installiereAudioFreigabe();
-        HAA_PLANLISTEN_TIMER = setInterval(aktivierePlanlistenKlappung, 1400);
-        HAA_PLANSTATUS_TIMER = setInterval(aktivierePlanStatusSticky, 1400);
+
+
         baueBox();
     }
 
@@ -7653,4 +7761,3 @@ if(typeof module!=='undefined'&&module.exports)module.exports=HasaAddress;
     window.addEventListener('load', starteSicher);
     setTimeout(starteSicher, 800);
 })();
-
