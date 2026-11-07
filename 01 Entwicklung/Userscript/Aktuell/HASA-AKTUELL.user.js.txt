@@ -7398,7 +7398,7 @@ const HasaAddress = (() => {
         if(u.searchParams.get('cmd')!=='hitlist')return null;
         const selects=[...doc.querySelectorAll('select')];
         const selected=selects.map(s=>s.selectedOptions?.[0]||s.querySelector('option[selected]')||s.querySelector('option'));
-        if(!selected.some(o=>o&&o.getAttribute('value')?.includes(':player:')))return null;
+        if(!selected.some(o=>o&&o.getAttribute('value')?.startsWith(':player:total:'))||selected.some(o=>o?.getAttribute('value')&&!/^:player:total:\d+$/.test(o.getAttribute('value'))))return null;
         const rows=[];
         for(const tr of doc.querySelectorAll('.StatWrapper tr')){
             const c=[...tr.querySelectorAll('td')];if(c.length!==9||!/^\d+$/.test(clean(c[0].textContent)))continue;

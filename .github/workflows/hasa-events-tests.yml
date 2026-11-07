@@ -81,6 +81,7 @@ jobs:
           HASA_TEST_SHARING_HTML="$test_api/sharing-global-fixture.html" node '01 Entwicklung/Tests/Browser/test_hasa_sharing_ui.cjs'
           HASA_TEST_JOURNAL_HTML="$test_api/journal-fixture.html" node '01 Entwicklung/Tests/Browser/test_hasa_journal_ui.cjs'
           php '01 Entwicklung/Tests/Server/address_integration.php'
+          python3 '01 Entwicklung/Tests/Server/address_http.py'
           php '01 Entwicklung/Tests/Server/signup_integration.php'
           python3 '01 Entwicklung/Tests/Server/signup_http.py'
           node '01 Entwicklung/Tests/Browser/test_hasa_signup.cjs'
