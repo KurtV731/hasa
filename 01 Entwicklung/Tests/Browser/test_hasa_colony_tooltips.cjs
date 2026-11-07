@@ -20,7 +20,7 @@ const hq = source.slice(source.indexOf('    function hqKoloniepunkte('),source.i
             objects.push({id:'HEADQUARTER',name:'HEADQUARTER',type:'building'});
             const api = new Function('objects', 'selected', [
                 'const STORAGE_TECHTREE_SPIELSTAND="spielstand", STORAGE_STAN_STATUS="stanStatus", STORAGE_STAN_AUSWAHL_OFFEN="open", STORAGE_TECHTREE_GRAPH="graph", STORAGE_TECHTREE_STATUS="status", STORAGE_TECHTREE_ERLEDIGT_ZEIGEN="done", STORAGE_TECHTREE_DEBUG="debug";',
-                'const TECHTREE_DIAGNOSE_ANZEIGEN=false;',
+                'const TECHTREE_DIAGNOSE_ANZEIGEN=false; let HAA_PLAN_LESEKONTEXT=null;',
                 'function esc(v){return String(v??"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}',
                 'function laden(k,f){return k==="open"?"1":k==="graph"?{SCOL:{}}:f;}',
                 'function ladeStanBestandMitFallback(){return {objects};}',
