@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HASA – Horizon Ascension Assistant
 // @namespace    horiversum.hasa
-// @version      1.3.0-alpha.9
+// @version      1.3.0-alpha.10
 // @charset      UTF-8
 // @updateURL    https://raw.githubusercontent.com/KurtV731/hasa/dev-1.3-alpha1/01%20Entwicklung/Userscript/Aktuell/HASA-AKTUELL.user.js
 // @downloadURL  https://raw.githubusercontent.com/KurtV731/hasa/dev-1.3-alpha1/01%20Entwicklung/Userscript/Aktuell/HASA-AKTUELL.user.js
@@ -219,8 +219,8 @@
         'PHYSICS', 'PSYCHOLOGY', 'NUCLEARPHYSICS', 'SOLARENERGYTECH'
     ]);
 
-    const HASA_VERSION = '1.3.0 Alpha 9';
-    const HASA_BUILD_LABEL = '1.3.0-alpha9-leistung-2026-11-07';
+    const HASA_VERSION = '1.3.0 Alpha 10';
+    const HASA_BUILD_LABEL = '1.3.0-alpha10-handlungsbedarf-2026-11-11';
     const HASA_RUNDE = 8;
     const HASA_RUNDE_SCHLUESSEL = 'runde8';
     // Die MariaDB und sämtliche Schreibendpunkte trennen Runde 7 und 8 jetzt
@@ -655,6 +655,8 @@
     }
 
     function registriereHasaEreignis(text, meta) {
+        const pruefeAscension=/^Aufstiegspfad Enthüllt$/i.test(meta.subject||'');
+        const ascensionVorher=pruefeAscension&&hasaAscensionFreigeschaltet();
         const ownerId = ereignisScannerBenutzer();
         if (!ownerId || !prdrNormalisiereText(text)) return false;
         const typ = erkenneHasaEreignis(meta.subject || '') || erkenneHasaEreignis(text);
@@ -709,6 +711,7 @@
             uebernehmeHasaAsfiEreignis(eintrag);
             hasaProductionEvent(eintrag);
             planeHasaEventSync();
+            if(pruefeAscension&&!ascensionVorher&&hasaAscensionFreigeschaltet())setTimeout(function(){if(istHasaFuerSitzungAktiv())baueBox();},0);
             HAA_EREIGNIS_FEHLER = null;
         } catch (fehler) {
             HAA_EREIGNIS_FEHLER = 'Meldung konnte lokal nicht gespeichert werden.';
@@ -886,6 +889,7 @@
 
     function aktualisiereHasaEreignisAnzeige() {
         aktualisiereHasaVideoErinnerung();
+        aktualisiereHasaAbfallWarnung();
         const element = document.getElementById('haa-ereignis-register');
         if (!element) return;
         const html = baueHasaEreignisRegisterHtml();
@@ -1146,6 +1150,48 @@
         }
     }
 
+    // HAA_ACTIONABLE_BEGIN: every original message is a separate pending decision.
+    function hasaOffeneAbfallMeldungen(now) {
+        const owner=ereignisScannerBenutzer();if(!owner)return [];
+        now=Number.isFinite(now)?now:Date.now();
+        const events=(laden(STORAGE_EREIGNIS_REGISTER,[])||[]).filter(e=>String(e.ownerId)===String(owner)&&e.round===HASA_RUNDE&&e.systemEvent&&e.messageId&&['Atommüll wird gelagert','Atommüll in der Sonne entsorgt'].includes(e.subject));
+        const unique=new Map();for(const e of events)unique.set(String(e.messageId),e);
+        const ordered=[...unique.values()].map(e=>({e,at:hasaMotivationStartzeit(e.reportedTimeText)})).filter(x=>x.at===null||x.at<=now).sort((a,b)=>(a.at??Infinity)-(b.at??Infinity)||String(a.e.messageId).localeCompare(String(b.e.messageId),undefined,{numeric:true}));
+        const pending=[];
+        const position=e=>e.position?[e.position.galaxy,e.position.system,e.position.orbit].join(':'):null;
+        for(const {e,at} of ordered){
+            if(e.subject==='Atommüll wird gelagert'){pending.push({event:e,at,ambiguous:false,closed:false});continue;}
+            if(at===null||!position(e))continue;
+            const candidates=pending.filter(x=>!x.closed&&x.at!==null&&x.at<at&&position(x.event)===position(e));
+            if(candidates.length===1){candidates[0].closed=true;candidates[0].confirmation=e.messageId;}
+            else if(candidates.length>1)candidates.forEach(x=>{x.ambiguous=true;});
+        }
+        return pending;
+    }
+    function baueHasaAbfallWarnungHtml() {
+        const rows=hasaOffeneAbfallMeldungen().filter(x=>!x.closed);if(!rows.length)return '';
+        let html='<strong>⚠ Atommüll: '+rows.length+' Meldung'+(rows.length===1?'':'en')+' noch zu bearbeiten</strong><ul style="margin:4px 0;padding-left:20px">';
+        for(const x of rows){const e=x.event,p=e.position;html+='<li>'+esc(e.planetName||'Planet unbekannt')+(p?' ('+esc([p.galaxy,p.system,p.orbit].join(':'))+')':'')+' · '+esc(e.reportedTimeText||'Zeit unbekannt')+' · Meldung '+esc(e.messageId)+(x.ambiguous?' · Entsorgungsbestätigung nicht eindeutig zugeordnet':'')+'</li>';}
+        return html+'</ul><div>Entscheidung in der ursprünglichen Spielnachricht treffen. Einzel-Löschung ist gesperrt. Ein genauer Flächenverlust ist nicht angegeben.</div><a href="https://horiversum.org/game/main/main.php?cmd=message" style="color:#9dcbff">Nachrichten im Spiel öffnen</a>';
+    }
+    function aktualisiereHasaAbfallWarnung() {
+        const node=document.getElementById('haa-abfall-warnung');if(!node)return;
+        const html=baueHasaAbfallWarnungHtml();node.hidden=!html;
+        if(node.dataset.inhalt!==html){node.dataset.inhalt=html;node.innerHTML=html;}
+    }
+    function hasaAscensionFreigeschaltet() {
+        const owner=ereignisScannerBenutzer();if(!owner)return false;
+        return (laden(STORAGE_EREIGNIS_REGISTER,[])||[]).some(e=>String(e.ownerId)===String(owner)&&e.round===HASA_RUNDE&&e.systemEvent&&e.messageId&&/^Aufstiegspfad Enthüllt$/i.test(e.subject||'')&&hasaMotivationStartzeit(e.reportedTimeText)!==null&&hasaMotivationStartzeit(e.reportedTimeText)<=Date.now());
+    }
+    function hasaEntscheidungsSchutz(meta,messageId) {
+        if(!meta.systemEvent)return '';
+        if(meta.subject==='Motivationsvideo verfügbar')return 'Motivationsvideo verfügbar';
+        if(meta.subject!=='Atommüll wird gelagert')return '';
+        const known=hasaOffeneAbfallMeldungen().find(x=>String(x.event.messageId)===String(messageId));
+        return known?.closed?'':'Atommüll: Entscheidung offen';
+    }
+    // HAA_ACTIONABLE_END
+
     // Alpha39: Nur den einzelnen Löschknopf verfügbarer Videos schützen.
     // Sammellöschung, Spam und Abspielen bleiben ausdrückliche Spielentscheidungen.
     const HAA_VIDEO_SCHUTZ = new Map();
@@ -1163,33 +1209,36 @@
     function stoppeHasaVideoSchutz(doc) {
         const state=HAA_VIDEO_SCHUTZ.get(doc);if(!state)return;
         state.observer.disconnect();
+        if(state.checks)state.checks.forEach((disabled,box)=>{box.disabled=disabled;});
         doc.removeEventListener('click',state.guard,true);doc.removeEventListener('auxclick',state.guard,true);
         state.links.forEach(function(mark,link){mark.lock.remove();link.style.display=mark.display;});
         HAA_VIDEO_SCHUTZ.delete(doc);
     }
 
     function aktualisiereHasaVideoSchutz(doc, state) {
-        const links=new Set();
+        const links=new Set(),checks=new Set();state.checks=state.checks||new Map();
         doc.querySelectorAll('td a.MessageReportEvent[href]').forEach(function(link){
             if(!ereignisIstSpieltext(link,false))return;
             const meta=ereignisZeilenMeta(link);
-            if(meta.subject!=='Motivationsvideo verfügbar' || !meta.systemEvent)return;
             const address=ereignisNachrichtenUrl(link.getAttribute('href'),doc.location.href);
             const row=link.closest('tr');if(!address || !row)return;
+            const label=hasaEntscheidungsSchutz(meta,address.messageId);if(!label)return;
+            if(meta.subject==='Atommüll wird gelagert')row.querySelectorAll('input[type=checkbox]').forEach(box=>{checks.add(box);if(!state.checks.has(box))state.checks.set(box,box.disabled);box.checked=false;box.disabled=true;});
             const actions=row.cells[3];if(!actions)return;
             actions.querySelectorAll('a[href]').forEach(function(actionLink){
                 if(!hasaVideoLoeschLink(actionLink,doc,address.messageId))return;
                 links.add(actionLink);
                 if(!state.links.has(actionLink)){
-                    const lock=doc.createElement('span');lock.className='haa-video-lock';lock.textContent='⛔';
-                    lock.setAttribute('role','img');lock.setAttribute('aria-label','Motivationsvideo: einzelnes Löschen gesperrt');
-                    lock.title='Motivationsvideo verfügbar – einzelnes Löschen gesperrt. Die Sammellöschung unten bleibt möglich.';
+                    const lock=doc.createElement('span');lock.className='haa-video-lock'+(meta.subject==='Atommüll wird gelagert'?' haa-abfall-lock':'');lock.textContent='⛔';
+                    lock.setAttribute('role','img');lock.setAttribute('aria-label',label+': einzelnes Löschen gesperrt');
+                    lock.title=meta.subject==='Motivationsvideo verfügbar'?'Motivationsvideo verfügbar – einzelnes Löschen gesperrt. Die Sammellöschung unten bleibt möglich.':label+' – einzelnes Löschen gesperrt. Die Entscheidung muss in der Spielnachricht getroffen werden. Sammellöschung ist kein Ersatz dafür.';
                     lock.style.cssText='display:inline-block;width:19px;line-height:21px;text-align:center;vertical-align:middle;cursor:help;';
                     state.links.set(actionLink,{lock:lock,display:actionLink.style.display});
                     actionLink.before(lock);actionLink.style.display='none';
                 }
             });
         });
+        state.checks.forEach((disabled,box)=>{if(!checks.has(box)){box.disabled=disabled;state.checks.delete(box);}});
         state.links.forEach(function(mark,link){if(!links.has(link)){mark.lock.remove();link.style.display=mark.display;state.links.delete(link);}});
     }
 
@@ -1203,7 +1252,12 @@
                 aktualisiereHasaVideoSchutz(doc,state);
                 const target=event.target?.nodeType===1?event.target:event.target?.parentElement;
                 const link=target?.closest('a[href]');
-                if(!link || !state.links.has(link))return;
+                if(!link)return;
+                if(!state.links.has(link)){
+                    try{const u=new URL(link.getAttribute('href'),doc.location.href);const mid=u.searchParams.get('message_id');
+                        if(u.origin===new URL(doc.location.href).origin&&u.searchParams.get('cmd')==='message'&&/^delete(?:_?all)?$/.test(u.searchParams.get('action')||'')&&(!/^\d+$/.test(mid||'')||Number(mid)===0)&&hasaOffeneAbfallMeldungen().some(x=>!x.closed)){event.preventDefault();event.stopImmediatePropagation();doc.defaultView.alert('HASA: Offene Atommüllmeldungen zuerst im Spiel bearbeiten. Sammellöschung ist solange gesperrt.');}
+                    }catch(_){}return;
+                }
                 event.preventDefault();event.stopImmediatePropagation();
             };
             state.observer=new MutationObserver(function(records){if(istHasaFuerSitzungAktiv()&&records.some(hasaFremdeDomAenderung))aktualisiereHasaVideoSchutz(doc,state);});
@@ -1270,7 +1324,9 @@
 
     function leseHasaProduktion() {
         const nameNode = document.querySelector('.ResPlanetName');
-        const name = nameNode ? prdrNormalisiereText(nameNode.textContent) : '';
+        const selector=document.querySelector('select.PlanetSelectBox');
+        const selected=selector&&(selector.selectedOptions?.[0]||selector.options?.[selector.selectedIndex]||selector.querySelector('option[selected]')||selector.querySelector('option'));
+        const name=prdrNormalisiereText(nameNode?.textContent||selected?.textContent||'');
         if (!name) return null;
         const positions=[];
         document.querySelectorAll('.TickPlanetEntry[onmouseover]').forEach(function (node) {
@@ -1286,7 +1342,7 @@
             const cell=label && label.closest('td'), table=cell && cell.closest('table');
             const row=cell && cell.parentElement.nextElementSibling;
             const data=row && row.cells && row.cells[cell.cellIndex];
-            const mount=data && data.querySelector('.ResMountWarn,.ResMountNorm,.ResMountCritical');
+            const mount=data && data.querySelector('.ResMountWarn,.ResMountNorm,.ResMountSafe,.ResMountCritical');
             if (!table || !mount) {if(['metal','mineral','fuel'].includes(key))return null;continue;}
             display[key]=prdrNormalisiereText(mount.textContent);
             if (['metal','mineral','fuel'].includes(key)) {
@@ -1568,6 +1624,7 @@
         }
         for(const node of HAA_RATE_MARKS)if(!node.isConnected)HAA_RATE_MARKS.delete(node);
         aktualisiereHasaVideoErinnerung();
+        aktualisiereHasaAbfallWarnung();
     }
 
     function installiereHasaLiveDaten() {
@@ -2313,6 +2370,8 @@
                     + 'style="flex:0 0 auto;font-size:11px;font-weight:bold;cursor:pointer;">Zur Benutzerverwaltung</button>'
                 : '')
             + '</div>';
+        const wasteWarning=baueHasaAbfallWarnungHtml();
+        html+='<div id="haa-abfall-warnung" role="status"'+(wasteWarning?'':' hidden')+' style="font-size:12px;white-space:normal;margin:4px 0 8px;padding:8px;border:2px solid #ef4444;border-radius:4px;color:#fecaca;">'+wasteWarning+'</div>';
         const videoErinnerung=baueHasaVideoErinnerungHtml();
         html+='<div id="haa-video-erinnerung" role="status"'+(videoErinnerung?'':' hidden')+' style="font-size:12px;white-space:normal;overflow-wrap:anywhere;margin:4px 0 8px;padding:6px;border:1px solid #94752d;border-radius:4px;color:#ffdc85;">'+videoErinnerung+'</div>';
         if (HAA_ANMELDEHINWEIS) html += '<div id="haa-anmeldehinweis" role="status" style="font-size:11px;white-space:normal;margin:3px 0 6px;">' + esc(HAA_ANMELDEHINWEIS) + '</div>';
@@ -5497,7 +5556,7 @@ return box;
             html += baueNavigationHtml();
             html += baueHasaWerkzeugleisteHtml();
             ascensionHtml += bauePlanungsstandResetHtml();
-            if (hatAscensionPunkte(ascStatus) || istAscensionSeite()) {
+            if (hatAscensionPunkte(ascStatus) || istAscensionSeite() || hasaAscensionFreigeschaltet()) {
                 html += baueAccordionBereichHtml('ascension', '⭐ Ascension', ascensionHtml);
             }
             let alarmHtml = '<div style="font-weight:bold;color:#FFD27C;margin:2px 0 5px;">🏗 Baualarm</div>';
@@ -7607,7 +7666,9 @@ if(typeof module!=='undefined'&&module.exports)module.exports=HasaAddress;
     // ADDRESS_AUTOMATION_END
 
     function istAscensionSeite() {
-        return document.querySelector('.AscAccCategory') !== null;
+        if(document.querySelector('.AscAccCategory'))return true;
+        const content=document.body?.textContent||'';
+        return /Du kannst\s+[\d.,’']+\s+Ascend-Punkte ausgeben/.test(content)&&[...document.querySelectorAll('button,input,a')].some(e=>/^Account(?: komplett)? zurücksetzen$/.test(String(e.value||e.textContent||'').trim()));
     }
 
     function istHasaFuerSitzungAktiv() {
