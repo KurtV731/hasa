@@ -60,7 +60,7 @@ const points = take('    function hatAscensionPunkte(', '    function baueAscens
         assert.deepEqual(statuses,[false,false,false,false,true,true,true]);
         assert.match(source,/const TECHTREE_DIAGNOSE_ANZEIGEN = false;/);
         assert.match(source,/if \(TECHTREE_DIAGNOSE_ANZEIGEN && debugDaten/);
-        assert.match(source,/if \(hatAscensionPunkte\(ascStatus\) \|\| istAscensionSeite\(\)\) \{\s*html \+= baueAccordionBereichHtml\('ascension'/);
+        assert.match(source,/if \(hatAscensionPunkte\(ascStatus\) \|\| istAscensionSeite\(\) \|\| hasaAscensionFreigeschaltet\(\)\) \{\s*html \+= baueAccordionBereichHtml\('ascension'/);
         assert.match(source,/ascensionHtml \+= bauePlanungsstandResetHtml\(\);/);
         const planningStart=source.indexOf('    function baueTechTreeTestHtml(');
         const planning=source.slice(planningStart,source.indexOf('\n    function ',planningStart+20));
