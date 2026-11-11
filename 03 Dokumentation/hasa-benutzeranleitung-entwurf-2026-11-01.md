@@ -1,6 +1,6 @@
 # HASA – Benutzerhandbuch 1.3
 
-**Prüfentwurf · Stand 7. November 2026 · Ergänzungen bis 1.3.0 Alpha 9**  
+**Prüfentwurf · Stand 11. November 2026 · Ergänzungen bis 1.3.0 Alpha 10**  
 Projektverantwortlicher: **Styl**
 
 Dieses Handbuch beschreibt HASA 1.3 mit den bis zu diesem Stand geprüften Ergänzungen. Die bisherigen Bildvorlagen orientieren sich an Alpha 6; die Adressbuch-Anleitung berücksichtigt Alpha 8. Die öffentliche stabile Version bleibt 1.2.0. Offene Fragen zur endgültigen Veröffentlichung sind im internen Prüfan­hang gesammelt.
@@ -28,7 +28,7 @@ Die Überschriften **Alarme**, **Forschungsplanung** und **Galaxiescanner** kann
 
 Position und Größe lassen sich mit der Maus anpassen. Wenn eine Zeile oder Tabelle breiter ist als das Fenster, kannst du seitlich scrollen. Deine gewählten offenen und geschlossenen Bereiche bleiben bei normalen Seitenwechseln erhalten.
 
-**Ascension fehlt?** Das kann völlig normal sein: Der Bereich erscheint erst, wenn HASA vorhandene oder investierte Ascension-Punkte beziehungsweise gekaufte Skillstufen erkannt hat. Ein erwarteter Gewinn beim nächsten Aufstieg allein reicht dafür nicht.
+**Ascension fehlt?** Der Bereich erscheint bei erkannten verfügbaren/investierten Punkten oder gekauften Fähigkeiten, auf der erkannten Ascension-Spielseite und nach der eingelesenen Systemmeldung **Aufstiegspfad Enthüllt**. Diese Meldung schaltet die Anzeige auch vor dem ersten Aufstieg mit 0 ausgebbaren Punkten frei. Die wirklichen Punkte und Fähigkeiten liest HASA beim Besuch der Ascension-Seite ein. Ein bloßer erwarteter Gewinn beim nächsten Aufstieg allein ersetzt den Freischaltnachweis nicht.
 
 > **Bildplatzhalter 01 – HASA aktivieren**  
 > Geplantes Motiv: Zugeschnittener Bereitschaftsbereich mit markiertem Knopf „HASA aktivieren“.  
@@ -306,9 +306,21 @@ Wenn Erinnerung oder Färbung nicht zum Spiel passen, melde Styl den konkreten F
 > Geplantes Motiv: Kompakte Ereignisliste mit erklärter Dauer und ≈-Betrag; private Daten bereinigen.  
 > Bildunterschrift / Alternativtext: Dauer und Hochrechnung bleiben von tatsächlich gemeldeten Gebäudeschäden getrennt.
 
+### Atommüll: offene Entscheidungen schützen
+
+Die Meldung **Atommüll wird gelagert** verlangt eine Entscheidung im Spiel. HASA zeigt offene Meldungen mit Planet, Datum und Nachrichtenkennung als Warnung unter der Werkzeugzeile. Jede ursprüngliche Nachricht ist ein eigener Vorgang.
+
+Das einzelne Löschsymbol wird durch **⛔** ersetzt; Auswahlkästchen dieser offenen Müllmeldungen werden abgewählt und gesperrt. Erkannte Sammellöschlinks werden bei offenem Müll blockiert. Die Entscheidungslinks in der Originalnachricht bleiben bedienbar. HASA wählt keine Entsorgungsart und gibt keine Ressourcen aus. Bei ausgeschaltetem HASA greift der Schutz nicht. Der Videoschutz behält seine bisherigen Regeln; dessen Sammellöschung wird dadurch nicht allgemein verändert.
+
+Eine erkannte Meldung **Atommüll in der Sonne entsorgt** beendet einen eindeutig zuordenbaren früheren Vorgang auf demselben Planeten. Gibt es mehrere mögliche offene Meldungen, bleibt die Zuordnung als unklar sichtbar; eine Bestätigung erledigt nicht einfach sämtliche offenen Nachrichten. Weitere Entsorgungsarten benötigen passende belegte Erfolgsmeldungen. Ein Klick auf eine Entscheidung allein ist noch kein Erfolgsnachweis.
+
+Die vorliegende Müllmeldung nennt **10.000 Minerale** für ein Endlager und **800 Minerale** für die Sonnenentsorgung. Sie sagt, dass Bauplatz belegt wird, nennt aber keine genaue Fläche und keinen bezifferten Arbeitsplatz-/Konstruktionsflächenverlust.
+
+Für eine spätere Messkurve soll beim nächsten Fall die tatsächlich angezeigte Baufläche vor dem Ereignis, währenddessen und nach der Entsorgung verglichen werden. Gleichzeitig laufende Bauten können diese Werte ebenfalls verändern. Diese Flächenmesskurve ist noch nicht Teil dieser Fassung; ohne vorherige Messung wird kein Verlust nachträglich erfunden.
+
 ## 8. Ressourcen: Deine Produktion besser einordnen
 
-HASA zeigt und protokolliert Stundenraten, nicht nur Ereignisnamen. Es erfasst die sichtbare Produktion des besuchten Planeten ungefähr alle 15 Minuten; andere Planeten werden dafür nicht automatisch besucht.
+HASA zeigt und protokolliert Stundenraten, nicht nur Ereignisnamen. Dabei werden auch Ressourcenanzeigen mit der Spielklasse ResMountSafe erkannt. Fehlt der Planetenkopf auf einer Spielseite, nutzt HASA die ausgewählte eigene Planetenauswahl mit eindeutigem Koordinatennachweis. Es erfasst die sichtbare Produktion des besuchten Planeten ungefähr alle 15 Minuten; andere Planeten werden dafür nicht automatisch besucht.
 
 | Markierung der Stundenrate | Bedeutung |
 |---|---|
