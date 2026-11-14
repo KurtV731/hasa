@@ -7,8 +7,10 @@ const event=(id,subject,at,orbit=5)=>({messageId:String(id),subject,reportedTime
 const start=(id,time='2026-11-01T01:00:00Z',orbit=5)=>event(id,'Atommüll wird gelagert',time,orbit);
 const end=(id,time='2026-11-01T02:00:00Z',orbit=5)=>event(id,'Atommüll in der Sonne entsorgt',time,orbit);
 events=[start(1)];assert.equal(ctx.hasaOffeneAbfallMeldungen().filter(x=>!x.closed).length,1);assert(ctx.baueHasaAbfallWarnungHtml().includes('1 Meldung'));
-events.push(end(2));assert.equal(ctx.hasaOffeneAbfallMeldungen().filter(x=>!x.closed).length,0);assert.equal(ctx.hasaEntscheidungsSchutz({systemEvent:true,subject:'Atommüll wird gelagert'},'1'),'');
-events=[start(1),start(3,'2026-11-01T01:30:00Z'),end(4)];assert.equal(ctx.hasaOffeneAbfallMeldungen().filter(x=>!x.closed).length,2);assert(ctx.hasaOffeneAbfallMeldungen().every(x=>x.ambiguous));
+events.push(end(2));assert.equal(ctx.hasaOffeneAbfallMeldungen().filter(x=>!x.closed).length,0);assert.equal(ctx.hasaEntscheidungsSchutz({systemEvent:true,subject:'Atommüll wird gelagert'},'1'),'Atommüll: Entscheidung offen');
+events=[start(1),start(3,'2026-11-01T01:30:00Z'),end(4)];assert.equal(ctx.hasaOffeneAbfallMeldungen().filter(x=>!x.closed).length,1);assert(ctx.hasaOffeneAbfallMeldungen().every(x=>x.ambiguous));
+events.push(end(5,'2026-11-01T02:30:00Z'));assert.equal(ctx.hasaOffeneAbfallMeldungen().filter(x=>!x.closed).length,0);assert.equal(ctx.baueHasaAbfallWarnungHtml(),'');
+events.push(end(5,'2026-11-01T02:30:00Z'),start(6,'2026-11-01T03:00:00Z'));assert.equal(ctx.hasaOffeneAbfallMeldungen().filter(x=>!x.closed).length,1);
 events=[start(1),end(2,'2026-11-01T02:00:00Z',6)];assert(!ctx.hasaOffeneAbfallMeldungen()[0].closed);
 events=[start(1),end(2),end(2),start(3,'2026-11-01T03:00:00Z')];assert.equal(ctx.hasaOffeneAbfallMeldungen().filter(x=>!x.closed).length,1);
 events=[{...start(1),round:7},{...start(2),ownerId:'8'}, {...start(3),systemEvent:false}];assert.equal(ctx.hasaOffeneAbfallMeldungen().length,0);
@@ -31,6 +33,8 @@ console.log('PASS actionable messages: one decision per ID, same-planet matching
  store.set(api.key,[{messageId:'123',subject:'Atommüll wird gelagert',reportedTimeText:'01.11.2026 01:00:00',ownerId:'7',round:8,systemEvent:true,position:{galaxy:1,system:191,orbit:5}}]);api.protect(document);
  },{helpers,moduleSource});
  assert.equal(await page.locator('.haa-abfall-lock').count(),1);assert(await page.locator('#box').isDisabled());assert(!await page.locator('#box').isChecked());assert(!await page.locator('#del').isVisible());
+ await page.evaluate(()=>document.querySelector('a.MessageReportEvent').className='MessageReportRead');
+ await page.waitForTimeout(50);assert.equal(await page.locator('.haa-abfall-lock').count(),1);assert(!await page.locator('#del').isVisible());
  const del=await page.evaluate(()=>!document.querySelector('#del').dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true})));assert(del);
  page.on('dialog',d=>d.dismiss());const all=await page.evaluate(()=>!document.querySelector('#all').dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true})));assert(all);
  const choice=await page.evaluate(()=>{const a=document.querySelector('#choice');a.addEventListener('click',e=>{e.preventDefault();},{once:true});const e=new MouseEvent('click',{bubbles:true,cancelable:true});let reached=false;a.addEventListener('click',()=>{reached=true;},{once:true});a.dispatchEvent(e);return reached;});assert(choice);

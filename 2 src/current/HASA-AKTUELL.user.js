@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HASA – Horizon Ascension Assistant
 // @namespace    horiversum.hasa
-// @version      1.3.0-alpha.11
+// @version      1.3.0-alpha.12
 // @charset      UTF-8
 // @updateURL    https://raw.githubusercontent.com/KurtV731/hasa/dev-1.3-alpha1/01%20Entwicklung/Userscript/Aktuell/HASA-AKTUELL.user.js
 // @downloadURL  https://raw.githubusercontent.com/KurtV731/hasa/dev-1.3-alpha1/01%20Entwicklung/Userscript/Aktuell/HASA-AKTUELL.user.js
@@ -226,8 +226,8 @@
         'PHYSICS', 'PSYCHOLOGY', 'NUCLEARPHYSICS', 'SOLARENERGYTECH'
     ]);
 
-    const HASA_VERSION = '1.3.0 Alpha 11';
-    const HASA_BUILD_LABEL = '1.3.0-alpha11-flottendetails-2026-11-14';
+    const HASA_VERSION = '1.3.0 Alpha 12';
+    const HASA_BUILD_LABEL = '1.3.0-alpha12-atommull-2026-11-14';
     const HASA_RUNDE = 8;
     const HASA_RUNDE_SCHLUESSEL = 'runde8';
     // Die MariaDB und sämtliche Schreibendpunkte trennen Runde 7 und 8 jetzt
@@ -520,7 +520,7 @@
             && sender==='Forschungszentrum' && Boolean(position);
         return { subject: subject, position: position,
             positionName: name || null, reportedTimeText: zeitText,
-            systemEvent: link.classList.contains('MessageReportEvent') || researchNotice };
+            systemEvent: link.classList.contains('MessageReportEvent') || researchNotice || (sender==='Energiebehörde' && Boolean(position) && ['Atommüll wird gelagert','Atommüll in der Sonne entsorgt'].includes(subject)) };
     }
 
     let HAA_DURCHBRUCH_ABRUF=false;
@@ -1171,15 +1171,19 @@
             if(at===null||!position(e))continue;
             const candidates=pending.filter(x=>!x.closed&&x.at!==null&&x.at<at&&position(x.event)===position(e));
             if(candidates.length===1){candidates[0].closed=true;candidates[0].confirmation=e.messageId;}
-            else if(candidates.length>1)candidates.forEach(x=>{x.ambiguous=true;});
+            else if(candidates.length>1){
+                // One distinct confirmation settles one load, even if the original ID is unknown.
+                candidates.forEach(x=>{x.ambiguous=true;});
+                candidates[0].closed=true;candidates[0].confirmation=e.messageId;
+            }
         }
         return pending;
     }
     function baueHasaAbfallWarnungHtml() {
         const rows=hasaOffeneAbfallMeldungen().filter(x=>!x.closed);if(!rows.length)return '';
         let html='<strong>⚠ Atommüll: '+rows.length+' Meldung'+(rows.length===1?'':'en')+' noch zu bearbeiten</strong><ul style="margin:4px 0;padding-left:20px">';
-        for(const x of rows){const e=x.event,p=e.position;html+='<li>'+esc(e.planetName||'Planet unbekannt')+(p?' ('+esc([p.galaxy,p.system,p.orbit].join(':'))+')':'')+' · '+esc(e.reportedTimeText||'Zeit unbekannt')+' · Meldung '+esc(e.messageId)+(x.ambiguous?' · Entsorgungsbestätigung nicht eindeutig zugeordnet':'')+'</li>';}
-        return html+'</ul><div>Entscheidung in der ursprünglichen Spielnachricht treffen. Einzel-Löschung ist gesperrt. Ein genauer Flächenverlust ist nicht angegeben.</div><a href="https://horiversum.org/game/main/main.php?cmd=message" style="color:#9dcbff">Nachrichten im Spiel öffnen</a>';
+        for(const x of rows){const e=x.event,p=e.position;html+='<li>'+esc(e.planetName||'Planet unbekannt')+(p?' ('+esc([p.galaxy,p.system,p.orbit].join(':'))+')':'')+(x.ambiguous?' · eine Ladung offen; Ursprungs-ID noch nicht eindeutig':' · '+esc(e.reportedTimeText||'Zeit unbekannt')+' · Meldung '+esc(e.messageId))+'</li>';}
+        return html+'</ul><div>Entscheidung in der ursprünglichen Spielnachricht treffen. Einzel-Löschung ist gesperrt. Bauplatz: vorläufig 200 ts je Ladung bei Fissionsreaktor Stufe 2; andere Stufen und Forschungseinflüsse noch ungeprüft.</div><a href="https://horiversum.org/game/main/main.php?cmd=message" style="color:#9dcbff">Nachrichten im Spiel öffnen</a>';
     }
     function aktualisiereHasaAbfallWarnung() {
         const node=document.getElementById('haa-abfall-warnung');if(!node)return;
@@ -1194,8 +1198,8 @@
         if(!meta.systemEvent)return '';
         if(meta.subject==='Motivationsvideo verfügbar')return 'Motivationsvideo verfügbar';
         if(meta.subject!=='Atommüll wird gelagert')return '';
-        const known=hasaOffeneAbfallMeldungen().find(x=>String(x.event.messageId)===String(messageId));
-        return known?.closed?'':'Atommüll: Entscheidung offen';
+        // A still visible original decision remains protected, including read messages.
+        return 'Atommüll: Entscheidung offen';
     }
     // HAA_ACTIONABLE_END
 
@@ -1224,7 +1228,7 @@
 
     function aktualisiereHasaVideoSchutz(doc, state) {
         const links=new Set(),checks=new Set();state.checks=state.checks||new Map();
-        doc.querySelectorAll('td a.MessageReportEvent[href]').forEach(function(link){
+        doc.querySelectorAll('td a[href]').forEach(function(link){
             if(!ereignisIstSpieltext(link,false))return;
             const meta=ereignisZeilenMeta(link);
             const address=ereignisNachrichtenUrl(link.getAttribute('href'),doc.location.href);
@@ -1268,7 +1272,7 @@
                 event.preventDefault();event.stopImmediatePropagation();
             };
             state.observer=new MutationObserver(function(records){if(istHasaFuerSitzungAktiv()&&records.some(hasaFremdeDomAenderung))aktualisiereHasaVideoSchutz(doc,state);});
-            state.observer.observe(doc.body,{subtree:true,childList:true,characterData:true});
+            state.observer.observe(doc.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['class']});
             doc.addEventListener('click',state.guard,true);doc.addEventListener('auxclick',state.guard,true);
             HAA_VIDEO_SCHUTZ.set(doc,state);
         }
