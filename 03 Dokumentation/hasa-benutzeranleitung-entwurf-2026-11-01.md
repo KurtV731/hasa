@@ -1,6 +1,6 @@
 # HASA – Benutzerhandbuch 1.3
 
-**Prüfentwurf · Stand 14. November 2026 · Ergänzungen bis 1.3.0 Alpha 11**  
+**Prüfentwurf · Stand 14. November 2026 · Ergänzungen bis 1.3.0 Alpha 12**  
 Projektverantwortlicher: **Styl**
 
 Dieses Handbuch beschreibt HASA 1.3 mit den bis zu diesem Stand geprüften Ergänzungen. Die bisherigen Bildvorlagen orientieren sich an Alpha 6; die Adressbuch-Anleitung berücksichtigt Alpha 8. Die öffentliche stabile Version bleibt 1.2.0. Offene Fragen zur endgültigen Veröffentlichung sind im internen Prüfan­hang gesammelt.
@@ -507,3 +507,12 @@ Bitte fachliche Korrekturen am Entwurf oder im gemeinsamen Brett sammeln. Veröf
 ### Nachtrag der Fachredaktion vom 07.11.2026 – Adressbuch
 
 Kapitel 5a und Wegweiser ergänzt anhand der geprüften Alpha-8-Implementierung, Quellcommit `ad66de24b3f13b4364981b2a894a14b8b8604217`. Enthält Quellenkennzeichen, tägliche Magazin-Nachlese nur bei aktivem geöffnetem HASA, Statistikabgleich, Historie, eigenständige Freigaben, privaten Altbestandimport, einmalige Servereinrichtung und Fehlerhilfe. Keine privaten Originalquellen oder Adressen eingebettet. GitHub-Prüflauf einschließlich HTTP-Empfang und MariaDB-Rechten bestanden. Diese redaktionelle Ergänzung bestätigt keinen produktiven Upload der neuen Serverdateien oder dieser Handbuchfassung. Die bestehende Websiteanleitung für 1.2 wird nicht automatisch durch diesen Entwurf ersetzt.
+
+
+### Ergänzung vom 14.11.2026 – Alpha 12: Atommüll
+
+Jede unterschiedliche Entsorgungsbestätigung erledigt genau eine zeitlich davor erfasste Ladung desselben Planeten. Zwei Bestätigungen für zwei Ladungen beseitigen die Warnung vollständig. Bei nur einer Bestätigung ist noch eine Ladung offen; die Warnung behauptet dann keine eindeutige ursprüngliche Meldungsnummer. Doppelt eingelesene Bestätigungen werden nicht mehrfach gezählt. Andere Planeten, Konten und Spielrunden bleiben getrennt.
+
+Noch vorhandene Originalmeldungen „Atommüll wird gelagert“ bleiben auch nach dem Lesen vor Einzellöschung geschützt. Lesen ist keine Entsorgung. HASA trifft keine Entsorgungsentscheidung und gibt keine Ressourcen aus.
+
+Arbeitshypothese aus zwei Messungen: Beim Fissionsreaktor Stufe 2 bindet eine Ladung 200 ts Bauplatz. Andere Reaktorstufen und mögliche Forschungseinflüsse sind noch ungeprüft. Diese Angabe ist keine automatisch erfasste Messkurve.
