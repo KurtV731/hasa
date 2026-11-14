@@ -1,0 +1,8 @@
+# HASA 1.3.0 Alpha 11 – Flottendetails und kompakte Kopfzeile
+Stand 14.11.2026. Auslöser: Obi-Wan meldet HASA im Flottendetail-Pop-up und eine nicht schließbare/leere Anzeige.
+
+Nachgewiesene Ursachen: main.php-Match schließt cmd=fleet&subcmd=view&fleet_id=… ein; window.open kann die aktive sessionStorage-Sitzung ins neue Fenster kopieren. Das ist kein iframe und wird durch @noframes nicht ausgeschlossen. Frühzeitiger Startausschluss für diese belegte Flottendetailroute gilt auch im direkt geöffneten oder noopener-Tab. Andere Hauptseiten, die Flottenübersicht und die Statistikleser bleiben erhalten. Nicht pauschal alle Dokumente mit window.opener sperren.
+
+Eingeklappte Anzeige behielt min-height 220px. Im gefalteten Zustand min-height 0, keine darüberliegenden Resize-Griffe. Aufklappen baut volle Größe/Griffe wieder auf. Hauptschalter Aus/Klappen werden vor optionalen Layout-/Bindeschritten verbunden; ein nachgelagerter Layoutfehler darf den Abschaltknopf nicht funktionslos hinterlassen. Die konkrete Ursache der von Obi-Wan gemeldeten fehlenden Reaktion ist ohne Konsolenfehler nicht abschließend belegt; Absicherung gezielt getestet.
+
+Neue Vollskript-Browserprüfung: geerbter Aktivzustand im echten window.open-Popup, direkter Flottendetailtab, Hauptfenster bleibt unberührt, Haupt-Flottenübersicht bleibt aktiv, kompakte Höhe, Klappen, Resize-Griffe nur offen, Aus/Ein und simulierter optionaler Layoutfehler. Bestehende Regression vor Kanalübernahme prüfen. Nur Userscript; kein Serverupdate, keine Datenlöschung, keine Spielaktionen. Bestehende Detailfenster nach Update schließen und neu öffnen. Neues Release im bisherigen Alpha-Kanal; stabile 1.2 nicht umetikettiert.
