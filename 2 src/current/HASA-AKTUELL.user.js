@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HASA – Horizon Ascension Assistant
 // @namespace    horiversum.hasa
-// @version      1.3.0-alpha.10
+// @version      1.3.0-alpha.11
 // @charset      UTF-8
 // @updateURL    https://raw.githubusercontent.com/KurtV731/hasa/dev-1.3-alpha1/01%20Entwicklung/Userscript/Aktuell/HASA-AKTUELL.user.js
 // @downloadURL  https://raw.githubusercontent.com/KurtV731/hasa/dev-1.3-alpha1/01%20Entwicklung/Userscript/Aktuell/HASA-AKTUELL.user.js
@@ -204,6 +204,13 @@
     if (window.location.origin !== 'https://horiversum.org'
             || !['/game/main/main.php','/game/stat/index.php','/game/stat/stat_main.php'].includes(window.location.pathname)) return;
 
+    // Fleet detail documents use the main.php path as well, but are not the
+    // main game surface. Skip even if window.open copied active sessionStorage.
+    const haaStartParameter = new URL(window.location.href).searchParams;
+    if (haaStartParameter.get('cmd') === 'fleet'
+            && haaStartParameter.get('subcmd') === 'view'
+            && haaStartParameter.has('fleet_id')) return;
+
     // Fremdrassen: nicht als erreichbare Spielerziele im Explorer anzeigen.
     // Die Datensätze bleiben bewusst gespeichert, damit sie später z. B.
     // für einen Kampfsimulator oder Flottenvergleich genutzt werden können.
@@ -219,8 +226,8 @@
         'PHYSICS', 'PSYCHOLOGY', 'NUCLEARPHYSICS', 'SOLARENERGYTECH'
     ]);
 
-    const HASA_VERSION = '1.3.0 Alpha 10';
-    const HASA_BUILD_LABEL = '1.3.0-alpha10-handlungsbedarf-2026-11-11';
+    const HASA_VERSION = '1.3.0 Alpha 11';
+    const HASA_BUILD_LABEL = '1.3.0-alpha11-flottendetails-2026-11-14';
     const HASA_RUNDE = 8;
     const HASA_RUNDE_SCHLUESSEL = 'runde8';
     // Die MariaDB und sämtliche Schreibendpunkte trennen Runde 7 und 8 jetzt
@@ -3574,6 +3581,7 @@
     }
 
     function aktiviereHasaResize(box) {
+        if (typeof HAA_UI_BOX_ZU !== 'undefined' && HAA_UI_BOX_ZU) return;
         if (!box || box.dataset.hasaResize === '1') return;
         box.dataset.hasaResize = '1';
 
@@ -3654,7 +3662,7 @@
 // HASA 1.1: kleine Displays behalten die normale Schriftgröße.
 // Bei Platzmangel wird innerhalb von HASA horizontal gescrollt.
 box.style.minWidth = '260px';
-box.style.minHeight = '220px';
+box.style.minHeight = HAA_UI_BOX_ZU ? '0' : '220px';
 box.style.width = '760px';
 box.style.maxWidth = 'calc(100vw - 24px)';
 box.style.maxHeight = 'calc(100vh - 16px)';
@@ -5570,6 +5578,14 @@ return box;
         }
 
         box.innerHTML = html;
+        const hauptAus = document.getElementById('haa-hauptschalter-aus');
+        if (hauptAus) hauptAus.onclick = deaktiviereHasaFuerSitzung;
+        const hauptKlappen = document.getElementById('haa-box-klappen');
+        if (hauptKlappen) hauptKlappen.onclick = function () {
+            HAA_UI_BOX_ZU = !HAA_UI_BOX_ZU;
+            speichern(STORAGE_UI_BOX_ZU, HAA_UI_BOX_ZU ? '1' : '0');
+            baueBox();
+        };
         aktiviereHasaResize(box);
         positioniereBox(box);
 

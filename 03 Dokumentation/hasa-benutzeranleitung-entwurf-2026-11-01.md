@@ -1,6 +1,6 @@
 # HASA – Benutzerhandbuch 1.3
 
-**Prüfentwurf · Stand 11. November 2026 · Ergänzungen bis 1.3.0 Alpha 10**  
+**Prüfentwurf · Stand 14. November 2026 · Ergänzungen bis 1.3.0 Alpha 11**  
 Projektverantwortlicher: **Styl**
 
 Dieses Handbuch beschreibt HASA 1.3 mit den bis zu diesem Stand geprüften Ergänzungen. Die bisherigen Bildvorlagen orientieren sich an Alpha 6; die Adressbuch-Anleitung berücksichtigt Alpha 8. Die öffentliche stabile Version bleibt 1.2.0. Offene Fragen zur endgültigen Veröffentlichung sind im internen Prüfan­hang gesammelt.
@@ -25,6 +25,8 @@ HASA unterstützt dich mit Beobachtungen und Planung. Bauen, forschen, Videos st
 Oben findest du die Versionsnummer. Darunter liegen direkte Wege zu **Gebäude**, **Forschung**, **Werft** und **Flotte**. Sie öffnen die entsprechenden Horizon-Bereiche.
 
 Die Überschriften **Alarme**, **Forschungsplanung** und **Galaxiescanner** kannst du anklicken, um sie auf- oder zuzuklappen. Du musst also nicht ständig alles sehen. Der kleine Pfeil oben rechts klappt das HASA-Fenster ein; **HASA aus** beendet die aktive HASA-Arbeit und führt zurück zur Bereitschaft.
+
+Eingeklappt bleibt nur die kompakte Kopfzeile sichtbar; ein Klick auf den kleinen Pfeil öffnet die Inhalte wieder. Mit **HASA aus** wechselst du in Bereitschaft. In Horizon-Flottendetailseiten mit einzelner Flottenkennung wird HASA nicht eingeblendet — auch nicht im zusätzlich geöffneten Detailfenster. Die Flottenübersicht im Hauptfenster bleibt verfügbar.
 
 Position und Größe lassen sich mit der Maus anpassen. Wenn eine Zeile oder Tabelle breiter ist als das Fenster, kannst du seitlich scrollen. Deine gewählten offenen und geschlossenen Bereiche bleiben bei normalen Seitenwechseln erhalten.
 
