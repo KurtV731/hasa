@@ -104,7 +104,8 @@ const helpers = source.slice(source.indexOf('    function prdrNormalisiereText')
     });
     await test('dynamic inserted and changed text captured without poll', async () => {
         await page.evaluate(() => {const row=document.querySelector('tr');row.querySelector('a').textContent='Seuche erfolgreich bekämpft';});
-        await page.waitForTimeout(100);
+        // The idle queue intentionally yields; wait for the result, below the 30s poll interval.
+        await page.waitForFunction(() => test.list().find(e=>e.messageId==='601')?.eventType==='Seuche erfolgreich bekämpft',null,{timeout:3000});
         assert.equal(await page.evaluate(() => test.list().find(e=>e.messageId==='601').eventType),'Seuche erfolgreich bekämpft');
     });
     await test('report capture through same-origin iframe and load event', async () => {
