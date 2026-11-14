@@ -1,6 +1,6 @@
 # HASA – Benutzerhandbuch 1.3
 
-**Prüfentwurf · Stand 14. November 2026 · Ergänzungen bis 1.3.0 Alpha 11**  
+**Prüfentwurf · Stand 14. November 2026 · Ergänzungen bis 1.3.0 Alpha 12**  
 Projektverantwortlicher: **Styl**
 
 Dieses Handbuch beschreibt HASA 1.3 mit den bis zu diesem Stand geprüften Ergänzungen. Die bisherigen Bildvorlagen orientieren sich an Alpha 6; die Adressbuch-Anleitung berücksichtigt Alpha 8. Die öffentliche stabile Version bleibt 1.2.0. Offene Fragen zur endgültigen Veröffentlichung sind im internen Prüfan­hang gesammelt.
